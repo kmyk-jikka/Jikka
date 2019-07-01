@@ -44,7 +44,7 @@ let pintegral name pred body cont = pipe2 (punderscore (pstring name) (pparen '{
 let pintarray =
     pconstname |>> IntArrayConst
 
-let pintterm =
+let pintatomic =
     choice
         [ pint64 |>> Int
         ; pvarname |>> IntVar
@@ -63,13 +63,28 @@ and pintpred () =
             ])
 
 and pintvalue () =
-    choice
-        [ pintegral "\\sum" (parse.Delay pintpred) (parse.Delay pintvalue) (fun (name, pred) value -> Sum (name, pred, value))
+    let opp = new OperatorPrecedenceParser<IntValue, option<VarName * IntPred>, unit>()
+    opp.TermParser <- choice
+        [ pparen '(' ')' opp.ExpressionParser
         ; attempt (punderscore pintarray (parse.Delay pintvalue) (fun a i -> Subscript (a, i)))
-        ; pintterm
-        ]
+        ; pintatomic
+        ] .>> spaces
+    let infix a c e = InfixOperator<IntValue, option<VarName * IntPred>, unit> (a, spaces >>. preturn None, c, Associativity.Left , e)
+    opp.AddOperator (infix "+" 2 (fun x y -> Add (x, y)))
+    opp.AddOperator (infix "-" 2 (fun x y -> Sub (x, y)))
+    opp.AddOperator (infix "\\cdot" 3 (fun x y -> Mul (x, y)))
+    opp.AddOperator (infix "/" 3 (fun x y -> Div(x, y)))
+    opp.AddOperator (infix "\\bmod" 3 (fun x y -> Mod (x, y)))
+    opp.AddOperator (infix "*" 3 (fun x y -> Mul (x, y)))
+    opp.AddOperator (infix "%" 3 (fun x y -> Mod (x, y)))
+    let pred = spaces >>. pchar '_' >>. spaces >>. pparen '{' '}' (parse.Delay pintpred |>> Some) .>> spaces
+    let prefix a c f = PrefixOperator<IntValue, option<VarName * IntPred>, unit> (a, pred, c, true, (), fun x y -> f (Option.get x) y)
+    opp.AddOperator (prefix "\\sum" 1 (fun (name, pred) body -> Sum (name, pred, body)))
+    opp.AddOperator (prefix "\\min" 1 (fun (name, pred) body -> Min (name, pred, body)))
+    opp.AddOperator (prefix "\\max" 1 (fun (name, pred) body -> Max (name, pred, body)))
+    opp.ExpressionParser
 
-let parser : Parser<IntValue, unit> = pintvalue ()
+let parser : Parser<IntValue, unit> = spaces >>. pintvalue () .>> spaces .>> eof
 
 
 type Type
@@ -127,6 +142,34 @@ let format ast =
             | (Some x, Some y) -> Some (sprintf "(%s %c %s)" x c y)
             | _ -> None
 
+        let bigop unit_ append x y z =
+            match x with
+            | VarName x ->
+                let name = newvar ()
+                let _ = sb.Append (sprintf "%sint64_t %s = %s;\n" (indent ()) name unit_)
+                let loop forstmt =
+                    let _ = sb.Append (sprintf "%s%s {\n" (indent ()) forstmt)
+                    nest <- nest + 1
+                    match go z with
+                    | None -> None
+                    | Some s ->
+                        let _ = sb.Append (sprintf "%s%s;\n" (indent ()) (append name s))
+                        nest <- nest - 1
+                        let _ = sb.Append (sprintf "%s}\n" (indent ()))
+                        Some name
+
+                match y with
+                | Lt n ->
+                    match go n with
+                    | None -> None
+                    | Some n ->
+                        loop (sprintf "for (int64_t %s = 0; %s < %s; ++ %s)"  x x n x)
+                | In (Range (l, r)) ->
+                    match (go l, go r) with
+                    | (Some l, Some r) ->
+                        loop (sprintf "for (int64_t %s = %s; %s < %s; ++ %s)"  x l x r x)
+                    | _ -> None
+
         match ast with
         | Int value -> Some (string value)
         | IntVar (VarName name) -> Some name
@@ -141,40 +184,9 @@ let format ast =
         | Div (x, y) -> binop '/' x y
         | Mod (x, y) -> binop '%' x y
 
-        | Sum (x, y, z) ->
-            match x with
-            | VarName x ->
-                let name = newvar ()
-                let _ = sb.Append (sprintf "%sint64_t %s = 0;\n" (indent ()) name)
-                match y with
-                | Lt n ->
-                    match go n with
-                    | None -> None
-                    | Some n ->
-                        let _ = sb.Append (sprintf "%sfor (int64_t %s = 0; %s < %s; ++ %s) {\n" (indent ()) x x n x)
-                        nest <- nest + 1
-                        match go z with
-                        | None -> None
-                        | Some s ->
-                            let _ = sb.Append (sprintf "%s%s += %s;\n" (indent ()) name s)
-                            nest <- nest - 1
-                            let _ = sb.Append (sprintf "%s}\n" (indent ()))
-                            Some name
-                | In (Range (l, r)) ->
-                    match (go l, go r) with
-                    | (Some l, Some r) ->
-                        let _ = sb.Append (sprintf "%sfor (int64_t %s = %s; %s < %s; ++ %s) {\n" (indent ()) x l x r x)
-                        nest <- nest + 1
-                        match go z with
-                        | None -> None
-                        | Some s ->
-                            let _ = sb.Append (sprintf "%s%s += %s;\n" (indent ()) name s)
-                            nest <- nest - 1
-                            let _ = sb.Append (sprintf "%s}\n" (indent ()))
-                            Some name
-                    | _ -> None
-        | Max (x, y, z) -> None
-        | Min (x, y, z) -> None
+        | Sum (x, y, z) -> bigop "0" (sprintf "%s += %s") x y z
+        | Max (x, y, z) -> bigop "INT64_MIN" (fun a b -> sprintf "%s = max(%s, %s)" a a b) x y z
+        | Min (x, y, z) -> bigop "INT64_MAX" (fun a b -> sprintf "%s = min(%s, %s)" a a b) x y z
 
     match go ast with
     | None -> None
