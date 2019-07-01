@@ -91,12 +91,12 @@ type Type
     = IntType
     | IntArrayType
 
-let freevars ast =
+let listVariables ast =
     let rec intvalue ast acc =
         match ast with
         | Int _ -> acc
-        | IntVar _ -> acc
-        | IntConst (ConstName name) -> (name, IntType) :: acc
+        | IntVar (VarName name) -> (name, IntType, false) :: acc
+        | IntConst (ConstName name) -> (name, IntType, true) :: acc
         | Subscript (x, y) -> intarray x (intvalue y acc)
         | Add (x, y) -> intvalue x (intvalue y acc)
         | Sub (x, y) -> intvalue x (intvalue y acc)
@@ -108,7 +108,7 @@ let freevars ast =
         | Min (_, y, z) -> intpred y (intvalue z acc)
     and intarray ast acc =
         match ast with
-        | IntArrayConst (ConstName name) -> (name, IntArrayType) :: acc
+        | IntArrayConst (ConstName name) -> (name, IntArrayType, true) :: acc
     and intset ast acc =
         match ast with
         | Range (l, r) -> intvalue l (intvalue r acc)
@@ -116,7 +116,63 @@ let freevars ast =
         match ast with
         | In x -> intset x acc
         | Lt x -> intvalue x acc
-    in Map (intvalue ast [])
+    in intvalue ast []
+
+let isNotUsedIn (VarName name) ast =
+    ast |> listVariables |> List.filter (fun (x, _, _) -> String.Equals(x, name)) |> List.isEmpty
+
+
+let rec optimize (ast : IntValue) : IntValue =
+    let binop func op x y =
+        let x = optimize x
+        let y = optimize y
+        match (x, y) with
+        | (Int x, Int y) -> Int (func x y)
+        | (x, y) -> op (x, y)
+
+    match ast with
+    | Int _ -> ast
+    | IntVar _ -> ast
+    | IntConst _ -> ast
+    | Subscript (x, y) -> Subscript (x, optimize y)
+    | Add (x, y) -> binop (+) Add x y
+    | Sub (x, y) -> binop (-) Sub x y
+    | Mul (x, y) -> binop (*) Mul x y
+    | Div (x, y) -> binop (/) Div x y
+    | Mod (x, y) -> binop (%) Mod x y
+    | Sum (x, y, z) ->
+        let z = optimize z
+        match (isNotUsedIn x z, cardinality y) with
+        | (true, Some n) -> optimize (Mul (Int n, z))
+        | _ -> Sum (x, y, z)
+    | Max (x, y, z) ->
+        let z = optimize z
+        match (isNotUsedIn x z, cardinality y) with
+        | (true, Some 0L) -> Max (x, Lt (Int 0L), Int 0L)
+        | (true, Some n) -> z
+        | _ -> Max (x, y, z)
+    | Min (x, y, z) ->
+        let z = optimize z
+        match (isNotUsedIn x z, cardinality y) with
+        | (true, Some 0L) -> Min (x, Lt (Int 0L), Int 0L)
+        | (true, Some n) -> z
+        | _ -> Min (x, y, z)
+
+and cardinality pred =
+    match pred with
+    | Lt n ->
+        match optimize n with
+        | Int n -> Some n
+        | _ -> None
+    | In (Range (l, r)) ->
+        match (optimize l, optimize r) with
+        | (Int l, Int r) -> Some (r - l)
+        | _ -> None
+
+
+
+let environment ast =
+    ast |> listVariables |> List.filter (fun (_, _, isConst) -> isConst) |> List.map (fun (x, y, _) -> (x, y)) |> Map
 
 let toCXXType type_ =
     match type_ with
@@ -124,10 +180,10 @@ let toCXXType type_ =
     | IntArrayType -> "const vector<int64_t> &"
 
 
-let format ast =
+let format (ast : IntValue) : option<string> =
     let sb = new StringBuilder()
     let _ = sb.Append "int64_t solve("
-    let _ = freevars ast |> Map.toList |> List.map (fun (key, value) -> sprintf "%s %s" (toCXXType value) key) |> String.concat ", " |> sb.Append
+    let _ = environment ast |> Map.toList |> List.map (fun (key, value) -> sprintf "%s %s" (toCXXType value) key) |> String.concat ", " |> sb.Append
     let _ = sb.Append ") {\n"
 
     let mutable counter = 0
@@ -201,11 +257,12 @@ let main argv =
     printf "Input: "
     let s = Console.ReadLine ()
     // let s = "\\sum _ {i < N} A _ i"
+    // let s = "\\sum _ {i < 3 + 4} 3 + \\max _ {j < 3} 9 * 4"
 
     match run parser s with
-    | Success (result, state, position) ->
-        match format result with
-        | Some result -> printfn "Success:\n%s" result
-        | None -> printfn "Failure:"
+    | Success (ast, state, position) ->
+        match format (optimize ast) with
+        | Some code -> printfn "Success:\n%s" code
+        | None -> printfn "Failure: failed to make C++ code from: %A" ast
     | Failure (message, error, state) -> printfn "Failure: %s" message
     0 // return an integer exit code
