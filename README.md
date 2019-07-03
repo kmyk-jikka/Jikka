@@ -10,7 +10,57 @@
 $ dotnet run
 ```
 
-## 例 (実装済み)
+## 例 (実装済み) (v2)
+
+```
+# Jikka v2
+# https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d
+
+K = 100001
+given N : Nat
+given S : N -> Nat
+given T : N -> K
+assume forall i. i < N implies S i < T i
+
+f : K -> Nat
+f t = count (\ i. i < N and S i <= t and t < T i)
+g : N -> K -> Nat
+g i t = f t - int (S i <= t and t < T i)
+
+compute min \ i. max \ t. g i t
+```
+
+``` console
+$ dotnet run
+{environment =
+  [Define (Ident "K",[],IntExp 100001);
+   Given (Ident "N",ExprTy (IdentExp (Ident "Nat")));
+   Given
+     (Ident "S",
+      FunTy (ExprTy (IdentExp (Ident "N")),ExprTy (IdentExp (Ident "Nat"))));
+   Given
+     (Ident "T",
+      FunTy (ExprTy (IdentExp (Ident "N")),ExprTy (IdentExp (Ident "K"))));
+   Assume ...;
+   Declare ...;
+   Define ...;
+   Declare ...;
+   Define ...];
+ compute =
+  AppExp
+    (IdentExp (Ident "min"),
+     LamExp
+       (Ident "i",
+        AppExp
+          (IdentExp (Ident "max"),
+           LamExp
+             (Ident "t",
+              AppExp
+                (AppExp (IdentExp (Ident "g"),IdentExp (Ident "i")),
+                 IdentExp (Ident "t"))))));}
+```
+
+## 例 (実装済み) (v1)
 
 入力: `\sum _ {i < N} A_i`
 

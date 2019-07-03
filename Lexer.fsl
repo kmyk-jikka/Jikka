@@ -27,6 +27,7 @@ rule tokenstream = parse
     | '.'               { DOT }
     | ':'               { COLON }
     | '='               { EQUAL }
+    | '_'               { UNDERSCORE }
     | "->"              { TO }
     | "=>"              { IMPLY }
 
@@ -35,6 +36,11 @@ rule tokenstream = parse
     | '*'               { MUL }
     | '/'               { DIV }
     | '%'               { MOD }
+    | "(+)"             { IDENT "+" }
+    | "(-)"             { IDENT "-" }
+    | "(*)"             { IDENT "*" }
+    | "(/)"             { IDENT "/" }
+    | "(%)"             { IDENT "%" }
 
     | '<'               { LT }
     | "<="              { LE }
@@ -43,6 +49,11 @@ rule tokenstream = parse
     | ">="              { GE }
     | '>'               { GT }
 
+    | "and"             { LAND }
+    | "or"              { LOR }
+    | "not"             { LNOT }
+    | "implies"         { LIMPLIES }
+    | "iff"             { LIFF }
     | "forall"          { FORALL }
     | "exists"          { EXISTS }
     | "given"           { GIVEN }
@@ -52,8 +63,10 @@ rule tokenstream = parse
     | alpha (alnum *)   { IDENT (lexeme lexbuf) }
     | digit +           { INT (int (lexeme lexbuf)) }
 
-    | whitespace +      { tokenstream lexbuf }
-    | newline           { tokenstream lexbuf }
+    | '\\' newline      { tokenstream lexbuf }
+    | '#' [^ '\n'] *    { tokenstream lexbuf }
+    | whitespace        { tokenstream lexbuf }
+    | newline           { NEWLINE }
     | eof               { EOF }
-    | _                 { raise (Exception (sprintf "SyntaxError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) lexbuf.StartPos.Column)) }
+    | _                 { raise (Exception (sprintf "LexerError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) lexbuf.StartPos.Column)) }
 
