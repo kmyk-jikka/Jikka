@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="4.6.2" />
+    <PackageReference Include="FsLexYacc" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FsYacc Include="Parser.fsy">
+      <OtherFlags>--module Parser</OtherFlags>
+    </FsYacc>
+    <FsLex Include="Lexer.fsl">
+      <OtherFlags>--module Lexer --unicode</OtherFlags>
+    </FsLex>
+    <Compile Include="Syntax.fs" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="Lexer.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>

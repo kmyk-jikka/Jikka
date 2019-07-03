@@ -1,0 +1,59 @@
+{
+
+open System
+open FSharp.Text.Lexing
+open Parser
+
+let lexeme = LexBuffer<_>.LexemeString
+
+}
+
+let whitespace = [' ' '\t']
+let newline = ('\n' | '\r' '\n')
+let upper = ['A' - 'Z']
+let lower = ['a' - 'z']
+let digit = ['0' - '9']
+let alpha = upper | lower
+let alnum = digit | upper | lower
+
+rule tokenstream = parse
+    | '('               { LPAREN }
+    | ')'               { RPAREN }
+    | '['               { LBRACKET }
+    | ']'               { RBRACKET }
+    | '{'               { LBRACE }
+    | '}'               { RBRACE }
+    | '\\'              { BACKSLASH }
+    | '.'               { DOT }
+    | ':'               { COLON }
+    | '='               { EQUAL }
+    | "->"              { TO }
+    | "=>"              { IMPLY }
+
+    | '+'               { ADD }
+    | '-'               { SUB }
+    | '*'               { MUL }
+    | '/'               { DIV }
+    | '%'               { MOD }
+
+    | '<'               { LT }
+    | "<="              { LE }
+    | "=="              { EQ }
+    | "/="              { NE }
+    | ">="              { GE }
+    | '>'               { GT }
+
+    | "forall"          { FORALL }
+    | "exists"          { EXISTS }
+    | "given"           { GIVEN }
+    | "assume"          { ASSUME }
+    | "compute"         { COMPUTE }
+
+    | alpha (alnum *)   { IDENT (lexeme lexbuf) }
+    | digit +           { INT (int (lexeme lexbuf)) }
+
+    | whitespace +      { tokenstream lexbuf }
+    | newline           { tokenstream lexbuf }
+    | eof               { EOF }
+    | _                 { raise (Exception (sprintf "SyntaxError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) lexbuf.StartPos.Column)) }
+
