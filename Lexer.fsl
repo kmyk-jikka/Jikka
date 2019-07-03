@@ -1,6 +1,7 @@
 {
 
 open System
+open System.Numerics
 open FSharp.Text.Lexing
 open Parser
 
@@ -61,7 +62,7 @@ rule tokenstream = parse
     | "compute"         { COMPUTE }
 
     | alpha (alnum *)   { IDENT (lexeme lexbuf) }
-    | digit +           { INT (int (lexeme lexbuf)) }
+    | digit +           { INT (BigInteger.Parse (lexeme lexbuf)) }
 
     | '\\' newline      { tokenstream lexbuf }
     | '#' [^ '\n'] *    { tokenstream lexbuf }

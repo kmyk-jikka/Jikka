@@ -1,10 +1,12 @@
 module Syntax
 
+open System.Numerics
+
 type Ident = Ident of string
 
 type Expr
     = IdentExp of Ident
-    | IntExp of int
+    | IntExp of BigInteger
     | LamExp of Ident * Expr
     | AppExp of Expr * Expr
 
