@@ -2,8 +2,7 @@ module Semantics
 
 open System.Numerics
 
-type Ident = Syntax.Ident
-let Ident = Syntax.Ident
+type Ident = Ident of string
 
 
 // base types
@@ -11,6 +10,11 @@ type BType
     = VarBTy of Ident
     | FunBTy of BType * BType
     | IntBTy
+
+// base type schema
+type BSchema
+    = BaseBScm of BType
+    | LamBScm of Ident * BSchema
 
 // untyped expr
 type UExpr
@@ -36,7 +40,6 @@ type BExpr
     | LamBExp of BType * BExpr
     | AppBExp of BExpr * BExpr
     | IntBExp of BigInteger
-
 
 let convertDeBruijnIndex (f : UExpr) : DBExpr =
     let rec go (env : list<Ident>) f =
@@ -135,12 +138,41 @@ let rec unifyConstraints (constraints : list<BType * BType>) : list<Ident * BTyp
         | (_, _) ->
             failwithf "failed to unify constraints: %A = %A" s t
 
+let splitSchema (scm : BSchema) : list<Ident> * BType =
+    let gensym = freshIdentGen "_T"
+    let rec go scm =
+        match scm with
+        | BaseBScm t ->
+            ([], t)
+        | LamBScm (x, scm) ->
+            let (acc, t) = go scm
+            let y = gensym ()
+            let t = substType x (VarBTy y) t
+            (y :: acc, t)
+    let (acc, t) = go scm
+    (List.rev acc, t)
 
 // Hindley/Milner type inference
-let inferTypes (f : UExpr) = // : (BExpr, TypeEnv) =
+let inferTypes (f : UExpr) (annot : option<BSchema>) : BExpr * BSchema =
     let f = convertDeBruijnIndex f
     let (f, t, constraints) = listConstraints f
+    let (tvars, constraints) =
+        match annot with
+        | None ->
+            ([], constraints)
+        | Some scm ->
+            let (tvars, u) = splitSchema scm
+            (tvars, (t, u) :: constraints)
     let subst = unifyConstraints constraints
     let f = substTypesOfExpr subst f
     let t = substTypes subst t
-    (f, t)
+    let used = ref []
+    let push scm x =
+        match substTypes subst (VarBTy x) with
+        | VarBTy (Ident x) when x.StartsWith "_" && not (List.contains (Ident x) (! used)) ->
+            used := Ident x :: ! used
+            LamBScm (Ident x, scm)
+        | _ ->
+            failwithf "failed to satisfy the type annotation: %A" annot
+    let scm = List.fold push (BaseBScm t) tvars
+    (f, scm)
