@@ -83,10 +83,14 @@ let listConstraints (f : DBExpr) : BExpr * BType * list<BType * BType> =
             (IntBExp n, IntBTy, acc)
     go [] f []
 
-let listFreeTypeVars : BType -> list<Ident> =
+let listFreeTypeVars (env : list<Ident>) : BType -> list<Ident> =
     let rec go acc t =
         match t with
-        | VarBTy x -> x :: acc
+        | VarBTy x ->
+            if List.contains x env then
+                acc
+            else
+                x :: acc
         | FunBTy (s, t) -> go (go acc s) t
         | IntBTy -> acc
     go []
@@ -125,10 +129,10 @@ let rec unifyConstraints (constraints : list<BType * BType>) : list<Ident * BTyp
         match (s, t) with
         | (VarBTy x, VarBTy y) when x = y ->
             unifyConstraints constraints
-        | (VarBTy x, t) when not (List.contains x (listFreeTypeVars t)) ->
+        | (VarBTy x, t) when not (List.contains x (listFreeTypeVars [] t)) ->
             let subst = unifyConstraints (substConstraints x t constraints)
             (x, substTypes subst t) :: subst
-        | (t, VarBTy x) when not (List.contains x (listFreeTypeVars t)) ->
+        | (t, VarBTy x) when not (List.contains x (listFreeTypeVars [] t)) ->
             let subst = unifyConstraints (substConstraints x t constraints)
             (x, substTypes subst t) :: subst
         | (FunBTy (s1, s2), FunBTy (t1, t2)) ->
@@ -151,6 +155,10 @@ let splitSchema (scm : BSchema) : list<Ident> * BType =
             (y :: acc, t)
     let (acc, t) = go scm
     (List.rev acc, t)
+
+let listFreeTypeVarsOfSchema (scm : BSchema) : list<Ident> =
+    let (env, t) = splitSchema scm
+    listFreeTypeVars env t
 
 // Hindley/Milner type inference
 let inferTypes (f : UExpr) (annot : option<BSchema>) : BExpr * BSchema =
@@ -175,4 +183,7 @@ let inferTypes (f : UExpr) (annot : option<BSchema>) : BExpr * BSchema =
         | _ ->
             failwithf "failed to satisfy the type annotation: %A" annot
     let scm = List.fold push (BaseBScm t) tvars
+    match listFreeTypeVarsOfSchema scm with
+    | [] -> ()
+    | tvars -> failwithf "the type schema is not closed: %A" tvars
     (f, scm)
