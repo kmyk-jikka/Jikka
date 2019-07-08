@@ -60,40 +60,57 @@ A. (競技プログラミングの) 問題を解くという行為がどのよ�
 # https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d
 
 K = 100000
-given N : Nat
-given S : N -> Nat
-given T : N -> (K + 1)
+input N : Nat
+input S : N -> Nat
+K1 = K + 1
+input T : N -> K1
 assume forall i. i < N implies S i < T i
 
-f : N -> (K + 1) -> Nat
-f i t = count (\ j. j < N and j /= i and S j <= t and t < T j)
+f : N -> K1 -> Nat
+f i t = count N (\ j. j < N and j /= i and S j <= t and t < T j)
 
-compute min \ i. max \ t. f i t
+output min N \ i. max K1 \ t. f i t
 ```
 
 ``` console
 $ dotnet run
 
-{environment =
-  [Define (Ident "K",[],IntExp 100000);
-   Given (Ident "N",ExprTy (IdentExp (Ident "Nat")));
-   Given ...;
-   Given ...;
-   Assume ...;
-   Declare ...;
-   Define ...];
- compute =
-  AppExp
-    (IdentExp (Ident "min"),
-     LamExp
-       (Ident "i",
-        AppExp
-          (IdentExp (Ident "max"),
-           LamExp
-             (Ident "t",
-              AppExp
-                (AppExp (IdentExp (Ident "f"),IdentExp (Ident "i")),
-                 IdentExp (Ident "t"))))));}
+{compiletime =
+  [(Ident "K1",
+    AppBExp
+      (AppBExp
+         (FreeVarBExp (Ident "+",FunBTy (IntBTy,FunBTy (IntBTy,IntBTy))),
+          FreeVarBExp (Ident "K",IntBTy)),IntBExp 1), BaseBScm IntBTy);
+   (Ident "K", IntBExp 100000, BaseBScm IntBTy)];
+ input =
+  [(Ident "T", FunBTy (VarBTy (Ident "N"),VarBTy (Ident "K1")));
+   (Ident "S", FunBTy (VarBTy (Ident "N"),VarBTy (Ident "Nat")));
+   (Ident "N", VarBTy (Ident "Nat"))];
+ runtime =
+  [...];
+ assumptions =
+  [...];
+ output =
+  (AppBExp
+     (AppBExp
+        (FreeVarBExp
+           (Ident "min",FunBTy (IntBTy,FunBTy (FunBTy (IntBTy,IntBTy),IntBTy))),
+         FreeVarBExp (Ident "N",IntBTy)),
+      LamBExp
+        (IntBTy,
+         AppBExp
+           (AppBExp
+              (FreeVarBExp
+                 (Ident "max",
+                  FunBTy (IntBTy,FunBTy (FunBTy (IntBTy,IntBTy),IntBTy))),
+               FreeVarBExp (Ident "K1",IntBTy)),
+            LamBExp
+              (IntBTy,
+               AppBExp
+                 (AppBExp
+                    (FreeVarBExp
+                       (Ident "f",FunBTy (IntBTy,FunBTy (IntBTy,IntBTy))),
+                     VarBExp 1),VarBExp 0))))), IntBTy);}
 ```
 
 ### 例 (実装済み) (v1)
