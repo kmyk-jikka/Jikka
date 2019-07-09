@@ -6,6 +6,8 @@ open FSharp.Text.Lexing
 open Parser
 
 let lexeme = LexBuffer<_>.LexemeString
+let newline (lexbuf : LexBuffer<_>) =
+    lexbuf.EndPos <- lexbuf.EndPos.NextLine
 
 }
 
@@ -66,10 +68,10 @@ rule tokenstream = parse
     | alpha (alnum *)   { IDENT (lexeme lexbuf) }
     | digit +           { INT (BigInteger.Parse (lexeme lexbuf)) }
 
-    | '\\' newline      { tokenstream lexbuf }
+    | '\\' newline      { newline lexbuf ; tokenstream lexbuf }
     | '#' [^ '\n'] *    { tokenstream lexbuf }
     | whitespace        { tokenstream lexbuf }
-    | newline           { NEWLINE }
+    | newline           { newline lexbuf ; NEWLINE }
     | eof               { EOF }
-    | _                 { raise (Exception (sprintf "LexerError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) lexbuf.StartPos.Column)) }
+    | _                 { raise (Exception (sprintf "LexerError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) (lexbuf.StartPos.Column + 1))) }
 
