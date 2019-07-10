@@ -20,7 +20,6 @@ type UExpr =
     | VarUExp of Ident
     | LamUExp of Ident * option<BType> * UExpr
     | AppUExp of UExpr * UExpr
-    | AsUExp of UExpr * BType
     | IntUExp of BigInteger
 
 // de Bruijn indexed untyped expr
@@ -29,7 +28,6 @@ type DBExpr =
     | FreeVarDBExp of Ident * BType
     | LamDBExp of option<BType> * DBExpr
     | AppDBExp of DBExpr * DBExpr
-    | AsDBExp of DBExpr * BType
     | IntDBExp of BigInteger
 
 // typed expr
@@ -99,7 +97,6 @@ let listFreeVars (f : UExpr) : list<Ident> =
             | None -> x :: acc
         | LamUExp(x, _, g) -> go (x :: env) g acc
         | AppUExp(g, h) -> go env h (go env g acc)
-        | AsUExp(g, _) -> go env g acc
         | IntUExp _ -> acc
     go [] f []
 
@@ -117,7 +114,6 @@ let convertDeBruijnIndex (typeenv : Map<Ident, BSchema>) (f : UExpr) : DBExpr =
                 | Some scm -> FreeVarDBExp(x, realizeSchema gensym scm)
         | LamUExp(x, t, g) -> LamDBExp(t, go (x :: env) g)
         | AppUExp(g, h) -> AppDBExp(go env g, go env h)
-        | AsUExp(g, t) -> AsDBExp(go env g, t)
         | IntUExp n -> IntDBExp n
     go [] f
 
@@ -141,9 +137,6 @@ let listConstraints (f : DBExpr) : BExpr * BType * list<BType * BType> =
             let (h, u, acc) = go env h acc
             let s = VarBTy(gensym())
             (AppBExp(g, h), s, (t, FunBTy(u, s)) :: acc)
-        | AsDBExp(g, t) ->
-            let (g, u, acc) = go env g acc
-            (g, u, (u, t) :: acc)
         | IntDBExp n -> (IntBExp n, IntBTy, acc)
     go [] f []
 
