@@ -3,8 +3,8 @@ open System.Numerics
 open Semantics
 open Syntax
 
-let varUExp s = VarUExp (Ident s)
-let appUExp2 f x y = AppUExp (AppUExp (f, x), y)
+let varUExp s = VarUExp(Ident s)
+let appUExp2 f x y = AppUExp(AppUExp(f, x), y)
 %}
 
 %start start
@@ -49,9 +49,9 @@ assumption_statement_list:
     | { [] }
 
 assumption_statement:
-    | ident parameters EQUAL expr NEWLINE newlines { Define ($1, $2, $4) }
-    | ident COLON schema NEWLINE newlines { Declare ($1, $3) }
-    | INPUT ident COLON type_ NEWLINE newlines { Input ($2, $4) }
+    | ident parameters EQUAL expr NEWLINE newlines { Define($1, $2, $4) }
+    | ident COLON schema NEWLINE newlines { Declare($1, $3) }
+    | INPUT ident COLON type_ NEWLINE newlines { Input($2, $4) }
     | ASSUME expr NEWLINE newlines { Assume $2 }
 
 parameters:
@@ -63,10 +63,10 @@ compute_statement:
     OUTPUT expr NEWLINE newlines { $2 }
 
 schema:
-    | FORALL ident DOT schema { LamBScm ($2, $4) }
+    | FORALL ident DOT schema { LamBScm($2, $4) }
     | type_ { BaseBScm $1 }
 type_:
-    | atomic_type TO type_ { FunBTy ($1, $3) }
+    | atomic_type TO type_ { FunBTy($1, $3) }
     | atomic_type { $1 }
 atomic_type:
     | ident { VarBTy $1 }
@@ -74,54 +74,54 @@ atomic_type:
 
 expr:
     | lambda_expr { $1 }
-    | funapp_expr lambda_expr { AppUExp ($1, $2) }
+    | funapp_expr lambda_expr { AppUExp($1, $2) }
     | iff_expr { $1 }
 lambda_expr:
-    | BACKSLASH ident DOT expr { LamUExp ($2, None, $4) }
-    | BACKSLASH ident COLON type_ DOT expr { LamUExp ($2, Some $4, $6) }
-    | FORALL ident DOT expr { AppUExp (varUExp "forall", LamUExp ($2, None, $4)) }
-    | FORALL ident COLON type_ DOT expr { AppUExp (varUExp "forall", LamUExp ($2, Some $4, $6)) }
-    | EXISTS ident DOT expr { AppUExp (varUExp "exists", LamUExp ($2, None, $4)) }
-    | EXISTS ident COLON type_ DOT expr { AppUExp (varUExp "exists", LamUExp ($2, Some $4, $6)) }
+    | BACKSLASH ident DOT expr { LamUExp($2, None, $4) }
+    | BACKSLASH ident COLON type_ DOT expr { LamUExp($2, Some $4, $6) }
+    | FORALL ident DOT expr { AppUExp(varUExp "forall", LamUExp($2, None, $4)) }
+    | FORALL ident COLON type_ DOT expr { AppUExp(varUExp "forall", LamUExp($2, Some $4, $6)) }
+    | EXISTS ident DOT expr { AppUExp(varUExp "exists", LamUExp($2, None, $4)) }
+    | EXISTS ident COLON type_ DOT expr { AppUExp(varUExp "exists", LamUExp($2, Some $4, $6)) }
 iff_expr:
-    | imply_expr LIFF lambda_expr { appUExp2 (varUExp "iff") $1 $3 }
-    | imply_expr LIFF imply_expr { appUExp2 (varUExp "iff") $1 $3 }
+    | imply_expr LIFF lambda_expr { appUExp2(varUExp "iff") $1 $3 }
+    | imply_expr LIFF imply_expr { appUExp2(varUExp "iff") $1 $3 }
     | imply_expr { $1 }
 imply_expr:
-    | or_expr LIMPLIES lambda_expr { appUExp2 (varUExp "implies") $1 $3 }
-    | or_expr LIMPLIES imply_expr { appUExp2 (varUExp "implies") $1 $3 }
+    | or_expr LIMPLIES lambda_expr { appUExp2(varUExp "implies") $1 $3 }
+    | or_expr LIMPLIES imply_expr { appUExp2(varUExp "implies") $1 $3 }
     | or_expr { $1 }
 or_expr:
-    | or_expr LOR and_expr { appUExp2 (varUExp "or") $1 $3 }
+    | or_expr LOR and_expr { appUExp2(varUExp "or") $1 $3 }
     | and_expr { $1 }
 and_expr:
-    | and_expr LAND not_expr { appUExp2 (varUExp "and") $1 $3 }
+    | and_expr LAND not_expr { appUExp2(varUExp "and") $1 $3 }
     | not_expr { $1 }
 not_expr:
-    | LNOT not_expr { AppUExp (varUExp "or", $2) }
+    | LNOT not_expr { AppUExp(varUExp "or", $2) }
     | compare_expr { $1 }
 compare_expr:
-    | add_expr LT add_expr { appUExp2 (varUExp "<") $1 $3 }
-    | add_expr LE add_expr { appUExp2 (varUExp "<=") $1 $3 }
-    | add_expr EQ add_expr { appUExp2 (varUExp "==") $1 $3 }
-    | add_expr NE add_expr { appUExp2 (varUExp "/=") $1 $3 }
-    | add_expr GE add_expr { appUExp2 (varUExp ">=") $1 $3 }
-    | add_expr GT add_expr { appUExp2 (varUExp ">") $1 $3 }
+    | add_expr LT add_expr { appUExp2(varUExp "<") $1 $3 }
+    | add_expr LE add_expr { appUExp2(varUExp "<=") $1 $3 }
+    | add_expr EQ add_expr { appUExp2(varUExp "==") $1 $3 }
+    | add_expr NE add_expr { appUExp2(varUExp "/=") $1 $3 }
+    | add_expr GE add_expr { appUExp2(varUExp ">=") $1 $3 }
+    | add_expr GT add_expr { appUExp2(varUExp ">") $1 $3 }
     | add_expr { $1 }
 add_expr:
-    | add_expr ADD mult_expr { appUExp2 (varUExp "+") $1 $3 }
-    | add_expr SUB mult_expr { appUExp2 (varUExp "-") $1 $3 }
+    | add_expr ADD mult_expr { appUExp2(varUExp "+") $1 $3 }
+    | add_expr SUB mult_expr { appUExp2(varUExp "-") $1 $3 }
     | mult_expr { $1 }
 mult_expr:
-    | mult_expr MUL pow_expr { appUExp2 (varUExp "*") $1 $3 }
-    | mult_expr DIV pow_expr { appUExp2 (varUExp "/") $1 $3 }
-    | mult_expr MOD pow_expr { appUExp2 (varUExp "%") $1 $3 }
+    | mult_expr MUL pow_expr { appUExp2(varUExp "*") $1 $3 }
+    | mult_expr DIV pow_expr { appUExp2(varUExp "/") $1 $3 }
+    | mult_expr MOD pow_expr { appUExp2(varUExp "%") $1 $3 }
     | pow_expr { $1 }
 pow_expr:
-    | funapp_expr POW pow_expr { appUExp2 (varUExp "**") $1 $3 }
+    | funapp_expr POW pow_expr { appUExp2(varUExp "**") $1 $3 }
     | funapp_expr { $1 }
 funapp_expr:
-    | funapp_expr atomic_expr { AppUExp ($1, $2) }
+    | funapp_expr atomic_expr { AppUExp($1, $2) }
     | atomic_expr { $1 }
 atomic_expr:
     | ident { VarUExp $1 }

@@ -65,13 +65,13 @@ rule tokenstream = parse
     | "assume"          { ASSUME }
     | "output"          { OUTPUT }
 
-    | alpha (alnum *)   { IDENT (lexeme lexbuf) }
-    | digit +           { INT (BigInteger.Parse (lexeme lexbuf)) }
+    | alpha (alnum *)   { IDENT(lexeme lexbuf) }
+    | digit +           { INT(BigInteger.Parse(lexeme lexbuf)) }
 
     | '\\' newline      { newline lexbuf ; tokenstream lexbuf }
     | '#' [^ '\n'] *    { tokenstream lexbuf }
     | whitespace        { tokenstream lexbuf }
     | newline           { newline lexbuf ; NEWLINE }
     | eof               { EOF }
-    | _                 { raise (Exception (sprintf "LexerError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) (lexbuf.StartPos.Column + 1))) }
+    | _                 { raise (Exception(sprintf "LexerError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) (lexbuf.StartPos.Column + 1))) }
 
