@@ -77,12 +77,12 @@ expr:
     | funapp_expr lambda_expr { AppUExp ($1, $2) }
     | iff_expr { $1 }
 lambda_expr:
-    | BACKSLASH ident DOT expr { LamUExp ($2, $4) }
-    | BACKSLASH ident COLON type_ DOT expr { LamAsUExp ($2, $4, $6) }
-    | FORALL ident DOT expr { AppUExp (varUExp "forall", LamUExp ($2, $4)) }
-    | FORALL ident COLON type_ DOT expr { AppUExp (varUExp "forall", LamAsUExp ($2, $4, $6)) }
-    | EXISTS ident DOT expr { AppUExp (varUExp "exists", LamUExp ($2, $4)) }
-    | EXISTS ident COLON type_ DOT expr { AppUExp (varUExp "exists", LamAsUExp ($2, $4, $6)) }
+    | BACKSLASH ident DOT expr { LamUExp ($2, None, $4) }
+    | BACKSLASH ident COLON type_ DOT expr { LamUExp ($2, Some $4, $6) }
+    | FORALL ident DOT expr { AppUExp (varUExp "forall", LamUExp ($2, None, $4)) }
+    | FORALL ident COLON type_ DOT expr { AppUExp (varUExp "forall", LamUExp ($2, Some $4, $6)) }
+    | EXISTS ident DOT expr { AppUExp (varUExp "exists", LamUExp ($2, None, $4)) }
+    | EXISTS ident COLON type_ DOT expr { AppUExp (varUExp "exists", LamUExp ($2, Some $4, $6)) }
 iff_expr:
     | imply_expr LIFF lambda_expr { appUExp2 (varUExp "iff") $1 $3 }
     | imply_expr LIFF imply_expr { appUExp2 (varUExp "iff") $1 $3 }

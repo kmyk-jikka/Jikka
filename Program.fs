@@ -58,8 +58,8 @@ let prepare (program : Program) : Problem =
 
                 let push x f =
                     match x with
-                    | None -> LamUExp(gensym(), f)
-                    | Some x -> LamUExp(x, f)
+                    | None -> LamUExp(gensym(), None, f)
+                    | Some x -> LamUExp(x, None, f)
 
                 let f = List.foldBack push args f
                 if List.forall (!compiletimeTypeEnv).ContainsKey (listFreeVars f) then

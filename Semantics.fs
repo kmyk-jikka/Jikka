@@ -18,20 +18,18 @@ type BSchema =
 // raw expr
 type UExpr =
     | VarUExp of Ident
-    | LamUExp of Ident * UExpr
+    | LamUExp of Ident * option<BType> * UExpr
     | AppUExp of UExpr * UExpr
     | AsUExp of UExpr * BType
-    | LamAsUExp of Ident * BType * UExpr
     | IntUExp of BigInteger
 
 // de Bruijn indexed untyped expr
 type DBExpr =
     | VarDBExp of int
     | FreeVarDBExp of Ident * BType
-    | LamDBExp of DBExpr
+    | LamDBExp of option<BType> * DBExpr
     | AppDBExp of DBExpr * DBExpr
     | AsDBExp of DBExpr * BType
-    | LamAsDBExp of BType * DBExpr
     | IntDBExp of BigInteger
 
 // typed expr
@@ -99,10 +97,9 @@ let listFreeVars (f : UExpr) : list<Ident> =
             match List.tryFindIndex (fun y -> x = y) env with
             | Some _ -> acc
             | None -> x :: acc
-        | LamUExp(x, g) -> go (x :: env) g acc
+        | LamUExp(x, _, g) -> go (x :: env) g acc
         | AppUExp(g, h) -> go env h (go env g acc)
         | AsUExp(g, _) -> go env g acc
-        | LamAsUExp(x, _, g) -> go (x :: env) g acc
         | IntUExp _ -> acc
     go [] f []
 
@@ -118,10 +115,9 @@ let convertDeBruijnIndex (typeenv : Map<Ident, BSchema>) (f : UExpr) : DBExpr =
                 match Map.tryFind x typeenv with
                 | None -> failwithf "undefined symbol: %A" x
                 | Some scm -> FreeVarDBExp(x, realizeSchema gensym scm)
-        | LamUExp(x, g) -> LamDBExp(go (x :: env) g)
+        | LamUExp(x, t, g) -> LamDBExp(t, go (x :: env) g)
         | AppUExp(g, h) -> AppDBExp(go env g, go env h)
         | AsUExp(g, t) -> AsDBExp(go env g, t)
-        | LamAsUExp(x, t, g) -> LamAsDBExp(t, go (x :: env) g)
         | IntUExp n -> IntDBExp n
     go [] f
 
@@ -132,7 +128,14 @@ let listConstraints (f : DBExpr) : BExpr * BType * list<BType * BType> =
         match f with
         | VarDBExp i -> (VarBExp i, env.[i], acc)
         | FreeVarDBExp(x, t) -> (FreeVarBExp(x, t), t, acc)
-        | LamDBExp g -> go env (LamAsDBExp(VarBTy(gensym()), g)) acc
+        | LamDBExp(t, g) ->
+            let t =
+                match t with
+                | None -> VarBTy(gensym())
+                | Some t -> t
+
+            let (g, u, acc) = go (t :: env) g acc
+            (LamBExp(t, g), FunBTy(t, u), acc)
         | AppDBExp(g, h) ->
             let (g, t, acc) = go env g acc
             let (h, u, acc) = go env h acc
@@ -141,9 +144,6 @@ let listConstraints (f : DBExpr) : BExpr * BType * list<BType * BType> =
         | AsDBExp(g, t) ->
             let (g, u, acc) = go env g acc
             (g, u, (u, t) :: acc)
-        | LamAsDBExp(t, g) ->
-            let (g, u, acc) = go (t :: env) g acc
-            (LamBExp(t, g), FunBTy(t, u), acc)
         | IntDBExp n -> (IntBExp n, IntBTy, acc)
     go [] f []
 
