@@ -27,7 +27,9 @@ let appPExp2 f x y = AppPExp(AppPExp(f, x), y)
 %token TO
 %token IMPLIES
 %token UNDERSCORE
+%token SEMICOLON
 %token COLON
+%token COMMA
 %token FUNCTION
 %token FUN
 %token IF
@@ -35,6 +37,7 @@ let appPExp2 f x y = AppPExp(AppPExp(f, x), y)
 %token ELSE
 
 %token GIVEN
+%token SOLVE
 
 %token ADD
 %token SUB
@@ -53,9 +56,14 @@ let appPExp2 f x y = AppPExp(AppPExp(f, x), y)
 %token LOR
 
 %token <string> IDENT
+%token ZAHL
+%token NAT
 %token <BigInteger> POSITIVE
 %token <BigInteger> ZERO
 %token <BigInteger> NEGATIVE
+%token BOOL
+%token <bool> TRUE
+%token <bool> FALSE
 
 %token EOF
 
@@ -73,9 +81,9 @@ toplevel:
     | { [] }
 
 declare:
-    | LET v_name parameters optional_type_restriction EQUAL v_expr { Let($2, $3, $4, $6) }
-    | LET REC v_name optional_type_restriction match_patterns END { LetRec($3, $4, $5) }
-    | LET GIVEN v_name parameters optional_type_restriction { LetGiven($3, $4, $5) }
+    | LET v_name parameters optional_type_restriction EQUAL v_expr IN { Let($2, $3, $4, $6) }
+    | LET REC v_name optional_type_restriction match_patterns IN { LetRec($3, $4, $5) }
+    | LET GIVEN v_name parameters COLON t_expr IN { LetGiven($3, $4, $6) }
 
 parameters:
     | parameter parameters { $1 :: $2 }
@@ -113,20 +121,29 @@ value_pattern:
     | LPAREN optional_v_name ADD POSITIVE optional_type_restriction RPAREN { PlusKPat($2, $4, $5) }
 
 t_expr:
-    | t_atomic TO t_expr { FunPTy(None, $1, $3) }
-    | LPAREN optional_v_name COLON t_expr RPAREN TO t_expr { FunPTy($2, $4, $7) }
+    | t_atomic TO t_expr { FunPTy($1, $3) }
     | t_atomic { $1 }
 t_atomic:
-    | t_name { VarPTy $1 }
-    | LPAREN t_expr RPAREN { $2 }
-    | LBRACE optional_v_name optional_type_restriction BAR v_expr RBRACE { RefinePTy($2, $3, $5) }
+    | LPAREN t_atomic TO t_expr RPAREN { FunPTy($2, $4) }
+    | ZAHL { ZahlPTy }
+    | NAT { NatPTy }
+    | BOOL { BoolPTy }
+    | atomic_int_expr { FinitePTy $1 }
+    | LPAREN simple_int_expr RPAREN { FinitePTy $2 }
+
+atomic_int_expr:
+    | integer { ConstIExp $1 }
+    | v_name { VarIExp $1 }
+simple_int_expr:
+    | v_name ADD integer { AddIExp($1, $3) }
+    | integer MUL v_name { MulIExp($1, $3) }
+    | integer MUL v_name ADD integer { MulAddIExp($1, $3, $5) }
 
 v_expr:
     | FUN optional_v_name TO v_expr { LamPExp($2, None, $4) }
     | FUN optional_v_name COLON t_atomic TO v_expr { LamPExp($2, Some $4, $6) }
     | FUN LPAREN optional_v_name optional_type_restriction RPAREN TO v_expr { LamPExp($3, $4, $7) }
     | IF v_expr THEN v_expr ELSE v_expr { IfThenElsePExp($2, $4, $6) }
-    | LET optional_v_name optional_type_restriction EQUAL v_expr IN v_expr { LetInPExp($2, $3, $5, $7) }
     | or_expr { $1 }
 or_expr:
     | or_expr LOR and_expr { appPExp2(varPExp "or") $1 $3 }
@@ -153,6 +170,7 @@ mult_expr:
     | mult_expr MUL pow_expr { appPExp2(varPExp "*") $1 $3 }
     | mult_expr DIV pow_expr { appPExp2(varPExp "/") $1 $3 }
     | mult_expr MOD pow_expr { appPExp2(varPExp "%") $1 $3 }
+    | SUB pow_expr { AppPExp(varPExp "negate", $2) }
     | pow_expr { $1 }
 pow_expr:
     | funapp_expr POW pow_expr { appPExp2(varPExp "**") $1 $3 }
@@ -163,9 +181,19 @@ funapp_expr:
 atomic_expr:
     | v_name { VarPExp $1 }
     | LPAREN v_expr RPAREN { $2 }
-    | POSITIVE { IntPExp $1 }
-    | ZERO { IntPExp $1 }
-    | NEGATIVE { IntPExp $1 }
+    | integer { IntPExp $1 }
+    | boolean { BoolPExp $1 }
+
+natural:
+    | POSITIVE { $1 }
+    | ZERO { $1 }
+integer:
+    | POSITIVE { $1 }
+    | ZERO { $1 }
+    | NEGATIVE { $1 }
+boolean:
+    | TRUE { $1 }
+    | FALSE { $1 }
 
 v_name: IDENT { ValName $1 }
 t_name: IDENT { TyName $1 }

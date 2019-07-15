@@ -39,7 +39,9 @@ rule tokenstream = parse
     | "->"              { TO }
     | "=>"              { IMPLIES }
     | '_'               { UNDERSCORE }
+    | ';'               { SEMICOLON }
     | ':'               { COLON }
+    | ','               { COMMA }
     | "function"        { FUNCTION }
     | "fun"             { FUN }
     | "if"              { IF }
@@ -47,6 +49,7 @@ rule tokenstream = parse
     | "else"            { ELSE }
 
     | "given"           { GIVEN }
+    | "solve"           { SOLVE }
 
     | '+'               { ADD }
     | '-'               { SUB }
@@ -82,9 +85,14 @@ rule tokenstream = parse
     | "(||)"            { IDENT "||" }
 
     | alpha (alnum *)   { IDENT(lexeme lexbuf) }
+    | "Zahl"            { ZAHL }
+    | "Nat"             { NAT }
     | nonzero digit *   { POSITIVE(BigInteger.Parse(lexeme lexbuf)) }
     | '0'               { ZERO(BigInteger.Parse(lexeme lexbuf)) }
     | '-' nonzero digit * { NEGATIVE(BigInteger.Parse(lexeme lexbuf)) }
+    | "Bool"             { BOOL }
+    | "true"             { TRUE true }
+    | "false"            { FALSE false }
 
     | '\\' newline      { newline lexbuf ; tokenstream lexbuf }
     | '#' [^ '\n'] *    { tokenstream lexbuf }
