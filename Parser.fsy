@@ -3,32 +3,60 @@ open System.Numerics
 open Semantics
 open Syntax
 
-let varUExp s = VarUExp(Ident s)
-let appUExp2 f x y = AppUExp(AppUExp(f, x), y)
+let varPExp s = VarPExp(ValName s)
+let appPExp2 f x y = AppPExp(AppPExp(f, x), y)
 %}
 
 %start start
 
-%token LPAREN RPAREN
-%token LBRACKET RBRACKET
-%token LBRACE RBRACE
-%token BACKSLASH DOT
-%token COLON
+%token LPAREN
+%token RPAREN
+%token LBRACKET
+%token RBRACKET
+%token LBRACE
+%token RBRACE
+
+%token LET
+%token REC
 %token EQUAL
+%token IN
+%token MATCH
+%token WITH
+%token END
+%token BAR
+%token TO
+%token IMPLIES
 %token UNDERSCORE
-%token TO IMPLY
+%token COLON
+%token FUNCTION
+%token FUN
+%token IF
+%token THEN
+%token ELSE
 
-%token ADD SUB MUL DIV MOD POW
-%token LT LE EQ NE GE GT
-%token LAND LOR LNOT LIMPLIES LIFF
+%token GIVEN
 
-%token FORALL EXISTS
-%token INPUT ASSUME OUTPUT
+%token ADD
+%token SUB
+%token MUL
+%token DIV
+%token MOD
+%token POW
+%token LT
+%token LE
+%token EQ
+%token NE
+%token GE
+%token GT
+%token LNOT
+%token LAND
+%token LOR
 
 %token <string> IDENT
-%token <BigInteger> INT
+%token <BigInteger> POSITIVE
+%token <BigInteger> ZERO
+%token <BigInteger> NEGATIVE
 
-%token NEWLINE
 %token EOF
 
 %type <Program> start
@@ -36,96 +64,108 @@ let appUExp2 f x y = AppUExp(AppUExp(f, x), y)
 %%
 
 start:
-    newlines program EOF { $2 }
+    program EOF { $1 }
 program:
-    assumption_statement_list compute_statement { { environment = $1; output = $2; } }
+    toplevel v_expr { { toplevel = $1; expr = $2; } }
 
-newlines:
-    | NEWLINE newlines {}
-    | {}
-
-assumption_statement_list:
-    | assumption_statement assumption_statement_list { $1 :: $2 }
+toplevel:
+    | declare toplevel { $1 :: $2 }
     | { [] }
 
-assumption_statement:
-    | ident parameters EQUAL expr NEWLINE newlines { Define($1, $2, $4) }
-    | ident COLON schema NEWLINE newlines { Declare($1, $3) }
-    | INPUT ident COLON type_ NEWLINE newlines { Input($2, $4) }
-    | ASSUME expr NEWLINE newlines { Assume $2 }
+declare:
+    | LET v_name parameters optional_type_restriction EQUAL v_expr { Let($2, $3, $4, $6) }
+    | LET REC v_name optional_type_restriction match_patterns END { LetRec($3, $4, $5) }
+    | LET GIVEN v_name parameters optional_type_restriction { LetGiven($3, $4, $5) }
 
 parameters:
-    | ident parameters { Some $1 :: $2 }
-    | UNDERSCORE parameters { None :: $2 }
+    | parameter parameters { $1 :: $2 }
     | { [] }
 
-compute_statement:
-    OUTPUT expr NEWLINE newlines { $2 }
+parameter:
+    | optional_v_name { Param($1, None) }
+    | LPAREN optional_v_name COLON t_expr RPAREN { Param($2, Some $4) }
 
-schema:
-    | FORALL ident DOT schema { LamBScm($2, $4) }
-    | type_ { BaseBScm $1 }
-type_:
-    | atomic_type TO type_ { FunBTy($1, $3) }
-    | atomic_type { $1 }
-atomic_type:
-    | ident { VarBTy $1 }
-    | LPAREN type_ RPAREN { $2 }
+optional_v_name:
+    | UNDERSCORE { None }
+    | v_name { Some $1 }
 
-expr:
-    | lambda_expr { $1 }
-    | funapp_expr lambda_expr { AppUExp($1, $2) }
-    | iff_expr { $1 }
-lambda_expr:
-    | BACKSLASH ident DOT expr { LamUExp($2, None, $4) }
-    | BACKSLASH ident COLON type_ DOT expr { LamUExp($2, Some $4, $6) }
-    | FORALL ident DOT expr { AppUExp(varUExp "forall", LamUExp($2, None, $4)) }
-    | FORALL ident COLON type_ DOT expr { AppUExp(varUExp "forall", LamUExp($2, Some $4, $6)) }
-    | EXISTS ident DOT expr { AppUExp(varUExp "exists", LamUExp($2, None, $4)) }
-    | EXISTS ident COLON type_ DOT expr { AppUExp(varUExp "exists", LamUExp($2, Some $4, $6)) }
-iff_expr:
-    | imply_expr LIFF lambda_expr { appUExp2(varUExp "iff") $1 $3 }
-    | imply_expr LIFF imply_expr { appUExp2(varUExp "iff") $1 $3 }
-    | imply_expr { $1 }
-imply_expr:
-    | or_expr LIMPLIES lambda_expr { appUExp2(varUExp "implies") $1 $3 }
-    | or_expr LIMPLIES imply_expr { appUExp2(varUExp "implies") $1 $3 }
+optional_type_restriction:
+    | COLON t_expr { Some $2 }
+    | { None }
+
+match_patterns:
+    | match_pattern match_patterns { $1 :: $2 }
+    | { [] }
+match_pattern:
+    | BAR value_patterns IMPLIES v_expr { ($2, $4) }
+
+value_patterns:
+    | value_pattern value_patterns { $1 :: $2 }
+    | { [] }
+
+value_pattern:
+    | optional_v_name { VarPat($1, None) }
+    | ZERO { IntPat($1, None) }
+    | POSITIVE { IntPat($1, None) }
+    | LPAREN optional_v_name COLON t_expr RPAREN { VarPat($2, Some $4) }
+    | LPAREN ZERO COLON t_expr RPAREN { IntPat($2, Some $4) }
+    | LPAREN POSITIVE COLON t_expr RPAREN { IntPat($2, Some $4) }
+    | LPAREN optional_v_name ADD POSITIVE optional_type_restriction RPAREN { PlusKPat($2, $4, $5) }
+
+t_expr:
+    | t_atomic TO t_expr { FunPTy(None, $1, $3) }
+    | LPAREN optional_v_name COLON t_expr RPAREN TO t_expr { FunPTy($2, $4, $7) }
+    | t_atomic { $1 }
+t_atomic:
+    | t_name { VarPTy $1 }
+    | LPAREN t_expr RPAREN { $2 }
+    | LBRACE optional_v_name optional_type_restriction BAR v_expr RBRACE { RefinePTy($2, $3, $5) }
+
+v_expr:
+    | FUN optional_v_name TO v_expr { LamPExp($2, None, $4) }
+    | FUN optional_v_name COLON t_atomic TO v_expr { LamPExp($2, Some $4, $6) }
+    | FUN LPAREN optional_v_name optional_type_restriction RPAREN TO v_expr { LamPExp($3, $4, $7) }
+    | IF v_expr THEN v_expr ELSE v_expr { IfThenElsePExp($2, $4, $6) }
+    | LET optional_v_name optional_type_restriction EQUAL v_expr IN v_expr { LetInPExp($2, $3, $5, $7) }
     | or_expr { $1 }
 or_expr:
-    | or_expr LOR and_expr { appUExp2(varUExp "or") $1 $3 }
+    | or_expr LOR and_expr { appPExp2(varPExp "or") $1 $3 }
     | and_expr { $1 }
 and_expr:
-    | and_expr LAND not_expr { appUExp2(varUExp "and") $1 $3 }
+    | and_expr LAND not_expr { appPExp2(varPExp "and") $1 $3 }
     | not_expr { $1 }
 not_expr:
-    | LNOT not_expr { AppUExp(varUExp "or", $2) }
+    | LNOT not_expr { AppPExp(varPExp "or", $2) }
     | compare_expr { $1 }
 compare_expr:
-    | add_expr LT add_expr { appUExp2(varUExp "<") $1 $3 }
-    | add_expr LE add_expr { appUExp2(varUExp "<=") $1 $3 }
-    | add_expr EQ add_expr { appUExp2(varUExp "==") $1 $3 }
-    | add_expr NE add_expr { appUExp2(varUExp "/=") $1 $3 }
-    | add_expr GE add_expr { appUExp2(varUExp ">=") $1 $3 }
-    | add_expr GT add_expr { appUExp2(varUExp ">") $1 $3 }
+    | add_expr LT add_expr { appPExp2(varPExp "<") $1 $3 }
+    | add_expr LE add_expr { appPExp2(varPExp "<=") $1 $3 }
+    | add_expr EQ add_expr { appPExp2(varPExp "==") $1 $3 }
+    | add_expr NE add_expr { appPExp2(varPExp "/=") $1 $3 }
+    | add_expr GE add_expr { appPExp2(varPExp ">=") $1 $3 }
+    | add_expr GT add_expr { appPExp2(varPExp ">") $1 $3 }
     | add_expr { $1 }
 add_expr:
-    | add_expr ADD mult_expr { appUExp2(varUExp "+") $1 $3 }
-    | add_expr SUB mult_expr { appUExp2(varUExp "-") $1 $3 }
+    | add_expr ADD mult_expr { appPExp2(varPExp "+") $1 $3 }
+    | add_expr SUB mult_expr { appPExp2(varPExp "-") $1 $3 }
     | mult_expr { $1 }
 mult_expr:
-    | mult_expr MUL pow_expr { appUExp2(varUExp "*") $1 $3 }
-    | mult_expr DIV pow_expr { appUExp2(varUExp "/") $1 $3 }
-    | mult_expr MOD pow_expr { appUExp2(varUExp "%") $1 $3 }
+    | mult_expr MUL pow_expr { appPExp2(varPExp "*") $1 $3 }
+    | mult_expr DIV pow_expr { appPExp2(varPExp "/") $1 $3 }
+    | mult_expr MOD pow_expr { appPExp2(varPExp "%") $1 $3 }
     | pow_expr { $1 }
 pow_expr:
-    | funapp_expr POW pow_expr { appUExp2(varUExp "**") $1 $3 }
+    | funapp_expr POW pow_expr { appPExp2(varPExp "**") $1 $3 }
     | funapp_expr { $1 }
 funapp_expr:
-    | funapp_expr atomic_expr { AppUExp($1, $2) }
+    | funapp_expr atomic_expr { AppPExp($1, $2) }
     | atomic_expr { $1 }
 atomic_expr:
-    | ident { VarUExp $1 }
-    | INT { IntUExp $1 }
-    | LPAREN expr RPAREN { $2 }
+    | v_name { VarPExp $1 }
+    | LPAREN v_expr RPAREN { $2 }
+    | POSITIVE { IntPExp $1 }
+    | ZERO { IntPExp $1 }
+    | NEGATIVE { IntPExp $1 }
 
-ident: IDENT { Ident $1 }
+v_name: IDENT { ValName $1 }
+t_name: IDENT { TyName $1 }

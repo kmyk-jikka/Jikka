@@ -53,6 +53,26 @@ A. (競技プログラミングの) 問題を解くという行為がどのよ�
 
 ## 例
 
+### 例 (実装済み) (v3)
+
+```
+# vim: set filetype=sml:
+# Jikka v3
+# https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d
+
+let K = 100000
+let given N : Nat
+let given S : { x : Nat | x < N } -> Nat
+let given T : { x : Nat | x < N } -> { x | x < K + 1 }
+let given H1 : { _ | forall (fun i : { x | x < N } -> S i < T i) }
+
+let rec f : { x | x < N } -> { x | x < K + 1 } -> Nat
+| i t => count N (fun j -> j < N && j /= i && S j <= t && t < T j)
+end
+
+min N (fun i -> max (K + 1) (fun t -> f i t))
+```
+
 ### 例 (実装済み) (v2)
 
 ```

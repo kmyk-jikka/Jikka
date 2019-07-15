@@ -16,6 +16,7 @@ let newline = ('\n' | '\r' '\n')
 let upper = ['A' - 'Z']
 let lower = ['a' - 'z']
 let digit = ['0' - '9']
+let nonzero = ['1' - '9']
 let alpha = upper | lower
 let alnum = digit | upper | lower
 
@@ -26,13 +27,26 @@ rule tokenstream = parse
     | ']'               { RBRACKET }
     | '{'               { LBRACE }
     | '}'               { RBRACE }
-    | '\\'              { BACKSLASH }
-    | '.'               { DOT }
-    | ':'               { COLON }
+
+    | "let"             { LET }
+    | "rec"             { REC }
     | '='               { EQUAL }
-    | '_'               { UNDERSCORE }
+    | "in"              { IN }
+    | "match"           { MATCH }
+    | "with"            { WITH }
+    | "end"             { END }
+    | '|'               { BAR }
     | "->"              { TO }
-    | "=>"              { IMPLY }
+    | "=>"              { IMPLIES }
+    | '_'               { UNDERSCORE }
+    | ':'               { COLON }
+    | "function"        { FUNCTION }
+    | "fun"             { FUN }
+    | "if"              { IF }
+    | "then"            { THEN }
+    | "else"            { ELSE }
+
+    | "given"           { GIVEN }
 
     | '+'               { ADD }
     | '-'               { SUB }
@@ -53,25 +67,29 @@ rule tokenstream = parse
     | "/="              { NE }
     | ">="              { GE }
     | '>'               { GT }
+    | "(<)"             { IDENT "<" }
+    | "(<=)"            { IDENT "<=" }
+    | "(==)"            { IDENT "==" }
+    | "(/=)"            { IDENT "==" }
+    | "(>=)"            { IDENT "/=" }
+    | "(>)"             { IDENT ">" }
 
-    | "and"             { LAND }
-    | "or"              { LOR }
-    | "not"             { LNOT }
-    | "implies"         { LIMPLIES }
-    | "iff"             { LIFF }
-    | "forall"          { FORALL }
-    | "exists"          { EXISTS }
-    | "input"           { INPUT }
-    | "assume"          { ASSUME }
-    | "output"          { OUTPUT }
+    | '!'               { LNOT }
+    | "&&"              { LAND }
+    | "||"              { LOR }
+    | "(!)"             { IDENT "!" }
+    | "(&&)"            { IDENT "&&" }
+    | "(||)"            { IDENT "||" }
 
     | alpha (alnum *)   { IDENT(lexeme lexbuf) }
-    | digit +           { INT(BigInteger.Parse(lexeme lexbuf)) }
+    | nonzero digit *   { POSITIVE(BigInteger.Parse(lexeme lexbuf)) }
+    | '0'               { ZERO(BigInteger.Parse(lexeme lexbuf)) }
+    | '-' nonzero digit * { NEGATIVE(BigInteger.Parse(lexeme lexbuf)) }
 
     | '\\' newline      { newline lexbuf ; tokenstream lexbuf }
     | '#' [^ '\n'] *    { tokenstream lexbuf }
     | whitespace        { tokenstream lexbuf }
-    | newline           { newline lexbuf ; NEWLINE }
+    | newline           { newline lexbuf ; tokenstream lexbuf }
     | eof               { EOF }
     | _                 { raise (Exception(sprintf "LexerError: Unexpected char: '%s' Line: %d Column: %d" (lexeme lexbuf) (lexbuf.StartPos.Line + 1) (lexbuf.StartPos.Column + 1))) }
 
