@@ -128,16 +128,28 @@ t_atomic:
     | ZAHL { ZahlPTy }
     | NAT { NatPTy }
     | BOOL { BoolPTy }
-    | atomic_int_expr { FinitePTy $1 }
-    | LPAREN simple_int_expr RPAREN { FinitePTy $2 }
+    | atomic_int_expr { OrdinalPTy $1 }
+    | LBRACKET int_expr COMMA int_expr RPAREN { RangePTy($2, $4) }
 
+int_expr:
+    | add_int_expr { $1 }
+add_int_expr:
+    | add_int_expr ADD mult_int_expr { AddIExp($1, $3) }
+    | add_int_expr SUB mult_int_expr { SubIExp($1, $3) }
+    | mult_int_expr { $1 }
+mult_int_expr:
+    | mult_int_expr MUL pow_int_expr { MulIExp($1, $3) }
+    | mult_int_expr DIV pow_int_expr { DivIExp($1, $3) }
+    | mult_int_expr MOD pow_int_expr { ModIExp($1, $3) }
+    | SUB pow_int_expr { NegateIExp($2) }
+    | pow_int_expr { $1 }
+pow_int_expr:
+    | atomic_int_expr POW pow_int_expr { PowIExp($1, $3) }
+    | atomic_int_expr { $1 }
 atomic_int_expr:
-    | integer { ConstIExp $1 }
+    | integer { LiteralIExp $1 }
     | v_name { VarIExp $1 }
-simple_int_expr:
-    | v_name ADD integer { AddIExp($1, $3) }
-    | integer MUL v_name { MulIExp($1, $3) }
-    | integer MUL v_name ADD integer { MulAddIExp($1, $3, $5) }
+    | LPAREN int_expr RPAREN { $2 }
 
 v_expr:
     | FUN optional_v_name TO v_expr { LamPExp($2, None, $4) }

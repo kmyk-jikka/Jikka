@@ -3,20 +3,22 @@ open FSharp.Text.Lexing
 open Semantics
 open Syntax
 
-let embed : list<ValName * Schema<BType>> =
-    [ (ValName "+", Monotype(FunBTy(ZahlBTy, FunBTy(ZahlBTy, ZahlBTy))))
-      (ValName "*", Monotype(FunBTy(ZahlBTy, FunBTy(ZahlBTy, ZahlBTy))))
-      (ValName "/", Monotype(FunBTy(ZahlBTy, FunBTy(ZahlBTy, ZahlBTy))))
-      (ValName "%", Monotype(FunBTy(ZahlBTy, FunBTy(ZahlBTy, ZahlBTy))))
-      (ValName "**", Monotype(FunBTy(ZahlBTy, FunBTy(ZahlBTy, ZahlBTy))))
-      (ValName "negate", Monotype(FunBTy(ZahlBTy, ZahlBTy)))
-      (ValName "-", Monotype(FunBTy(ZahlBTy, FunBTy(ZahlBTy, ZahlBTy))))
-      (ValName "!", Monotype(FunBTy(BoolBTy, BoolBTy)))
-      (ValName "&&", Monotype(FunBTy(BoolBTy, FunBTy(BoolBTy, BoolBTy))))
-      (ValName "||", Monotype(FunBTy(BoolBTy, FunBTy(BoolBTy, BoolBTy))))
-      (ValName "count", Polytype(TyName "n", Monotype(FunBTy(FunBTy(VarBTy(TyName "n"), BoolBTy), NatBTy))))
-      (ValName "max", Polytype(TyName "n", Monotype(FunBTy(FunBTy(VarBTy(TyName "n"), ZahlBTy), ZahlBTy))))
-      (ValName "min", Polytype(TyName "n", Monotype(FunBTy(FunBTy(VarBTy(TyName "n"), ZahlBTy), ZahlBTy)))) ]
+let fun3BTy a b c = FunBTy(a, FunBTy(b, c))
+
+let embed : list<ValName * Schema<RType>> =
+    [ (ValName "+", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
+      (ValName "*", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
+      (ValName "/", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
+      (ValName "%", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
+      (ValName "**", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
+      (ValName "negate", Monotype(FunRTy(ZahlRTy, ZahlRTy)))
+      (ValName "-", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
+      (ValName "!", Monotype(FunRTy(BoolRTy, BoolRTy)))
+      (ValName "&&", Monotype(FunRTy(BoolRTy, FunRTy(BoolRTy, BoolRTy))))
+      (ValName "||", Monotype(FunRTy(BoolRTy, FunRTy(BoolRTy, BoolRTy))))
+      (ValName "count", Polytype(TyName "n", Monotype(FunRTy(FunRTy(VarRTy(TyName "n"), BoolRTy), NatRTy))))
+      (ValName "max", Polytype(TyName "n", Monotype(FunRTy(FunRTy(VarRTy(TyName "n"), ZahlRTy), ZahlRTy))))
+      (ValName "min", Polytype(TyName "n", Monotype(FunRTy(FunRTy(VarRTy(TyName "n"), ZahlRTy), ZahlRTy)))) ]
 
 let prepare (parsed : Program) =
     let gensym_t = newGensym TyName "_t"
@@ -27,22 +29,25 @@ let prepare (parsed : Program) =
     for decl in parsed.toplevel do
         match decl with
         | Let(x, [], t, e) ->
-            printfn "let %A ... = ..." x
+            printfn "let %A" x
             let e = convertFromParsedExpr gensym_t gensym_v (!typeenv) e
             let (e, scm) = inferTypes gensym_t e (Option.map convertFromParsedType t)
             typeenv := (!typeenv).Add(x, scm)
             definition := (!definition).Add(x, e)
+            printfn "    : %A" scm
         | LetRec(x, t, patterns) ->
-            printfn "let rec %A ... = ..." x
+            printfn "let rec %A" x
             failwith "\"let rec ...\" is not implemented yet"
         | LetGiven(x, [], t) ->
-            printfn "let given %A ... = ..." x
+            printfn "let given %A" x
             let t = convertFromParsedType t
             typeenv := (!typeenv).Add(x, Monotype t)
+            printfn "    : %A" t
         | _ -> failwith "params are not implemented yet"
     printfn "in ..."
     let e = convertFromParsedExpr gensym_t gensym_v (!typeenv) parsed.expr
     let (e, scm) = inferTypes gensym_t e None
+    printfn "    : %A" scm
     (e, scm)
 
 [<EntryPoint>]

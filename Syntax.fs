@@ -8,8 +8,9 @@ type PType =
     | FunPTy of PType * PType
     | ZahlPTy
     | NatPTy
+    | OrdinalPTy of IntExpr
+    | RangePTy of IntExpr * IntExpr
     | BoolPTy
-    | FinitePTy of IntExpr
 
 // parsed exprs
 and PExpr =
@@ -47,15 +48,16 @@ let listFreeVarsOfPExpr : PExpr -> list<ValName> =
         | BoolPExp _ -> acc
     go []
 
-let rec convertFromParsedType : PType -> BType =
+let rec convertFromParsedType : PType -> RType =
     function
-    | FunPTy(s, t) -> FunBTy(convertFromParsedType s, convertFromParsedType t)
-    | ZahlPTy -> ZahlBTy
-    | NatPTy -> NatBTy
-    | BoolPTy -> BoolBTy
-    | FinitePTy e -> FiniteBTy e
+    | FunPTy(s, t) -> FunRTy(convertFromParsedType s, convertFromParsedType t)
+    | ZahlPTy -> ZahlRTy
+    | NatPTy -> NatRTy
+    | OrdinalPTy e -> OrdinalRTy e
+    | RangePTy(l, r) -> RangeRTy(l, r)
+    | BoolPTy -> BoolRTy
 
-let convertFromParsedExpr (gensym_t : unit -> TyName) (gensym_v : unit -> ValName) (typeenv : Map<ValName, Schema<BType>>) : PExpr -> UExpr =
+let convertFromParsedExpr (gensym_t : unit -> TyName) (gensym_v : unit -> ValName) (typeenv : Map<ValName, Schema<RType>>) : PExpr -> UExpr =
     let rec go (stk : list<option<ValName>>) =
         function
         | VarPExp x ->
