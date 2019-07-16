@@ -53,28 +53,28 @@ rule tokenstream = parse
 
     | '+'               { ADD }
     | '-'               { SUB }
-    | '*'               { MUL }
     | '/'               { DIV }
     | '%'               { MOD }
     | "**"              { POW }
+    | '*'               { MUL }
     | "(+)"             { IDENT "+" }
     | "(-)"             { IDENT "-" }
-    | "(*)"             { IDENT "*" }
     | "(/)"             { IDENT "/" }
     | "(%)"             { IDENT "%" }
     | "(**)"            { IDENT "**" }
+    | "(*)"             { IDENT "*" }
 
-    | '<'               { LT }
     | "<="              { LE }
+    | '<'               { LT }
     | "=="              { EQ }
     | "/="              { NE }
     | ">="              { GE }
     | '>'               { GT }
-    | "(<)"             { IDENT "<" }
     | "(<=)"            { IDENT "<=" }
+    | "(<)"             { IDENT "<" }
     | "(==)"            { IDENT "==" }
-    | "(/=)"            { IDENT "==" }
-    | "(>=)"            { IDENT "/=" }
+    | "(/=)"            { IDENT "/=" }
+    | "(>=)"            { IDENT ">=" }
     | "(>)"             { IDENT ">" }
 
     | '!'               { LNOT }
@@ -84,7 +84,6 @@ rule tokenstream = parse
     | "(&&)"            { IDENT "&&" }
     | "(||)"            { IDENT "||" }
 
-    | alpha (alnum *)   { IDENT(lexeme lexbuf) }
     | "Zahl"            { ZAHL }
     | "Nat"             { NAT }
     | nonzero digit *   { POSITIVE(BigInteger.Parse(lexeme lexbuf)) }
@@ -94,6 +93,7 @@ rule tokenstream = parse
     | "true"             { TRUE true }
     | "false"            { FALSE false }
 
+    | alpha (alnum *)   { IDENT(lexeme lexbuf) }
     | '\\' newline      { newline lexbuf ; tokenstream lexbuf }
     | '#' [^ '\n'] *    { tokenstream lexbuf }
     | whitespace        { tokenstream lexbuf }
