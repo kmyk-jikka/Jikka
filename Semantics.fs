@@ -39,16 +39,6 @@ type Schema<'t> =
     | Monotype of 't
     | Polytype of TyName * Schema<'t>
 
-// untyped exprs
-type UExpr =
-    | VarUExp of int
-    | FreeVarUExp of ValName * RType
-    | LamUExp of option<RType> * UExpr
-    | AppUExp of UExpr * UExpr
-    | IfThenElseUExp of UExpr * UExpr * UExpr
-    | IntUExp of BigInteger
-    | BoolUExp of bool
-
 // typed exprs
 type Expr =
     | VarExp of int
@@ -106,35 +96,30 @@ let substTyVarOfExpr (b : TyName) (a : RType) : Expr -> Expr =
 let substTyVarsOfExpr (subst : list<TyName * RType>) : Expr -> Expr = List.foldBack (fun (b, a) e -> substTyVarOfExpr b a e) subst
 let realizeSchema (gensym : unit -> TyName) : Schema<RType> -> RType = foldSchema id (fun x t -> substTyVarOfRType x (VarRTy(gensym())) t)
 
-let listTypeConstraints (gensym : unit -> TyName) : UExpr -> (Expr * RType * list<RType * RType>) =
+let listTypeConstraints (gensym : unit -> TyName) : Expr -> (Expr * RType * list<RType * RType>) =
     let rec go (stk : list<RType>) (acc : list<RType * RType>) =
         function
-        | VarUExp i -> (VarExp i, stk.[i], acc)
-        | FreeVarUExp(x, t) -> (FreeVarExp(x, t), t, acc)
-        | LamUExp(t, e) ->
-            let t =
-                match t with
-                | None -> VarRTy(gensym())
-                | Some t -> t
-
+        | VarExp i -> (VarExp i, stk.[i], acc)
+        | FreeVarExp(x, t) -> (FreeVarExp(x, t), t, acc)
+        | LamExp(t, e) ->
             let (e, u, acc) = go (t :: stk) acc e
             (LamExp(t, e), FunRTy(t, u), acc)
-        | AppUExp(e1, e2) ->
+        | AppExp(e1, e2) ->
             let (e1, t1, acc) = go stk acc e1
             let (e2, t2, acc) = go stk acc e2
             let s = VarRTy(gensym())
             (AppExp(e1, e2), s, (t1, FunRTy(t2, s)) :: acc)
-        | IfThenElseUExp(e1, e2, e3) ->
+        | IfThenElseExp(e1, e2, e3) ->
             let (e1, t1, acc) = go stk acc e1
             let (e2, t2, acc) = go stk acc e2
             let (e3, t3, acc) = go stk acc e3
             (IfThenElseExp(e1, e2, e3), t2, (t1, BoolRTy) :: (t2, t3) :: acc)
-        | IntUExp n ->
+        | IntExp n ->
             let t =
                 if n >= 0I then OrdinalRTy(LiteralIExp(n + 1I))
                 else ZahlRTy
             (IntExp n, t, acc)
-        | BoolUExp p -> (BoolExp p, BoolRTy, acc)
+        | BoolExp p -> (BoolExp p, BoolRTy, acc)
     go [] []
 
 let listFreeTyVarsOfRType (env : list<TyName>) : RType -> list<TyName> =
@@ -183,7 +168,7 @@ let rec unifyConstraints : list<RType * RType> -> list<TyName * RType> =
         | (_, _) -> failwithf "failed to unify constraints: %A = %A" t1 t2
 
 // Hindley/Milner type inference
-let inferTypes (gensym : unit -> TyName) (e : UExpr) (annot : option<RType>) : Expr * Schema<RType> =
+let inferTypes (gensym : unit -> TyName) (e : Expr) (annot : option<RType>) : Expr * Schema<RType> =
     let (e, t, constraints) = listTypeConstraints gensym e
 
     let constraints =
@@ -205,13 +190,13 @@ type Defined =
     | Defined of ValName * Expr * Schema<RType>
     | Given of ValName * RType
 
-let getTypeEnv (toplevel : list<Defined>) =
+let getTypeEnv : list<Defined> -> list<ValName * Schema<RType>> =
     let f =
         function
         | Builtin(x, scm) -> (x, scm)
         | Defined(x, _, scm) -> (x, scm)
         | Given(x, t) -> (x, Monotype t)
-    Map.ofList (List.map f toplevel)
+    List.map f
 
 let filterDefined : list<Defined> -> list<ValName * Expr * Schema<RType>> =
     let f =

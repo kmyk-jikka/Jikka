@@ -63,15 +63,16 @@ let assignLambda (n : int) (e : Expr) : Expr -> Expr =
         if i = n + depth then e
         else VarExp i)
 
-let optimize (gensym : unit -> TyName) : Expr -> Expr =
+let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName) : Expr -> Expr =
     let app f x = AppExp(f, x)
     let app2 f x y = AppExp(AppExp(f, x), y)
 
-    let fvar (name : string) : Expr =
-        match List.tryFind (fun (x, _) -> x = ValName name) embed with
+    let fvarTuple (name : string) : ValName * RType =
+        match List.tryFind (fun (x, _) -> x = ValName name) typeenv with
         | None -> failwithf "undefined name: %s" name
-        | Some(x, scm) -> FreeVarExp(x, realizeSchema gensym scm)
+        | Some(x, scm) -> (x, realizeSchema gensym scm)
 
+    let fvar (name : string) : Expr = FreeVarExp(fvarTuple name)
     let appf name x = AppExp(fvar name, x)
     let app2f name x y = AppExp(AppExp(fvar name, x), y)
     let add : Expr -> Expr -> Expr = app2 (fvar "+")
@@ -81,7 +82,9 @@ let optimize (gensym : unit -> TyName) : Expr -> Expr =
     let rec go (acc : list<RType>) : Expr -> (Expr * RType) =
         function
         | VarExp i -> (VarExp i, acc.[i])
-        | FreeVarExp(x, t) -> (FreeVarExp(x, t), t)
+        | FreeVarExp(ValName x, _) ->
+            let (x, t) = fvarTuple x
+            (FreeVarExp(x, t), t)
         | LamExp(t1, e) ->
             let (e, t2) = go (t1 :: acc) e
             (LamExp(t1, e), FunRTy(t1, t2))

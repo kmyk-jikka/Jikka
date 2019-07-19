@@ -57,19 +57,22 @@ let rec convertFromParsedType : PType -> RType =
     | RangePTy(l, r) -> RangeRTy(l, r)
     | BoolPTy -> BoolRTy
 
-let convertFromParsedExpr (gensym_t : unit -> TyName) (gensym_v : unit -> ValName) (typeenv : Map<ValName, Schema<RType>>) : PExpr -> UExpr =
+let convertFromParsedExpr (gensym_t : unit -> TyName) (gensym_v : unit -> ValName) (typeenv : list<ValName * Schema<RType>>) : PExpr -> Expr =
     let rec go (stk : list<option<ValName>>) =
         function
         | VarPExp x ->
             match List.tryFindIndex (fun y -> y = Some x) stk with
-            | Some i -> VarUExp i
+            | Some i -> VarExp i
             | None ->
-                match Map.tryFind x typeenv with
+                match List.tryFind (fun (y, _) -> y = x) typeenv with
                 | None -> failwithf "undefined symbol: %A" x
-                | Some scm -> FreeVarUExp(x, realizeSchema gensym_t scm)
-        | LamPExp(x, t, e) -> LamUExp(Option.map convertFromParsedType t, go (x :: stk) e)
-        | AppPExp(e1, e2) -> AppUExp(go stk e1, go stk e2)
-        | IfThenElsePExp(e1, e2, e3) -> IfThenElseUExp(go stk e1, go stk e2, go stk e3)
-        | IntPExp n -> IntUExp n
-        | BoolPExp p -> BoolUExp p
+                | Some(_, scm) -> FreeVarExp(x, realizeSchema gensym_t scm)
+        | LamPExp(x, t, e) ->
+            match t with
+            | None -> LamExp(VarRTy(gensym_t()), go (x :: stk) e)
+            | Some t -> LamExp(convertFromParsedType t, go (x :: stk) e)
+        | AppPExp(e1, e2) -> AppExp(go stk e1, go stk e2)
+        | IfThenElsePExp(e1, e2, e3) -> IfThenElseExp(go stk e1, go stk e2, go stk e3)
+        | IntPExp n -> IntExp n
+        | BoolPExp p -> BoolExp p
     go []

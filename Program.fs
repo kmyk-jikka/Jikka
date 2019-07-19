@@ -25,7 +25,8 @@ let main argv =
             eprintfn "let %A" x
             let e = convertFromParsedExpr gensym_t gensym_v (getTypeEnv !toplevel) e
             let (e, scm) = inferTypes gensym_t e (Option.map convertFromParsedType t)
-            let e = optimize gensym_t e
+            let e = optimize (getTypeEnv !toplevel) gensym_t e
+            let (e, scm) = inferTypes gensym_t e None
             toplevel := Defined(x, e, scm) :: !toplevel
             eprintfn "    : %A" scm
         | LetRec(x, t, patterns) ->
@@ -42,7 +43,8 @@ let main argv =
     let (e, scm) = inferTypes gensym_t e None
     eprintfn "%A : %A" e scm
     eprintfn "optimize..."
-    let e = optimize gensym_t e
+    let e = optimize (getTypeEnv !toplevel) gensym_t e
+    let (e, scm) = inferTypes gensym_t e None
     eprintfn "%A" e
     eprintfn "transpile..."
     let code = transpile !toplevel e scm
