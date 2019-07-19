@@ -1,0 +1,19 @@
+image:
+  - Ubuntu
+
+build_script:
+  - dotnet build
+
+before_test:
+  - dotnet tool install -g fantomas-tool 
+
+test_script:
+  - |
+    bash -e <<'EOF'
+        for f in *.fs ; do
+            if [ ! -e ${f}l -a ! -e ${f}y ] ; then
+                diff $f <(fantomas --pageWidth 9999 --stdout < $f)
+            fi
+        done
+    EOF
+  - diff <(dotnet run < tests/sample.jikka) tests/sample.cpp

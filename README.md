@@ -1,5 +1,7 @@
 # Jikka
 
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/f0jfg16ap6g91l40/branch/master?svg=true)](https://ci.appveyor.com/project/kmyk/jikka)
+
 Jikka は 半自動で競技プログラミングの問題を解くエキスパートシステムです。
 
 競技プログラミングにおいて「ただ式変形をするだけで解ける」「ただデータ構造のライブラリを貼るだけで解ける」問題はわりとあります。
