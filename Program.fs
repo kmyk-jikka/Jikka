@@ -2,23 +2,7 @@ open System
 open FSharp.Text.Lexing
 open Semantics
 open Syntax
-
-let fun3BTy a b c = FunBTy(a, FunBTy(b, c))
-
-let embed : list<ValName * Schema<RType>> =
-    [ (ValName "+", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
-      (ValName "*", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
-      (ValName "/", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
-      (ValName "%", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
-      (ValName "**", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
-      (ValName "negate", Monotype(FunRTy(ZahlRTy, ZahlRTy)))
-      (ValName "-", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))
-      (ValName "!", Monotype(FunRTy(BoolRTy, BoolRTy)))
-      (ValName "&&", Monotype(FunRTy(BoolRTy, FunRTy(BoolRTy, BoolRTy))))
-      (ValName "||", Monotype(FunRTy(BoolRTy, FunRTy(BoolRTy, BoolRTy))))
-      (ValName "count", Polytype(TyName "n", Monotype(FunRTy(FunRTy(VarRTy(TyName "n"), BoolRTy), NatRTy))))
-      (ValName "max", Polytype(TyName "n", Monotype(FunRTy(FunRTy(VarRTy(TyName "n"), ZahlRTy), ZahlRTy))))
-      (ValName "min", Polytype(TyName "n", Monotype(FunRTy(FunRTy(VarRTy(TyName "n"), ZahlRTy), ZahlRTy)))) ]
+open Optimization
 
 let prepare (parsed : Program) =
     let gensym_t = newGensym TyName "_t"
@@ -47,7 +31,7 @@ let prepare (parsed : Program) =
     printfn "in ..."
     let e = convertFromParsedExpr gensym_t gensym_v (!typeenv) parsed.expr
     let (e, scm) = inferTypes gensym_t e None
-    printfn "    : %A" scm
+    let e = optimize gensym_t e
     (e, scm)
 
 [<EntryPoint>]
