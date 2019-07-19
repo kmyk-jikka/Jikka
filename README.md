@@ -58,19 +58,27 @@ A. (競技プログラミングの) 問題を解くという行為がどのよ�
 ```
 # vim: set filetype=sml:
 # Jikka v3
-# https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d
 
 let K = 100000 in
 let given N : Nat in
-let given S : N -> Nat in
-let given T : N -> (K + 1) in
+let given A : Nat -> Nat in
 
-# let rec f : N -> (K + 1) -> Nat
-# | i t => count (fun j -> j < N && j /= i && S j <= t && t < T j)
-# in
-let f = fun i -> fun t -> i + t in
+sum K (fun i -> max N (fun j -> i + 2 * A j))
+```
 
-min (fun i -> max (fun t -> f i t))
+``` c++
+int64_t solve(int64_t N, const vector<int64_t> & A) {
+    int64_t K = 100000;
+    int64_t a2 = 0;
+    for (int64_t i2 = 0; i2 < K; ++ i2) {
+        a2 += i2;
+    }
+    int64_t a1 = INT64_MIN;
+    for (int64_t i1 = 0; i1 < N; ++ i1) {
+        a1 = max(a1, 2 * A[i1]);
+    }
+    return a2 + K * a1;
+}
 ```
 
 ### 例 (実装済み) (v2)
