@@ -25,13 +25,13 @@ $ dotnet run
 
 入力 O(kn):
 
-```
+``` sml
 # vim: set filetype=sml:
 # Jikka v3
 
 let K = 100000 in
 let given N : Nat in
-let given A : Nat -> Nat in
+let given A : N -> Nat in
 
 sum K (fun i -> max N (fun j -> i + 2 * A j))
 ```
