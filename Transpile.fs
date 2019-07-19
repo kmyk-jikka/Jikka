@@ -1,7 +1,7 @@
-module Transpile
+module Jikka.Transpile
 
+open Jikka.Semantics
 open System.Text
-open Semantics
 
 let rec getCXXType : RType -> string =
     function

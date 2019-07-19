@@ -1,9 +1,11 @@
-open System
+module Jikka.Program
+
 open FSharp.Text.Lexing
-open Semantics
-open Syntax
-open Optimization
-open Transpile
+open Jikka.Optimization
+open Jikka.Semantics
+open Jikka.Syntax
+open Jikka.Transpile
+open System
 
 [<EntryPoint>]
 let main argv =

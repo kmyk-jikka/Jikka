@@ -1,4 +1,4 @@
-module Semantics
+module Jikka.Semantics
 
 open System.Numerics
 

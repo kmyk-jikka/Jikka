@@ -1,6 +1,6 @@
-module Optimization
+module Jikka.Optimization
 
-open Semantics
+open Jikka.Semantics
 
 let embed : list<ValName * Schema<RType>> =
     [ (ValName "+", Monotype(FunRTy(ZahlRTy, FunRTy(ZahlRTy, ZahlRTy))))

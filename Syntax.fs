@@ -1,7 +1,7 @@
-module Syntax
+module Jikka.Syntax
 
+open Jikka.Semantics
 open System.Numerics
-open Semantics
 
 // parsed types
 type PType =
