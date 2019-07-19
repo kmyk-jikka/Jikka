@@ -199,3 +199,32 @@ let inferTypes (gensym : unit -> TyName) (e : UExpr) (annot : option<RType>) : E
     | [] -> ()
     | _ -> failwithf "the type schema is not closed: %A" scm
     (e, scm)
+
+type Defined =
+    | Builtin of ValName * Schema<RType>
+    | Defined of ValName * Expr * Schema<RType>
+    | Given of ValName * RType
+
+let getTypeEnv (toplevel : list<Defined>) =
+    let f =
+        function
+        | Builtin(x, scm) -> (x, scm)
+        | Defined(x, _, scm) -> (x, scm)
+        | Given(x, t) -> (x, Monotype t)
+    Map.ofList (List.map f toplevel)
+
+let filterDefined : list<Defined> -> list<ValName * Expr * Schema<RType>> =
+    let f =
+        function
+        | Builtin _ -> None
+        | Defined(x, e, scm) -> Some(x, e, scm)
+        | Given _ -> None
+    List.choose f
+
+let filterGiven : list<Defined> -> List<ValName * RType> =
+    let f =
+        function
+        | Builtin _ -> None
+        | Defined _ -> None
+        | Given(x, t) -> Some(x, t)
+    List.choose f

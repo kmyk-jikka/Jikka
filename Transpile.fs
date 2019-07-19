@@ -141,14 +141,14 @@ let appendCXXCode (sb : StringBuilder) (nest : int) (code : CXXCode) (cont : str
             go nest sentences
     go nest (List.rev code.sentences)
 
-let transpile (given : list<ValName * RType>) (definition : list<ValName * Expr * Schema<RType>>) (e : Expr) (scm : Schema<RType>) : string =
+let transpile (toplevel : list<Defined>) (e : Expr) (scm : Schema<RType>) : string =
     let sb = new StringBuilder()
     let gensym_accumulator = newGensym id "a"
     let gensym_counter = newGensym id "i"
     let gensym_general = newGensym id "t"
     let _ = sb.Append(getCXXTypeFromSchema scm)
     let _ = sb.Append " solve("
-    for (i, (ValName x, t)) in List.indexed (List.rev given) do
+    for (i, (ValName x, t)) in List.indexed (List.rev (filterGiven toplevel)) do
         let _ =
             sb.Append(if i = 0 then ""
                       else ", ")
@@ -159,7 +159,7 @@ let transpile (given : list<ValName * RType>) (definition : list<ValName * Expr 
         ()
     let _ =
         sb.Append ") {\n"
-    for (ValName x, e, scm) in List.rev definition do
+    for (ValName x, e, scm) in List.rev (filterDefined toplevel) do
         appendCXXCode sb 1 (transpileExpr gensym_counter gensym_accumulator gensym_general e) (fun e -> sprintf "%s %s = %s;" (getCXXTypeFromSchema scm) x e)
     appendCXXCode sb 1 (transpileExpr gensym_counter gensym_accumulator gensym_general e) (sprintf "return %s;")
     let _ =

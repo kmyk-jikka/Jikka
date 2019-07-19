@@ -18,18 +18,15 @@ let main argv =
 
     let gensym_t = newGensym TyName "_t"
     let gensym_v = newGensym ValName "_v"
-    let given = ref []
-    let definition = ref []
-    let typeenv = ref (Map.ofList embed)
+    let toplevel = ref (List.map Builtin embed)
     for decl in parsed.toplevel do
         match decl with
         | Let(x, [], t, e) ->
             eprintfn "let %A" x
-            let e = convertFromParsedExpr gensym_t gensym_v (!typeenv) e
+            let e = convertFromParsedExpr gensym_t gensym_v (getTypeEnv !toplevel) e
             let (e, scm) = inferTypes gensym_t e (Option.map convertFromParsedType t)
             let e = optimize gensym_t e
-            typeenv := (!typeenv).Add(x, scm)
-            definition := (x, e, scm) :: !definition
+            toplevel := Defined(x, e, scm) :: !toplevel
             eprintfn "    : %A" scm
         | LetRec(x, t, patterns) ->
             eprintfn "let rec %A" x
@@ -37,18 +34,17 @@ let main argv =
         | LetGiven(x, [], t) ->
             eprintfn "let given %A" x
             let t = convertFromParsedType t
-            typeenv := (!typeenv).Add(x, Monotype t)
-            given := (x, t) :: !given
+            toplevel := Given(x, t) :: !toplevel
             eprintfn "    : %A" t
         | _ -> failwith "params are not implemented yet"
     eprintfn "in ..."
-    let e = convertFromParsedExpr gensym_t gensym_v (!typeenv) parsed.expr
+    let e = convertFromParsedExpr gensym_t gensym_v (getTypeEnv !toplevel) parsed.expr
     let (e, scm) = inferTypes gensym_t e None
     eprintfn "%A : %A" e scm
     eprintfn "optimize..."
     let e = optimize gensym_t e
     eprintfn "%A" e
     eprintfn "transpile..."
-    let code = transpile !given !definition e scm
+    let code = transpile !toplevel e scm
     printf "%s" code
     0
