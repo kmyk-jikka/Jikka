@@ -69,6 +69,85 @@ let assignLambda (n : int) (e : Expr) : Expr -> Expr =
         if i = n + depth then e
         else VarExp i)
 
+type SplitIfThenElseRanges =
+    { positive : list<Expr * Expr>
+      negative : list<Expr * Expr>
+      unknown : list<Expr * Expr * Expr>
+      positive1 : list<Expr>
+      negative1 : list<Expr>
+      unknown1 : list<Expr * Expr> }
+
+let emptyIfThenElseRanges : SplitIfThenElseRanges =
+    { positive = []
+      negative = []
+      unknown = []
+      positive1 = []
+      negative1 = []
+      unknown1 = [] }
+
+let addIfThenElseRanges (a : SplitIfThenElseRanges) (b : SplitIfThenElseRanges) : SplitIfThenElseRanges =
+    { positive = List.append a.positive b.positive
+      negative = List.append a.negative b.negative
+      unknown = List.append a.unknown b.unknown
+      positive1 = List.append a.positive1 b.positive1
+      negative1 = List.append a.negative1 b.negative1
+      unknown1 = List.append a.unknown1 b.unknown1 }
+
+let splitPredicateToRanges (fvar : ValName -> Expr) : Expr -> Expr -> Expr -> SplitIfThenElseRanges =
+    let ranges = emptyIfThenElseRanges
+    let fvar name = fvar (ValName name)
+    let incr (x : Expr) : Expr = AppExp(AppExp(fvar "+", x), IntExp 1I)
+
+    let rec go l r pred =
+        match pred with
+        | BoolExp true -> { ranges with positive = [ (l, r) ] }
+        | BoolExp false -> { ranges with negative = [ (l, r) ] }
+        | AppExp(AppExp(FreeVarExp(ValName name, _), a), b) ->
+            let unary (a : Expr) : SplitIfThenElseRanges =
+                match (name, a) with
+                | ("=", a) ->
+                    { ranges with positive1 = [ a ]
+                                  negative =
+                                      [ (l, a)
+                                        (incr a, r) ] }
+                | ("<>", a) ->
+                    { ranges with positive =
+                                      [ (l, a)
+                                        (incr a, r) ]
+                                  negative1 = [ a ] }
+                | ("<", a) ->
+                    { ranges with positive = [ (l, a) ]
+                                  negative = [ (a, r) ] }
+                | ("<=", a) ->
+                    { ranges with positive = [ (l, incr a) ]
+                                  negative = [ (incr a, r) ] }
+                | (">=", a) ->
+                    { ranges with positive = [ (a, r) ]
+                                  negative = [ (l, a) ] }
+                | (">", a) ->
+                    { ranges with positive = [ (incr a, r) ]
+                                  negative = [ (l, incr a) ] }
+                | _ -> { ranges with unknown = [ (l, r, pred) ] }
+            match (name, a, b) with
+            | (_, VarExp 0, b) when not (findBoundVar 0 b) -> unary (unshiftLambda b)
+            | (_, a, VarExp 0) when not (findBoundVar 0 a) -> unary (unshiftLambda a)
+            | ("&&", a, b) -> { ranges with unknown = [ (l, r, pred) ] }
+            | ("||", a, b) -> { ranges with unknown = [ (l, r, pred) ] }
+            | _ -> { ranges with unknown = [ (l, r, pred) ] }
+        | AppExp(FreeVarExp(ValName name, _), a) ->
+            match (name, a) with
+            | ("!", a) ->
+                let ranges = go l r a
+                { positive = ranges.positive
+                  negative = ranges.negative
+                  unknown = List.map (fun (l, r, pred) -> (l, r, AppExp(fvar "!", pred))) ranges.unknown
+                  positive1 = ranges.positive1
+                  negative1 = ranges.negative1
+                  unknown1 = List.map (fun (k, pred) -> (k, AppExp(fvar "!", pred))) ranges.unknown1 }
+            | _ -> { ranges with unknown = [ (l, r, pred) ] }
+        | _ -> { ranges with unknown = [ (l, r, pred) ] }
+    go
+
 let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName) : Expr -> Expr =
     let app f x = AppExp(f, x)
     let app2 f x y = AppExp(AppExp(f, x), y)
@@ -83,11 +162,15 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
     let appf name x = AppExp(fvar name, x)
     let app2f name x y = AppExp(AppExp(fvar name, x), y)
     let app3f name x y z = AppExp(AppExp(AppExp(fvar name, x), y), z)
-    let add : Expr -> Expr -> Expr = app2 (fvar "+")
-    let sub : Expr -> Expr -> Expr = app2 (fvar "-")
-    let mul : Expr -> Expr -> Expr = app2 (fvar "*")
+    let add : Expr -> Expr -> Expr = app2f "+"
+    let sub : Expr -> Expr -> Expr = app2f "-"
+    let mul : Expr -> Expr -> Expr = app2f "*"
+    let incr (x : Expr) : Expr = add x (IntExp 1I)
+    let sum3 : Expr -> Expr -> Expr -> Expr = app3f "sum3"
     let addOrSub name = (name = "+" || name = "-")
     let maxOrMin name = (name = "max3" || name = "min3")
+    let compareOp name = (name = "=" || name = "<>" || name = "<" || name = "<=" || name = ">" || name = ">=")
+    let fvarFromValName (ValName name) : Expr = fvar name
 
     let rec go (acc : list<RType>) : Expr -> (Expr * RType) =
         function
@@ -98,8 +181,17 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
         | LamExp(t1, e) ->
             let (e, t2) = go (t1 :: acc) e
             (LamExp(t1, e), FunRTy(t1, t2))
+        | AppExp(LamExp(t, e1), e2) ->
+            let (e1, t1) = go (t :: acc) e1
+            let (e2, t2) = go acc e2
+            go acc (unshiftLambda (assignLambda 0 e2 e1))
         | AppExp(f, x) ->
             let (f, t) = go acc f
+
+            let t =
+                match t with
+                | FunRTy(_, t) -> t
+                | _ -> failwithf "failed to construct a type: %A %A %A" f x t
 
             let go e =
                 let (e, _) = go acc e in e
@@ -113,6 +205,12 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                     | ("negate", AppExp(FreeVarExp(ValName "negate", _), e)) -> e
                     | ("!", BoolExp p) -> BoolExp(not p)
                     | ("!", AppExp(FreeVarExp(ValName "!", _), e)) -> e
+                    | ("!", AppExp(AppExp(FreeVarExp(ValName "=", _), a), b)) -> go (app2f "<>" a b)
+                    | ("!", AppExp(AppExp(FreeVarExp(ValName "<>", _), a), b)) -> go (app2f "=" a b)
+                    | ("!", AppExp(AppExp(FreeVarExp(ValName "<", _), a), b)) -> go (app2f ">=" a b)
+                    | ("!", AppExp(AppExp(FreeVarExp(ValName "<=", _), a), b)) -> go (app2f ">" a b)
+                    | ("!", AppExp(AppExp(FreeVarExp(ValName ">=", _), a), b)) -> go (app2f "<" a b)
+                    | ("!", AppExp(AppExp(FreeVarExp(ValName ">", _), a), b)) -> go (app2f "<=" a b)
                     | _ -> AppExp(FreeVarExp(ValName f, t), x)
                 | AppExp(AppExp(FreeVarExp(ValName f, t), x), y) ->
                     let x = go x
@@ -162,6 +260,10 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                     | ("=", IntExp n, e) when n = 0I -> go (appf "!" (appf "zahlToBool" e))
                     | ("<>", e, IntExp n) when n = 0I -> go (appf "zahlToBool" e)
                     | ("<>", IntExp n, e) when n = 0I -> go (appf "zahlToBool" e)
+                    | (">=", a, b) -> go (app2f "<=" b a)
+                    | (">", a, b) -> go (app2f "<" b a)
+                    | ("<", a, AppExp(AppExp(FreeVarExp(ValName "+", _), IntExp n), b)) when n = 1I -> go (app2f "<=" a b)
+                    | (cmp, AppExp(AppExp(FreeVarExp(ValName "+", _), IntExp n1), a), AppExp(AppExp(FreeVarExp(ValName "+", _), IntExp n2), b)) when compareOp cmp && n1 = n2 -> go (app2f cmp a b)
                     | ("count", n, f) -> go (app3f "count3" (IntExp 0I) n f)
                     | ("sum", n, f) -> go (app3f "sum3" (IntExp 0I) n f)
                     | ("max", n, f) -> go (app3f "max3" (IntExp 0I) n f)
@@ -177,15 +279,15 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                     | ("sum3", IntExp l, IntExp r, _) when l = r -> IntExp 0I
                     | ("sum3", l, r, LamExp(_, e)) when not (findBoundVar 0 e) -> go (mul (sub r l) (unshiftLambda e))
                     | ("sum3", l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when addOrSub op ->
-                        let e1 = app3f "sum3" l r (LamExp(t, e1))
-                        let e2 = app3f "sum3" l r (LamExp(t, e2))
+                        let e1 = sum3 l r (LamExp(t, e1))
+                        let e2 = sum3 l r (LamExp(t, e2))
                         go (app2f op e1 e2)
                     | ("sum3", l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName "*", _), e1), e2))) when not (findBoundVar 0 e1) ->
                         let e1 = unshiftLambda e1
-                        let e2 = app3f "sum3" l r (LamExp(t, e2))
+                        let e2 = sum3 l r (LamExp(t, e2))
                         go (mul e1 e2)
                     | ("sum3", l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName "*", _), e1), e2))) when not (findBoundVar 0 e2) ->
-                        let e1 = app3f "sum3" l r (LamExp(t, e1))
+                        let e1 = sum3 l r (LamExp(t, e1))
                         let e2 = unshiftLambda e2
                         go (mul e1 e2)
                     | (maxlike, _, _, LamExp(t, e)) when maxOrMin maxlike && not (findBoundVar 0 e) -> unshiftLambda e
@@ -197,12 +299,35 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                         let e1 = app3f maxlike l r (LamExp(t, e1))
                         let e2 = unshiftLambda e2
                         go (app2f op e1 e2)
+                    | (op, l, r, LamExp(t, IfThenElseExp(e1, e2, e3))) when op = "count3" || op = "sum3" || maxOrMin op ->
+                        let (plus, zero) =
+                            match op with
+                            | "count3" -> (fvar "+", IntExp 0I)
+                            | "sum3" -> (fvar "+", IntExp 0I)
+                            | "max3" -> (fvar "max2", IntExp -9223372036854775808I)
+                            | "min3" -> (fvar "min2", IntExp 9223372036854775807I)
+                            | _ -> failwithf "something wrong: %s" op
+
+                        let lam e = LamExp(t, e)
+                        let ranges = splitPredicateToRanges fvarFromValName l r e1
+                        let e = ref zero
+                        for (l, r) in ranges.positive do
+                            e := app2 plus !e (sum3 l r (lam e2))
+                        for (l, r) in ranges.negative do
+                            e := app2 plus !e (sum3 l r (lam e3))
+                        for (l, r, pred) in ranges.unknown do
+                            e := app2 plus !e (sum3 l r (lam (IfThenElseExp(pred, e2, e3))))
+                        for k in ranges.positive1 do
+                            e := app2 plus !e (unshiftLambda (assignLambda 0 k e2))
+                        for k in ranges.negative1 do
+                            e := app2 plus !e (unshiftLambda (assignLambda 0 k e3))
+                        for (k, pred) in ranges.unknown1 do
+                            e := app2 plus !e (unshiftLambda (assignLambda 0 k (IfThenElseExp(pred, e2, e3))))
+                        go !e
                     | _ -> AppExp(AppExp(AppExp(FreeVarExp(ValName f, t), x), y), z)
                 | _ -> AppExp(f, go x)
 
-            match t with
-            | FunRTy(_, t3) -> (y, t3)
-            | _ -> failwith "failed to construct a type"
+            (y, t)
         | IfThenElseExp(e1, e2, e3) ->
             let (e1, _) = go acc e1
             let (e2, t2) = go acc e2
