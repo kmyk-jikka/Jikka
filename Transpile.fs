@@ -181,10 +181,10 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                 | FreeVarExp(ValName name, _) ->
                     let s =
                         match name with
-                        | _ when name = "<" || name = "<=" || name = ">" || name = ">=" -> join (" " + name + " ") args
-                        | _ when name = "=" -> join (" == ") args
-                        | _ when name = "<>" -> join (" != ") args
-                        | _ when name = "+" || name = "-" || name = "*" || name = "/" || name = "%" -> join (" " + name + " ") args
+                        | _ when name = "<" || name = "<=" || name = ">" || name = ">=" -> "(" + join (" " + name + " ") args + ")"
+                        | _ when name = "=" -> "(" + join (" == ") args + ")"
+                        | _ when name = "<>" -> "(" + join (" != ") args + ")"
+                        | _ when name = "+" || name = "-" || name = "*" || name = "/" || name = "%" -> "(" + join (" " + name + " ") args + ")"
                         | _ when name = "**" -> sprintf "pow(%s)" (join ", " args)
                         | _ -> sprintf "%s[%s]" name (join "][" args)
                     { sentences = sentences
