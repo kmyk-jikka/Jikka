@@ -112,10 +112,10 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
         | AppExp(AppExp(FreeVarExp(ValName "sum", _), n), LamExp(_, e)) -> accumulate (sprintf "%s += %s") "0" (IntExp 0I) n e
         | AppExp(AppExp(FreeVarExp(ValName "max", _), n), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" (IntExp 0I) n e
         | AppExp(AppExp(FreeVarExp(ValName "min", _), n), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" (IntExp 0I) n e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "count2", _), l), r), LamExp(_, e)) -> accumulate (sprintf "%s += (bool)(%s)") "0" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "sum2", _), l), r), LamExp(_, e)) -> accumulate (sprintf "%s += %s") "0" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "max2", _), l), r), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "min2", _), l), r), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "count3", _), l), r), LamExp(_, e)) -> accumulate (sprintf "%s += (bool)(%s)") "0" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "sum3", _), l), r), LamExp(_, e)) -> accumulate (sprintf "%s += %s") "0" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "max3", _), l), r), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "min3", _), l), r), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" l r e
         | AppExp(FreeVarExp(ValName "zahlToBool", _), e) ->
             cxxcode { let! e = go env e
                       return sprintf "(bool)(%s)" e }
@@ -191,6 +191,7 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                         | _ when name = "<>" -> "(" + join (" != ") args + ")"
                         | _ when name = "+" || name = "-" || name = "*" || name = "/" || name = "%" -> "(" + join (" " + name + " ") args + ")"
                         | _ when name = "**" -> sprintf "pow(%s)" (join ", " args)
+                        | _ when name = "max" || name = "min" -> sprintf "%s(%s)" name (join ", " args)
                         | _ -> sprintf "%s[%s]" name (join "][" args)
                     { sentences = sentences
                       expr = s }
