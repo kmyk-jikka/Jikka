@@ -23,6 +23,10 @@ let embed : list<ValName * Schema<RType>> =
       (ValName "sum", Monotype(FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy))))
       (ValName "max", Monotype(FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy))))
       (ValName "min", Monotype(FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy))))
+      (ValName "count2", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, BoolRTy), NatRTy)))))
+      (ValName "sum2", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy)))))
+      (ValName "max2", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy)))))
+      (ValName "min2", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy)))))
       (ValName "boolToZahl", Monotype(FunRTy(BoolRTy, ZahlRTy)))
       (ValName "zahlToBool", Monotype(FunRTy(ZahlRTy, BoolRTy))) ]
 
@@ -66,6 +70,7 @@ let assignLambda (n : int) (e : Expr) : Expr -> Expr =
 let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName) : Expr -> Expr =
     let app f x = AppExp(f, x)
     let app2 f x y = AppExp(AppExp(f, x), y)
+    let app3 f x y z = AppExp(AppExp(AppExp(f, x), y), z)
 
     let fvarTuple (name : string) : ValName * RType =
         match List.tryFind (fun (x, _) -> x = ValName name) typeenv with
@@ -75,6 +80,7 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
     let fvar (name : string) : Expr = FreeVarExp(fvarTuple name)
     let appf name x = AppExp(fvar name, x)
     let app2f name x y = AppExp(AppExp(fvar name, x), y)
+    let app3f name x y z = AppExp(AppExp(AppExp(fvar name, x), y), z)
     let add : Expr -> Expr -> Expr = app2 (fvar "+")
     let sub : Expr -> Expr -> Expr = app2 (fvar "-")
     let mul : Expr -> Expr -> Expr = app2 (fvar "*")
@@ -89,24 +95,24 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
             let (e, t2) = go (t1 :: acc) e
             (LamExp(t1, e), FunRTy(t1, t2))
         | AppExp(f, x) ->
-            let (f, t1) = go acc f
-            let (x, t2) = go acc x
+            let (f, t) = go acc f
 
             let go e =
                 let (e, _) = go acc e in e
 
-            let nop = AppExp(f, x)
-
             let y =
                 match AppExp(f, x) with
-                | AppExp(FreeVarExp(ValName f, _), x) ->
+                | AppExp(FreeVarExp(ValName f, t), x) ->
+                    let x = go x
                     match (f, x) with
                     | ("negate", IntExp n) -> IntExp(-n)
                     | ("negate", AppExp(FreeVarExp(ValName "negate", _), e)) -> e
                     | ("!", BoolExp p) -> BoolExp(not p)
                     | ("!", AppExp(FreeVarExp(ValName "!", _), e)) -> e
-                    | _ -> nop
-                | AppExp(AppExp(FreeVarExp(ValName f, _), x), y) ->
+                    | _ -> AppExp(FreeVarExp(ValName f, t), x)
+                | AppExp(AppExp(FreeVarExp(ValName f, t), x), y) ->
+                    let x = go x
+                    let y = go y
                     match (f, x, y) with
                     | ("+", IntExp a, IntExp b) -> IntExp(a + b)
                     | ("-", IntExp a, IntExp b) -> IntExp(a - b)
@@ -152,38 +158,45 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                     | ("=", IntExp n, e) when n = 0I -> go (appf "!" (appf "zahlToBool" e))
                     | ("<>", e, IntExp n) when n = 0I -> go (appf "zahlToBool" e)
                     | ("<>", IntExp n, e) when n = 0I -> go (appf "zahlToBool" e)
-                    | ("count", IntExp n, _) when n = 0I -> IntExp 0I
-                    | ("count", n, LamExp(_, e)) when not (findBoundVar 0 e) -> go (mul n (appf "boolToZahl" (unshiftLambda e)))
-                    | ("sum", IntExp n, _) when n = 0I -> IntExp 0I
-                    | ("sum", n, LamExp(_, e)) when not (findBoundVar 0 e) ->
-                        eprintfn "before: %A" nop
-                        eprintfn "after: %A" (mul n (unshiftLambda e))
-                        eprintfn "finally: %A" (go (mul n (unshiftLambda e)))
-                        go (mul n (unshiftLambda e))
-                    | ("sum", n, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when op = "+" || op = "-" ->
-                        let e1 = app2f "sum" n (LamExp(t, e1))
-                        let e2 = app2f "sum" n (LamExp(t, e2))
+                    | ("count", n, f) -> go (app3f "count2" (IntExp 0I) n f)
+                    | ("sum", n, f) -> go (app3f "sum2" (IntExp 0I) n f)
+                    | ("max", n, f) -> go (app3f "max2" (IntExp 0I) n f)
+                    | ("min", n, f) -> go (app3f "min2" (IntExp 0I) n f)
+                    | _ -> AppExp(AppExp(FreeVarExp(ValName f, t), x), y)
+                | AppExp(AppExp(AppExp(FreeVarExp(ValName f, t), x), y), z) ->
+                    let x = go x
+                    let y = go y
+                    let z = go z
+                    match (f, x, y, z) with
+                    | ("count2", IntExp l, IntExp r, _) when l = r -> IntExp 0I
+                    | ("count2", l, r, LamExp(_, e)) when not (findBoundVar 0 e) -> go (mul (sub r l) (appf "boolToZahl" (unshiftLambda e)))
+                    | ("sum2", IntExp l, IntExp r, _) when l = r -> IntExp 0I
+                    | ("sum2", l, r, LamExp(_, e)) when not (findBoundVar 0 e) -> go (mul (sub r l) (unshiftLambda e))
+                    | ("sum2", l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when op = "+" || op = "-" ->
+                        let e1 = app3f "sum2" l r (LamExp(t, e1))
+                        let e2 = app3f "sum2" l r (LamExp(t, e2))
                         go (app2f op e1 e2)
-                    | ("sum", n, LamExp(t, AppExp(AppExp(FreeVarExp(ValName "*", _), e1), e2))) when not (findBoundVar 0 e1) ->
+                    | ("sum2", l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName "*", _), e1), e2))) when not (findBoundVar 0 e1) ->
                         let e1 = unshiftLambda e1
-                        let e2 = app2f "sum" n (LamExp(t, e2))
+                        let e2 = app3f "sum2" l r (LamExp(t, e2))
                         go (app2f "*" e1 e2)
-                    | ("sum", n, LamExp(t, AppExp(AppExp(FreeVarExp(ValName "*", _), e1), e2))) when not (findBoundVar 0 e2) ->
-                        let e1 = app2f "sum" n (LamExp(t, e1))
+                    | ("sum2", l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName "*", _), e1), e2))) when not (findBoundVar 0 e2) ->
+                        let e1 = app3f "sum2" l r (LamExp(t, e1))
                         let e2 = unshiftLambda e2
                         go (app2f "*" e1 e2)
-                    | (maxlike, n, LamExp(t, e)) when (maxlike = "max" || maxlike = "min") && not (findBoundVar 0 e) -> unshiftLambda e
-                    | (maxlike, n, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when (maxlike = "max" || maxlike = "min") && (op = "+" || op = "-") && not (findBoundVar 0 e1) ->
+                    | (maxlike, _, _, LamExp(t, e)) when (maxlike = "max2" || maxlike = "min2") && not (findBoundVar 0 e) -> unshiftLambda e
+                    | (maxlike, l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when (maxlike = "max2" || maxlike = "min2") && (op = "+" || op = "-") && not (findBoundVar 0 e1) ->
                         let e1 = unshiftLambda e1
-                        let e2 = app2f maxlike n (LamExp(t, e2))
+                        let e2 = app3f maxlike l r (LamExp(t, e2))
                         go (app2f op e1 e2)
-                    | (maxlike, n, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when (maxlike = "max" || maxlike = "min") && (op = "+" || op = "-") && not (findBoundVar 0 e2) ->
-                        let e1 = app2f maxlike n (LamExp(t, e1))
+                    | (maxlike, l, r, LamExp(t, AppExp(AppExp(FreeVarExp(ValName op, _), e1), e2))) when (maxlike = "max2" || maxlike = "min2") && (op = "+" || op = "-") && not (findBoundVar 0 e2) ->
+                        let e1 = app3f maxlike l r (LamExp(t, e1))
                         let e2 = unshiftLambda e2
                         go (app2f op e1 e2)
-                    | _ -> nop
-                | _ -> nop
-            match t1 with
+                    | _ -> AppExp(AppExp(AppExp(FreeVarExp(ValName f, t), x), y), z)
+                | _ -> AppExp(f, go x)
+
+            match t with
             | FunRTy(_, t3) -> (y, t3)
             | _ -> failwith "failed to construct a type"
         | IfThenElseExp(e1, e2, e3) ->
