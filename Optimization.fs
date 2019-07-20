@@ -108,30 +108,30 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                     | _ -> nop
                 | AppExp(AppExp(FreeVarExp(ValName f, _), x), y) ->
                     match (f, x, y) with
-                    | ("add", IntExp a, IntExp b) -> IntExp(a + b)
-                    | ("sub", IntExp a, IntExp b) -> IntExp(a - b)
-                    | ("mul", IntExp a, IntExp b) -> IntExp(a * b)
-                    | ("div", IntExp a, IntExp b) -> IntExp(a / b)
-                    | ("mod", IntExp a, IntExp b) -> IntExp(a % b)
-                    | ("pow", IntExp a, IntExp b) -> IntExp(a ** int (b))
-                    | ("add", e, IntExp n) when n = 0I -> e
-                    | ("sub", e, IntExp n) when n = 0I -> e
-                    | ("mul", e, IntExp n) when n = 1I -> e
-                    | ("mul", _, IntExp n) when n = 0I -> IntExp 0I
-                    | ("mul", e, IntExp n) when n = -1I -> go (app (fvar "negate") e)
-                    | ("div", e, IntExp n) when n = 1I -> e
-                    | ("div", e, IntExp n) when n = -1I -> go (app (fvar "negate") e)
-                    | ("mod", _, IntExp n) when n = 1I -> IntExp 0I
-                    | ("pow", e, IntExp n) when n = 1I -> e
-                    | ("add", IntExp n, e) when n = 0I -> e
-                    | ("sub", IntExp n, e) when n = 0I -> go (app (fvar "negate") e)
-                    | ("mul", IntExp n, e) when n = 1I -> e
-                    | ("mul", IntExp n, _) when n = 0I -> IntExp 0I
-                    | ("mul", IntExp n, e) when n = -1I -> go (app (fvar "negate") e)
-                    | ("div", IntExp n, _) when n = 0I -> IntExp 0I
-                    | ("div", IntExp n, e) when n = -1I -> go (app (fvar "negate") e)
-                    | ("mod", IntExp n, _) when n = 0I -> IntExp 0I
-                    | ("pow", IntExp n, _) when n = 1I -> IntExp 1I
+                    | ("+", IntExp a, IntExp b) -> IntExp(a + b)
+                    | ("-", IntExp a, IntExp b) -> IntExp(a - b)
+                    | ("*", IntExp a, IntExp b) -> IntExp(a * b)
+                    | ("/", IntExp a, IntExp b) -> IntExp(a / b)
+                    | ("%", IntExp a, IntExp b) -> IntExp(a % b)
+                    | ("**", IntExp a, IntExp b) -> IntExp(a ** int (b))
+                    | ("+", e, IntExp n) when n = 0I -> e
+                    | ("-", e, IntExp n) when n = 0I -> e
+                    | ("*", e, IntExp n) when n = 1I -> e
+                    | ("*", _, IntExp n) when n = 0I -> IntExp 0I
+                    | ("*", e, IntExp n) when n = -1I -> go (app (fvar "negate") e)
+                    | ("/", e, IntExp n) when n = 1I -> e
+                    | ("/", e, IntExp n) when n = -1I -> go (app (fvar "negate") e)
+                    | ("%", _, IntExp n) when n = 1I -> IntExp 0I
+                    | ("**", e, IntExp n) when n = 1I -> e
+                    | ("+", IntExp n, e) when n = 0I -> e
+                    | ("-", IntExp n, e) when n = 0I -> go (app (fvar "negate") e)
+                    | ("*", IntExp n, e) when n = 1I -> e
+                    | ("*", IntExp n, _) when n = 0I -> IntExp 0I
+                    | ("*", IntExp n, e) when n = -1I -> go (app (fvar "negate") e)
+                    | ("/", IntExp n, _) when n = 0I -> IntExp 0I
+                    | ("/", IntExp n, e) when n = -1I -> go (app (fvar "negate") e)
+                    | ("%", IntExp n, _) when n = 0I -> IntExp 0I
+                    | ("**", IntExp n, _) when n = 1I -> IntExp 1I
                     | ("&&", BoolExp a, BoolExp b) -> BoolExp(a && b)
                     | ("||", BoolExp a, BoolExp b) -> BoolExp(a || b)
                     | ("&&", BoolExp true, e) -> e
