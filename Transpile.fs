@@ -189,26 +189,23 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                 | _ -> failwith "failed to transpile"
             loop [] [] e
         | IfThenElseExp(e1, e2, e3) ->
-            let e1 = go env e1
-            let e2 = go env e2
-            let e3 = go env e3
-            if e2.sentences = [] && e3.sentences = [] then
-                cxxcode { let! e1 = e1
-                          return sprintf "(%s ? %s : %s)" e1 e2.expr e3.expr }
-            else
-                let sentences = ref e1.sentences
-                let line s = sentences := s :: !sentences
-                let t = gensym_general()
-                line (sprintf "auto %s = ([&]() {" t)
-                line (sprintf "if (%s) {" e1.expr)
-                sentences := List.append e2.sentences !sentences
-                line (sprintf "return %s;" e2.expr)
-                line (sprintf "} else {")
-                sentences := List.append e3.sentences !sentences
-                line (sprintf "return %s;" e3.expr)
-                line (sprintf "}")
-                { sentences = !sentences
-                  expr = t }
+            cxxcode {
+                let! e1 = go env e1
+                let e2 = go env e2
+                let e3 = go env e3
+                if e2.sentences = [] && e3.sentences = [] then return sprintf "(%s ? %s : %s)" e1 e2.expr e3.expr
+                else
+                    let t = gensym_general()
+                    do! line (sprintf "auto %s = ([&]() {" t)
+                    do! line (sprintf "if (%s) {" e1)
+                    let! e2 = e2
+                    do! line (sprintf "return %s;" e2)
+                    do! line (sprintf "} else {")
+                    let! e3 = e3
+                    do! line (sprintf "return %s;" e3)
+                    do! line (sprintf "}")
+                    return t
+            }
         | IntExp n -> cxxcode { return sprintf "%A" n }
         | BoolExp p ->
             cxxcode {
