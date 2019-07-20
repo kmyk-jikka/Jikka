@@ -21,8 +21,9 @@ let main argv =
     let toplevel = ref (List.map Builtin embed)
     for decl in parsed.toplevel do
         match decl with
-        | Let(x, [], t, e) ->
+        | Let(x, args, t, e) ->
             eprintfn "let %A" x
+            let e = List.foldBack lambdaFromParam args e
             let e = convertFromParsedExpr gensym_t gensym_v (getTypeEnv !toplevel) e
             let (e, scm) = inferTypes gensym_t e (Option.map convertFromParsedType t)
             let e = optimize (getTypeEnv !toplevel) gensym_t e
@@ -32,12 +33,11 @@ let main argv =
         | LetRec(x, t, patterns) ->
             eprintfn "let rec %A" x
             failwith "\"let rec ...\" is not implemented yet"
-        | LetGiven(x, [], t) ->
+        | LetGiven(x, t) ->
             eprintfn "let given %A" x
             let t = convertFromParsedType t
             toplevel := Given(x, t) :: !toplevel
             eprintfn "    : %A" t
-        | _ -> failwith "params are not implemented yet"
     eprintfn "in ..."
     let e = convertFromParsedExpr gensym_t gensym_v (getTypeEnv !toplevel) parsed.expr
     let (e, scm) = inferTypes gensym_t e None

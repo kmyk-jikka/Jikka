@@ -83,7 +83,7 @@ toplevel:
 declare:
     | LET v_name parameters optional_type_restriction EQUAL v_expr IN { Let($2, $3, $4, $6) }
     | LET REC v_name optional_type_restriction match_patterns IN { LetRec($3, $4, $5) }
-    | LET GIVEN v_name parameters COLON t_expr IN { LetGiven($3, $4, $6) }
+    | LET GIVEN v_name COLON t_expr IN { LetGiven($3, $5) }
 
 parameters:
     | parameter parameters { $1 :: $2 }

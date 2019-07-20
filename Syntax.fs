@@ -31,7 +31,7 @@ type Pattern =
 type Declaration =
     | Let of ValName * list<Param> * option<PType> * PExpr
     | LetRec of ValName * option<PType> * list<list<Pattern> * PExpr>
-    | LetGiven of ValName * list<Param> * PType
+    | LetGiven of ValName * PType
 
 type Program =
     { toplevel : list<Declaration>
@@ -76,3 +76,7 @@ let convertFromParsedExpr (gensym_t : unit -> TyName) (gensym_v : unit -> ValNam
         | IntPExp n -> IntExp n
         | BoolPExp p -> BoolExp p
     go []
+
+let lambdaFromParam (x : Param) (e : PExpr) : PExpr =
+    let (Param(x, t)) = x
+    LamPExp(x, t, e)
