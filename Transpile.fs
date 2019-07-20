@@ -46,15 +46,30 @@ let join (sep : string) (words : list<string>) : string =
                else sep)
         + word) "" (List.indexed words)
 
-type CXXCode =
+type CXXCode<'a> =
     { sentences : list<string>
-      expr : string }
+      expr : 'a }
 
-let cxxExpr (s : string) : CXXCode =
-    { sentences = []
-      expr = s }
+type CXXCodeBuilder() =
 
-let bindCXXCode (code : CXXCode) (sentences : list<string>) (expr : string -> string) =
+    member __.Return(x) =
+        { sentences = []
+          expr = x }
+
+    member __.Bind(x, f) =
+        let y = f x.expr
+        { sentences = List.append y.sentences x.sentences
+          expr = y.expr }
+
+    member __.Zero() = __.Return(())
+
+let cxxcode = new CXXCodeBuilder()
+
+let line (s : string) : CXXCode<unit> =
+    { sentences = [ s ]
+      expr = () }
+
+let bindCXXCode (code : CXXCode<string>) (sentences : list<string>) (expr : string -> string) =
     { sentences = List.append sentences code.sentences
       expr = expr code.expr }
 
@@ -75,89 +90,95 @@ let transpileIntExpr (toplevel : list<Defined>) : IntExpr -> string =
         | PowIExp(e1, e2) -> paren 2 (sprintf "pow(%s, %s)" (go 9 e1) (go 9 e2))
     go 9
 
-let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (gensym_accumulator : unit -> string) (gensym_general : unit -> string) : Expr -> CXXCode =
-    let rec go (env : list<string>) : Expr -> CXXCode =
+let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (gensym_accumulator : unit -> string) (gensym_general : unit -> string) : Expr -> CXXCode<string> =
+    let rec go (env : list<string>) : Expr -> CXXCode<string> =
         let accumulate plus zero n e =
-            let sentences = ref []
-            let line s = sentences := s :: !sentences
-            let acc = gensym_accumulator()
-            line (sprintf "int64_t %s = %s;" acc zero)
-            let n = go env n
-            sentences := List.append n.sentences !sentences
-            let i = gensym_counter()
-            line (sprintf "for (int64_t %s = 0; %s < %s; ++ %s) {" i i n.expr i)
-            let e = go (i :: env) e
-            sentences := List.append e.sentences !sentences
-            line (plus acc e.expr + ";")
-            line "}"
-            { sentences = !sentences
-              expr = acc }
+            cxxcode {
+                let acc = gensym_accumulator()
+                do! line (sprintf "int64_t %s = %s;" acc zero)
+                let! n = go env n
+                let i = gensym_counter()
+                do! line (sprintf "for (int64_t %s = 0; %s < %s; ++ %s) {" i i n i)
+                let! e = go (i :: env) e
+                do! line (plus acc e + ";")
+                do! line "}"
+                return acc
+            }
         function
         | AppExp(AppExp(FreeVarExp(ValName "count", _), n), LamExp(_, e)) -> accumulate (sprintf "%s += (bool)(%s)") "0" n e
         | AppExp(AppExp(FreeVarExp(ValName "sum", _), n), LamExp(_, e)) -> accumulate (sprintf "%s += %s") "0" n e
         | AppExp(AppExp(FreeVarExp(ValName "max", _), n), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" n e
         | AppExp(AppExp(FreeVarExp(ValName "min", _), n), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" n e
-        | AppExp(FreeVarExp(ValName "zahlToBool", _), e) -> bindCXXCode (go env e) [] (sprintf "(bool)(%s)")
-        | AppExp(FreeVarExp(ValName "boolToZahl", _), e) -> bindCXXCode (go env e) [] (sprintf "(int64_t)(%s)")
-        | VarExp i -> cxxExpr env.[i]
-        | FreeVarExp(ValName x, _) -> cxxExpr x
+        | AppExp(FreeVarExp(ValName "zahlToBool", _), e) ->
+            cxxcode { let! e = go env e
+                      return sprintf "(bool)(%s)" e }
+        | AppExp(FreeVarExp(ValName "boolToZahl", _), e) ->
+            cxxcode { let! e = go env e
+                      return sprintf "(int64_t)(%s)" e }
+        | VarExp i -> cxxcode { return env.[i] }
+        | FreeVarExp(ValName x, _) -> cxxcode { return x }
         | LamExp _ as e ->
-            let sentences = ref []
-            let line s = sentences := s :: !sentences
-            let ary = gensym_general()
-            match e with
-            | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, LamExp(OrdinalRTy n3, body))) ->
-                let t =
-                    getCXXType (getType [ OrdinalRTy n3
-                                          OrdinalRTy n2
-                                          OrdinalRTy n1 ] body)
+            cxxcode {
+                let ary = gensym_general()
+                do! match e with
+                    | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, LamExp(OrdinalRTy n3, body))) ->
+                        cxxcode {
+                            let t =
+                                getCXXType (getType [ OrdinalRTy n3
+                                                      OrdinalRTy n2
+                                                      OrdinalRTy n1 ] body)
 
-                let n1 = transpileIntExpr toplevel n1
-                let n2 = transpileIntExpr toplevel n2
-                let n3 = transpileIntExpr toplevel n3
-                let i1 = gensym_counter()
-                let i2 = gensym_counter()
-                let i3 = gensym_counter()
-                line (sprintf "vector<vector<vector<%s> > > %s(%s, vector<vector<%s> >(%s, vector<%s>(%s)));" t ary n1 t n2 t n3)
-                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
-                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
-                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i3 i3 n3 i3)
-                let body = go (i3 :: i2 :: i1 :: env) body
-                sentences := List.append body.sentences !sentences
-                line (sprintf "%s[%s][%s][%s] = %s;" ary i1 i2 i3 body.expr)
-                line "}"
-                line "}"
-                line "}"
-            | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, body)) ->
-                let t =
-                    getCXXType (getType [ OrdinalRTy n2
-                                          OrdinalRTy n1 ] body)
+                            let n1 = transpileIntExpr toplevel n1
+                            let n2 = transpileIntExpr toplevel n2
+                            let n3 = transpileIntExpr toplevel n3
+                            let i1 = gensym_counter()
+                            let i2 = gensym_counter()
+                            let i3 = gensym_counter()
+                            do! line (sprintf "vector<vector<vector<%s> > > %s(%s, vector<vector<%s> >(%s, vector<%s>(%s)));" t ary n1 t n2 t n3)
+                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
+                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i3 i3 n3 i3)
+                            let! body = go (i3 :: i2 :: i1 :: env) body
+                            do! line (sprintf "%s[%s][%s][%s] = %s;" ary i1 i2 i3 body)
+                            do! line "}"
+                            do! line "}"
+                            do! line "}"
+                            return ()
+                        }
+                    | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, body)) ->
+                        cxxcode {
+                            let t =
+                                getCXXType (getType [ OrdinalRTy n2
+                                                      OrdinalRTy n1 ] body)
 
-                let n1 = transpileIntExpr toplevel n1
-                let n2 = transpileIntExpr toplevel n2
-                let i1 = gensym_counter()
-                let i2 = gensym_counter()
-                line (sprintf "vector<vector<%s> > %s(%s, vector<%s>(%s));" t ary n1 t n2)
-                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
-                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
-                let body = go (i2 :: i1 :: env) body
-                sentences := List.append body.sentences !sentences
-                line (sprintf "%s[%s][%s] = %s;" ary i1 i2 body.expr)
-                line "}"
-                line "}"
-            | LamExp(OrdinalRTy n1, body) ->
-                let t = getCXXType (getType [ OrdinalRTy n1 ] body)
-                let n1 = transpileIntExpr toplevel n1
-                let i1 = gensym_counter()
-                line (sprintf "vector<%s> %s(%s);" t ary n1)
-                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
-                let body = go (i1 :: env) body
-                sentences := List.append body.sentences !sentences
-                line (sprintf "%s[%s] = %s;" ary i1 body.expr)
-                line "}"
-            | _ -> failwithf "failed to transpile: %A" e
-            { sentences = !sentences
-              expr = ary }
+                            let n1 = transpileIntExpr toplevel n1
+                            let n2 = transpileIntExpr toplevel n2
+                            let i1 = gensym_counter()
+                            let i2 = gensym_counter()
+                            do! line (sprintf "vector<vector<%s> > %s(%s, vector<%s>(%s));" t ary n1 t n2)
+                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
+                            let! body = go (i2 :: i1 :: env) body
+                            do! line (sprintf "%s[%s][%s] = %s;" ary i1 i2 body)
+                            do! line "}"
+                            do! line "}"
+                            return ()
+                        }
+                    | LamExp(OrdinalRTy n1, body) ->
+                        cxxcode {
+                            let t = getCXXType (getType [ OrdinalRTy n1 ] body)
+                            let n1 = transpileIntExpr toplevel n1
+                            let i1 = gensym_counter()
+                            do! line (sprintf "vector<%s> %s(%s);" t ary n1)
+                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                            let! body = go (i1 :: env) body
+                            do! line (sprintf "%s[%s] = %s;" ary i1 body)
+                            do! line "}"
+                            return ()
+                        }
+                    | _ -> failwithf "failed to transpile: %A" e
+                return ary
+            }
         | AppExp _ as e ->
             let rec loop args sentences =
                 function
@@ -178,7 +199,9 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
             let e1 = go env e1
             let e2 = go env e2
             let e3 = go env e3
-            if e2.sentences = [] && e3.sentences = [] then bindCXXCode e1 [] (fun e1 -> sprintf "(%s ? %s : %s)" e1 e2.expr e3.expr)
+            if e2.sentences = [] && e3.sentences = [] then
+                cxxcode { let! e1 = e1
+                          return sprintf "(%s ? %s : %s)" e1 e2.expr e3.expr }
             else
                 let sentences = ref e1.sentences
                 let line s = sentences := s :: !sentences
@@ -193,10 +216,12 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                 line (sprintf "}")
                 { sentences = !sentences
                   expr = t }
-        | IntExp n -> cxxExpr (sprintf "%A" n)
+        | IntExp n -> cxxcode { return sprintf "%A" n }
         | BoolExp p ->
-            cxxExpr (if p then "true"
-                     else "false")
+            cxxcode {
+                return if p then "true"
+                       else "false"
+            }
     go []
 
 let indent (nest : int) : string = String.replicate nest "    "
@@ -209,7 +234,7 @@ let appendLine (sb : StringBuilder) (nest : int) (s : string) : unit =
         sb.Append "\n"
     ()
 
-let appendCXXCode (sb : StringBuilder) (nest : int) (code : CXXCode) (cont : string -> string) : unit =
+let appendCXXCode (sb : StringBuilder) (nest : int) (code : CXXCode<string>) (cont : string -> string) : unit =
     let rec go (nest : int) : list<string> -> unit =
         function
         | [] -> appendLine sb nest (cont code.expr)
