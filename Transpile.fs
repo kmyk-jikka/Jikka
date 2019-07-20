@@ -25,6 +25,16 @@ let getCXXArgumentType : RType -> string =
     | FunRTy(RangeRTy _, t) -> sprintf "const vector<%s> &" (getCXXType t)
     | t -> getCXXType t
 
+let getCXXDeclType : RType -> string =
+    function
+    | FunRTy _ -> "auto &"
+    | t -> getCXXType t
+
+let getMonotype : Schema<'t> -> 't =
+    function
+    | Polytype _ as scm -> failwithf "not a monotype: %A" scm
+    | Monotype t -> t
+
 let getCXXTypeFromSchema : Schema<RType> -> string =
     function
     | Polytype _ as scm -> failwithf "failed to convert to a C++ type: %A" scm
@@ -48,7 +58,24 @@ let bindCXXCode (code : CXXCode) (sentences : list<string>) (expr : string -> st
     { sentences = List.append sentences code.sentences
       expr = expr code.expr }
 
-let transpileExpr (gensym_counter : unit -> string) (gensym_accumulator : unit -> string) (gensym_general : unit -> string) : Expr -> CXXCode =
+let transpileIntExpr (toplevel : list<Defined>) : IntExpr -> string =
+    let rec go prec =
+        let paren n s =
+            if prec < n then "(" + s + ")"
+            else s
+        function
+        | LiteralIExp n -> paren 1 (sprintf "%A" n)
+        | VarIExp(ValName x) -> paren 1 x
+        | NegateIExp e -> paren 3 (sprintf "- %s" (go 3 e))
+        | AddIExp(e1, e2) -> paren 5 (sprintf "%s + %s" (go 5 e1) (go 5 e2))
+        | SubIExp(e1, e2) -> paren 5 (sprintf "%s - %s" (go 5 e1) (go 5 e2))
+        | MulIExp(e1, e2) -> paren 4 (sprintf "%s * %s" (go 4 e1) (go 4 e2))
+        | DivIExp(e1, e2) -> paren 4 (sprintf "%s / %s" (go 4 e1) (go 4 e2))
+        | ModIExp(e1, e2) -> paren 4 (sprintf "%s %% %s" (go 4 e1) (go 4 e2))
+        | PowIExp(e1, e2) -> paren 2 (sprintf "pow(%s, %s)" (go 9 e1) (go 9 e2))
+    go 9
+
+let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (gensym_accumulator : unit -> string) (gensym_general : unit -> string) : Expr -> CXXCode =
     let rec go (env : list<string>) : Expr -> CXXCode =
         let accumulate plus zero n e =
             let sentences = ref []
@@ -74,7 +101,63 @@ let transpileExpr (gensym_counter : unit -> string) (gensym_accumulator : unit -
         | AppExp(FreeVarExp(ValName "boolToZahl", _), e) -> bindCXXCode (go env e) [] (sprintf "(int64_t)(%s)")
         | VarExp i -> cxxExpr env.[i]
         | FreeVarExp(ValName x, _) -> cxxExpr x
-        | LamExp _ as e -> failwithf "failed to transpile: %A" e
+        | LamExp _ as e ->
+            let sentences = ref []
+            let line s = sentences := s :: !sentences
+            let ary = gensym_general()
+            match e with
+            | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, LamExp(OrdinalRTy n3, body))) ->
+                let t =
+                    getCXXType (getType [ OrdinalRTy n3
+                                          OrdinalRTy n2
+                                          OrdinalRTy n1 ] body)
+
+                let n1 = transpileIntExpr toplevel n1
+                let n2 = transpileIntExpr toplevel n2
+                let n3 = transpileIntExpr toplevel n3
+                let i1 = gensym_counter()
+                let i2 = gensym_counter()
+                let i3 = gensym_counter()
+                line (sprintf "vector<vector<vector<%s> > > %s(%s, vector<vector<%s> >(%s, vector<%s>(%s)));" t ary n1 t n2 t n3)
+                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
+                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i3 i3 n3 i3)
+                let body = go (i3 :: i2 :: i1 :: env) body
+                sentences := List.append body.sentences !sentences
+                line (sprintf "%s[%s][%s][%s] = %s;" ary i1 i2 i3 body.expr)
+                line "}"
+                line "}"
+                line "}"
+            | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, body)) ->
+                let t =
+                    getCXXType (getType [ OrdinalRTy n2
+                                          OrdinalRTy n1 ] body)
+
+                let n1 = transpileIntExpr toplevel n1
+                let n2 = transpileIntExpr toplevel n2
+                let i1 = gensym_counter()
+                let i2 = gensym_counter()
+                line (sprintf "vector<vector<%s> > %s(%s, vector<%s>(%s));" t ary n1 t n2)
+                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
+                let body = go (i2 :: i1 :: env) body
+                sentences := List.append body.sentences !sentences
+                line (sprintf "%s[%s][%s] = %s;" ary i1 i2 body.expr)
+                line "}"
+                line "}"
+            | LamExp(OrdinalRTy n1, body) ->
+                let t = getCXXType (getType [ OrdinalRTy n1 ] body)
+                let n1 = transpileIntExpr toplevel n1
+                let i1 = gensym_counter()
+                line (sprintf "vector<%s> %s(%s);" t ary n1)
+                line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                let body = go (i1 :: env) body
+                sentences := List.append body.sentences !sentences
+                line (sprintf "%s[%s] = %s;" ary i1 body.expr)
+                line "}"
+            | _ -> failwithf "failed to transpile: %A" e
+            { sentences = !sentences
+              expr = ary }
         | AppExp _ as e ->
             let rec loop args sentences =
                 function
@@ -146,7 +229,7 @@ let transpile (toplevel : list<Defined>) (e : Expr) (scm : Schema<RType>) : stri
     let gensym_accumulator = newGensym id "a"
     let gensym_counter = newGensym id "i"
     let gensym_general = newGensym id "t"
-    let _ = sb.Append(getCXXTypeFromSchema scm)
+    let _ = sb.Append(getCXXType (getMonotype scm))
     let _ = sb.Append " solve("
     for (i, (ValName x, t)) in List.indexed (List.rev (filterGiven toplevel)) do
         let _ =
@@ -160,8 +243,10 @@ let transpile (toplevel : list<Defined>) (e : Expr) (scm : Schema<RType>) : stri
     let _ =
         sb.Append ") {\n"
     for (ValName x, e, scm) in List.rev (filterDefined toplevel) do
-        appendCXXCode sb 1 (transpileExpr gensym_counter gensym_accumulator gensym_general e) (fun e -> sprintf "%s %s = %s;" (getCXXTypeFromSchema scm) x e)
-    appendCXXCode sb 1 (transpileExpr gensym_counter gensym_accumulator gensym_general e) (sprintf "return %s;")
+        let e = transpileExpr toplevel gensym_counter gensym_accumulator gensym_general e
+        appendCXXCode sb 1 e (fun e -> sprintf "%s %s = %s;" (getCXXDeclType (getMonotype scm)) x e)
+    let e = transpileExpr toplevel gensym_counter gensym_accumulator gensym_general e
+    appendCXXCode sb 1 e (sprintf "return %s;")
     let _ =
         sb.Append "}\n"
     sb.ToString()

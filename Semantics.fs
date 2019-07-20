@@ -165,6 +165,16 @@ let rec unifyConstraints : list<RType * RType> -> list<TyName * RType> =
             let subst = unifyConstraints (substTyVarOfConstraints x t constraints)
             (x, substTyVarsOfRType subst t) :: subst
         | (FunRTy(t11, t12), FunRTy(t21, t22)) -> unifyConstraints ((t11, t21) :: (t12, t22) :: constraints)
+        | (ZahlRTy, ZahlRTy) -> unifyConstraints constraints
+        | (ZahlRTy, NatRTy) -> unifyConstraints constraints
+        | (ZahlRTy, OrdinalRTy _) -> unifyConstraints constraints
+        | (ZahlRTy, RangeRTy _) -> unifyConstraints constraints
+        | (NatRTy, NatRTy) -> unifyConstraints constraints
+        | (NatRTy, OrdinalRTy _) -> unifyConstraints constraints
+        | (NatRTy, RangeRTy _) -> unifyConstraints constraints
+        | (OrdinalRTy _, OrdinalRTy _) -> unifyConstraints constraints
+        | (OrdinalRTy _, RangeRTy _) -> unifyConstraints constraints
+        | (RangeRTy _, RangeRTy _) -> unifyConstraints constraints
         | (_, _) -> failwithf "failed to unify constraints: %A = %A" t1 t2
 
 // Hindley/Milner type inference
@@ -184,6 +194,19 @@ let inferTypes (gensym : unit -> TyName) (e : Expr) (annot : option<RType>) : Ex
     | [] -> ()
     | _ -> failwithf "the type schema is not closed: %A" scm
     (e, scm)
+
+let rec getType (stk : list<RType>) : Expr -> RType =
+    function
+    | VarExp i -> stk.[i]
+    | FreeVarExp(_, t) -> t
+    | LamExp(t, e) -> FunRTy(t, getType (t :: stk) e)
+    | AppExp(e1, _) as e ->
+        match getType stk e1 with
+        | FunRTy(_, t) -> t
+        | _ -> failwithf "failed to reconstruct type: %A" e
+    | IfThenElseExp(_, e2, _) -> getType stk e2
+    | IntExp _ -> ZahlRTy
+    | BoolExp _ -> BoolRTy
 
 type Defined =
     | Builtin of ValName * Schema<RType>
