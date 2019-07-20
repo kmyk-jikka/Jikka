@@ -61,6 +61,8 @@ type CXXCodeBuilder() =
         { sentences = List.append y.sentences x.sentences
           expr = y.expr }
 
+    member __.Combine(x, y) = __.Bind(x, fun _ -> y)
+    member __.Delay(f) = f()
     member __.Zero() = __.Return(())
 
 let cxxcode = new CXXCodeBuilder()
@@ -120,63 +122,54 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
         | LamExp _ as e ->
             cxxcode {
                 let ary = gensym_general()
-                do! match e with
-                    | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, LamExp(OrdinalRTy n3, body))) ->
-                        cxxcode {
-                            let t =
-                                getCXXType (getType [ OrdinalRTy n3
-                                                      OrdinalRTy n2
-                                                      OrdinalRTy n1 ] body)
+                match e with
+                | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, LamExp(OrdinalRTy n3, body))) ->
+                    let t =
+                        getCXXType (getType [ OrdinalRTy n3
+                                              OrdinalRTy n2
+                                              OrdinalRTy n1 ] body)
 
-                            let n1 = transpileIntExpr toplevel n1
-                            let n2 = transpileIntExpr toplevel n2
-                            let n3 = transpileIntExpr toplevel n3
-                            let i1 = gensym_counter()
-                            let i2 = gensym_counter()
-                            let i3 = gensym_counter()
-                            do! line (sprintf "vector<vector<vector<%s> > > %s(%s, vector<vector<%s> >(%s, vector<%s>(%s)));" t ary n1 t n2 t n3)
-                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
-                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
-                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i3 i3 n3 i3)
-                            let! body = go (i3 :: i2 :: i1 :: env) body
-                            do! line (sprintf "%s[%s][%s][%s] = %s;" ary i1 i2 i3 body)
-                            do! line "}"
-                            do! line "}"
-                            do! line "}"
-                            return ()
-                        }
-                    | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, body)) ->
-                        cxxcode {
-                            let t =
-                                getCXXType (getType [ OrdinalRTy n2
-                                                      OrdinalRTy n1 ] body)
+                    let n1 = transpileIntExpr toplevel n1
+                    let n2 = transpileIntExpr toplevel n2
+                    let n3 = transpileIntExpr toplevel n3
+                    let i1 = gensym_counter()
+                    let i2 = gensym_counter()
+                    let i3 = gensym_counter()
+                    do! line (sprintf "vector<vector<vector<%s> > > %s(%s, vector<vector<%s> >(%s, vector<%s>(%s)));" t ary n1 t n2 t n3)
+                    do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                    do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
+                    do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i3 i3 n3 i3)
+                    let! body = go (i3 :: i2 :: i1 :: env) body
+                    do! line (sprintf "%s[%s][%s][%s] = %s;" ary i1 i2 i3 body)
+                    do! line "}"
+                    do! line "}"
+                    do! line "}"
+                | LamExp(OrdinalRTy n1, LamExp(OrdinalRTy n2, body)) ->
+                    let t =
+                        getCXXType (getType [ OrdinalRTy n2
+                                              OrdinalRTy n1 ] body)
 
-                            let n1 = transpileIntExpr toplevel n1
-                            let n2 = transpileIntExpr toplevel n2
-                            let i1 = gensym_counter()
-                            let i2 = gensym_counter()
-                            do! line (sprintf "vector<vector<%s> > %s(%s, vector<%s>(%s));" t ary n1 t n2)
-                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
-                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
-                            let! body = go (i2 :: i1 :: env) body
-                            do! line (sprintf "%s[%s][%s] = %s;" ary i1 i2 body)
-                            do! line "}"
-                            do! line "}"
-                            return ()
-                        }
-                    | LamExp(OrdinalRTy n1, body) ->
-                        cxxcode {
-                            let t = getCXXType (getType [ OrdinalRTy n1 ] body)
-                            let n1 = transpileIntExpr toplevel n1
-                            let i1 = gensym_counter()
-                            do! line (sprintf "vector<%s> %s(%s);" t ary n1)
-                            do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
-                            let! body = go (i1 :: env) body
-                            do! line (sprintf "%s[%s] = %s;" ary i1 body)
-                            do! line "}"
-                            return ()
-                        }
-                    | _ -> failwithf "failed to transpile: %A" e
+                    let n1 = transpileIntExpr toplevel n1
+                    let n2 = transpileIntExpr toplevel n2
+                    let i1 = gensym_counter()
+                    let i2 = gensym_counter()
+                    do! line (sprintf "vector<vector<%s> > %s(%s, vector<%s>(%s));" t ary n1 t n2)
+                    do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                    do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i2 i2 n2 i2)
+                    let! body = go (i2 :: i1 :: env) body
+                    do! line (sprintf "%s[%s][%s] = %s;" ary i1 i2 body)
+                    do! line "}"
+                    do! line "}"
+                | LamExp(OrdinalRTy n1, body) ->
+                    let t = getCXXType (getType [ OrdinalRTy n1 ] body)
+                    let n1 = transpileIntExpr toplevel n1
+                    let i1 = gensym_counter()
+                    do! line (sprintf "vector<%s> %s(%s);" t ary n1)
+                    do! line (sprintf "for (int %s = 0; %s < %s; ++ %s) {" i1 i1 n1 i1)
+                    let! body = go (i1 :: env) body
+                    do! line (sprintf "%s[%s] = %s;" ary i1 body)
+                    do! line "}"
+                | _ -> failwithf "failed to transpile: %A" e
                 return ary
             }
         | AppExp _ as e ->
