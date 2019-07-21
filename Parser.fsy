@@ -112,13 +112,15 @@ value_patterns:
     | { [] }
 
 value_pattern:
-    | optional_v_name { VarPat($1, None) }
-    | ZERO { IntPat($1, None) }
-    | POSITIVE { IntPat($1, None) }
-    | LPAREN optional_v_name COLON t_expr RPAREN { VarPat($2, Some $4) }
-    | LPAREN ZERO COLON t_expr RPAREN { IntPat($2, Some $4) }
-    | LPAREN POSITIVE COLON t_expr RPAREN { IntPat($2, Some $4) }
-    | LPAREN optional_v_name ADD POSITIVE optional_type_restriction RPAREN { PlusKPat($2, $4, $5) }
+    | optional_v_name { VarPPat($1, None) }
+    | boolean { BoolPPat($1, None) }
+    | ZERO { IntPPat($1, None) }
+    | POSITIVE { IntPPat($1, None) }
+    | LPAREN optional_v_name COLON t_expr RPAREN { VarPPat($2, Some $4) }
+    | LPAREN boolean COLON t_expr RPAREN { BoolPPat($2, Some $4) }
+    | LPAREN ZERO COLON t_expr RPAREN { IntPPat($2, Some $4) }
+    | LPAREN POSITIVE COLON t_expr RPAREN { IntPPat($2, Some $4) }
+    | LPAREN optional_v_name ADD POSITIVE optional_type_restriction RPAREN { PlusKPPat($2, $4, $5) }
 
 t_expr:
     | t_atomic TO t_expr { FunPTy($1, $3) }

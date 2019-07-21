@@ -197,6 +197,7 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                       expr = s }
                 | _ -> failwith "failed to transpile"
             loop [] [] e
+        | FixpoExp(s, patterns, ts) -> failwith "not implemented yet"
         | IfThenElseExp(e1, e2, e3) ->
             cxxcode {
                 let! e1 = go env e1

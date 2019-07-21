@@ -39,12 +39,19 @@ type Schema<'t> =
     | Monotype of 't
     | Polytype of TyName * Schema<'t>
 
+type Pattern =
+    | VarPat
+    | BoolPat of bool
+    | IntPat of BigInteger
+    | PlusKPat of BigInteger
+
 // typed exprs
 type Expr =
     | VarExp of int
     | FreeVarExp of ValName * RType
     | LamExp of RType * Expr
     | AppExp of Expr * Expr
+    | FixpoExp of RType * list<list<Pattern> * Expr> * list<RType>
     | IfThenElseExp of Expr * Expr * Expr
     | IntExp of BigInteger
     | BoolExp of bool
@@ -88,6 +95,7 @@ let substTyVarOfExpr (b : TyName) (a : RType) : Expr -> Expr =
         | FreeVarExp(x, t) -> FreeVarExp(x, subst t)
         | LamExp(t, e) -> LamExp(subst t, go e)
         | AppExp(e1, e2) -> AppExp(go e1, go e2)
+        | FixpoExp(t, patterns, ts) -> FixpoExp(subst t, List.map (fun (patterns, e) -> (patterns, go e)) patterns, List.map subst ts)
         | IfThenElseExp(e1, e2, e3) -> IfThenElseExp(go e1, go e2, go e3)
         | IntExp n -> IntExp n
         | BoolExp p -> BoolExp p
@@ -109,6 +117,15 @@ let listTypeConstraints (gensym : unit -> TyName) : Expr -> (Expr * RType * list
             let (e2, t2, acc) = go stk acc e2
             let s = VarRTy(gensym())
             (AppExp(e1, e2), s, (t1, FunRTy(t2, s)) :: acc)
+        | FixpoExp(s, patterns, ts) ->
+            let cons (patterns, e) (patterns', acc) =
+                let (e, t, acc) = go (List.append (List.rev ts) (s :: stk)) acc e
+                let t = List.foldBack (fun t1 t2 -> FunRTy(t1, t2)) ts t
+                ((patterns, e) :: patterns', (s, t) :: acc)
+
+            let nil = ([], acc)
+            let (patterns, acc) = List.foldBack cons patterns nil
+            (FixpoExp(s, patterns, ts), s, acc)
         | IfThenElseExp(e1, e2, e3) ->
             let (e1, t1, acc) = go stk acc e1
             let (e2, t2, acc) = go stk acc e2
@@ -204,6 +221,7 @@ let rec getType (stk : list<RType>) : Expr -> RType =
         match getType stk e1 with
         | FunRTy(_, t) -> t
         | _ -> failwithf "failed to reconstruct type: %A" e
+    | FixpoExp(s, patterns, ts) -> s
     | IfThenElseExp(_, e2, _) -> getType stk e2
     | IntExp _ -> ZahlRTy
     | BoolExp _ -> BoolRTy
