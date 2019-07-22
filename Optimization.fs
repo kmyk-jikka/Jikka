@@ -40,6 +40,7 @@ let foldBoundVar (f : 'a -> int -> 'a) : 'a -> Expr -> 'a =
         | LamExp(_, e) -> go (depth + 1) acc e
         | AppExp(e1, e2) -> go depth (go depth acc e1) e2
         | FixpoExp(s, patterns, ts) -> List.fold (fun acc (_, e) -> go (depth + 1 + List.length ts) acc e) acc patterns
+        | InductionExp(t1, t2, bases, step) -> go (depth + 2) (List.fold (fun acc e -> go depth acc e) acc bases) step
         | IfThenElseExp(e1, e2, e3) -> go depth (go depth (go depth acc e1) e2) e3
         | IntExp _ -> acc
         | BoolExp _ -> acc
@@ -53,6 +54,7 @@ let mapBoundVar (f : int -> int -> Expr) : Expr -> Expr =
         | LamExp(t, e1) -> LamExp(t, go (depth + 1) e1)
         | AppExp(e1, e2) -> AppExp(go depth e1, go depth e2)
         | FixpoExp(s, patterns, ts) -> FixpoExp(s, List.map (fun (patterns, e) -> (patterns, go (depth + 1 + List.length ts) e)) patterns, ts)
+        | InductionExp(t1, t2, bases, step) -> InductionExp(t1, t2, List.map (go depth) bases, go (depth + 2) step)
         | IfThenElseExp(e1, e2, e3) -> IfThenElseExp(go depth e1, go depth e2, go depth e3)
         | IntExp _ -> e
         | BoolExp _ -> e
@@ -338,6 +340,10 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
             let patterns = List.map f patterns
             let e = FixpoExp(s, List.map (fun (patterns, e, _) -> (patterns, e)) patterns, ts)
             (e, s)
+        | InductionExp(t1, t2, bases, step) ->
+            let bases = List.map (fun e -> fst (go acc e)) bases
+            let (step, _) = go (t1 :: FunRTy(t1, t2) :: acc) step
+            (InductionExp(t1, t2, bases, step), FunRTy(t1, t2))
         | IfThenElseExp(e1, e2, e3) ->
             let (e1, _) = go acc e1
             let (e2, t2) = go acc e2
