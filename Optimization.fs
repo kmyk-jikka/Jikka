@@ -334,11 +334,11 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
             (y, t)
         | FixpoExp(s, patterns, ts) ->
             let f (patterns, e) =
-                let (e, t) = go (List.append (List.rev ts) (s :: acc)) e
-                (patterns, e, t)
+                let (e, _) = go (List.append (List.rev ts) (s :: acc)) e
+                (patterns, e)
 
             let patterns = List.map f patterns
-            let e = FixpoExp(s, List.map (fun (patterns, e, _) -> (patterns, e)) patterns, ts)
+            let e = FixpoExp(s, patterns, ts)
             (e, s)
         | InductionExp(t1, t2, bases, step) ->
             let bases = List.map (fun e -> fst (go acc e)) bases
