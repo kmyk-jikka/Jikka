@@ -96,26 +96,31 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
     let rec go (env : list<string>) : Expr -> CXXCode<string> =
         let accumulate plus zero l r e =
             cxxcode {
+                let! e = match e with
+                         | LamExp(_, e) -> cxxcode { return (fun i -> go (i :: env) e) }
+                         | _ ->
+                             cxxcode { let! e = go env e
+                                       return (fun i -> cxxcode { return sprintf "%s[%s]" e i }) }
                 let acc = gensym_accumulator()
                 do! line (sprintf "int64_t %s = %s;" acc zero)
+                let i = gensym_counter()
                 let! l = go env l
                 let! r = go env r
-                let i = gensym_counter()
                 do! line (sprintf "for (int64_t %s = %s; %s < %s; ++ %s) {" i l i r i)
-                let! e = go (i :: env) e
+                let! e = e i
                 do! line (plus acc e + ";")
                 do! line "}"
                 return acc
             }
         function
-        | AppExp(AppExp(FreeVarExp(ValName "count", _), n), LamExp(_, e)) -> accumulate (sprintf "%s += (bool)(%s)") "0" (IntExp 0I) n e
-        | AppExp(AppExp(FreeVarExp(ValName "sum", _), n), LamExp(_, e)) -> accumulate (sprintf "%s += %s") "0" (IntExp 0I) n e
-        | AppExp(AppExp(FreeVarExp(ValName "max", _), n), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" (IntExp 0I) n e
-        | AppExp(AppExp(FreeVarExp(ValName "min", _), n), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" (IntExp 0I) n e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "count3", _), l), r), LamExp(_, e)) -> accumulate (sprintf "%s += (bool)(%s)") "0" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "sum3", _), l), r), LamExp(_, e)) -> accumulate (sprintf "%s += %s") "0" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "max3", _), l), r), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "min3", _), l), r), LamExp(_, e)) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" l r e
+        | AppExp(AppExp(FreeVarExp(ValName "count", _), n), e) -> accumulate (sprintf "%s += (bool)(%s)") "0" (IntExp 0I) n e
+        | AppExp(AppExp(FreeVarExp(ValName "sum", _), n), e) -> accumulate (sprintf "%s += %s") "0" (IntExp 0I) n e
+        | AppExp(AppExp(FreeVarExp(ValName "max", _), n), e) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" (IntExp 0I) n e
+        | AppExp(AppExp(FreeVarExp(ValName "min", _), n), e) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" (IntExp 0I) n e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "count3", _), l), r), e) -> accumulate (sprintf "%s += (bool)(%s)") "0" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "sum3", _), l), r), e) -> accumulate (sprintf "%s += %s") "0" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "max3", _), l), r), e) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "min3", _), l), r), e) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" l r e
         | AppExp(FreeVarExp(ValName "zahlToBool", _), e) ->
             cxxcode { let! e = go env e
                       return sprintf "(bool)(%s)" e }
