@@ -14,7 +14,7 @@ Jikka は 半自動で競技プログラミングの問題を解くすごいプ�
 .NET Core をインストール (<https://dotnet.microsoft.com/download>) してから
 
 ``` console
-$ dotnet run
+$ dotnet run < INPUT > OUTPUT
 ```
 
 ## 例
