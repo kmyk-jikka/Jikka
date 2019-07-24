@@ -2,10 +2,12 @@
 
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/by1shf3c22xvwt19/branch/master?svg=true)](https://ci.appveyor.com/project/kmyk/jikka)
 
-Jikka は 半自動で競技プログラミングの問題を解くエキスパートシステムです。
+Jikka は 半自動で競技プログラミングの問題を解くすごいプログラムです。
 
 競技プログラミングにおいて「ただ式変形をするだけで解ける」「ただデータ構造のライブラリを貼るだけで解ける」問題はわりとあります。
 そのような問題を ML 系言語に似た形式で入力すると、計算量を落としつつ C++ の実装に変換して出力します。
+
+現状
 
 ## 実行方法
 
@@ -17,18 +19,15 @@ $ dotnet run
 
 ## 例
 
-### v3 (実装済み)
+### 例題
 
-例題:
+問題:
 自然数 k と長さ n の数列 a = (a₀, a₁, …, aₙ) が与えられます。
 ∑ᵢ˱ₖ maxᵢ˱ₙ (i + 2aⱼ) を計算してください。
 
 入力 O(kn):
 
 ``` sml
-# vim: set filetype=sml:
-# Jikka v3
-
 let K = 100000 in
 let given N : Nat in
 let given A : N -> Nat in
@@ -52,6 +51,22 @@ int64_t solve(int64_t N, const vector<int64_t> & A) {
     return a2 + K * a1;
 }
 ```
+
+### AtCoder Beginner Contest 134: C - Exception Handling
+
+問題: <https://atcoder.jp/contests/abc134/tasks/abc134_c>
+
+入力 O(N^2):
+
+``` sml
+let given N : [2, 200001) in
+let given A : N -> 200001 in
+
+let f (i : N) = max N (fun j -> if j = i then 0 else A j) in
+f
+```
+
+出力 O(N): <https://atcoder.jp/contests/abc134/submissions/6526623>
 
 ## 機能
 
