@@ -29,13 +29,15 @@ let embed : list<ValName * Schema<RType>> =
       (ValName "sum3", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy)))))
       (ValName "max3", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy)))))
       (ValName "min3", Monotype(FunRTy(NatRTy, FunRTy(NatRTy, FunRTy(FunRTy(ZahlRTy, ZahlRTy), ZahlRTy)))))
+      (ValName "INT64_MAX", Monotype(ZahlRTy))
+      (ValName "INT64_MIN", Monotype(ZahlRTy))
       (ValName "boolToZahl", Monotype(FunRTy(BoolRTy, ZahlRTy)))
       (ValName "zahlToBool", Monotype(FunRTy(ZahlRTy, BoolRTy))) ]
 
-let foldBoundVar (f : 'a -> int -> 'a) : 'a -> Expr -> 'a =
+let foldBoundVar (f : 'a -> int -> int -> 'a) : 'a -> Expr -> 'a =
     let rec go depth acc =
         function
-        | VarExp i -> f acc (i - depth)
+        | VarExp i -> f acc depth i
         | FreeVarExp _ -> acc
         | LamExp(_, e) -> go (depth + 1) acc e
         | AppExp(e1, e2) -> go depth (go depth acc e1) e2
@@ -60,13 +62,20 @@ let mapBoundVar (f : int -> int -> Expr) : Expr -> Expr =
         | BoolExp _ -> e
     go 0
 
-let findBoundVar (n : int) : Expr -> bool = foldBoundVar (fun acc i -> acc || i = n) false
+let findBoundVar (n : int) : Expr -> bool = foldBoundVar (fun acc depth i -> acc || i - depth = n) false
+let hasAnyVar : Expr -> bool = foldBoundVar (fun _ _ _ -> true) false
+let isClosedExpr : Expr -> bool = foldBoundVar (fun acc depth i -> acc && i - depth < 0) true
 
 let unshiftLambda : Expr -> Expr =
     mapBoundVar (fun depth i ->
         VarExp(if i > depth then i - 1
                elif i < depth then i
                else failwith "failed to shift"))
+
+let shiftLambda : Expr -> Expr =
+    mapBoundVar (fun depth i ->
+        VarExp(if i >= depth then i + 1
+               else i))
 
 let assignLambda (n : int) (e : Expr) : Expr -> Expr =
     mapBoundVar (fun depth i ->
@@ -152,20 +161,66 @@ let splitPredicateToRanges (fvar : ValName -> Expr) : Expr -> Expr -> Expr -> Sp
         | _ -> { ranges with unknown = [ (l, r, pred) ] }
     go
 
-let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName) : Expr -> Expr =
+let isArray (stk : list<RType>) (e : Expr) : option<IntExpr * RType> =
+    match getType stk e with
+    | FunRTy(OrdinalRTy n, t) -> Some(n, t)
+    | _ -> None
+
+let rec toIntExpr : Expr -> option<IntExpr> =
+    function
+    | IntExp n -> Some(LiteralIExp n)
+    | FreeVarExp(a, t) ->
+        match t with
+        | ZahlRTy -> Some(VarIExp a)
+        | NatRTy -> Some(VarIExp a)
+        | OrdinalRTy _ -> Some(VarIExp a)
+        | RangeRTy _ -> Some(VarIExp a)
+        | _ -> None
+    | AppExp(FreeVarExp(ValName "negate", _), a) -> Option.map NegateIExp (toIntExpr a)
+    | AppExp(AppExp(FreeVarExp(ValName f, _), a), b) ->
+        let op a b =
+            match f with
+            | "+" -> Some(AddIExp(a, b))
+            | "-" -> Some(AddIExp(a, b))
+            | "*" -> Some(AddIExp(a, b))
+            | "/" -> Some(AddIExp(a, b))
+            | "%" -> Some(AddIExp(a, b))
+            | "**" -> Some(AddIExp(a, b))
+            | _ -> None
+        Option.bind (fun a -> Option.bind (fun b -> op a b) (toIntExpr b)) (toIntExpr a)
+    | _ -> None
+
+let fromIntExpr (fvar : ValName -> Expr) : IntExpr -> Expr =
+    let fvar s = fvar (ValName s)
+
+    let rec go =
+        function
+        | LiteralIExp n -> IntExp n
+        | VarIExp(ValName a) -> fvar a
+        | NegateIExp e -> AppExp(fvar "negate", go e)
+        | AddIExp(e1, e2) -> AppExp(AppExp(fvar "+", go e1), go e2)
+        | SubIExp(e1, e2) -> AppExp(AppExp(fvar "-", go e1), go e2)
+        | MulIExp(e1, e2) -> AppExp(AppExp(fvar "*", go e1), go e2)
+        | DivIExp(e1, e2) -> AppExp(AppExp(fvar "/", go e1), go e2)
+        | ModIExp(e1, e2) -> AppExp(AppExp(fvar "%", go e1), go e2)
+        | PowIExp(e1, e2) -> AppExp(AppExp(fvar "**", go e1), go e2)
+    go
+
+let optimize (toplevel : ref<list<Defined>>) (gensym_t : unit -> TyName) (gensym_v : unit -> ValName) : Expr -> Expr =
     let app f x = AppExp(f, x)
     let app2 f x y = AppExp(AppExp(f, x), y)
     let app3 f x y z = AppExp(AppExp(AppExp(f, x), y), z)
 
     let fvarTuple (name : string) : ValName * RType =
-        match List.tryFind (fun (x, _) -> x = ValName name) typeenv with
+        match List.tryFind (fun (x, _) -> x = ValName name) (getTypeEnv !toplevel) with
         | None -> failwithf "undefined name: %s" name
-        | Some(x, scm) -> (x, realizeSchema gensym scm)
+        | Some(x, scm) -> (x, realizeSchema gensym_t scm)
 
     let fvar (name : string) : Expr = FreeVarExp(fvarTuple name)
     let appf name x = AppExp(fvar name, x)
     let app2f name x y = AppExp(AppExp(fvar name, x), y)
     let app3f name x y z = AppExp(AppExp(AppExp(fvar name, x), y), z)
+    let app4f name x y z w = AppExp(AppExp(AppExp(AppExp(fvar name, x), y), z), w)
     let add : Expr -> Expr -> Expr = app2f "+"
     let sub : Expr -> Expr -> Expr = app2f "-"
     let mul : Expr -> Expr -> Expr = app2f "*"
@@ -176,12 +231,37 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
     let compareOp name = (name = "=" || name = "<>" || name = "<" || name = "<=" || name = ">" || name = ">=")
     let fvarFromValName (ValName name) : Expr = fvar name
 
+    let smallOp =
+        function // : 'b -> 'a -> 'b
+        | "count" -> LamExp(VarRTy(gensym_t()), LamExp(VarRTy(gensym_t()), app2f "+" (VarExp 1) (appf "boolToZahl" (VarExp 0))))
+        | "count3" -> LamExp(VarRTy(gensym_t()), LamExp(VarRTy(gensym_t()), app2f "+" (VarExp 1) (appf "boolToZahl" (VarExp 0))))
+        | "sum" -> fvar "+"
+        | "sum3" -> fvar "+"
+        | "max" -> fvar "max2"
+        | "max3" -> fvar "max2"
+        | "min" -> fvar "min2"
+        | "min3" -> fvar "min2"
+        | name -> failwithf "not a big op: %s" name
+
+    let unitOfSmallOp =
+        function // : 'b
+        | "count" -> IntExp 0I
+        | "count3" -> IntExp 0I
+        | "sum" -> IntExp 0I
+        | "sum3" -> IntExp 0I
+        | "max" -> fvar "INT64_MIN"
+        | "max3" -> fvar "INT64_MIN"
+        | "min" -> fvar "INT64_MAX"
+        | "min3" -> fvar "INT64_MAX"
+        | name -> failwithf "not a big op: %s" name
+
     let rec go (acc : list<RType>) : Expr -> (Expr * RType) =
         function
         | VarExp i -> (VarExp i, acc.[i])
         | FreeVarExp(ValName x, _) ->
             let (x, t) = fvarTuple x
             (FreeVarExp(x, t), t)
+        | LamExp(_, AppExp(e, VarExp 0)) when not (findBoundVar 0 e) -> go acc (unshiftLambda e)
         | LamExp(t1, e) ->
             let (e, t2) = go (t1 :: acc) e
             (LamExp(t1, e), FunRTy(t1, t2))
@@ -196,6 +276,8 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                 match t with
                 | FunRTy(_, t) -> t
                 | _ -> failwithf "failed to construct a type: %A %A %A" f x t
+
+            let optimize e = fst (go [] e)
 
             let go e =
                 let (e, _) = go acc e in e
@@ -260,6 +342,12 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                     | ("<>", IntExp a, IntExp b) -> BoolExp(a <> b)
                     | (">=", IntExp a, IntExp b) -> BoolExp(a >= b)
                     | (">", IntExp a, IntExp b) -> BoolExp(a > b)
+                    | ("<", a, b) when a = b -> BoolExp false
+                    | ("<=", a, b) when a = b -> BoolExp true
+                    | ("=", a, b) when a = b -> BoolExp true
+                    | ("<>", a, b) when a = b -> BoolExp false
+                    | (">=", a, b) when a = b -> BoolExp true
+                    | (">", a, b) when a = b -> BoolExp false
                     | ("=", e, IntExp n) when n = 0I -> go (appf "!" (appf "zahlToBool" e))
                     | ("=", IntExp n, e) when n = 0I -> go (appf "!" (appf "zahlToBool" e))
                     | ("<>", e, IntExp n) when n = 0I -> go (appf "zahlToBool" e)
@@ -308,19 +396,19 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                             match op with
                             | "count3" -> (fvar "+", IntExp 0I)
                             | "sum3" -> (fvar "+", IntExp 0I)
-                            | "max3" -> (fvar "max2", IntExp -9223372036854775808I)
-                            | "min3" -> (fvar "min2", IntExp 9223372036854775807I)
+                            | "max3" -> (fvar "max2", fvar "INT64_MIN")
+                            | "min3" -> (fvar "min2", fvar "INT64_MAX")
                             | _ -> failwithf "something wrong: %s" op
 
                         let lam e = LamExp(t, e)
                         let ranges = splitPredicateToRanges fvarFromValName l r e1
                         let e = ref zero
                         for (l, r) in ranges.positive do
-                            e := app2 plus !e (sum3 l r (lam e2))
+                            e := app2 plus !e (app3f op l r (lam e2))
                         for (l, r) in ranges.negative do
-                            e := app2 plus !e (sum3 l r (lam e3))
+                            e := app2 plus !e (app3f op l r (lam e3))
                         for (l, r, pred) in ranges.unknown do
-                            e := app2 plus !e (sum3 l r (lam (IfThenElseExp(pred, e2, e3))))
+                            e := app2 plus !e (app3f op l r (lam (IfThenElseExp(pred, e2, e3))))
                         for k in ranges.positive1 do
                             e := app2 plus !e (unshiftLambda (assignLambda 0 k e2))
                         for k in ranges.negative1 do
@@ -328,6 +416,75 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
                         for (k, pred) in ranges.unknown1 do
                             e := app2 plus !e (unshiftLambda (assignLambda 0 k (IfThenElseExp(pred, e2, e3))))
                         go !e
+                    | (op, l, r, e) when (op = "count3" || op = "sum3") && Option.isSome (isArray acc e) && isClosedExpr e ->
+                        let (n, t) = Option.get (isArray acc e)
+                        let name = gensym_v()
+                        let base_ = IntExp 0I
+                        let step = add (app (VarExp 1) (VarExp 0)) (app (shiftLambda (shiftLambda e)) (VarExp 0))
+                        let def = InductionExp(OrdinalRTy(AddIExp(n, LiteralIExp 1I)), t, [ base_ ], step)
+                        let (def, scm) = inferTypes gensym_t def None
+                        let def = optimize def
+                        let (def, scm) = inferTypes gensym_t def None
+                        toplevel := Defined(name, def, scm) :: !toplevel
+                        let e = fvarFromValName name
+                        go (sub (app e r) (app e l))
+                    | (op, l, r, e) when maxOrMin op && isClosedExpr e && isClosedExpr l && isClosedExpr r ->
+                        let name = gensym_v()
+                        let (e, scm) = inferTypes gensym_t (app3f op l r e) None
+                        toplevel := Defined(name, e, scm) :: !toplevel
+                        fvarFromValName name
+                    | (op, l, r, e) when maxOrMin op && isClosedExpr e && Option.isSome (isArray acc e) && isClosedExpr l ->
+                        eprintfn "LLL %A %A %A" l r e
+                        // vector<int> acc(n + 1);
+                        // REP (i, n) {
+                        //     if (i <= l || r < i) {
+                        //         acc[i] = 0;
+                        //     } else {
+                        //         acc[i + 1] = acc[i] + ...;
+                        //     }
+                        // }
+                        let (n, t) = Option.get (isArray acc e)
+                        let name = gensym_v()
+                        let base_ = unitOfSmallOp op
+
+                        let step =
+                            let acc = app (VarExp 1) (VarExp 0)
+                            let i = VarExp 0
+                            let if_ = app2f "<=" l i
+                            let then_ = app2 (smallOp op) acc (app (shiftLambda (shiftLambda e)) i)
+                            let else_ = unitOfSmallOp op
+                            IfThenElseExp(if_, then_, else_)
+
+                        let def = InductionExp(OrdinalRTy(AddIExp(n, LiteralIExp 1I)), t, [ base_ ], step)
+                        eprintfn "%A" def
+                        let (def, scm) = inferTypes gensym_t def None
+                        let def = optimize def
+                        let (def, scm) = inferTypes gensym_t def None
+                        toplevel := Defined(name, def, scm) :: !toplevel
+                        let e = fvarFromValName name
+                        go (app e r)
+                    | (op, l, r, e) when maxOrMin op && isClosedExpr e && Option.isSome (isArray acc e) && isClosedExpr r ->
+                        eprintfn "RRR %A %A %A" l r e
+                        let (n, t) = Option.get (isArray acc e)
+                        let rev e = sub (sub (fromIntExpr fvarFromValName n) e) (IntExp 1I)
+                        let name = gensym_v()
+                        let base_ = unitOfSmallOp op
+
+                        let step =
+                            let acc = app (VarExp 1) (VarExp 0)
+                            let i = rev (VarExp 0)
+                            let if_ = app2f "<" i r
+                            let then_ = app2 (smallOp op) acc (app (shiftLambda (shiftLambda e)) i)
+                            let else_ = unitOfSmallOp op
+                            IfThenElseExp(if_, then_, else_)
+
+                        let def = InductionExp(OrdinalRTy(AddIExp(n, LiteralIExp 1I)), t, [ base_ ], step)
+                        let (def, scm) = inferTypes gensym_t def None
+                        let def = optimize def
+                        let (def, scm) = inferTypes gensym_t def None
+                        toplevel := Defined(name, def, scm) :: !toplevel
+                        let e = fvarFromValName name
+                        go (app e (add (rev l) (IntExp 1I)))
                     | _ -> AppExp(AppExp(AppExp(FreeVarExp(ValName f, t), x), y), z)
                 | _ -> AppExp(f, go x)
 
@@ -355,6 +512,7 @@ let optimize (typeenv : list<ValName * Schema<RType>>) (gensym : unit -> TyName)
             | _ -> (IfThenElseExp(e1, e2, e3), t2)
         | IntExp n -> (IntExp n, ZahlRTy)
         | BoolExp p -> (BoolExp p, BoolRTy)
+
     fun e ->
         let (e, _) = go [] e
         e

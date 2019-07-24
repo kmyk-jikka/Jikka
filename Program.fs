@@ -18,6 +18,7 @@ let main argv =
 
     let gensym_t = newGensym TyName "_t"
     let gensym_v = newGensym ValName "_v"
+    let gensym_global = newGensym ValName "g"
     let toplevel = ref (List.map Builtin embed)
     for decl in parsed.toplevel do
         match decl with
@@ -27,7 +28,7 @@ let main argv =
             let e = convertFromParsedExpr gensym_t gensym_v (getTypeEnv !toplevel) [] e
             let t = Option.map (fun t -> List.foldBack (fun _ t2 -> FunRTy(VarRTy(gensym_t()), t2)) args (convertFromParsedType t)) t
             let (e, scm) = inferTypes gensym_t e t
-            let e = optimize (getTypeEnv !toplevel) gensym_t e
+            let e = optimize toplevel gensym_t gensym_global e
             let (e, scm) = inferTypes gensym_t e None
             toplevel := Defined(x, e, scm) :: !toplevel
             eprintfn "    : %A" scm
@@ -35,7 +36,7 @@ let main argv =
             eprintfn "let rec %A" x
             let (e, t) = convertFromParsedPatterns gensym_t gensym_v (getTypeEnv !toplevel) x t patterns
             let (e, scm) = inferTypes gensym_t e (Some t)
-            let e = optimize (getTypeEnv !toplevel) gensym_t e
+            let e = optimize toplevel gensym_t gensym_global e
             let (e, scm) = inferTypes gensym_t e None
             toplevel := Defined(x, e, scm) :: !toplevel
         | LetGiven(x, t) ->
@@ -48,7 +49,7 @@ let main argv =
     let (e, scm) = inferTypes gensym_t e None
     eprintfn "%A : %A" e scm
     eprintfn "optimize..."
-    let e = optimize (getTypeEnv !toplevel) gensym_t e
+    let e = optimize toplevel gensym_t gensym_global e
     let (e, scm) = inferTypes gensym_t e None
     eprintfn "%A" e
     eprintfn "transpile..."

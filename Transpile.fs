@@ -56,6 +56,8 @@ type CXXCodeBuilder() =
         { sentences = []
           expr = x }
 
+    member __.ReturnFrom(x) = x
+
     member __.Bind(x, f) =
         let y = f x.expr
         { sentences = List.append y.sentences x.sentences
@@ -63,6 +65,7 @@ type CXXCodeBuilder() =
 
     member __.Combine(x, y) = __.Bind(x, fun _ -> y)
     member __.Delay(f) = f()
+    member __.For(xs, f) = Seq.fold (fun acc x -> __.Combine(acc, f x)) (__.Zero()) xs
     member __.Zero() = __.Return(())
 
 let cxxcode = new CXXCodeBuilder()
@@ -115,12 +118,18 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
         function
         | AppExp(AppExp(FreeVarExp(ValName "count", _), n), e) -> accumulate (sprintf "%s += (bool)(%s)") "0" (IntExp 0I) n e
         | AppExp(AppExp(FreeVarExp(ValName "sum", _), n), e) -> accumulate (sprintf "%s += %s") "0" (IntExp 0I) n e
-        | AppExp(AppExp(FreeVarExp(ValName "max", _), n), e) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" (IntExp 0I) n e
-        | AppExp(AppExp(FreeVarExp(ValName "min", _), n), e) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" (IntExp 0I) n e
+        | AppExp(AppExp(FreeVarExp(ValName "max", _), n), e) -> accumulate (fun a b -> sprintf "%s = max<int64_t>(%s, %s)" a a b) "INT64_MIN" (IntExp 0I) n e
+        | AppExp(AppExp(FreeVarExp(ValName "min", _), n), e) -> accumulate (fun a b -> sprintf "%s = min<int64_t>(%s, %s)" a a b) "INT64_MAX" (IntExp 0I) n e
         | AppExp(AppExp(AppExp(FreeVarExp(ValName "count3", _), l), r), e) -> accumulate (sprintf "%s += (bool)(%s)") "0" l r e
         | AppExp(AppExp(AppExp(FreeVarExp(ValName "sum3", _), l), r), e) -> accumulate (sprintf "%s += %s") "0" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "max3", _), l), r), e) -> accumulate (fun a b -> sprintf "%s = max(%s, %s)" a a b) "INT64_MIN" l r e
-        | AppExp(AppExp(AppExp(FreeVarExp(ValName "min3", _), l), r), e) -> accumulate (fun a b -> sprintf "%s = min(%s, %s)" a a b) "INT64_MAX" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "max3", _), l), r), e) -> accumulate (fun a b -> sprintf "%s = max<int64_t>(%s, %s)" a a b) "INT64_MIN" l r e
+        | AppExp(AppExp(AppExp(FreeVarExp(ValName "min3", _), l), r), e) -> accumulate (fun a b -> sprintf "%s = min<int64_t>(%s, %s)" a a b) "INT64_MAX" l r e
+        | AppExp(FreeVarExp(ValName "negate", _), e) ->
+            cxxcode { let! e = go env e
+                      return sprintf "(- %s)" e }
+        | AppExp(FreeVarExp(ValName "!", _), e) ->
+            cxxcode { let! e = go env e
+                      return sprintf "(! %s)" e }
         | AppExp(FreeVarExp(ValName "zahlToBool", _), e) ->
             cxxcode { let! e = go env e
                       return sprintf "(bool)(%s)" e }
@@ -183,11 +192,12 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                 return ary
             }
         | AppExp _ as e ->
-            let rec loop args sentences =
+            let rec loop args =
                 function
                 | AppExp(e1, e2) ->
-                    let e2 = go env e2
-                    loop (e2.expr :: args) (List.append sentences e2.sentences) e1
+                    cxxcode { let! e2 = go env e2
+                              return! loop (e2 :: args) e1 }
+                | VarExp i -> cxxcode { return sprintf "%s[%s]" env.[i] (join "][" args) }
                 | FreeVarExp(ValName name, _) ->
                     let s =
                         match name with
@@ -196,14 +206,33 @@ let transpileExpr (toplevel : list<Defined>) (gensym_counter : unit -> string) (
                         | _ when name = "<>" -> "(" + join (" != ") args + ")"
                         | _ when name = "+" || name = "-" || name = "*" || name = "/" || name = "%" -> "(" + join (" " + name + " ") args + ")"
                         | _ when name = "**" -> sprintf "pow(%s)" (join ", " args)
-                        | _ when name = "max" || name = "min" -> sprintf "%s(%s)" name (join ", " args)
+                        | _ when name = "&&" || name = "||" -> "(" + join (" " + name + " ") args + ")"
+                        | _ when name = "max2" -> sprintf "max<int64_t>(%s)" (join ", " args)
+                        | _ when name = "min2" -> sprintf "min<int64_t>(%s)" (join ", " args)
                         | _ -> sprintf "%s[%s]" name (join "][" args)
-                    { sentences = sentences
-                      expr = s }
-                | _ -> failwith "failed to transpile"
-            loop [] [] e
+                    cxxcode { return s }
+                | _ -> failwithf "failed to transpile in %A" e
+            loop [] e
         | FixpoExp(s, patterns, ts) -> failwith "not implemented yet"
-        | InductionExp(t1, t2, bases, step) -> failwith "not implemented yet"
+        | InductionExp(t1, t2, bases, step) as e ->
+            match t1 with
+            | OrdinalRTy n ->
+                cxxcode {
+                    let ary = gensym_general()
+                    let n = transpileIntExpr toplevel n
+                    let i = gensym_counter()
+                    do! line (sprintf "vector<%s> %s(%s);" (getCXXType t2) ary n)
+                    for (k, base_) in List.indexed bases do
+                        let! base_ = go env base_
+                        do! line (sprintf "%s[%d] = %s;" ary k base_)
+                        return ()
+                    do! line (sprintf "for (int %s = 0; %s < %s - %d; ++ %s) {" i i n (List.length bases) i)
+                    let! step = go (i :: ary :: env) step
+                    do! line (sprintf "%s[%s + %d] = %s;" ary i (List.length bases) step)
+                    do! line "}"
+                    return ary
+                }
+            | _ -> failwithf "failed to transpile: %A" e
         | IfThenElseExp(e1, e2, e3) ->
             cxxcode {
                 let! e1 = go env e1
