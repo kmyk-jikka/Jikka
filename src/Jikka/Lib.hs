@@ -1,4 +1,4 @@
-module Lib
+module Jikka.Lib
   ( someFunc,
   )
 where

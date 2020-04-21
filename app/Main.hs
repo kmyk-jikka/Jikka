@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Jikka.Lib
 
 main :: IO ()
 main = someFunc
