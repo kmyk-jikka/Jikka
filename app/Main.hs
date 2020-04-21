@@ -1,6 +1,12 @@
 module Main where
 
-import Jikka.Lib
+import qualified Jikka.Main
+import System.Environment
+import System.Exit
 
 main :: IO ()
-main = someFunc
+main = do
+  name <- getProgName
+  args <- getArgs
+  code <- Jikka.Main.main name args
+  exitWith code
