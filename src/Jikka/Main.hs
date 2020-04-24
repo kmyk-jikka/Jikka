@@ -1,10 +1,13 @@
 module Jikka.Main where
 
+import Control.Monad (forM_)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
+import Jikka.Deserializer.Lexer as Lexer
 import Paths_Jikka (version)
 import System.Console.GetOpt
-import System.Exit
+import System.Exit (ExitCode (..))
+import qualified Text.Megaparsec as P
 
 data Flag
   = Help
@@ -60,4 +63,8 @@ main' usage opts path = go defaultOptions opts
 main'' :: Options -> FilePath -> IO ()
 main'' opts path = do
   code <- T.readFile path
-  T.putStr code
+  case P.runParser Lexer.lexer path code of
+    Left bundle -> putStr (P.errorBundlePretty bundle)
+    Right tokens ->
+      forM_ (Lexer.stream tokens) $ \token ->
+        print $ Lexer.value token
