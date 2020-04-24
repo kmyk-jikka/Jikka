@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Jikka.Deserializer.Lexer
+module Jikka.Deserializer.ML.Lexer
   ( Token (..),
     WithPos (..),
     lexer,

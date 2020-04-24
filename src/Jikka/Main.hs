@@ -1,30 +1,41 @@
 module Jikka.Main where
 
 import Control.Monad (forM_)
+import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
-import Jikka.Deserializer.Lexer as Lexer
+import Jikka.Deserializer.Read as DecAst
+import Jikka.Optimizer.Main as Opt
+import Jikka.Optimizer.Type.Rich as R
+import Jikka.Optimizer.Type.Simple as S
+import Jikka.Serializer.Show as SerAst
 import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))
+import System.IO (hPutStr, hPutStrLn, stderr)
 import qualified Text.Megaparsec as P
 
 data Flag
   = Help
   | Verbose
   | Version
-  deriving (Show)
+  | From String
+  | To String
+  deriving (Eq, Ord, Show, Read)
 
-newtype Options
+data Options
   = Options
-      { verbose :: Bool
+      { verbose :: Bool,
+        from :: FilePath -> Text -> Either String R.Expr,
+        to :: S.Expr -> Either String Text
       }
-  deriving (Show)
 
 defaultOptions :: Options
 defaultOptions =
   Options
-    { verbose = False
+    { verbose = False,
+      from = DecAst.run,
+      to = SerAst.run
     }
 
 header :: String -> String
@@ -34,37 +45,68 @@ options :: [OptDescr Flag]
 options =
   [ Option ['h', '?'] ["help"] (NoArg Help) "",
     Option ['v'] ["verbose"] (NoArg Version) "",
+    Option ['f'] ["from"] (ReqArg From "FORMAT") "",
+    Option ['t'] ["to"] (ReqArg To "FORMAT") "",
     Option [] ["version"] (NoArg Version) ""
   ]
+
+getDeserializer :: String -> Maybe (FilePath -> Text -> Either String R.Expr)
+getDeserializer "ast" = Just DecAst.run
+getDeserializer _ = Nothing
+
+getSerializer :: String -> Maybe (S.Expr -> Either String Text)
+getSerializer "ast" = Just SerAst.run
+getSerializer _ = Nothing
 
 main :: String -> [String] -> IO ExitCode
 main name args = do
   let usage = usageInfo (header name) options
   case getOpt Permute options args of
-    (parsed, [path], []) -> do
-      main' usage parsed path
-      return ExitSuccess
-    (_, _, errors) -> do
-      mapM_ (\error -> putStr $ name ++ ": " ++ error) errors
-      putStrLn ""
+    (parsed, _, []) | Help `elem` parsed -> do
       putStr usage
+      return ExitSuccess
+    (parsed, _, []) | Version `elem` parsed -> do
+      putStrLn $ showVersion version
+      return ExitSuccess
+    (parsed, [path], []) -> case parseFlags name parsed of
+      Left error -> do
+        hPutStrLn stderr error
+        return $ ExitFailure 1
+      Right opts -> do
+        input <- T.readFile path
+        case main' opts path input of
+          Left error -> do
+            hPutStrLn stderr error
+            return $ ExitFailure 1
+          Right output -> do
+            T.putStr output
+            return ExitSuccess
+    (_, _, errors) | errors /= [] -> do
+      mapM_ (\error -> hPutStr stderr $ name ++ ": " ++ error) errors
+      return $ ExitFailure 1
+    _ -> do
+      hPutStr stderr usage
       return $ ExitFailure 1
 
-main' :: String -> [Flag] -> FilePath -> IO ()
-main' usage opts path = go defaultOptions opts
+parseFlags :: String -> [Flag] -> Either String Options
+parseFlags name = go defaultOptions
   where
-    go :: Options -> [Flag] -> IO ()
-    go opts [] = main'' opts path
+    usage = usageInfo (header name) options
+    go :: Options -> [Flag] -> Either String Options
+    go opts [] = Right opts
     go opts (flag : flags) = case flag of
-      Help -> putStr usage
-      Version -> putStrLn $ showVersion version
+      Help -> undefined
+      Version -> undefined
       Verbose -> go (opts {verbose = True}) flags
+      From x -> case getDeserializer x of
+        Nothing -> Left $ name ++ ": unknown argument for option `--from': " ++ x
+        Just f -> go (opts {from = f}) flags
+      To y -> case getSerializer y of
+        Nothing -> Left $ name ++ ": unknown argument for option `--to': " ++ y
+        Just f -> go (opts {to = f}) flags
 
-main'' :: Options -> FilePath -> IO ()
-main'' opts path = do
-  code <- T.readFile path
-  case P.runParser Lexer.lexer path code of
-    Left bundle -> putStr (P.errorBundlePretty bundle)
-    Right tokens ->
-      forM_ (Lexer.stream tokens) $ \token ->
-        print $ Lexer.value token
+main' :: Options -> FilePath -> Text -> Either String Text
+main' opts path input = do
+  expr <- from opts path input
+  expr' <- Opt.run expr
+  to opts expr'
