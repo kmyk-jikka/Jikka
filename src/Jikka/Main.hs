@@ -1,5 +1,6 @@
 module Jikka.Main where
 
+import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Paths_Jikka (version)
 import System.Console.GetOpt
@@ -24,7 +25,7 @@ defaultOptions =
     }
 
 header :: String -> String
-header progName = "Usage: " ++ progName ++ " < FILE"
+header progName = "Usage: " ++ progName ++ " FILE"
 
 options :: [OptDescr Flag]
 options =
@@ -37,8 +38,8 @@ main :: String -> [String] -> IO ExitCode
 main name args = do
   let usage = usageInfo (header name) options
   case getOpt Permute options args of
-    (parsed, [], []) -> do
-      main' usage parsed
+    (parsed, [path], []) -> do
+      main' usage parsed path
       return ExitSuccess
     (_, _, errors) -> do
       mapM_ (\error -> putStr $ name ++ ": " ++ error) errors
@@ -46,12 +47,17 @@ main name args = do
       putStr usage
       return $ ExitFailure 1
 
-main' :: String -> [Flag] -> IO ()
-main' usage = go defaultOptions
+main' :: String -> [Flag] -> FilePath -> IO ()
+main' usage opts path = go defaultOptions opts
   where
     go :: Options -> [Flag] -> IO ()
-    go opts [] = return ()
+    go opts [] = main'' opts path
     go opts (flag : flags) = case flag of
       Help -> putStr usage
       Version -> putStrLn $ showVersion version
       Verbose -> go (opts {verbose = True}) flags
+
+main'' :: Options -> FilePath -> IO ()
+main'' opts path = do
+  code <- T.readFile path
+  T.putStr code
