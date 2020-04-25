@@ -6,8 +6,7 @@ import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Jikka.Deserializer.Read as DecAst
 import Jikka.Optimizer.Main as Opt
-import Jikka.Optimizer.Type.Rich as R
-import Jikka.Optimizer.Type.Simple as S
+import qualified Jikka.Optimizer.Type.Interface as I
 import Jikka.Serializer.Show as SerAst
 import Paths_Jikka (version)
 import System.Console.GetOpt
@@ -26,8 +25,8 @@ data Flag
 data Options
   = Options
       { verbose :: Bool,
-        from :: FilePath -> Text -> Either String R.Expr,
-        to :: S.Expr -> Either String Text
+        from :: FilePath -> Text -> Either String I.Expr,
+        to :: I.Expr -> Either String Text
       }
 
 defaultOptions :: Options
@@ -50,11 +49,11 @@ options =
     Option [] ["version"] (NoArg Version) ""
   ]
 
-getDeserializer :: String -> Maybe (FilePath -> Text -> Either String R.Expr)
+getDeserializer :: String -> Maybe (FilePath -> Text -> Either String I.Expr)
 getDeserializer "ast" = Just DecAst.run
 getDeserializer _ = Nothing
 
-getSerializer :: String -> Maybe (S.Expr -> Either String Text)
+getSerializer :: String -> Maybe (I.Expr -> Either String Text)
 getSerializer "ast" = Just SerAst.run
 getSerializer _ = Nothing
 

@@ -1,12 +1,12 @@
 module Jikka.Optimizer.Type.Simple where
 
+import Jikka.Optimizer.Type.Common (Name)
+
 data Literal
   = Unit
   | Bool Bool
   | Int Integer
   deriving (Eq, Ord, Read, Show)
-
-type Name = String
 
 data FunType
   = NoRec

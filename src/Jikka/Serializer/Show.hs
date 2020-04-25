@@ -1,7 +1,7 @@
 module Jikka.Serializer.Show where
 
 import Data.Text (Text, pack)
-import qualified Jikka.Optimizer.Type.Simple as S
+import qualified Jikka.Optimizer.Type.Interface as I
 
-run :: S.Expr -> Either String Text
-run expr = Right . pack $ show expr
+run :: I.Expr -> Either String Text
+run e = Right . pack $ show e
