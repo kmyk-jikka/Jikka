@@ -12,7 +12,6 @@ import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))
 import System.IO (hPutStr, hPutStrLn, stderr)
-import qualified Text.Megaparsec as P
 
 data Flag
   = Help
