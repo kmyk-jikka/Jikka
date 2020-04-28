@@ -5,11 +5,13 @@
 module Jikka.Deserializer.ML.Lexer
   ( Token (..),
     WithPos (..),
-    lexer,
     TokenStream (..),
+    lexer,
   )
 where
 
+import Data.List (uncons)
+import Data.Proxy (Proxy (..))
 import Data.Text (Text, unpack)
 import Data.Void (Void)
 import qualified Text.Megaparsec as P
@@ -59,32 +61,62 @@ data WithPos a
   = WithPos
       { start :: P.SourcePos,
         end :: P.SourcePos,
+        length' :: Int,
         value :: a
       }
   deriving (Eq, Ord, Show, Read, Functor)
 
-data TokenStream
-  = TokenStream
-      { name :: FilePath,
-        input :: Text,
-        stream :: [WithPos Token]
-      }
+newtype TokenStream = TokenStream {unTokenStream :: [WithPos Token]}
+  deriving (Eq, Ord, Show, Read)
 
 instance P.Stream TokenStream where
-  type Token TokenStream = WithPos Token
-  type Tokens TokenStream = [WithPos Token]
+  type Token TokenStream = Token
+  type Tokens TokenStream = [Token]
+  tokensToChunk Proxy = id
+  chunkToTokens Proxy = id
+  chunkLength Proxy = length
+  take1_ (TokenStream s) = case s of
+    [] -> Nothing
+    (token : tokens) -> Just (value token, TokenStream tokens)
+  takeN_ n (TokenStream s) = case s of
+    _ | n <= 0 -> Just ([], TokenStream s)
+    [] -> Nothing
+    _ -> let (ls, rs) = splitAt n s in Just (map value ls, TokenStream rs)
+  takeWhile_ pred (TokenStream s) = let (ls, rs) = span (pred . value) s in (map value ls, TokenStream rs)
+  showTokens Proxy = show
+  chunkEmpty Proxy = null
+  reachOffset offset pst =
+    let (TokenStream tokens) = P.pstateInput pst
+     in let tokens' = drop offset tokens'
+         in let sourcePos
+                  | not $ null tokens' = start $ head tokens'
+                  | not $ null tokens = end $ last tokens
+                  | otherwise = P.pstateSourcePos pst
+             in let pst' =
+                      pst
+                        { P.pstateInput = TokenStream tokens',
+                          P.pstateOffset = P.pstateOffset pst + offset,
+                          P.pstateSourcePos = sourcePos
+                        }
+                 in let line = case tokens' of
+                          [] -> "<eof>"
+                          (token : _) -> show token
+                     in (line, pst')
 
 type Parser = P.Parsec Void Text
 
 withPos :: Parser a -> Parser (WithPos a)
 withPos f = do
   start <- P.getSourcePos
+  offset <- P.getOffset
   value <- f
   end <- P.getSourcePos
+  length'' <- subtract offset <$> P.getOffset
   return $
     WithPos
       { start = start,
         end = end,
+        length' = length'',
         value = value
       }
 
@@ -160,15 +192,6 @@ token1 =
 
 lexer :: Parser TokenStream
 lexer = do
-  name <- P.sourceName <$> P.getSourcePos
-  input <- P.getInput
-  stream <- do
-    head <- P.try ((: []) <$> token1) <|> ([] <$ space)
-    tail <- P.many token1 <* P.eof
-    return $ head ++ tail
-  return $
-    TokenStream
-      { name = name,
-        input = input,
-        stream = stream
-      }
+  head <- P.try ((: []) <$> token1) <|> ([] <$ space)
+  tail <- P.many token1 <* P.eof
+  return . TokenStream $ head ++ tail
