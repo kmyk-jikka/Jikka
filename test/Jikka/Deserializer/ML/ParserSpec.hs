@@ -43,14 +43,17 @@ prettyMatch (PatPlusK x k) = "(" ++ prettyOptName x ++ " + " ++ show k ++ ") "
 prettyBranch :: MatchBranch -> String
 prettyBranch (patterns, e) = "| " ++ concatMap prettyMatch patterns ++ "-> " ++ prettyExpr e ++ "\n"
 
+prettyLetType :: LetType -> String
+prettyLetType NoRec = ""
+prettyLetType Rec = "rec "
+
 prettyExpr :: WithPos Expr -> String
 prettyExpr e = case value e of
   Lit lit -> prettyLiteral lit
   Var x -> x
   App WithPos {value = App e1 e2} e3 -> "(" ++ prettyExpr e1 ++ " " ++ prettyExpr e2 ++ " " ++ prettyExpr e3 ++ ")"
   App e1 e2 -> "(" ++ prettyExpr e1 ++ " " ++ prettyExpr e2 ++ ")"
-  Let x args t e1 e2 -> "(let " ++ prettyOptName x ++ " " ++ prettyArgs args ++ prettyOptType t ++ "= " ++ prettyExpr e1 ++ " in " ++ prettyExpr e2 ++ ")"
-  LetRec x args t e1 e2 -> "(let rec " ++ x ++ " " ++ prettyArgs args ++ prettyOptType t ++ "= " ++ prettyExpr e1 ++ " in " ++ prettyExpr e2 ++ ")"
+  Let ltype x args t e1 e2 -> "(let " ++ prettyLetType ltype ++ prettyOptName x ++ " " ++ prettyArgs args ++ prettyOptType t ++ "= " ++ prettyExpr e1 ++ " in " ++ prettyExpr e2 ++ ")"
   Fun args e -> "(fun " ++ prettyArgs args ++ "-> " ++ prettyExpr e ++ ")"
   If e1 e2 e3 -> "(if " ++ prettyExpr e1 ++ "\nthen " ++ prettyExpr e2 ++ "\nelse " ++ prettyExpr e3 ++ ")"
   Match e branches -> "(match " ++ prettyExpr e ++ " with" ++ concatMap prettyBranch branches ++ "end)"

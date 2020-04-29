@@ -99,26 +99,28 @@ expr e = case value e of
   Lit lit -> return $ J.Lit (literal lit)
   Var x -> var (withPos e x)
   App e1 e2 -> J.App <$> expr e1 <*> expr e2
-  Let x [] t e1 e2 -> do
-    x <- optName x
-    t <- optType t
-    e1 <- expr e1
-    e2 <- pushEnv x t (expr e2)
-    return $ J.Let x t e1 e2
-  Let x args t e1 e2 -> do
+  Let ltype x args t e1 e2 -> do
     x <- optName x
     args <- optArgs args
     t <- funType (map snd args) t
-    e1 <- J.Fun J.NoRec . (: []) <$> singleBranch args e1
-    e2 <- pushEnv x t (expr e2)
-    return $ J.Let x t e1 e2
-  LetRec x args t e1 e2 -> do
-    args <- optArgs args
-    t <- funType (map snd args) t
-    pushEnv x t $ do
-      e1 <- J.Fun (J.Rec x) . (: []) <$> singleBranch args e1
-      e2 <- expr e2
-      return $ J.Let x t e1 e2
+    case (ltype, args) of
+      (NoRec, []) -> do
+        e1 <- expr e1
+        e2 <- pushEnv x t (expr e2)
+        return $ J.Let x t e1 e2
+      (NoRec, _) -> do
+        e1 <- J.Fun J.NoRec . (: []) <$> singleBranch args e1
+        e2 <- pushEnv x t (expr e2)
+        return $ J.Let x t e1 e2
+      (Rec, []) -> pushEnv x t $ do
+        e1 <- expr e1
+        e2 <- expr e2
+        let e1' = J.App (J.Fun (J.Rec x) [([J.PatLit J.Unit], e1)]) (J.Lit J.Unit)
+        return $ J.Let x t e1' e2
+      (Rec, _) -> pushEnv x t $ do
+        e1 <- J.Fun (J.Rec x) . (: []) <$> singleBranch args e1
+        e2 <- expr e2
+        return $ J.Let x t e1 e2
   Fun args e -> do
     args <- optArgs args
     J.Fun J.NoRec . (: []) <$> singleBranch args e

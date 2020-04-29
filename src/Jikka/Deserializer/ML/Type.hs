@@ -35,12 +35,18 @@ instance NFData MatchPattern
 
 type MatchBranch = ([MatchPattern], WithPos Expr)
 
+data LetType
+  = NoRec
+  | Rec
+  deriving (Eq, Ord, Show, Read, Generic)
+
+instance NFData LetType
+
 data Expr
   = Lit Literal
   | Var Name
   | App (WithPos Expr) (WithPos Expr)
-  | Let (Maybe Name) Args (Maybe (WithPos Type)) (WithPos Expr) (WithPos Expr)
-  | LetRec Name Args (Maybe (WithPos Type)) (WithPos Expr) (WithPos Expr)
+  | Let LetType (Maybe Name) Args (Maybe (WithPos Type)) (WithPos Expr) (WithPos Expr)
   | Fun Args (WithPos Expr)
   | If (WithPos Expr) (WithPos Expr) (WithPos Expr)
   | Match (WithPos Expr) [MatchBranch]

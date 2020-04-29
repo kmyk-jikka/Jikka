@@ -108,11 +108,13 @@ MatchBranches :: { [MatchBranch] }
     : {- empty -}                      { [] }
     | MatchBranch MatchBranches        { $1 : $2 }
 
+LetType :: { LetType }
+    : {- empty -}                      { NoRec }
+    | rec                              { Rec }
+
 Expr :: { WithPos Expr }
     : ItemOpSeq                        {% let app op e1 e2 = withPos op (App (withPos op (App (fmap (Var . getOpName) op) e1)) e2) in ShuntingYard.run app $1 }
-    | let OptName OptType '=' Expr in Expr  { withPos $1 $ Let $2 [] $3 $5 $7 }
-    | let Ident Args OptType '=' Expr in Expr  { withPos $1 $ Let (Just $ value $2) $3 $4 $6 $8 }
-    | let rec Ident Args OptType '=' Expr in Expr  { withPos $1 $ LetRec (value $3) $4 $5 $7 $9 }
+    | let LetType OptName Args OptType '=' Expr in Expr  { withPos $1 $ Let $2 $3 $4 $5 $7 $9 }
     | match Expr with MatchBranches end  { withPos $1 $ Match $2 $4 }
     | function MatchBranches end       { withPos $1 $ Function $2 }
     | if Expr then Expr else Expr      { withPos $1 $ If $2 $4 $6 }

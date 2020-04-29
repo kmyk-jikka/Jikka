@@ -8,6 +8,7 @@ import Jikka.Deserializer.ML as FromML
 import Jikka.Deserializer.Read as FromRead
 import Jikka.Language.Type (Expr)
 import Jikka.Optimizer.Main as Opt
+import Jikka.Serializer.Pretty as ToPretty
 import Jikka.Serializer.Show as ToShow
 import Paths_Jikka (version)
 import System.Console.GetOpt
@@ -34,7 +35,7 @@ defaultOptions =
   Options
     { verbose = False,
       from = FromML.run,
-      to = ToShow.run
+      to = ToPretty.run
     }
 
 header :: String -> String
@@ -55,6 +56,7 @@ getDeserializer "read" = Just FromRead.run
 getDeserializer _ = Nothing
 
 getSerializer :: String -> Maybe (Expr -> Either String Text)
+getSerializer "pretty" = Just ToPretty.run
 getSerializer "show" = Just ToShow.run
 getSerializer _ = Nothing
 
