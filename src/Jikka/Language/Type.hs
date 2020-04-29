@@ -29,12 +29,19 @@ data BuiltIn
   | Mul
   | Div
   | Mod
+  | Pow
   | Min
   | Max
   | Sum
   | Product
   | Minimum
   | Maximum
+  | Equal
+  | NotEqual
+  | LessThan
+  | LessThanEqual
+  | GreaterThan
+  | GreaterThanEqual
   deriving (Eq, Ord, Enum, Bounded, Read, Show)
 
 data FunType
@@ -43,9 +50,8 @@ data FunType
   deriving (Eq, Ord, Read, Show)
 
 data Pattern
-  = PatAny
+  = PatVar Name
   | PatLit !Literal
-  | PatVar Name
   | PatPlusK Name Integer
   deriving (Eq, Ord, Read, Show)
 

@@ -33,7 +33,7 @@ defaultOptions :: Options
 defaultOptions =
   Options
     { verbose = False,
-      from = FromRead.run,
+      from = FromML.run,
       to = ToShow.run
     }
 

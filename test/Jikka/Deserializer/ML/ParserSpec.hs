@@ -9,6 +9,7 @@ import Data.Char (toLower)
 import qualified Jikka.Deserializer.ML.Lexer as L
 import Jikka.Deserializer.ML.Parser
 import Jikka.Deserializer.ML.Pos
+import Jikka.Deserializer.ML.Type
 import Test.Hspec
 
 prettyLiteral :: Literal -> String

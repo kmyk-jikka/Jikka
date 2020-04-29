@@ -1,24 +1,12 @@
 {
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
-module Jikka.Deserializer.ML.Parser
-    ( Args(..)
-    , Expr(..)
-    , Literal(..)
-    , MatchBranch(..)
-    , MatchPattern(..)
-    , Name(..)
-    , Type(..)
-    , run
-    ) where
+module Jikka.Deserializer.ML.Parser (run) where
 
-import Control.DeepSeq
 import Data.List (intercalate)
-import GHC.Generics (Generic)
 import qualified Jikka.Deserializer.ML.Lexer as L (Token(..))
+import Jikka.Deserializer.ML.Pos
 import qualified Jikka.Deserializer.ML.ShuntingYard as ShuntingYard
 import Jikka.Deserializer.ML.ShuntingYard (Op, getOpName, getBuiltInOp)
-import Jikka.Deserializer.ML.Pos
+import Jikka.Deserializer.ML.Type
 
 -- TODO: use left-recursion for effciency
 }
@@ -144,45 +132,6 @@ ItemOpSeq :: { (WithPos Expr, [(WithPos Op, WithPos Expr)]) }
     | ItemFunApp Op ItemOpSeq          { let (x, ys) = $3 in ($1, ($2, x) : ys) }
 
 {
-type Name = String
-
-data Type
-    = TyVar Name
-    | TyFun Type Type
-    deriving (Eq, Ord, Show, Read, Generic)
-instance NFData Type
-
-data Literal
-    = Unit
-    | Int Integer
-    | Bool Bool
-    deriving (Eq, Ord, Show, Read, Generic)
-instance NFData Literal
-
-type Args = [(Maybe Name, Maybe (WithPos Type))]
-
-data MatchPattern
-    = PatVar (Maybe Name)
-    | PatLit Literal
-    | PatPlusK (Maybe Name) Integer
-    deriving (Eq, Ord, Show, Read, Generic)
-instance NFData MatchPattern
-
-type MatchBranch = ([MatchPattern], WithPos Expr)
-
-data Expr
-    = Lit Literal
-    | Var Name
-    | App (WithPos Expr) (WithPos Expr)
-    | Let (Maybe Name) Args (Maybe (WithPos Type)) (WithPos Expr) (WithPos Expr)
-    | LetRec Name Args (Maybe (WithPos Type)) (WithPos Expr) (WithPos Expr)
-    | Fun Args (WithPos Expr)
-    | If (WithPos Expr) (WithPos Expr) (WithPos Expr)
-    | Match (WithPos Expr) [MatchBranch]
-    | Function [MatchBranch]
-    deriving (Eq, Ord, Show, Read, Generic)
-instance NFData Expr
-
 happyErrorExpList :: ([WithPos L.Token], [String]) -> Either String a
 happyErrorExpList (tokens, expected) = error $ "Syntax error at " ++ pos' tokens ++ ": " ++ tok tokens ++ " is got, but " ++ exp expected ++ " expected" where
     pos' [] = "EOF"
