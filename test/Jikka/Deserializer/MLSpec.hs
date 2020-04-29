@@ -8,13 +8,19 @@ where
 import Data.Text (Text, pack)
 import Jikka.Deserializer.ML
 import Jikka.Language.Type
+import qualified Jikka.Serializer.Eval as Eval
 import Test.Hspec
 
 run' :: String -> Either String Expr
 run' = run "*test*" . pack
 
 spec :: Spec
-spec = describe "deserializer" $ do
+spec = do
+  specSimple
+  specEval
+
+specSimple :: Spec
+specSimple = describe "deserializer (simple)" $ do
   it "let rec function" $ do
     let input =
           concat
@@ -70,3 +76,31 @@ spec = describe "deserializer" $ do
             )
             (App (Var "fact") (Lit (Int 10)))
     run' input `shouldBe` Right tree
+
+run'' :: String -> Either String Expr
+run'' input = Eval.run' =<< run "*test*" (pack input)
+
+specEval :: Spec
+specEval = describe "deserializer (eval)" $ do
+  it "let rec function" $ do
+    let input =
+          concat
+            [ "let rec fact = function\n",
+              "    | 0 -> 1\n",
+              "    | n + 1 -> (n + 1) * fact n\n",
+              "    end\n",
+              "in fact 10\n"
+            ]
+    let value = Lit . Int $ product [1 .. 10]
+    run'' input `shouldBe` Right value
+  it "let rec match" $ do
+    let input =
+          concat
+            [ "let rec fact n = match n with\n",
+              "    | 0 -> 1\n",
+              "    | n + 1 -> (n + 1) * fact n\n",
+              "    end\n",
+              "in fact 10\n"
+            ]
+    let value = Lit . Int $ product [1 .. 10]
+    run'' input `shouldBe` Right value
