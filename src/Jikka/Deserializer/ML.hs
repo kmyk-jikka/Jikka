@@ -1,11 +1,11 @@
-module Jikka.Deserializer.ML (Jikka.Deserializer.ML.run) where
+module Jikka.Deserializer.ML (run) where
 
 import Data.Text (Text, unpack)
-import Jikka.Deserializer.ML.Lexer as L
-import Jikka.Deserializer.ML.Parser as P
-import Jikka.Optimizer.Type.Interface as I
+import qualified Jikka.Deserializer.ML.Lexer as L
+import qualified Jikka.Deserializer.ML.Parser as P
+import qualified Jikka.Language.Type as J
 
-run :: FilePath -> Text -> Either String I.Expr
+run :: FilePath -> Text -> Either String J.Expr
 run path input = do
   tokens <- L.run $ unpack input
   parsed <- P.run tokens

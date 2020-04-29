@@ -4,10 +4,11 @@ import Control.Monad (forM_)
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
-import Jikka.Deserializer.Read as DecAst
+import Jikka.Deserializer.ML as FromML
+import Jikka.Deserializer.Read as FromRead
+import Jikka.Language.Type (Expr)
 import Jikka.Optimizer.Main as Opt
-import qualified Jikka.Optimizer.Type.Interface as I
-import Jikka.Serializer.Show as SerAst
+import Jikka.Serializer.Show as ToShow
 import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))
@@ -24,16 +25,16 @@ data Flag
 data Options
   = Options
       { verbose :: Bool,
-        from :: FilePath -> Text -> Either String I.Expr,
-        to :: I.Expr -> Either String Text
+        from :: FilePath -> Text -> Either String Expr,
+        to :: Expr -> Either String Text
       }
 
 defaultOptions :: Options
 defaultOptions =
   Options
     { verbose = False,
-      from = DecAst.run,
-      to = SerAst.run
+      from = FromRead.run,
+      to = ToShow.run
     }
 
 header :: String -> String
@@ -48,12 +49,13 @@ options =
     Option [] ["version"] (NoArg Version) ""
   ]
 
-getDeserializer :: String -> Maybe (FilePath -> Text -> Either String I.Expr)
-getDeserializer "ast" = Just DecAst.run
+getDeserializer :: String -> Maybe (FilePath -> Text -> Either String Expr)
+getDeserializer "ml" = Just FromML.run
+getDeserializer "read" = Just FromRead.run
 getDeserializer _ = Nothing
 
-getSerializer :: String -> Maybe (I.Expr -> Either String Text)
-getSerializer "ast" = Just SerAst.run
+getSerializer :: String -> Maybe (Expr -> Either String Text)
+getSerializer "show" = Just ToShow.run
 getSerializer _ = Nothing
 
 main :: String -> [String] -> IO ExitCode

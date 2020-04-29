@@ -9,13 +9,13 @@ module Jikka.Deserializer.ML.Parser
     , MatchPattern(..)
     , Name(..)
     , Type(..)
-    , Jikka.Deserializer.ML.Parser.run
+    , run
     ) where
 
 import Control.DeepSeq
 import Data.List (intercalate)
 import GHC.Generics (Generic)
-import qualified Jikka.Deserializer.ML.Lexer as L
+import qualified Jikka.Deserializer.ML.Lexer as L (Token(..))
 import qualified Jikka.Deserializer.ML.ShuntingYard as ShuntingYard
 import Jikka.Deserializer.ML.ShuntingYard (Op, getOpName, getBuiltInOp)
 import Jikka.Deserializer.ML.Pos
