@@ -19,7 +19,7 @@ spec = describe "deserializer" $ do
     let input =
           concat
             [ "let rec fact = function\n",
-              "    | 0 -> 0\n",
+              "    | 0 -> 1\n",
               "    | n + 1 -> (n + 1) * fact n\n",
               "    end\n",
               "in fact 10\n"
@@ -28,11 +28,19 @@ spec = describe "deserializer" $ do
           Let
             "fact"
             (TyVar "_1")
-            ( Fun
-                NoRec
-                [ ([PatLit (Int 0)], Lit (Int 0)),
-                  ([PatPlusK "n" 1], App (App (BuiltIn Mul) (App (App (BuiltIn Add) (Var "n")) (Lit (Int 1)))) (App (Var "fact") (Var "n")))
-                ]
+            ( App
+                ( Fun
+                    (Rec "fact")
+                    [ ( [PatLit Unit],
+                        Fun
+                          NoRec
+                          [ ([PatLit (Int 0)], Lit (Int 0)),
+                            ([PatPlusK "n" 1], App (App (BuiltIn Mul) (App (App (BuiltIn Add) (Var "n")) (Lit (Int 1)))) (App (Var "fact") (Var "n")))
+                          ]
+                      )
+                    ]
+                )
+                (Lit Unit)
             )
             (App (Var "fact") (Lit (Int 10)))
     run' input `shouldBe` Right tree
@@ -40,7 +48,7 @@ spec = describe "deserializer" $ do
     let input =
           concat
             [ "let rec fact n = match n with\n",
-              "    | 0 -> 0\n",
+              "    | 0 -> 1\n",
               "    | n + 1 -> (n + 1) * fact n\n",
               "    end\n",
               "in fact 10\n"
@@ -48,7 +56,7 @@ spec = describe "deserializer" $ do
     let fun =
           Fun
             NoRec
-            [ ([PatLit (Int 0)], Lit (Int 0)),
+            [ ([PatLit (Int 0)], Lit (Int 1)),
               ([PatPlusK "n" 1], App (App (BuiltIn Mul) (App (App (BuiltIn Add) (Var "n")) (Lit (Int 1)))) (App (Var "fact") (Var "n")))
             ]
     let tree =
