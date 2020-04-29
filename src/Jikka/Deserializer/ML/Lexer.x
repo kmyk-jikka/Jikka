@@ -1,16 +1,13 @@
 {
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Jikka.Deserializer.ML.Lexer
-    ( Pos(..)
-    , Token(..)
-    , WithPos(..)
+    ( Token(..)
     , run
     ) where
 
 import Control.DeepSeq
 import GHC.Generics
+import Jikka.Deserializer.ML.Pos
 }
 
 %wrapper "monad"
@@ -55,7 +52,7 @@ tokens :-
     ")"             { tok' CloseParen }
 
     [ A-Z a-z ] [ \' 0-9 A-Z a-z ] *  { tok Ident }
-    [ \+ \- \* \/ \% \< \= \> \& \| \^ \@ ]  { tok Op }
+    [ \+ \- \* \/ \% \< \= \> \& \| \^ \@ ] +  { tok Op }
 
 {
 alexEOF :: Alex (Maybe (WithPos Token))
@@ -76,8 +73,8 @@ tok' token = tok (const token)
 data Token
     -- literals
     = Unit
-    | Int !Integer
-    | Bool !Bool
+    | Int Integer
+    | Bool Bool
     -- keywords
     | Let
     | Rec
@@ -111,20 +108,6 @@ data Token
     | Op String
     deriving (Eq, Ord, Show, Read, Generic)
 instance NFData Token
-
-data Pos = Pos
-    { line :: !Int
-    , column :: !Int
-    }
-    deriving (Eq, Ord, Show, Read, Generic)
-instance NFData Pos
-
-data WithPos a = WithPos
-    { pos :: !Pos
-    , value :: !a
-    }
-    deriving (Eq, Ord, Show, Read, Generic, Functor)
-instance NFData a => NFData (WithPos a)
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
 unfoldM f = do
