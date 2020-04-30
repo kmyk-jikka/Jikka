@@ -40,7 +40,7 @@ specSimple = describe "deserializer (simple)" $ do
                     [ ( [PatLit Unit],
                         Fun
                           NoRec
-                          [ ([PatLit (Int 0)], Lit (Int 0)),
+                          [ ([PatLit (Int 0)], Lit (Int 1)),
                             ([PatPlusK "n" 1], App (App (BuiltIn Mul) (App (App (BuiltIn Add) (Var "n")) (Lit (Int 1)))) (App (Var "fact") (Var "n")))
                           ]
                       )
