@@ -83,8 +83,9 @@ expr env e = case e of
     e2 <- expr env e2
     app env (App e1 e2)
 
-run' :: Expr -> Either String Expr
-run' = expr M.empty
+run' :: M.Map Name Expr -> Expr -> Either String Expr
+run' = expr
 
-run :: Expr -> Either String Text
-run e = pack . show <$> run' e
+run :: Program -> Either String Text
+run Program {given = [], body = e} = pack . show <$> run' M.empty e
+run _ = Left "Runtime Error: we cannot execute programs with given clauses now"

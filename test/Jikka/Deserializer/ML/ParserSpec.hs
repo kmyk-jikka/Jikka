@@ -59,11 +59,16 @@ prettyExpr e = case value e of
   Match e branches -> "(match " ++ prettyExpr e ++ " with" ++ concatMap prettyBranch branches ++ "end)"
   Function branches -> "(function" ++ concatMap prettyBranch branches ++ "end)"
 
+prettyProg :: Program -> String
+prettyProg prog = concatMap prettyGiven (given prog) ++ prettyExpr (body prog)
+  where
+    prettyGiven (x, t) = "let given " ++ x ++ " : " ++ prettyType (value t) ++ " in\n"
+
 run' :: String -> Either String String
 run' input = do
   tokens <- L.run input
   parsed <- run tokens
-  return $ prettyExpr parsed
+  return $ prettyProg parsed
 
 spec :: Spec
 spec = describe "parser" $ do

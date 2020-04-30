@@ -68,5 +68,11 @@ expr d e = case e of
   Fun ftype branches -> let prec = 5 in showParen (d > prec) . f $ funType ftype ++ "\n" ++ concatMap branch branches ++ "end"
   App e1 e2 -> let prec = 10 in showParen (d > prec) $ expr prec e1 . f " " . expr (prec + 1) e2
 
-run :: Expr -> Either String Text
-run e = Right . pack $ expr 0 e ""
+given' :: (Name, Type) -> ShowS
+given' (x, t) = f ("let given " ++ x ++ " : ") . type' 0 t . f " in\n"
+
+run :: Program -> Either String Text
+run prog = Right . pack $ prog' ""
+  where
+    concatFun = foldl (.) id
+    prog' = concatFun (map given' (given prog)) . expr 0 (body prog)

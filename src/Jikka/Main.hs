@@ -6,7 +6,7 @@ import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Jikka.Deserializer.ML as FromML
 import Jikka.Deserializer.Read as FromRead
-import Jikka.Language.Type (Expr)
+import Jikka.Language.Type (Program)
 import Jikka.Optimizer.Main as Opt
 import Jikka.Serializer.Eval as ToEval
 import Jikka.Serializer.Pretty as ToPretty
@@ -27,8 +27,8 @@ data Flag
 data Options
   = Options
       { verbose :: Bool,
-        from :: FilePath -> Text -> Either String Expr,
-        to :: Expr -> Either String Text
+        from :: FilePath -> Text -> Either String Program,
+        to :: Program -> Either String Text
       }
 
 defaultOptions :: Options
@@ -51,12 +51,12 @@ options =
     Option [] ["version"] (NoArg Version) ""
   ]
 
-getDeserializer :: String -> Maybe (FilePath -> Text -> Either String Expr)
+getDeserializer :: String -> Maybe (FilePath -> Text -> Either String Program)
 getDeserializer "ml" = Just FromML.run
 getDeserializer "read" = Just FromRead.run
 getDeserializer _ = Nothing
 
-getSerializer :: String -> Maybe (Expr -> Either String Text)
+getSerializer :: String -> Maybe (Program -> Either String Text)
 getSerializer "pretty" = Just ToPretty.run
 getSerializer "show" = Just ToShow.run
 getSerializer "eval" = Just ToEval.run
@@ -111,6 +111,6 @@ parseFlags name = go defaultOptions
 
 main' :: Options -> FilePath -> Text -> Either String Text
 main' opts path input = do
-  expr <- from opts path input
-  expr' <- Opt.run expr
-  to opts expr'
+  prog <- from opts path input
+  prog' <- Opt.run prog
+  to opts prog'

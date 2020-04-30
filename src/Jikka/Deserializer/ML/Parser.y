@@ -56,8 +56,8 @@ import Jikka.Deserializer.ML.Type
 
 %%
 
-Start :: { WithPos Expr }
-    : Expr                             { $1 }
+Start :: { Program }
+    : GivenDecls Expr                  { Program (reverse $1) $2 }
 
 Int :: { WithPos Integer }
     : int                              { withPos $1 $ let (L.Int n) = value $1 in n }
@@ -73,6 +73,13 @@ Type :: { WithPos Type }
     : Ident                            { withPos $1 $ TyVar (value $1) }
     | Ident '->' Type                  { withPos $1 $ TyFun (TyVar $ value $1) (value $3) }
     | '(' Type ')'                     { $2 }
+
+GivenDecl :: { (Name, WithPos Type) }
+    : let given Ident ':' Type in    { (value $3, $5) }
+
+GivenDecls :: { [(Name, WithPos Type)] }
+    : {- empty -}                      { [] }
+    | GivenDecls GivenDecl             { $2 : $1 }
 
 OptName :: { Maybe Name }
     : '_'                              { Nothing }
@@ -135,7 +142,7 @@ ItemOpSeq :: { (WithPos Expr, [(WithPos Op, WithPos Expr)]) }
 
 {
 happyErrorExpList :: ([WithPos L.Token], [String]) -> Either String a
-happyErrorExpList (tokens, expected) = error $ "Syntax error at " ++ pos' tokens ++ ": " ++ tok tokens ++ " is got, but " ++ exp expected ++ " expected" where
+happyErrorExpList (tokens, expected) = Left $ "Syntax error at " ++ pos' tokens ++ ": " ++ tok tokens ++ " is got, but " ++ exp expected ++ " expected" where
     pos' [] = "EOF"
     pos' (token : _) = prettyPos (pos token)
     tok [] = "EOF"

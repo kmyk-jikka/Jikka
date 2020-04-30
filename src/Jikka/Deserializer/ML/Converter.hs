@@ -152,5 +152,14 @@ pushEnvs xts f = do
 runM :: M a -> Either String a
 runM f = runExcept $ evalStateT f (0, M.empty)
 
-run :: WithPos Expr -> Either String J.Expr
-run = runM . expr
+run :: Program -> Either String J.Program
+run prog = runM $ do
+  let f (x, t) = (x, type' $ value t)
+  let given' = map f $ given prog
+  pushEnvs given' $ do
+    body <- expr $ body prog
+    return
+      J.Program
+        { J.given = given',
+          J.body = body
+        }

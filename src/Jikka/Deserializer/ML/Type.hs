@@ -54,3 +54,12 @@ data Expr
   deriving (Eq, Ord, Show, Read, Generic)
 
 instance NFData Expr
+
+data Program
+  = Program
+      { given :: [(Name, WithPos Type)],
+        body :: WithPos Expr
+      }
+  deriving (Eq, Ord, Show, Read, Generic)
+
+instance NFData Program

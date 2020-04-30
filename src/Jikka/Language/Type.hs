@@ -63,3 +63,10 @@ data Expr
   | Fun FunType [([Pattern], Expr)]
   | App Expr Expr
   deriving (Eq, Ord, Read, Show)
+
+data Program
+  = Program
+      { given :: [(Name, Type)],
+        body :: Expr
+      }
+  deriving (Eq, Ord, Read, Show)
