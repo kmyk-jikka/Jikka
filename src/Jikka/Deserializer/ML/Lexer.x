@@ -1,12 +1,9 @@
 {
-{-# LANGUAGE DeriveGeneric #-}
 module Jikka.Deserializer.ML.Lexer
     ( Token(..)
     , run
     ) where
 
-import Control.DeepSeq
-import GHC.Generics
 import Jikka.Deserializer.ML.Pos
 }
 
@@ -106,8 +103,7 @@ data Token
     -- identifier
     | Ident String
     | Op String
-    deriving (Eq, Ord, Show, Read, Generic)
-instance NFData Token
+    deriving (Eq, Ord, Show, Read)
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
 unfoldM f = do

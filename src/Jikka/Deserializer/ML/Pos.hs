@@ -1,28 +1,20 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Jikka.Deserializer.ML.Pos where
-
-import Control.DeepSeq
-import GHC.Generics (Generic)
 
 data Pos
   = Pos
       { line :: !Int,
         column :: !Int
       }
-  deriving (Eq, Ord, Show, Read, Generic)
-
-instance NFData Pos
+  deriving (Eq, Ord, Show, Read)
 
 data WithPos a
   = WithPos
       { pos :: !Pos,
         value :: !a
       }
-  deriving (Eq, Ord, Show, Read, Generic, Functor)
-
-instance NFData a => NFData (WithPos a)
+  deriving (Eq, Ord, Show, Read, Functor)
 
 withPos :: WithPos a -> b -> WithPos b
 withPos pos value = pos {value = value}
