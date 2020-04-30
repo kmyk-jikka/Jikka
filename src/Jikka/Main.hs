@@ -8,6 +8,7 @@ import Jikka.Deserializer.ML as FromML
 import Jikka.Deserializer.Read as FromRead
 import Jikka.Language.Type (Program)
 import Jikka.Optimizer.Main as Opt
+import Jikka.Serializer.CPlusPlus as ToCPlusPlus
 import Jikka.Serializer.Eval as ToEval
 import Jikka.Serializer.Pretty as ToPretty
 import Jikka.Serializer.Show as ToShow
@@ -60,6 +61,7 @@ getSerializer :: String -> Maybe (Program -> Either String Text)
 getSerializer "pretty" = Just ToPretty.run
 getSerializer "show" = Just ToShow.run
 getSerializer "eval" = Just ToEval.run
+getSerializer "cplusplus" = Just ToCPlusPlus.run
 getSerializer _ = Nothing
 
 main :: String -> [String] -> IO ExitCode
