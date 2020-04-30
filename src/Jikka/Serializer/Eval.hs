@@ -88,4 +88,4 @@ run' = expr
 
 run :: Program -> Either String Text
 run Program {given = [], body = e} = pack . show <$> run' M.empty e
-run _ = Left "Runtime Error: we cannot execute programs with given clauses now"
+run _ = error "TODO: make programs with `let given' clauses executable"

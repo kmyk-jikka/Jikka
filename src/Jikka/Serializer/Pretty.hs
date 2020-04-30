@@ -1,4 +1,8 @@
-module Jikka.Serializer.Pretty (run) where
+-- TODO: replace this with Jikka.Serializer.ML
+module Jikka.Serializer.Pretty
+  ( run,
+  )
+where
 
 import Data.Char (toLower)
 import Data.List (intercalate)
