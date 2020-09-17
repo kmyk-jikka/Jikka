@@ -9,6 +9,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Cache .stack
+      uses: actions/cache@v2
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
+        restore-keys: ${{ runner.os }}-stack-
+
     - name: Set up Haskell
       uses: actions/setup-haskell@v1.1
       with:
