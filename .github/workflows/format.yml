@@ -1,0 +1,24 @@
+name: format
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Haskell
+      uses: actions/setup-haskell@v1.1
+      with:
+        enable-stack: true
+
+    - name: Build dependencies
+      run: stack build --test --only-dependencies
+
+    - name: Run Ormolu
+      run: stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
+
+    - name: Run HLint
+      run: stack exec hlint -- src app test
