@@ -7,7 +7,7 @@ where
 import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Text (Text, pack)
-import Jikka.Language.Type
+import Jikka.Language.Parsed.Type
 import Text.Show
 
 type Prec = Int

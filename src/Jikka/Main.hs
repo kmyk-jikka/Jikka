@@ -6,7 +6,7 @@ import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Jikka.Deserializer.ML as FromML
 import Jikka.Deserializer.Read as FromRead
-import Jikka.Language.Type (Program)
+import Jikka.Language.Parsed.Type (Program)
 import Jikka.Optimizer.Main as Opt
 import Jikka.Serializer.CPlusPlus as ToCPlusPlus
 import Jikka.Serializer.Eval as ToEval

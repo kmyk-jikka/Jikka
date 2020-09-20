@@ -8,7 +8,7 @@ where
 import qualified Data.Map as M
 import Data.Text (Text, pack)
 import Jikka.Deserializer.ML
-import Jikka.Language.Type
+import Jikka.Language.Parsed.Type
 import qualified Jikka.Serializer.Eval as Eval
 import Test.Hspec
 

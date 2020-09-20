@@ -6,7 +6,7 @@ import Control.Monad.State.Strict (StateT, evalStateT)
 import qualified Data.Map.Strict as M
 import Jikka.Deserializer.ML.Pos
 import Jikka.Deserializer.ML.Type
-import qualified Jikka.Language.Type as J
+import qualified Jikka.Language.Parsed.Type as J
 
 builtInMap :: M.Map Name J.BuiltIn
 builtInMap =

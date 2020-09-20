@@ -1,7 +1,7 @@
 module Jikka.Deserializer.Read where
 
 import Data.Text (Text, unpack)
-import qualified Jikka.Language.Type as J
+import qualified Jikka.Language.Parsed.Type as J
 import Text.Read (readEither)
 
 run :: FilePath -> Text -> Either String J.Program

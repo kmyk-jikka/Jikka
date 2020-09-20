@@ -1,4 +1,4 @@
-module Jikka.Language.Type where
+module Jikka.Language.Parsed.Type where
 
 type Name = String
 

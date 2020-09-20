@@ -3,7 +3,7 @@ module Jikka.Serializer.Eval (run, run') where
 import qualified Data.Map as M
 import Data.Maybe (catMaybes)
 import Data.Text (Text, pack)
-import Jikka.Language.Type
+import Jikka.Language.Parsed.Type
 
 v :: (a -> Literal) -> a -> Either String Expr
 v f x = Right (Lit (f x))
