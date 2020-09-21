@@ -1,6 +1,19 @@
-module Jikka.Language.Parsed.Type where
+module Jikka.Language.Parsed.Type
+  ( Expr (..),
+    FunType (..),
+    Pattern (..),
+    Program (..),
+    Type (..),
+    -- re-export
+    BuiltIn (..),
+    Literal (..),
+    Name (..),
+  )
+where
 
-type Name = String
+import Jikka.Language.Common.BuiltIn (BuiltIn (..))
+import Jikka.Language.Common.Literal (Literal (..))
+import Jikka.Language.Common.Name (Name (..))
 
 data Type
   = TyVar Name
@@ -9,40 +22,6 @@ data Type
   | TyInt
   | TyFun Type Type
   deriving (Eq, Ord, Read, Show)
-
-data Literal
-  = Unit
-  | Bool !Bool
-  | Int !Integer
-  deriving (Eq, Ord, Read, Show)
-
-data BuiltIn
-  = Not
-  | And
-  | Or
-  | If
-  | Succ
-  | Pred
-  | Neg
-  | Add
-  | Sub
-  | Mul
-  | Div
-  | Mod
-  | Pow
-  | Min
-  | Max
-  | Sum
-  | Product
-  | Minimum
-  | Maximum
-  | Equal
-  | NotEqual
-  | LessThan
-  | LessThanEqual
-  | GreaterThan
-  | GreaterThanEqual
-  deriving (Eq, Ord, Enum, Bounded, Read, Show)
 
 data FunType
   = NoRec

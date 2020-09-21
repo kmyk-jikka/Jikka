@@ -36,7 +36,7 @@ Jikka はそのような機械的な考察を処理する。
 ## Overview
 
 Jikka はその概観としてはただのトランスパイラである。
-ML 風言語や Haskell 風言語や C++ 風言語で書かれたソースコードを受けとり、これを高級内部言語として解釈し、これを低級内部言語に変換して最適化し、ML 風言語や Haskell 風言語や C++ 風言語として出力する。
+ML 風言語や Haskell 風言語や C++ 風言語で書かれたソースコードを受けとり、これを高級内部言語 `Sugared` として解釈し、これを低級内部言語 `Core` に変換して最適化し、ML 風言語や Haskell 風言語や C++ 風言語として出力する。
 最適化は低級内部言語のレベルで行われる。
 
 TODO: もうすこし書く
@@ -45,6 +45,84 @@ TODO: もうすこし書く
 ## Detailed Design
 
 TODO: 書く
+
+### ML-like language
+
+
+### Sugared language
+
+Sugared 言語は、内部で用いられる高級言語である。
+ML を参考にしている。
+
+```
+<program>
+    ::= "let" "given" <ident> ":" <type> "in" <program>
+      | <expr>
+
+<expr>
+    ::= <item>
+      | <expr> <expr>
+      | <expr> <binop> <expr>
+      | "let" "rec" <ident> [":" <type>] "=" <expr> "in" <expr>
+      | "let" <ident> [":" <type>] "=" <expr> "in" <expr>
+      | "if" <expr> "then" <expr> "else" <expr>
+      | "match" <expr> "with" <match-branches> "end"
+      | "function" <match-branches> "end"
+      | "fun" <args> "->" <expr>
+
+<match-branches>
+    ::= "|" <pattern> "->" <expr>
+
+<item>
+    ::= <ident>
+      | <literal>
+      | "(" <expr> ")"
+
+<type>
+    ::= <ident>
+      | <type> "->" <type>
+      | "(" <type> ")"
+```
+
+
+### Core language
+
+Core 言語は、内部で用いられる低級言語である。
+GHC Core を参考にしている。
+
+```
+<program>
+    ::= "let" <bind> "in" <program>
+      | <expr>
+
+<bind>
+    ::= "given" <ident> ":" <type>
+      | "rec" <ident> ":" <type> "=" <expr>
+      | <ident> ":" <type> "=" <expr>
+
+<expr>
+    ::= <ident>
+      | <literal>
+      | <expr> <expr>
+      | "\\" <var> ":" <type> "->" <expr>
+      | "let" <ident> ":" <type> "=" <expr> "in" <expr>
+      | "case" <expr> "of" "{" <match-branches> "}"
+
+<match-branch>
+    ::= <pattern> "->" <expr>
+
+<item>
+    ::= <ident>
+      | <literal>
+      | "(" <expr> ")"
+
+<type>
+    ::= <ident>
+      | <type> <type>
+      | <type> "->" <type>
+      | "forall" <ident> "." <type>
+      | "(" <type> ")"
+```
 
 
 ## Security Considerations
