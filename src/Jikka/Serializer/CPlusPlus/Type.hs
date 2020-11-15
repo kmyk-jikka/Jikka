@@ -25,6 +25,7 @@ data Sentence
   | If Expr Sentence Sentence
   | Rep Name RepType Sentence
   | Block [Sentence]
+  | Return Expr
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -54,4 +55,19 @@ data Expr
   | App Expr [Expr]
   deriving (Eq, Ord, Show, Read)
 
+data ToplevleDecl
+  = FunDecl Name [(Name, Type)] [Sentence]
+  | ConstDecl Name Literal
+  deriving (Eq, Ord, Show, Read)
+
+data IncludeType
+  = IncludeSystem
+  | IncludeQuote
+  deriving (Eq, Ord, Show, Read)
+
 data Program
+  = Program
+      { includes :: [(IncludeType, Name)],
+        decls :: [ToplevleDecl]
+      }
+  deriving (Eq, Ord, Show, Read)
