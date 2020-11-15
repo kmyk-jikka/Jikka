@@ -37,7 +37,7 @@ defaultOptions =
   Options
     { verbose = False,
       from = FromML.run,
-      to = ToPretty.run
+      to = ToCPlusPlus.run
     }
 
 header :: String -> String
@@ -47,8 +47,8 @@ options :: [OptDescr Flag]
 options =
   [ Option ['h', '?'] ["help"] (NoArg Help) "",
     Option ['v'] ["verbose"] (NoArg Version) "",
-    Option ['f'] ["from"] (ReqArg From "FORMAT") "",
-    Option ['t'] ["to"] (ReqArg To "FORMAT") "",
+    Option ['f'] ["from"] (ReqArg From "FORMAT") "choices: \"ml\" (default), \"read\"",
+    Option ['t'] ["to"] (ReqArg To "FORMAT") "choices: \"cplusplus\", \"pretty\", \"show\", \"eval\"",
     Option [] ["version"] (NoArg Version) ""
   ]
 
