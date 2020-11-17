@@ -4,13 +4,10 @@ import Control.Monad (forM_)
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
-import Jikka.Deserializer.ML as FromML
+import Jikka.Converter.Optimizer as Opt
+import Jikka.Deserializer.Python as FromPython
 import Jikka.Deserializer.Read as FromRead
-import Jikka.Language.Parsed.Type (Program)
-import Jikka.Optimizer.Main as Opt
-import Jikka.Serializer.CPlusPlus as ToCPlusPlus
-import Jikka.Serializer.Eval as ToEval
-import Jikka.Serializer.Pretty as ToPretty
+import Jikka.Language.Python.Type (Program)
 import Jikka.Serializer.Show as ToShow
 import Paths_Jikka (version)
 import System.Console.GetOpt
@@ -36,8 +33,8 @@ defaultOptions :: Options
 defaultOptions =
   Options
     { verbose = False,
-      from = FromML.run,
-      to = ToCPlusPlus.run
+      from = FromPython.run,
+      to = ToShow.run
     }
 
 header :: String -> String
@@ -47,21 +44,18 @@ options :: [OptDescr Flag]
 options =
   [ Option ['h', '?'] ["help"] (NoArg Help) "",
     Option ['v'] ["verbose"] (NoArg Version) "",
-    Option ['f'] ["from"] (ReqArg From "FORMAT") "choices: \"ml\" (default), \"read\"",
-    Option ['t'] ["to"] (ReqArg To "FORMAT") "choices: \"cplusplus\", \"pretty\", \"show\", \"eval\"",
+    Option ['f'] ["from"] (ReqArg From "FORMAT") "choices: \"python\" (default), \"read\"",
+    Option ['t'] ["to"] (ReqArg To "FORMAT") "choices: \"show\" (default)",
     Option [] ["version"] (NoArg Version) ""
   ]
 
 getDeserializer :: String -> Maybe (FilePath -> Text -> Either String Program)
-getDeserializer "ml" = Just FromML.run
+getDeserializer "python" = Just FromPython.run
 getDeserializer "read" = Just FromRead.run
 getDeserializer _ = Nothing
 
 getSerializer :: String -> Maybe (Program -> Either String Text)
-getSerializer "pretty" = Just ToPretty.run
 getSerializer "show" = Just ToShow.run
-getSerializer "eval" = Just ToEval.run
-getSerializer "cplusplus" = Just ToCPlusPlus.run
 getSerializer _ = Nothing
 
 main :: String -> [String] -> IO ExitCode

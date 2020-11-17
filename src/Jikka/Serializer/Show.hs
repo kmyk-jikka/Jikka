@@ -1,7 +1,7 @@
 module Jikka.Serializer.Show where
 
 import Data.Text (Text, pack)
-import qualified Jikka.Language.Parsed.Type as J
+import Jikka.Language.Python.Type (Program (..))
 
-run :: J.Program -> Either String Text
+run :: Program -> Either String Text
 run e = Right . pack $ show e
