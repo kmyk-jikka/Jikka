@@ -1,4 +1,4 @@
-module Jikka.Language.Python.Type where
+module Jikka.Language.CPlusPlus.Type where
 
 type Name = String
 
@@ -7,24 +7,22 @@ newtype VarName = VarName {unVarName :: Name} deriving (Eq, Ord, Show, Read)
 newtype FunName = FunName {unFunName :: Name} deriving (Eq, Ord, Show, Read)
 
 data Type
-  = TyInt
-  | TyNat
-  | TyInterval Integer Integer
+  = TyInt32
+  | TyInt64
   | TyBool
-  | TyList Type
-  | TyIterator Type
+  | TyVector Type
   | TyArray Type Integer
   deriving (Eq, Ord, Show, Read)
 
 data Literal
-  = LitInt Integer
+  = LitInt32 Integer
+  | LitInt64 Integer
   | LitBool Bool
   deriving (Eq, Ord, Show, Read)
 
 data Expr
   = Lit Literal
-  | ListComp Expr (Maybe VarName) Expr (Maybe Expr)
-  | ListExt [Expr]
+  | VectorExt [Expr]
   | Var VarName
   | Sub Expr Expr
   | Call FunName [Expr]
@@ -42,13 +40,12 @@ data Sentence
   deriving (Eq, Ord, Show, Read)
 
 data ToplevelDecl
-  = ConstDef VarName Type Expr
-  | FunDef FunName [Type] Type [Sentence]
+  = ConstDecl VarName Type Expr
+  | FunDecl Type FunName [Type] [Sentence]
   deriving (Eq, Ord, Show, Read)
 
-data Program
+newtype Program
   = Program
-      { isCompatImported :: Bool,
-        decls :: [ToplevelDecl]
+      { decls :: [ToplevelDecl]
       }
   deriving (Eq, Ord, Show, Read)
