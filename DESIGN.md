@@ -6,7 +6,7 @@
 ## Objective
 
 Jikka は、競技プログラミングの問題を解く行為そのものを自動化するツールである。
-特にこれを「最適化コンパイラ」あるいは「自動定理証明」の形に落とし込んで実現する。
+特にこれを「最適化トランスパイラ」の形に落とし込んで実現する。
 
 ## Goals
 
@@ -36,110 +36,65 @@ Jikka はそのような機械的な考察を処理する。
 ## Overview
 
 Jikka はその概観としてはただのトランスパイラである。
-ML 風言語や Haskell 風言語や C++ 風言語で書かれたソースコードを受けとり、これを高級内部言語 `Sugared` として解釈し、これを低級内部言語 `Core` に変換して最適化し、ML 風言語や Haskell 風言語や C++ 風言語として出力する。
-最適化は低級内部言語のレベルで行われる。
-
-TODO: もうすこし書く
+Python のとても制限されたサブセットとして書かれたソースコードを受けとり、内部で大域的な最適化を行い、最終的に C++ 言語として出力する。
 
 
 ## Detailed Design
 
+### なぜトランスパイラであるか
+
 TODO: 書く
 
-### ML-like language
+### なぜ出力言語は C++ であるか
 
+理由は 2 点ある。
 
-### Sugared language
+1.  利用しやすい: 競プロという用途において柔軟な利用が可能になるから
+2.  開発しやすい: 局所的な最適化をまったく回避できるから
 
-Sugared 言語は、内部で用いられる高級言語である。
-ML を参考にしている。
+他の有力な選択肢は次のようになるだろう。
 
-```
-<program>
-    ::= "let" "given" <ident> ":" <type> "in" <program>
-      | <expr>
+-   実行ファイルを出力する
+-   何も出力しない (インタプリタとしてのみ振る舞う)
+-   何も出力しない (ライブラリとして振る舞う。例: [Numba](https://numba.pydata.org/))
+-   Python を出力する
+-   Rust を出力する
 
-<expr>
-    ::= <item>
-      | <expr> <expr>
-      | <expr> <binop> <expr>
-      | "let" "rec" <ident> [":" <type>] "=" <expr> "in" <expr>
-      | "let" <ident> [":" <type>] "=" <expr> "in" <expr>
-      | "if" <expr> "then" <expr> "else" <expr>
-      | "match" <expr> "with" <match-branches> "end"
-      | "function" <match-branches> "end"
-      | "fun" <args> "->" <expr>
+「実行ファイル」「インタプリタ」「ライブラリ」の方針はどれも競技プログラミングでの実用が難しい。
+ほとんどのオンラインジャッジは未だ「単一のソースコードを提出する」という方式が主流であるためである。
+ソースコードをそのまま出力するものでないと、出力結果の提出ができない。
 
-<match-branches>
-    ::= "|" <pattern> "->" <expr>
+Python を出力する方針は利用が難しい。
+Python は C++ と比べて遅いためである。
+十分に性質を理解した上でなら大きな問題にはならない (証拠: Python のみで AtCoder 橙の人が存在する) とはいえ、たいていのユーザにとっては不利な言語であろう。
 
-<item>
-    ::= <ident>
-      | <literal>
-      | "(" <expr> ")"
+Rust を出力する方針は開発も利用も難しい。
+Rust の厳密な型検査に合致するコードの出力は面倒であり、また競プロでの実用レベルで Rust を習得しているユーザは少ない。
 
-<type>
-    ::= <ident>
-      | <type> "->" <type>
-      | "(" <type> ")"
-```
+### なぜ入力言語は Python であるか
 
+理由は 2 点ある。
 
-### Core language
+1.  開発しやすい: 出力とのギャップを減らし実装を容易にするため
+2.  利用しやすい: 広く普及しているほどよく高級な言語であるため
 
-Core 言語は、内部で用いられる低級言語である。
-GHC Core を参考にしている。
+他の有力な選択肢は次のようになるだろう。
 
-```
-<program>
-    ::= "let" <bind> "in" <program>
-      | <expr>
+-   C++ を入力する
+-   Lisp を入力する
+-   ML を入力する
+-   Haskell を入力する
 
-<bind>
-    ::= "given" <ident> ":" <type>
-      | "rec" <ident> ":" <type> "=" <expr>
-      | <ident> ":" <type> "=" <expr>
-
-<expr>
-    ::= <ident>
-      | <literal>
-      | <expr> <expr>
-      | "\\" <var> ":" <type> "->" <expr>
-      | "let" <ident> ":" <type> "=" <expr> "in" <expr>
-      | "case" <expr> "of" "{" <match-branches> "}"
-
-<match-branch>
-    ::= <pattern> "->" <expr>
-
-<item>
-    ::= <ident>
-      | <literal>
-      | "(" <expr> ")"
-
-<type>
-    ::= <ident>
-      | <type> <type>
-      | <type> "->" <type>
-      | "forall" <ident> "." <type>
-      | "(" <type> ")"
-```
-
-
-## Security Considerations
-
-特になし。
-
-
-## Privacy Considerations
-
-特になし。
+TODO: 書く
 
 
 ## Metrics Considerations
 
-AtCoder Beginner Contest などの問題をどの程度の割合で解けるか数えれば指標とできる。
+適切な仮定の下で「AtCoder 上でのレート」という形で性能評価が可能である。
+また「AtCoder Beginner Contest などの問題のうち何割が解ける」などの形での評価も可能だろう。
 
 
 ## Testing Plan
 
-TODO: 書く
+効率良く実行できる安定した end-to-end テストが簡単に書けるため、これを利用するのがよいだろう。
+つまり、俗に「verify する」と呼ばれる、実際の競技プログラミングの問題に対して利用して AC を確認するという形式のテストに類似したものが可能である。
