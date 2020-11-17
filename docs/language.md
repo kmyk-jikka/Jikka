@@ -12,7 +12,7 @@ This is the almost same to Python.
 ## Syntax
 
 ```ebnf
-<program> ::= <toplevel-decl>+
+<program> ::= <toplevel-decl> +
 
 # types
 <type> ::= "int"
@@ -28,7 +28,7 @@ This is the almost same to Python.
 <none-literal> ::= "None"
 <list-literal> ::= "[" <actual-args> "]"
                  | "[" <comprehension> "]"
-<comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> ["if" <expr>]
+<comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> [ "if" <expr> ]
 <var-name-or-underscore> ::= <var-name>
                            | "_"
 <literal> ::= <int-literal>
@@ -52,7 +52,7 @@ This is the almost same to Python.
 <unary-op> ::= ...
 <binary-op> ::= ...
 <actual-args> ::= EMPTY
-                | <expr> ("," <expr>)*
+                | <expr> ("," <expr>) *
 
 # simple statements
 <simple-stmt> ::= <var-name> ":" <type> "=" <expr>
@@ -64,7 +64,7 @@ This is the almost same to Python.
 <compound-stmt> ::= <if-stmt>
                   | <for-stmt>
 <if-stmt> ::= "if" <expr> ":" <suite>
-              ("elif" <expr> ":" <suite>)*
+              ("elif" <expr> ":" <suite>) *
               "else" <expr> ":" <suite>
 <for-stmt> ::= "for" <expr> "in" <expr> ":" <suite>
 
@@ -76,7 +76,7 @@ This is the almost same to Python.
 # toplevel declarations
 <compat-import> ::= "from" "jikka" "." "compat" "import" "*"
                   | "from" "math" "import" "*"
-<function-decl> ::= "def" <fun-name> "(" <formal-args> ")" ":" <suite>
+<function-decl> ::= "def" <fun-name> "(" <formal-args> ")" "->" <type> ":" <suite>
 <toplevel-decl> ::= <compat-import> NEWLINE
                   | <assignment-stmt> NEWLINE
                   | <function-decl>
@@ -184,6 +184,10 @@ binary ops on `int`:
     -   comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html)
 -   `>?` max
     -   comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html)
+
+binary ops on `bool`:
+
+-   `implies` implication
 
 
 ### builtin small functions
