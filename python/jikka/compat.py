@@ -1,6 +1,7 @@
 import functools
+import math
 import operator
-from math import gcd
+import sys
 from typing import *
 
 nat = int
@@ -76,10 +77,21 @@ def multichoose(n: nat, r: nat) -> nat:
         return 1
     return choose(n + r - 1, r)
 
-def lcm(x: int, y: int) -> int:
-    return x * y // gcd(x, y)
+gcd = math.gcd
 
-def modinv(x: int, mod: nat) -> nat:
-    if mod <= 0:
-        raise ValueError('mod must be positive')
-    return pow(x, -1, mod)
+if sys.version_info < (3, 9):
+    def lcm(x: int, y: int) -> int:
+        return x * y // gcd(x, y)
+else:
+    lcm = math.lcm
+
+if sys.version_info < (3, 8):
+    def inv(x: int, mod: nat) -> nat:
+        if mod <= 0:
+            raise ValueError('mod must be positive')
+        raise NotImplementedError('TODO: implement this')
+else:
+    def inv(x: int, mod: nat) -> nat:
+        if mod <= 0:
+            raise ValueError('mod must be positive')
+        return pow(x, -1, mod)

@@ -1,5 +1,9 @@
 # Language Specification
 
+## Overview
+
+a very restricted subset of Python + additional builtin functions
+
 ## Lexical Analysis
 
 This is the almost same to Python.
@@ -7,7 +11,7 @@ This is the almost same to Python.
 
 ## Syntax
 
-```bnf
+```ebnf
 <program> ::= <toplevel-decl>+
 
 # types
@@ -22,24 +26,28 @@ This is the almost same to Python.
 <int-literal> ::= ...
 <bool-literal> ::= "True" | "False"
 <none-literal> ::= "None"
-<list-literal> ::= "[" "]"
-                 | "[" <expr> "for" <var> "in" <expr> "]"
-                 | "[" <expr> "for" <var> "in" <expr> "if" <expr> "]"
+<list-literal> ::= "[" <actual-args> "]"
+                 | "[" <comprehension> "]"
+<comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> ["if" <expr>]
+<var-name-or-underscore> ::= <var-name>
+                           | "_"
 <literal> ::= <int-literal>
             | <bool-literal>
             | <none-literal>
             | <list-literal>
 
 # exprs
-<var> ::= ...
-<atom> ::= <var>
+<var-name> ::= ...
+<fun-name> ::= ...
+<atom> ::= <var-name>
          | <literal>
          | "(" <expr> ")"
 <expr> ::= <atom>
          | <unary-op> <atom>
          | <atom> <binary-op> <atom>
          | <atom> "[" <expr> "]"
-         | <var> "(" <actual-args> ")"
+         | <fun-name> "(" <actual-args> ")"
+         | <fun-name> "(" <comprehension> ")"
          | <expr> "if" <expr> "else" <expr>
 <unary-op> ::= ...
 <binary-op> ::= ...
@@ -47,13 +55,14 @@ This is the almost same to Python.
                 | <expr> ("," <expr>)*
 
 # simple statements
-<simple-stmt> ::= <var> ":" <type> "=" <expr>
-                | <var> "=" <expr>
+<simple-stmt> ::= <var-name> ":" <type> "=" <expr>
+                | <var-name> "=" <expr>
                 | "assert" <expr>
                 | "return" <expr>
 
 # compound statements
 <compound-stmt> ::= <if-stmt>
+                  | <for-stmt>
 <if-stmt> ::= "if" <expr> ":" <suite>
               ("elif" <expr> ":" <suite>)*
               "else" <expr> ":" <suite>
@@ -67,7 +76,7 @@ This is the almost same to Python.
 # toplevel declarations
 <compat-import> ::= "from" "jikka" "." "compat" "import" "*"
                   | "from" "math" "import" "*"
-<function-decl> ::= "def" <var> "(" <formal-args> ")" ":" <suite>
+<function-decl> ::= "def" <fun-name> "(" <formal-args> ")" ":" <suite>
 <toplevel-decl> ::= <compat-import> NEWLINE
                   | <assignment-stmt> NEWLINE
                   | <function-decl>
@@ -104,6 +113,11 @@ It's not a value.
 
 The behavior is undefined when a variable without value (i.e. in `None`) is used as an argument of a function call or an operation. However, if possible, the compiler should detect it and stop as a compiler error.
 
+### iterators
+
+For any type `T`, `Iterator[T]` is the special type represents the set of iterator objects of values in `T`. This is not immutable, so used only as a types of builtin functions. You cannot make a variable which has the iterator type.
+
+TODO: should we allow iterators which have the infinite length?
 
 ## Standard Library
 
@@ -213,18 +227,23 @@ Not from the default Python:
 
 From the default Python:
 
--   `sum(xs: List[int]) -> int`
+-   `sum(xs: Iterator[int]) -> int`
 -   `min(xs: List[int]) -> int`
     -   `xs` must be non empty
 -   `max(xs: List[int]) -> int`
     -   `xs` must be non empty
--   `all(xs: List[bool]) -> bool`
--   `any(xs: List[bool]) -> bool`
--   `sorted(xs: List[int]) -> List[int]`
+-   `all(xs: Iterator[bool]) -> bool`
+-   `any(xs: Iterator[bool]) -> bool`
+-   `sorted(xs: Iterator[int]) -> List[int]`
+-   `list(xs: Iterator[int]) -> List[int]`
+-   `reversed(xs: Iterator[int]) -> Iterator[int]`
+-   `range(stop: int) -> Iterator[int]`
+-   `range(start: int, stop: int) -> Iterator[int]`
+-   `range(start: int, stop: int, step: int) -> Iterator[int]`
 
 Not from the default Python:
 
--   `product(xs: List[int]) -> int`
+-   `product(xs: Iterator[int]) -> int`
 -   `argmin(xs: List[int]) -> nat`
     -   `xs` must be non empty
 -   `argmax(xs: List[int]) -> nat`
