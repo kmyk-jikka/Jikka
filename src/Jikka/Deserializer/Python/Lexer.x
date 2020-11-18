@@ -60,9 +60,9 @@ tokens :-
     $alpha [$alnum _] *  { tok Ident }
 
     -- Python operators
-    "+"             { tok' Plus }
-    "-"             { tok' Minus }
-    "*"             { tok' Star }
+    "+"             { tok Op }
+    "-"             { tok Op }
+    "*"             { tok Op }
     "//"            { tok Op }
     "%"             { tok Op }
     "**"            { tok Op }
@@ -157,11 +157,7 @@ data Token
     | CloseParen
     -- identifier
     | Ident String
-    -- operators
     | Op String
-    | Plus
-    | Minus
-    | Star
     -- indent
     | Newline
     | Indent

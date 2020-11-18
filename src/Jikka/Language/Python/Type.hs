@@ -9,11 +9,11 @@ newtype FunName = FunName {unFunName :: Name} deriving (Eq, Ord, Show, Read)
 data Type
   = TyInt
   | TyNat
-  | TyInterval Integer Integer
+  | TyInterval Expr Expr
   | TyBool
   | TyList Type
   | TyIterator Type
-  | TyArray Type Integer
+  | TyArray Type Expr
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -23,10 +23,10 @@ data Literal
 
 data Expr
   = Lit Literal
-  | ListComp Expr (Maybe VarName) Expr (Maybe Expr)
-  | ListExt [Expr]
   | Var VarName
   | Sub Expr Expr
+  | ListComp Expr (Maybe VarName) Expr (Maybe Expr)
+  | ListExt [Expr]
   | Call FunName [Expr]
   | Cond Expr Expr Expr
   deriving (Eq, Ord, Show, Read)
@@ -34,7 +34,7 @@ data Expr
 data Sentence
   = If Expr [Sentence] [Sentence]
   | For VarName Expr [Sentence]
-  | Declare VarName Type
+  | Declare VarName Type [Expr]
   | Assign VarName [Expr] Expr
   | Define VarName Type Expr
   | Assert Expr
@@ -43,12 +43,12 @@ data Sentence
 
 data ToplevelDecl
   = ConstDef VarName Type Expr
-  | FunDef FunName [Type] Type [Sentence]
+  | FunDef FunName [(VarName, Type)] Type [Sentence]
+  | FromImport [String]
   deriving (Eq, Ord, Show, Read)
 
-data Program
+newtype Program
   = Program
-      { isCompatImported :: Bool,
-        decls :: [ToplevelDecl]
+      { decls :: [ToplevelDecl]
       }
   deriving (Eq, Ord, Show, Read)

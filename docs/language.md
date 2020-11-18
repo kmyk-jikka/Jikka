@@ -1,15 +1,20 @@
 # Language Specification
 
+-   TODO: Fix the syntax of types. `def solve(n: int, a: Array[int, n]) -> int:` is invalid in Python. We should use `Array[int, "n"]` instead.
+-   TODO: Fix the syntax of exprs around operators.
+
 ## Overview
 
 a very restricted subset of Python + additional builtin functions
 
-## Lexical Analysis
+
+## Syntax
+
+### Lexical Analysis
 
 This is the almost same to Python.
 
-
-## Syntax
+### Grammer
 
 ```ebnf
 <program> ::= <toplevel-decl> +
@@ -25,20 +30,29 @@ This is the almost same to Python.
 # literals
 <int-literal> ::= ...
 <bool-literal> ::= "True" | "False"
-<none-literal> ::= "None"
-<list-literal> ::= "[" <actual-args> "]"
-                 | "[" <comprehension> "]"
-<comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> [ "if" <expr> ]
-<var-name-or-underscore> ::= <var-name>
-                           | "_"
 <literal> ::= <int-literal>
             | <bool-literal>
-            | <none-literal>
-            | <list-literal>
 
-# exprs
+# names
 <var-name> ::= ...
 <fun-name> ::= ...
+<var-name-or-underscore> ::= <var-name>
+                           | "_"
+
+# args
+<actual-args> ::= EMPTY
+                | <expr> ("," <expr>) *
+<formal-args> ::= EMPTY
+                | <var-name> ":" <type> ("," <var-name> ":" <type>) *
+
+# lists
+<comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> [ "if" <expr> ]
+<list-shape> ::= '[' "None" "for" "_" "in" "range" "(" <expr> ")" "]"
+               | '[' <list-shape> "for" "_" "in" "range" "(" <expr> ")" "]"
+<list-subscript> ::= '[' Expr ']'
+                   | '[' Expr ']' <list-subscript>
+
+# exprs
 <atom> ::= <var-name>
          | <literal>
          | "(" <expr> ")"
@@ -46,17 +60,18 @@ This is the almost same to Python.
          | <unary-op> <atom>
          | <atom> <binary-op> <atom>
          | <atom> "[" <expr> "]"
+         | "[" <actual-args> "]"
+         | "[" <comprehension> "]"
          | <fun-name> "(" <actual-args> ")"
          | <fun-name> "(" <comprehension> ")"
          | <expr> "if" <expr> "else" <expr>
 <unary-op> ::= ...
 <binary-op> ::= ...
-<actual-args> ::= EMPTY
-                | <expr> ("," <expr>) *
 
 # simple statements
 <simple-stmt> ::= <var-name> ":" <type> "=" <expr>
-                | <var-name> "=" <expr>
+                | <var-name> ":" <type> "=" <list-shape>
+                | <var-name> <list-subscript> "=" <expr>
                 | "assert" <expr>
                 | "return" <expr>
 
@@ -66,21 +81,22 @@ This is the almost same to Python.
 <if-stmt> ::= "if" <expr> ":" <suite>
               ("elif" <expr> ":" <suite>) *
               "else" <expr> ":" <suite>
-<for-stmt> ::= "for" <expr> "in" <expr> ":" <suite>
+<for-stmt> ::= "for" <var-name> "in" <expr> ":" <suite>
 
 # statements
-<suite> ::= NEWLINE INDENT <statement>+ DEDENT
+<suite> ::= NEWLINE INDENT NEWLINE + (<statement> NEWLINE +) + DEDENT
 <statement> ::= <simple-statement>
               | <compound-statement>
 
 # toplevel declarations
-<compat-import> ::= "from" "jikka" "." "compat" "import" "*"
-                  | "from" "math" "import" "*"
+<from-import> ::= "from" "jikka" "." "compat" "import" "*"
+                | "from" "math" "import" "*"
 <function-decl> ::= "def" <fun-name> "(" <formal-args> ")" "->" <type> ":" <suite>
-<toplevel-decl> ::= <compat-import> NEWLINE
+<toplevel-decl> ::= <from-import> NEWLINE
                   | <assignment-stmt> NEWLINE
                   | <function-decl>
 ```
+
 
 ## Semantics
 
@@ -89,19 +105,26 @@ This is the almost same to Python.
 This language is compatible with Python.
 This means that, if the execution successfully stops on both interpreter of this language and Python, the result is the same.
 
-### types
+### intrinsic types
+
+Each terms uniquely belongs its Church-style type.
 
 -   `int` type represents the set of integers.
+-   `bool` type represents the set of truth values. It has two values `True` and `False`.
+-   For any type `T`, `List[T]` type represents the set of finite sequences of values in `T`. They are immutable.
+
+### annotational types
+
+Some terms have some Curry-style types.
+
 -   `nat` type represents the set of natural numbers.
     -   `nat` is not a standard type of Python.
     -   `nat` is a subclass of `int`.
     -   `0` is a natural number.
--   `bool` type represents the set of truth values. It has two values `True` and `False`.
 -   For integers `l` and `r` which `l <= r` holds, `Interval[l, r]` type represents the closed interval `[l, r]`.
     -   `Interval[l, r]` is a subclass of `int`.
     -   `Interval[l, r]` is a subclass of `nat` when `l >= 0`.
     -   `r` is included.
--   For any type `T`, `List[T]` type represents the set of finite sequences of values in `T`. They are immutable.
 -   For any type `T` and an integer `n`, `Array[T, n]` type represents the set of sequences of values in `T` with the length `n`. They are immutable.
     -   `Array[T, n]` is not a standard type of Python.
     -   `Array[T, n]` is a subclass of `List[T]`.
