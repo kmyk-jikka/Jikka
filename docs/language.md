@@ -113,21 +113,32 @@ Each terms uniquely belongs its Church-style type.
 -   `bool` type represents the set of truth values. It has two values `True` and `False`.
 -   For any type `T`, `List[T]` type represents the set of finite sequences of values in `T`. They are immutable.
 
+Also, some additional types exist.
+
+-   For any type `T`, `Iterator[T]` type represents the class of iterator objects.
+    -   This type is used internally only for the compatibility with Python.
+    -   You cannot bind values of `Iterator[T]` to any variables.
+    -   For any types `T` and `S`, if `S` is a subtype of `T`, then `List[S]` is treated as a subtype of `Iterator[T]` (covariant).
+-   For any types `T1`, `T2`, ..., `Tn`, and `R`, `Callable[[T1, T2, ..., Tn], R]` is the set of functions from `T1`, `T2`, ..., `Tn` to `R`.
+    -   This is used only on documents.
+
+They all come from the standard types of Python.
+
 ### annotational types
 
 Some terms have some Curry-style types.
 
 -   `nat` type represents the set of natural numbers.
     -   `nat` is not a standard type of Python.
-    -   `nat` is a subclass of `int`.
+    -   `nat` is a subtype of `int`.
     -   `0` is a natural number.
 -   For integers `l` and `r` which `l <= r` holds, `Interval[l, r]` type represents the closed interval `[l, r]`.
-    -   `Interval[l, r]` is a subclass of `int`.
-    -   `Interval[l, r]` is a subclass of `nat` when `l >= 0`.
+    -   `Interval[l, r]` is a subtype of `int`.
+    -   `Interval[l, r]` is a subtype of `nat` when `l >= 0`.
     -   `r` is included.
 -   For any type `T` and an integer `n`, `Array[T, n]` type represents the set of sequences of values in `T` with the length `n`. They are immutable.
     -   `Array[T, n]` is not a standard type of Python.
-    -   `Array[T, n]` is a subclass of `List[T]`.
+    -   `Array[T, n]` is a subtype of `List[T]`.
 
 ### single assignment
 
@@ -144,15 +155,11 @@ TODO: should we allow iterators which have the infinite length?
 
 ## Standard Library
 
-### builtin operators
+### builtin operators from Python
 
-unary op on `int`:
+arithmetical functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
 
 -   `-` negation
--   `~` bitwise-not
-
-binary ops on `int`:
-
 -   `+` addition
 -   `-` subtraction
 -   `*` multiplication
@@ -160,13 +167,23 @@ binary ops on `int`:
     -   It means `(x // y) * y + (x % y) == x` always holds.
 -   `%` modulo (always positive)
 -   `**` power
+
+logical functions (`Callable[[bool], bool]`, `Callable[[bool, bool], bool]`):
+
+-   `not` not
+-   `and` and
+-   `or` or
+
+bitwise functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
+
+-   `~` bitwise-not
 -   `&` bitwise-and
 -   `|` bitwise-or
 -   `^` bitwise-xor
 -   `<<` left shift
 -   `>>` right shift
 
-binary relation on `int`:
+arithmetical relations (`Callable[[int, int], bool]`):
 
 -   `<` less-than
     -   Please note that combinational notations like `a < b < c` are not supported.
@@ -174,20 +191,11 @@ binary relation on `int`:
 -   `<=` less-or-equal
 -   `>=` greater-or-equal
 
-unary op on `bool`:
-
--   `not` not
-
-binary ops on `bool`:
-
--   `and` and
--   `or` or
-
-ternary ops on arbitrary types (`forall a. Bool -> a -> a -> a`):
+the combinational function (polymorphic, `Callable[[T, bool, T], T]`):
 
 -   `... if ... else ...`
 
-binary relation on arbitrary types (`forall a. a -> a -> Bool`):
+equality relations (polymorphic, `Callable[[T, T], bool]` only for `int` and `bool`).
 
 -   `==` equal
     -   Please note that combinational notations like `a == b == c` are not supported.
@@ -198,7 +206,7 @@ binary relation on arbitrary types (`forall a. a -> a -> Bool`):
 
 WARNING: these ops breaks compatibility with Python. `from jikka.compat import *` disables them.
 
-binary ops on `int`:
+arithmetical functions (`Callable[[int, int], int]`):
 
 -   `/^` division (ceil)
     -   same to `(x + y - 1) // y`
@@ -208,7 +216,7 @@ binary ops on `int`:
 -   `>?` max
     -   comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html)
 
-binary ops on `bool`:
+logical functions (`Callable[[bool, bool], bool]`):
 
 -   `implies` implication
 
