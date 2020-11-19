@@ -3,12 +3,13 @@
 module Jikka.Deserializer.Python.Parser (run) where
 
 import Data.List (intercalate)
+import qualified Data.Map.Strict as M
 import qualified Jikka.Deserializer.Python.Lexer as L (Token(..))
-import Jikka.Deserializer.Pos
 import qualified Jikka.Deserializer.ShuntingYard as ShuntingYard
 import Jikka.Deserializer.ShuntingYard (BinOpInfo(..), Fixity(..))
+import Jikka.Language.Common.Name
+import Jikka.Language.Common.Pos
 import Jikka.Language.Python.Parsed.Type
-import Jikka.Language.Name
 }
 
 %name run
@@ -40,12 +41,12 @@ import Jikka.Language.Name
     '='             { WithPos _ L.Equal }
     '_'             { WithPos _ L.Underscore }
 
-    '{'             { WithPos _ L.OpenBrace }
     '['             { WithPos _ L.OpenBracket }
     '('             { WithPos _ L.OpenParen }
-    '}'             { WithPos _ L.CloseBrace }
     ']'             { WithPos _ L.CloseBracket }
     ')'             { WithPos _ L.CloseParen }
+    '\''            { WithPos _ L.SingleQuote }
+    '"'             { WithPos _ L.DoubleQuote }
 
     int             { WithPos _ (L.Ident "int") }
     nat             { WithPos _ (L.Ident "nat") }
@@ -54,11 +55,17 @@ import Jikka.Language.Name
     list            { WithPos _ (L.Ident "List") }
     array           { WithPos _ (L.Ident "Array") }
     range           { WithPos _ (L.Ident "range") }
+    not             { WithPos _ (L.Ident "not") }
+    and             { WithPos _ (L.Ident "and") }
+    or              { WithPos _ (L.Ident "or") }
+    implies         { WithPos _ (L.Ident "implies") }
     ident           { WithPos _ (L.Ident _) }
 
     '+'             { WithPos _ (L.Op "+") }
     '-'             { WithPos _ (L.Op "-") }
+    '~'             { WithPos _ (L.Op "-") }
     '*'             { WithPos _ (L.Op "*") }
+    '**'            { WithPos _ (L.Op "**") }
     op              { WithPos _ (L.Op _) }
 
     newline         { WithPos _ L.Newline }
@@ -68,7 +75,7 @@ import Jikka.Language.Name
 %%
 
 Start :: { Program }
-    : list(newline) list(ToplevelDecl) list(newline)  { Program $2 }
+    : list(newline) list(ToplevelDecl)           { Program $2 }
 
 -- utilities
 opt(p) -- :: { Maybe a }
@@ -92,97 +99,177 @@ sep(p, q) -- :: { [a] }
     | sep1(p, q)                       { $1 }
 
 -- types
-Type :: { Type }
-    : int                              { TyInt }
-    | nat                              { TyNat }
-    | interval '[' Expr ',' Expr ']'   { TyInterval $3 $5 }
-    | bool                             { TyBool }
-    | list '[' Type ']'                { TyList $3 }
-    | array '[' Type ',' Expr ']'      { TyArray $3 $5 }
+Type :: { Type' }
+    : int                                        { withPos $1 TyInt }
+    | nat                                        { withPos $1 TyNat }
+    | interval '[' QuotedExpr ',' QuotedExpr ']' { withPos $1 $ TyInterval $3 $5 }
+    | bool                                       { withPos $1 TyBool }
+    | list '[' Type ']'                          { withPos $1 $ TyList $3 }
+    | array '[' Type ',' QuotedExpr ']'          { withPos $1 $ TyArray $3 $5 }
+QuotedExpr :: { Expr' }
+    : '"' Expr '"'                               { $2 }
+    | '\'' Expr '\''                             { $2 }
+OptColonType :: { Maybe Type' }
+    : {- empty -}                                { Nothing }
+    | ':' Type                                   { Just $2 }
+OptArrowType :: { Maybe Type' }
+    : {- empty -}                                { Nothing }
+    | '->' Type                                  { Just $2 }
 
 -- literals
-IntLiteral :: { Integer }
-    : integer                          { let (L.Int n) = value $1 in n }
-BoolLiteral :: { Bool }
-    : boolean                          { let (L.Bool p) = value $1 in p }
-Literal :: { Literal }
-    : IntLiteral                       { LitInt $1 }
-    | BoolLiteral                      { LitBool $1 }
+Literal :: { WithPos Literal }
+    : integer                          { let (L.Int n) = value $1 in withPos $1 $ LitInt n }
+    | boolean                          { let (L.Bool p) = value $1 in withPos $1 $ LitBool p }
 
 -- names
-Name :: { Name }
-    : ident                            { let (L.Ident x) = value $1 in x }
-VarName :: { VarName }
-    : Name                             { VarName $1 }
-FunName :: { FunName }
-    : Name                             { FunName $1 }
-VarNameOrUnderscore :: { Maybe VarName }
-    : VarName                          { Just $1 }
-    | '_'                              { Nothing }
+Name :: { WithPos Name }
+    : ident                            { let (L.Ident x) = value $1 in withPos $1 x }
+VarName :: { WithPos VarName }
+    : Name                             { VarName `fmap` $1 }
+FunName :: { WithPos FunName }
+    : Name                             { FunName `fmap` $1 }
+VarNameOrUnderscore :: { WithPos (Maybe VarName) }
+    : VarName                          { Just `fmap` $1 }
+    | '_'                              { withPos $1 $ Nothing }
 
 -- args
-ActualArgs :: { [Expr] }
-    : sep(Expr, ',')                   { $1 }
-FormalArg :: { (VarName, Type) }
-    : VarName ':' Type                 { ($1, $3) }
-FormalArgs :: { [(VarName, Type)] }
-    : sep(FormalArg, ',')             { $1 }
+ActualArgs :: { [Expr'] }
+    : sep(Expr, ',')                             { $1 }
+FormalArg :: { (VarName, Maybe Type') }
+    : VarName OptColonType                       { (value $1, $2) }
+FormalArgs :: { [(VarName, Maybe Type')] }
+    : sep(FormalArg, ',')                        { $1 }
 
 -- lists
-Comprehension :: { (Expr, Maybe VarName, Expr, Maybe Expr) }
-    : Expr for VarNameOrUnderscore in Expr         { ($1, $3, $5, Nothing) }
-    | Expr for VarNameOrUnderscore in Expr if Expr { ($1, $3, $5, Just $7) }
-ListShape :: { [Expr] }
-    : '[' none for '_' in range '(' Expr ')' ']'  { [$8] }
-    | '[' ListShape for '_' in range '(' Expr ')' ']'  { $8 : $2 }
-ListSub :: { [Expr] }
+Comprehension :: { (Expr', WithPos (Maybe VarName), Expr', Maybe Expr') }
+    : Expr for VarNameOrUnderscore in Expr                 { ($1, $3, $5, Nothing) }
+    | Expr for VarNameOrUnderscore in Expr if Expr         { ($1, $3, $5, Just $7) }
+ListShape :: { WithPos ListShape }
+    : none                                                 { withPos $1 NoneShape }
+    | '[' ListShape for '_' in range '(' Expr ')' ']'      { withPos $1 $ ListShape (value $2) $8 }
+ListSub1 :: { [Expr'] }
     : '[' Expr ']'                     { [$2] }
-    | '[' Expr ']' ListSub             { $2 : $4 }
+    | '[' Expr ']' ListSub1            { $2 : $4 }
+
+-- operators
+BinaryOp :: { WithPos FunName }
+    : op                               { toFunName' $1 }
+    | '+'                              { toFunName' $1 }
+    | '-'                              { toFunName' $1 }
+    | '*'                              { toFunName' $1 }
 
 -- exprs
-Atom :: { Expr }
-    : VarName                          { Var $1 }
-    | Literal                          { Lit $1 }
-    | '(' Expr ')'                     { $2 }
-Expr :: { Expr }
-    : Atom                             { $1 }
-    | Expr '[' Expr ']'                { Sub $1 $3 }
-    | '[' ActualArgs ']'               { ListExt $2 }
-    | '[' Comprehension ']'            { let (body, var, iter, pred) = $2 in ListComp body var iter pred }
-    | FunName '(' ActualArgs ')'       { Call $1 $3 }
-    | FunName '(' Comprehension ')'    { let (body, var, iter, pred) = $3 in Call $1 [ListComp body var iter pred] }
-    | Expr if Expr else Expr           { Cond $3 $1 $5 }
+-- The operator precedence of Python is listed at https://docs.python.org/3/reference/expressions.html#operator-precedence
+ExprAtom :: { Expr' }
+    : VarName                                    { Var `fmap` $1 }
+    | Literal                                    { Lit `fmap` $1 }
+    | '[' ActualArgs ']'                         { withPos $1 $ ListExt $2 }
+    | '[' Comprehension ']'                      { let (body, var, iter, pred) = $2 in withPos $1 $ ListComp body (value var) iter pred }
+    | VarName ListSub1                           { foldl (\a i -> withPos $1 $ Sub a i) (Var `fmap` $1) $2 }
+    | FunName '(' ActualArgs ')'                 { withPos $1 $ Call (value $1) $3 }
+    | FunName '(' Comprehension ')'              { let (body, var, iter, pred) = $3 in withPos $1 $ Call (value $1) [withPos $2 $ ListComp body (value var) iter pred] }
+    | '(' Expr ')'                               { $2 }
+ExprPow :: { Expr' }
+    : ExprAtom                                   { $1 }
+    | ExprAtom '**' ExprPow                      { withPos $1 $ Call (toFunName $2) [$1, $3] }
+ExprUnOp :: { Expr' }
+    : ExprPow                                    { $1 }
+    | '+' ExprUnOp                               { withPos $1 $ Call (toFunName $1) [$2] }
+    | '-' ExprUnOp                               { withPos $1 $ Call (toFunName $1) [$2] }
+    | '~' ExprUnOp                               { withPos $1 $ Call (toFunName $1) [$2] }
+ExprBinOpList :: { (Expr', [(WithPos FunName, Expr')]) }
+    : ExprUnOp                                   { ($1, []) }
+    | ExprBinOpList BinaryOp ExprUnOp            { let (x, ys) = $1 in (x, ys ++ [($2, $3)]) }
+ExprBinOp :: { Expr' }
+    : ExprBinOpList                              {% useShuntingYard $1 }
+ExprNot :: { Expr' }
+    : ExprBinOp                                  { $1 }
+    | not ExprNot                                { withPos $1 $ Call (toFunName $1) [$2] }
+ExprAnd :: { Expr' }
+    : ExprNot                                    { $1 }
+    | ExprNot and ExprAnd                        { withPos $1 $ Call (toFunName $2) [$1, $3] }
+ExprOr :: { Expr' }
+    : ExprAnd                                    { $1 }
+    | ExprAnd or ExprOr                          { withPos $1 $ Call (toFunName $2) [$1, $3] }
+ExprImplies :: { Expr' }
+    : ExprOr                                     { $1 }
+    | ExprOr implies ExprImplies                 { withPos $1 $ Call (toFunName $2) [$1, $3] }
+Expr :: { Expr' }
+    : ExprImplies                                { $1 }
+    | Expr if ExprImplies else ExprImplies       { withPos $1 $ Cond $3 $1 $5 }
 
 -- simple statements
-SimpleStatement :: { Sentence }
-    : VarName ':' Type '=' Expr        { Define $1 $3 $5 }
-    | VarName ':' Type '=' ListShape   { Declare $1 $3 $5 }
-    | VarName ListSub '=' Expr         { Assign $1 $2 $4 }
-    | assert Expr                      { Assert $2 }
-    | return Expr                      { Return $2 }
+SimpleStatement :: { Sentence' }
+    : VarName OptColonType '=' Expr              { withPos $1 $ Define (value $1) $2 $4 }
+    | VarName OptColonType '=' ListShape         { withPos $1 $ Declare (value $1) $2 (value $4) }
+    | VarName ListSub1 '=' Expr                  { withPos $1 $ Assign (value $1) $2 $4 }
+    | assert Expr                                { withPos $1 $ Assert $2 }
+    | return Expr                                { withPos $1 $ Return $2 }
 
 -- compound statements
-IfStatementTail :: { [Sentence] }
-    : else ':' Suite                   { $3 }
-    | elif Expr ':' Suite IfStatementTail  { [If $2 $4 $5] }
-CompoundStatement :: { Sentence }
-    : if Expr ':' Suite IfStatementTail  { If $2 $4 $5 }
-    | for VarName in Expr ':' Suite    { For $2 $4 $6 }
+IfStatementTail :: { [Sentence'] }
+    : else ':' Suite                             { $3 }
+    | elif Expr ':' Suite IfStatementTail        { [withPos $1 $ If $2 $4 $5] }
+CompoundStatement :: { Sentence' }
+    : if Expr ':' Suite IfStatementTail          { withPos $1 $ If $2 $4 $5 }
+    | for VarName in Expr ':' Suite              { withPos $1 $ For (value $2) $4 $6 }
 
 -- statements
-Suite :: { [Sentence] }
-    : list1(newline) indent list(newline) list1(Statement) dedent { $4 }
-Statement :: { Sentence }
-    : SimpleStatement list1(newline)   { $1 }
-    | CompoundStatement list(newline) { $1 }
+Suite :: { [Sentence'] }
+    : list1(newline) indent list(newline) list1(Statement) dedent              { $4 }
+Statement :: { Sentence' }
+    : SimpleStatement list1(newline)                                           { $1 }
+    | CompoundStatement list(newline)                                          { $1 }
 
 -- toplevel declarations
-ToplevelDecl :: { ToplevelDecl }
-    : from sep1(Name, '.') import '*'  { FromImport $2 }
-    | def FunName '(' FormalArgs ')' '->' Type ':' Suite { FunDef $2 $4 $7 $9 }
-    | VarName ':' Type '=' Expr        { ConstDef $1 $3 $5 }
+ToplevelDecl :: { ToplevelDecl' }
+    : from sep1(Name, '.') import '*' list1(newline)                           { withPos $1 $ FromImport (map value $2) }
+    | def FunName '(' FormalArgs ')' OptArrowType ':' Suite                    { withPos $1 $ FunDef (value $2) $4 $6 $8 }
+    | VarName OptColonType '=' Expr list1(newline)                             { withPos $1 $ ConstDef (value $1) $2 $4 }
 
 {
+toFunName' :: WithPos L.Token -> WithPos FunName
+toFunName' token = f <$> token where
+    f (L.Ident name) = FunName name
+    f (L.Op name) = FunName name
+    f _ = error "invalid token as a function name"
+
+toFunName :: WithPos L.Token -> FunName
+toFunName = value . toFunName'
+
+builtInOps :: M.Map FunName BinOpInfo
+builtInOps =
+    let op fixity prec name = (FunName name, BinOpInfo fixity prec)
+    in M.fromList
+        [ op Leftfix 20 ">?"
+        , op Leftfix 20 "<?"
+        , op Leftfix 12 "//"
+        , op Leftfix 12 "%"
+        , op Leftfix 12 "/^"
+        , op Leftfix 11 "+"
+        , op Leftfix 11 "-"
+        , op Leftfix 10 "<<"
+        , op Leftfix 10 ">>"
+        , op Leftfix 9 "&"
+        , op Leftfix 8 "^"
+        , op Leftfix 7 "|"
+        , op Nonfix 6 "=="
+        , op Nonfix 6 "/="
+        , op Nonfix 6 "<"
+        , op Nonfix 6 "<="
+        , op Nonfix 6 ">"
+        , op Nonfix 6 ">="
+        ]
+
+useShuntingYard :: (Expr', [(WithPos FunName, Expr')]) -> Either String Expr'
+useShuntingYard = ShuntingYard.run info apply where
+    info :: FunName -> Either String BinOpInfo
+    info op = case M.lookup op builtInOps of
+        Nothing -> Left $ show op ++ " is not defined"
+        Just op -> Right op
+    apply :: WithPos FunName -> Expr' -> Expr' -> Expr'
+    apply op x y = withPos x $ Call (value op) [x, y]
+
 happyErrorExpList :: ([WithPos L.Token], [String]) -> Either String a
 happyErrorExpList (tokens, expected) = Left $ "Syntax error at " ++ pos' tokens ++ ": " ++ tok tokens ++ " is got, but " ++ exp expected ++ " expected" where
     pos' [] = "EOF"

@@ -1,8 +1,5 @@
 # Language Specification
 
--   TODO: Fix the syntax of types. `def solve(n: int, a: Array[int, n]) -> int:` is invalid in Python. We should use `Array[int, "n"]` instead.
--   TODO: Fix the syntax of exprs around operators.
-
 ## Overview
 
 a very restricted subset of Python + additional builtin functions
@@ -17,15 +14,17 @@ This is the almost same to Python.
 ### Grammer
 
 ```ebnf
-<program> ::= <toplevel-decl> +
+<program> ::= <toplevel-def> +
 
 # types
 <type> ::= "int"
          | "nat"
          | "bool"
-         | "Interval" "[" <expr>, <expr> "]"
+         | "Interval" "[" <quoted-expr>, <quoted-expr> "]"
          | "List" "[" <type> "]"
-         | "Array" "[" <type> "," <expr> "]"
+         | "Array" "[" <type> "," <quoted-expr> "]"
+<quoted-expr> ::= "'" <expr> "'"
+                | "\"" <expr> "\""
 
 # literals
 <int-literal> ::= ...
@@ -47,31 +46,35 @@ This is the almost same to Python.
 
 # lists
 <comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> [ "if" <expr> ]
-<list-shape> ::= '[' "None" "for" "_" "in" "range" "(" <expr> ")" "]"
+<list-shape> ::= "None"
                | '[' <list-shape> "for" "_" "in" "range" "(" <expr> ")" "]"
 <list-subscript> ::= '[' Expr ']'
                    | '[' Expr ']' <list-subscript>
 
-# exprs
-<atom> ::= <var-name>
-         | <literal>
-         | "(" <expr> ")"
-<expr> ::= <atom>
-         | <unary-op> <atom>
-         | <atom> <binary-op> <atom>
-         | <atom> "[" <expr> "]"
-         | "[" <actual-args> "]"
-         | "[" <comprehension> "]"
-         | <fun-name> "(" <actual-args> ")"
-         | <fun-name> "(" <comprehension> ")"
-         | <expr> "if" <expr> "else" <expr>
+# operators
 <unary-op> ::= ...
 <binary-op> ::= ...
 
+# exprs
+<expr> ::= <var-name>
+         | <literal>
+         | "[" <actual-args> "]"
+         | "[" <comprehension> "]"
+         | <var-name> ( "[" <expr> "]" ) +
+         | <fun-name> "(" <actual-args> ")"
+         | <fun-name> "(" <comprehension> ")"
+         | "(" <expr> ")"
+         | <unary-op> <expr>
+         | <expr> <binary-op> <expr>
+         | <expr> "if" <expr> "else" <expr>
+
 # simple statements
-<simple-stmt> ::= <var-name> ":" <type> "=" <expr>
-                | <var-name> ":" <type> "=" <list-shape>
-                | <var-name> <list-subscript> "=" <expr>
+<variable-def> ::= <var-name> [ ":" <type> ] "=" <expr>
+<variable-decl> ::= <var-name> [ ":" <type> ] "=" <list-shape>
+<variable-assign> ::= <var-name> <list-subscript> "=" <expr>
+<simple-stmt> ::= <variable-def>
+                | <variable-decl>
+                | <variable-assign>
                 | "assert" <expr>
                 | "return" <expr>
 
@@ -91,10 +94,10 @@ This is the almost same to Python.
 # toplevel declarations
 <from-import> ::= "from" "jikka" "." "compat" "import" "*"
                 | "from" "math" "import" "*"
-<function-decl> ::= "def" <fun-name> "(" <formal-args> ")" "->" <type> ":" <suite>
-<toplevel-decl> ::= <from-import> NEWLINE
-                  | <assignment-stmt> NEWLINE
-                  | <function-decl>
+<function-def> ::= "def" <fun-name> "(" <formal-args> ")" "->" <type> ":" <suite>
+<toplevel-def> ::= <from-import> NEWLINE
+                  | <variable-def>
+                  | <function-def>
 ```
 
 

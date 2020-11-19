@@ -7,7 +7,7 @@ where
 
 import Data.Either (isLeft)
 import Jikka.Deserializer.OffsideRule (IndentSetting (..), insertIndentTokens)
-import Jikka.Deserializer.Pos
+import Jikka.Language.Common.Pos
 import Test.Hspec
 
 token :: Int -> Int -> a -> WithPos a

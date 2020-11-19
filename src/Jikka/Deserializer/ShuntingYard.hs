@@ -8,7 +8,7 @@ module Jikka.Deserializer.ShuntingYard
   )
 where
 
-import Jikka.Deserializer.Pos
+import Jikka.Language.Common.Pos
 
 type Prec = Int
 

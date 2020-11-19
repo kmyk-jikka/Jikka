@@ -5,8 +5,8 @@ module Jikka.Deserializer.Python.LexerSpec
   )
 where
 
-import Jikka.Deserializer.Pos
 import Jikka.Deserializer.Python.Lexer (Token (..), run)
+import Jikka.Language.Common.Pos
 import Test.Hspec
 
 run' :: String -> Either String [Token]

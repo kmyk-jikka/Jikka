@@ -7,8 +7,8 @@ where
 
 import Data.Either (isLeft)
 import qualified Data.Map.Strict as M
-import Jikka.Deserializer.Pos
 import Jikka.Deserializer.ShuntingYard (BinOpInfo (..), Fixity (..), Prec, run)
+import Jikka.Language.Common.Pos
 import Test.Hspec
 
 -- Haskell's one

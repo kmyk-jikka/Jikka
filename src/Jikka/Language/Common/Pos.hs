@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-module Jikka.Deserializer.Pos where
+module Jikka.Language.Common.Pos where
 
 data Pos
   = Pos

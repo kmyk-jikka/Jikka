@@ -1,15 +1,24 @@
 module Jikka.Language.Python.Parsed.Type where
 
-import Jikka.Language.Name
+import Jikka.Language.Common.Name
+import Jikka.Language.Common.Pos
+
+type Type' = WithPos Type
+
+type Expr' = WithPos Expr
+
+type Sentence' = WithPos Sentence
+
+type ToplevelDecl' = WithPos ToplevelDecl
 
 data Type
   = TyInt
   | TyNat
-  | TyInterval Expr Expr
+  | TyInterval Expr' Expr'
   | TyBool
-  | TyList Type
-  | TyIterator Type
-  | TyArray Type Expr
+  | TyList Type'
+  | TyIterator Type'
+  | TyArray Type' Expr'
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -20,31 +29,36 @@ data Literal
 data Expr
   = Lit Literal
   | Var VarName
-  | Sub Expr Expr
-  | ListComp Expr (Maybe VarName) Expr (Maybe Expr)
-  | ListExt [Expr]
-  | Call FunName [Expr]
-  | Cond Expr Expr Expr
+  | Sub Expr' Expr'
+  | ListComp Expr' (Maybe VarName) Expr' (Maybe Expr')
+  | ListExt [Expr']
+  | Call FunName [Expr']
+  | Cond Expr' Expr' Expr'
+  deriving (Eq, Ord, Show, Read)
+
+data ListShape
+  = NoneShape
+  | ListShape ListShape Expr'
   deriving (Eq, Ord, Show, Read)
 
 data Sentence
-  = If Expr [Sentence] [Sentence]
-  | For VarName Expr [Sentence]
-  | Declare VarName Type [Expr]
-  | Assign VarName [Expr] Expr
-  | Define VarName Type Expr
-  | Assert Expr
-  | Return Expr
+  = If Expr' [Sentence'] [Sentence']
+  | For VarName Expr' [Sentence']
+  | Define VarName (Maybe Type') Expr'
+  | Declare VarName (Maybe Type') ListShape
+  | Assign VarName [Expr'] Expr'
+  | Assert Expr'
+  | Return Expr'
   deriving (Eq, Ord, Show, Read)
 
 data ToplevelDecl
-  = ConstDef VarName Type Expr
-  | FunDef FunName [(VarName, Type)] Type [Sentence]
-  | FromImport [String]
+  = ConstDef VarName (Maybe Type') Expr'
+  | FunDef FunName [(VarName, Maybe Type')] (Maybe Type') [Sentence']
+  | FromImport [Name]
   deriving (Eq, Ord, Show, Read)
 
 newtype Program
   = Program
-      { decls :: [ToplevelDecl]
+      { decls :: [ToplevelDecl']
       }
   deriving (Eq, Ord, Show, Read)

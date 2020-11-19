@@ -6,7 +6,7 @@ module Jikka.Deserializer.OffsideRule
   )
 where
 
-import Jikka.Deserializer.Pos
+import Jikka.Language.Common.Pos
 
 data IndentSetting a
   = IndentSetting

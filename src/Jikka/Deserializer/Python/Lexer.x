@@ -5,7 +5,7 @@ module Jikka.Deserializer.Python.Lexer
     , run
     ) where
 
-import Jikka.Deserializer.Pos
+import Jikka.Language.Common.Pos
 import Jikka.Deserializer.OffsideRule (insertIndentTokens, IndentSetting(..))
 }
 
@@ -56,6 +56,8 @@ tokens :-
     "}"             { tok' CloseBrace }
     "]"             { tok' CloseBracket }
     ")"             { tok' CloseParen }
+    "'"             { tok' SingleQuote }
+    "\""            { tok' DoubleQuote }
 
     $alpha [$alnum _] *  { tok Ident }
 
@@ -155,6 +157,8 @@ data Token
     | CloseBrace
     | CloseBracket
     | CloseParen
+    | SingleQuote
+    | DoubleQuote
     -- identifier
     | Ident String
     | Op String

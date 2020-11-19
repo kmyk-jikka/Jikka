@@ -1,6 +1,6 @@
 module Jikka.Language.Python.Typed.Type where
 
-import Jikka.Language.Name
+import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Stdlib
 
 type Type = CurryType Expr
