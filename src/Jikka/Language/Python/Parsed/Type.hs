@@ -1,4 +1,4 @@
-module Jikka.Language.Python.Type where
+module Jikka.Language.Python.Parsed.Type where
 
 type Name = String
 

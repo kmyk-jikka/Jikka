@@ -7,7 +7,7 @@ import Data.Char (toLower)
 import Jikka.Deserializer.Pos
 import qualified Jikka.Deserializer.Python.Lexer as L
 import Jikka.Deserializer.Python.Parser
-import Jikka.Language.Python.Type
+import Jikka.Language.Python.Parsed.Type
 import Test.Hspec
 
 run' :: [L.Token] -> Either String Program

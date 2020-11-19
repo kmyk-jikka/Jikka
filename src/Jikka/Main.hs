@@ -7,7 +7,7 @@ import Data.Version (showVersion)
 import Jikka.Converter.Optimizer as Opt
 import Jikka.Deserializer.Python as FromPython
 import Jikka.Deserializer.Read as FromRead
-import Jikka.Language.Python.Type (Program)
+import Jikka.Language.Python.Typed.Type (Program)
 import Jikka.Serializer.Show as ToShow
 import Paths_Jikka (version)
 import System.Console.GetOpt

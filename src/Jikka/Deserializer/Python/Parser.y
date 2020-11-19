@@ -7,7 +7,7 @@ import qualified Jikka.Deserializer.Python.Lexer as L (Token(..))
 import Jikka.Deserializer.Pos
 import qualified Jikka.Deserializer.ShuntingYard as ShuntingYard
 import Jikka.Deserializer.ShuntingYard (BinOpInfo(..), Fixity(..))
-import Jikka.Language.Python.Type
+import Jikka.Language.Python.Parsed.Type
 }
 
 %name run
