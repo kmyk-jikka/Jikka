@@ -29,9 +29,3 @@ jobs:
 
     - name: Run HLint
       run: stack exec hlint -- src app test
-
-    - name: Run Happy
-      run: |
-        happy --outfile=/dev/null --info=info.txt src/Jikka/Deserializer/Python/Parser.y
-        cat info.txt
-        ! grep conflict info.txt
