@@ -7,7 +7,6 @@ import Data.Version (showVersion)
 import Jikka.Converter.Optimizer as Opt
 import Jikka.Deserializer.Python as FromPython
 import Jikka.Deserializer.Read as FromRead
-import Jikka.Language.Python.Typed.Type (Program)
 import Jikka.Serializer.Show as ToShow
 import Paths_Jikka (version)
 import System.Console.GetOpt
@@ -18,45 +17,28 @@ data Flag
   = Help
   | Verbose
   | Version
-  | From String
-  | To String
   deriving (Eq, Ord, Show, Read)
 
-data Options
+newtype Options
   = Options
-      { verbose :: Bool,
-        from :: FilePath -> Text -> Either String Program,
-        to :: Program -> Either String Text
+      { verbose :: Bool
       }
 
 defaultOptions :: Options
 defaultOptions =
   Options
-    { verbose = False,
-      from = FromPython.run,
-      to = ToShow.run
+    { verbose = False
     }
 
 header :: String -> String
-header progName = "Usage: " ++ progName ++ " FILE"
+header progName = "Usage: " ++ progName ++ " [convert | exec] FILE"
 
 options :: [OptDescr Flag]
 options =
   [ Option ['h', '?'] ["help"] (NoArg Help) "",
-    Option ['v'] ["verbose"] (NoArg Version) "",
-    Option ['f'] ["from"] (ReqArg From "FORMAT") "choices: \"python\" (default), \"read\"",
-    Option ['t'] ["to"] (ReqArg To "FORMAT") "choices: \"show\" (default)",
+    Option ['v'] ["verbose"] (NoArg Verbose) "",
     Option [] ["version"] (NoArg Version) ""
   ]
-
-getDeserializer :: String -> Maybe (FilePath -> Text -> Either String Program)
-getDeserializer "python" = Just FromPython.run
-getDeserializer "read" = Just FromRead.run
-getDeserializer _ = Nothing
-
-getSerializer :: String -> Maybe (Program -> Either String Text)
-getSerializer "show" = Just ToShow.run
-getSerializer _ = Nothing
 
 main :: String -> [String] -> IO ExitCode
 main name args = do
@@ -68,13 +50,14 @@ main name args = do
     (parsed, _, []) | Version `elem` parsed -> do
       putStrLn $ showVersion version
       return ExitSuccess
-    (parsed, [path], []) -> case parseFlags name parsed of
+    (parsed, [subcmd, path], []) -> case parseFlags name parsed of
       Left error -> do
         hPutStrLn stderr error
         return $ ExitFailure 1
       Right opts -> do
         input <- T.readFile path
-        case main' opts path input of
+        result <- runSubcommand subcmd opts path input
+        case result of
           Left error -> do
             hPutStrLn stderr error
             return $ ExitFailure 1
@@ -95,18 +78,26 @@ parseFlags name = go defaultOptions
     go :: Options -> [Flag] -> Either String Options
     go opts [] = Right opts
     go opts (flag : flags) = case flag of
-      Help -> undefined
-      Version -> undefined
+      Help -> error "parseFlags is not called when --help is specified"
+      Version -> error "parseFlags is not called when --version is specified"
       Verbose -> go (opts {verbose = True}) flags
-      From x -> case getDeserializer x of
-        Nothing -> Left $ name ++ ": unknown argument for option `--from': " ++ x
-        Just f -> go (opts {from = f}) flags
-      To y -> case getSerializer y of
-        Nothing -> Left $ name ++ ": unknown argument for option `--to': " ++ y
-        Just f -> go (opts {to = f}) flags
 
-main' :: Options -> FilePath -> Text -> Either String Text
-main' opts path input = do
-  prog <- from opts path input
-  prog' <- Opt.run prog
-  to opts prog'
+runSubcommand :: String -> Options -> FilePath -> Text -> IO (Either String Text)
+runSubcommand subcmd opts path input = case subcmd of
+  "convert" -> return $ convert opts path input
+  "execute" -> execute opts path input
+  _ -> return . Left $ "undefined subcommand: " ++ show subcmd
+
+convert :: Options -> FilePath -> Text -> Either String Text
+convert opts path input = do
+  prog <- FromPython.run path input
+  prog <- Right prog
+  ToShow.run prog
+
+execute :: Options -> FilePath -> Text -> IO (Either String Text)
+execute opts path input = do
+  let prog = do
+        prog <- FromPython.run path input
+        Right prog
+  putStrLn "Hello, world!"
+  return $ Left "not implemented yet"
