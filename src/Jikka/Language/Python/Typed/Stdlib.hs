@@ -5,6 +5,7 @@ data ChurchType
   = TyInt
   | TyBool
   | TyList ChurchType
+  | TyIterator ChurchType
   deriving (Eq, Ord, Show, Read)
 
 -- Curry-style types
@@ -17,6 +18,16 @@ data CurryType expr
   | ATyIterator (CurryType expr)
   | ATyArray (CurryType expr) expr
   deriving (Eq, Ord, Show, Read)
+
+toChurchType :: CurryType expr -> ChurchType
+toChurchType t = case t of
+  ATyInt -> TyInt
+  ATyBool -> TyBool
+  ATyList t' -> TyList (toChurchType t')
+  ATyNat -> TyInt
+  ATyInterval _ _ -> TyInt
+  ATyIterator t' -> TyIterator (toChurchType t')
+  ATyArray t' _ -> TyList (toChurchType t')
 
 -- 0-ary functions
 data Literal
