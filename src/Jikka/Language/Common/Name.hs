@@ -5,3 +5,5 @@ type Name = String
 newtype VarName = VarName {unVarName :: Name} deriving (Eq, Ord, Show, Read)
 
 newtype FunName = FunName {unFunName :: Name} deriving (Eq, Ord, Show, Read)
+
+newtype TypeName = TypeName {unTypeName :: Name} deriving (Eq, Ord, Show, Read)

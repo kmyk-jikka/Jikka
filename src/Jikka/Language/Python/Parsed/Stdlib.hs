@@ -16,19 +16,26 @@ unaryOps =
           op "argmin" ArgMin,
           op "~" BitNot,
           op "fact" Fact,
-          op "inv" Inv,
-          op "len" Len,
-          op "list" List,
           op "max" Max1,
           op "min" Min1,
           op "-" Negate,
           op "not" Not,
           op "product" Product,
           op "range" Range1,
-          op "reversed" Reversed,
-          op "sorted" Sorted,
           op "sum" Sum
         ]
+
+unaryOpLen :: FunName
+unaryOpLen = FunName "len"
+
+unaryOpList :: FunName
+unaryOpList = FunName "list"
+
+unaryOpReversed :: FunName
+unaryOpReversed = FunName "reversed"
+
+unaryOpSorted :: FunName
+unaryOpSorted = FunName "sorted"
 
 binaryOps :: M.Map FunName BinaryOp
 binaryOps =
@@ -50,6 +57,7 @@ binaryOps =
           op ">=" GreaterEqual,
           op ">" GreaterThan,
           op "implies" Implies,
+          op "inv" Inv,
           op "lcm" Lcm,
           op "<=" LessEqual,
           op "<" LessThan,
@@ -85,7 +93,8 @@ ternaryOps =
 operatorNames :: S.Set FunName
 operatorNames =
   S.unions
-    [ S.fromList [binaryOpEqual, binaryOpNotEqual],
+    [ S.fromList [unaryOpLen, unaryOpList, unaryOpReversed, unaryOpSorted],
+      S.fromList [binaryOpEqual, binaryOpNotEqual],
       M.keysSet unaryOps,
       M.keysSet binaryOps,
       M.keysSet ternaryOps

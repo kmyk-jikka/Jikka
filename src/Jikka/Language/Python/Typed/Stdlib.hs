@@ -1,11 +1,14 @@
 module Jikka.Language.Python.Typed.Stdlib where
 
+import Jikka.Language.Common.Name
+
 -- Church-style types
 data ChurchType
   = TyInt
   | TyBool
   | TyList ChurchType
   | TyIterator ChurchType
+  | TyVar TypeName
   deriving (Eq, Ord, Show, Read)
 
 -- Curry-style types
@@ -17,17 +20,8 @@ data CurryType expr
   | ATyInterval expr expr
   | ATyIterator (CurryType expr)
   | ATyArray (CurryType expr) expr
+  | ATyVar TypeName
   deriving (Eq, Ord, Show, Read)
-
-toChurchType :: CurryType expr -> ChurchType
-toChurchType t = case t of
-  ATyInt -> TyInt
-  ATyBool -> TyBool
-  ATyList t' -> TyList (toChurchType t')
-  ATyNat -> TyInt
-  ATyInterval _ _ -> TyInt
-  ATyIterator t' -> TyIterator (toChurchType t')
-  ATyArray t' _ -> TyList (toChurchType t')
 
 -- 0-ary functions
 data Literal
@@ -41,14 +35,12 @@ data UnaryOp
     Negate
   | Fact
   | Abs
-  | -- modular functions
-    Inv
   | -- logical functions
     Not
   | -- bitwise functions
     BitNot
   | -- list functions
-    Len
+    Len ChurchType
   | Sum
   | Product
   | Min1
@@ -57,9 +49,9 @@ data UnaryOp
   | ArgMax
   | All
   | Any
-  | Sorted
-  | List
-  | Reversed
+  | Sorted ChurchType
+  | List ChurchType
+  | Reversed ChurchType
   | Range1
   deriving (Eq, Ord, Show, Read)
 
@@ -78,6 +70,8 @@ data BinaryOp
   | Lcm
   | Min
   | Max
+  | -- modular functions
+    Inv
   | -- combinational functions
     Choose
   | Permute

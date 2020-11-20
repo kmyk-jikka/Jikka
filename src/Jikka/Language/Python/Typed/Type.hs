@@ -10,9 +10,9 @@ data Expr
   | Lit Literal
   | UnOp UnaryOp Expr
   | BinOp BinaryOp Expr Expr
-  | TerOp TernaryOp Expr Expr
+  | TerOp TernaryOp Expr Expr Expr
   | Sub VarName [Expr]
-  | ListComp Type Expr (Maybe VarName) Expr (Maybe Expr)
+  | ListComp Type Expr VarName Expr (Maybe Expr)
   | ListExt Type [Expr]
   | Call FunName [Expr]
   deriving (Eq, Ord, Show, Read)
