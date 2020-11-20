@@ -25,17 +25,13 @@ unaryOps =
           op "sum" Sum
         ]
 
-unaryOpLen :: FunName
-unaryOpLen = FunName "len"
-
-unaryOpList :: FunName
-unaryOpList = FunName "list"
-
-unaryOpReversed :: FunName
-unaryOpReversed = FunName "reversed"
-
-unaryOpSorted :: FunName
-unaryOpSorted = FunName "sorted"
+genericUnaryOps :: M.Map FunName (ChurchType -> UnaryOp)
+genericUnaryOps = M.fromList
+    [ (FunName "len", Len),
+      (FunName "list", List),
+      (FunName "reversed", Reversed),
+      (FunName "sorted", Sorted)
+    ]
 
 binaryOps :: M.Map FunName BinaryOp
 binaryOps =
@@ -76,25 +72,23 @@ binaryOps =
           op "range" Range2
         ]
 
-binaryOpEqual :: FunName
-binaryOpEqual = FunName "=="
-
-binaryOpNotEqual :: FunName
-binaryOpNotEqual = FunName "!="
+genericBinaryOps :: M.Map FunName (ChurchType -> BinaryOp)
+genericBinaryOps = M.fromList
+    [ (FunName "==", Equal),
+      (FunName "!=", NotEqual)
+    ]
 
 ternaryOps :: M.Map FunName TernaryOp
-ternaryOps =
-  let op name terop = (FunName name, terop)
-   in M.fromList
-        [ op "pow" PowMod,
-          op "range" Range3
-        ]
+ternaryOps = M.fromList
+    [ (FunName "pow", PowMod),
+      (FunName "range", Range3)
+    ]
 
 operatorNames :: S.Set FunName
 operatorNames =
   S.unions
-    [ S.fromList [unaryOpLen, unaryOpList, unaryOpReversed, unaryOpSorted],
-      S.fromList [binaryOpEqual, binaryOpNotEqual],
+    [ M.keysSet genericUnaryOps,
+      M.keysSet genericBinaryOps,
       M.keysSet unaryOps,
       M.keysSet binaryOps,
       M.keysSet ternaryOps
