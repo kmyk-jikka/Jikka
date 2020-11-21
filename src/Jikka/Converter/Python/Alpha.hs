@@ -46,14 +46,29 @@ genName name = do
   modify $ \state -> state {nextId = id + 1}
   return $ name ++ "@" ++ show id
 
+checkNotFunName :: VarName -> Alpha ()
+checkNotFunName name = do
+  name' <- lookup (FunName $ unVarName name) <$> gets usedFuns
+  case name' of
+    Nothing -> return ()
+    Just _ -> throwError $ "the name of the variable is already used as a function: " ++ show (unVarName name)
+
+checkNotVarName :: FunName -> Alpha ()
+checkNotVarName name = do
+  name' <- lookup (VarName $ unFunName name) <$> gets usedVars
+  case name' of
+    Nothing -> return ()
+    Just _ -> throwError $ "the name of the function is already used as a variable: " ++ show (unFunName name)
+
 -- TODO: add location info to the VarName
 defineNewVarName :: VarName -> Alpha VarName
 defineNewVarName name = do
-  used <- gets usedVars
-  case lookup name used of
+  checkNotFunName name
+  name' <- lookup name <$> gets usedVars
+  case name' of
     Nothing -> do
       name' <- VarName <$> genName (unVarName name)
-      modify $ \state -> state {usedVars = (name, name') : used}
+      modify $ \state -> state {usedVars = (name, name') : usedVars state}
       return name'
     _ -> throwError $ "variable is already defined: " ++ show (unVarName name)
 
@@ -68,11 +83,12 @@ useExistingVarName name = do
 -- TODO: add location info to the FunName
 defineNewFunName :: FunName -> Alpha FunName
 defineNewFunName name = do
-  used <- gets usedFuns
-  case lookup name used of
+  checkNotVarName name
+  name' <- lookup name <$> gets usedFuns
+  case name' of
     Nothing -> do
       name' <- FunName <$> genName (unFunName name)
-      modify $ \state -> state {usedFuns = (name, name') : used}
+      modify $ \state -> state {usedFuns = (name, name') : usedFuns state}
       return name'
     Just _ -> throwError $ "function is already defined: " ++ show (unFunName name)
 
@@ -159,16 +175,17 @@ alphaExpr e = withPos e <$> case value e of
   Sub e1 e2 -> Sub <$> alphaExpr e1 <*> alphaExpr e2
   ListComp e1 name e2 e3 -> do
     e2 <- alphaExpr e2
-    used <- gets usedVars
+    preservedVars <- gets usedVars
     name' <- case name of
       Nothing -> VarName <$> genName "_"
       Just name -> do
+        checkNotFunName name
         name' <- VarName <$> genName (unVarName name)
-        modify $ \state -> state {usedVars = (name, name') : used}
+        modify $ \state -> state {usedVars = (name, name') : preservedVars}
         return name'
     e3 <- withEnvPreserving $ mapM alphaExpr e3
     e1 <- withEnvPreserving $ alphaExpr e1
-    modify $ \state -> state {usedVars = used}
+    modify $ \state -> state {usedVars = preservedVars}
     return $ ListComp e1 (Just name') e2 e3
   ListExt es -> ListExt <$> mapM alphaExpr es
   Call name es -> Call <$> useExistingFunName name <*> mapM alphaExpr es

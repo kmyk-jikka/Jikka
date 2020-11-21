@@ -1,5 +1,6 @@
 module Jikka.Converter.Python.AlphaSpec (spec) where
 
+import Data.Either (isLeft)
 import Jikka.Converter.Python.Alpha (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
@@ -143,3 +144,37 @@ spec = describe "run" $ do
                 `at` 1
             ]
     run parsed `shouldBe` Right expected
+  it "works on recursive functions" $ do
+    let parsed =
+          Program
+            [ FunDef
+                (FunName "f")
+                [(VarName "x", Nothing)]
+                Nothing
+                [ Return (Call (FunName "f") [Var (VarName "x") `at` 4] `at` 3) `at` 2
+                ]
+                `at` 1
+            ]
+    let expected =
+          Program
+            [ FunDef
+                (FunName "f@0")
+                [(VarName "x@1", Nothing)]
+                Nothing
+                [ Return (Call (FunName "f@0") [Var (VarName "x@1") `at` 4] `at` 3) `at` 2
+                ]
+                `at` 1
+            ]
+    run parsed `shouldBe` Right expected
+  it "doesn't use the same name as a function and as a variable" $ do
+    let parsed =
+          Program
+            [ FunDef
+                (FunName "f")
+                []
+                Nothing
+                [ Define (VarName "f") Nothing (Lit (LitInt 0) `at` 3) `at` 2
+                ]
+                `at` 1
+            ]
+    run parsed `shouldSatisfy` isLeft

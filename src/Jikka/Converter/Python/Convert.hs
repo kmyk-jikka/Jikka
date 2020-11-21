@@ -165,6 +165,7 @@ convertToplevelDecl decl = case value decl of
   X.FunDef name args ret body -> do
     args <- mapM (\(x, t) -> (,) x <$> convertMaybeType t) args
     ret <- convertMaybeType ret
+    declareFun name (map snd args) ret
     body <- mapM convertSentence body
     return [Y.FunDef name args ret body]
   X.FromImport path -> return []
