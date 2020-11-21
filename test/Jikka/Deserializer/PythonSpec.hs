@@ -17,9 +17,8 @@ run' :: [String] -> Either String Program
 run' lines = run "test.py" (pack . concat $ map (++ "\n") lines)
 
 spec :: Spec
-spec = describe "run"
-  $ it "works"
-  $ do
+spec = describe "run" $ do
+  it "works" $ do
     let input =
           [ "def solve() -> int:",
             "    return 42"

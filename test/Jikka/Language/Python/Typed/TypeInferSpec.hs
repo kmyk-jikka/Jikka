@@ -12,9 +12,8 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "infer'"
-    $ it "works"
-    $ do
+  describe "infer'" $ do
+    it "works" $ do
       let expr = UnOp Abs (Lit (LitInt (-10)))
       let expected = ATyNat
       infer' emptyTypeEnv expr `shouldBe` Right expected
