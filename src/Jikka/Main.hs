@@ -1,10 +1,12 @@
 module Jikka.Main where
 
 import Control.Monad (forM_)
+import Control.Monad.Except
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import qualified Jikka.Subcommand.Convert as Convert
+import qualified Jikka.Subcommand.Debug as Debug
 import qualified Jikka.Subcommand.Execute as Execute
 import Paths_Jikka (version)
 import System.Console.GetOpt
@@ -29,7 +31,7 @@ defaultOptions =
     }
 
 header :: String -> String
-header progName = "Usage: " ++ progName ++ " [convert | exec] FILE"
+header progName = "Usage: " ++ progName ++ " [convert | debug | exec] FILE"
 
 options :: [OptDescr Flag]
 options =
@@ -53,14 +55,12 @@ main name args = do
         hPutStrLn stderr error
         return $ ExitFailure 1
       Right opts -> do
-        input <- T.readFile path
-        result <- runSubcommand subcmd opts path input
+        result <- runExceptT $ runSubcommand subcmd opts path
         case result of
           Left error -> do
             hPutStrLn stderr error
             return $ ExitFailure 1
-          Right output -> do
-            T.putStr output
+          Right () -> do
             return ExitSuccess
     (_, _, errors) | errors /= [] -> do
       mapM_ (\error -> hPutStr stderr $ name ++ ": " ++ error) errors
@@ -80,8 +80,12 @@ parseFlags name = go defaultOptions
       Version -> error "parseFlags is not called when --version is specified"
       Verbose -> go (opts {verbose = True}) flags
 
-runSubcommand :: String -> Options -> FilePath -> Text -> IO (Either String Text)
-runSubcommand subcmd opts path input = case subcmd of
-  "convert" -> return $ Convert.run path input
-  "execute" -> Execute.run path input
-  _ -> return . Left $ "undefined subcommand: " ++ show subcmd
+runSubcommand :: String -> Options -> FilePath -> ExceptT String IO ()
+runSubcommand subcmd opts path = case subcmd of
+  "convert" -> do
+    input <- liftIO $ T.readFile path
+    output <- liftEither $ Convert.run path input
+    liftIO $ T.putStr output
+  "debug" -> Debug.run path
+  "execute" -> Execute.run path
+  _ -> throwError $ "undefined subcommand: " ++ show subcmd
