@@ -4,10 +4,8 @@ import Control.Monad (forM_)
 import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
-import Jikka.Converter.Optimizer as Opt
-import Jikka.Deserializer.Python as FromPython
-import Jikka.Deserializer.Read as FromRead
-import Jikka.Serializer.Show as ToShow
+import qualified Jikka.Subcommand.Convert as Convert
+import qualified Jikka.Subcommand.Execute as Execute
 import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))
@@ -84,20 +82,6 @@ parseFlags name = go defaultOptions
 
 runSubcommand :: String -> Options -> FilePath -> Text -> IO (Either String Text)
 runSubcommand subcmd opts path input = case subcmd of
-  "convert" -> return $ convert opts path input
-  "execute" -> execute opts path input
+  "convert" -> return $ Convert.run path input
+  "execute" -> Execute.run path input
   _ -> return . Left $ "undefined subcommand: " ++ show subcmd
-
-convert :: Options -> FilePath -> Text -> Either String Text
-convert opts path input = do
-  prog <- FromPython.run path input
-  prog <- Right prog
-  ToShow.run prog
-
-execute :: Options -> FilePath -> Text -> IO (Either String Text)
-execute opts path input = do
-  let prog = do
-        prog <- FromPython.run path input
-        Right prog
-  putStrLn "Hello, world!"
-  return $ Left "not implemented yet"
