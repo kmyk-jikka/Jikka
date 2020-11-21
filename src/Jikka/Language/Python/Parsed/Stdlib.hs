@@ -26,7 +26,8 @@ unaryOps =
         ]
 
 genericUnaryOps :: M.Map FunName (ChurchType -> UnaryOp)
-genericUnaryOps = M.fromList
+genericUnaryOps =
+  M.fromList
     [ (FunName "len", Len),
       (FunName "list", List),
       (FunName "reversed", Reversed),
@@ -73,13 +74,15 @@ binaryOps =
         ]
 
 genericBinaryOps :: M.Map FunName (ChurchType -> BinaryOp)
-genericBinaryOps = M.fromList
+genericBinaryOps =
+  M.fromList
     [ (FunName "==", Equal),
       (FunName "!=", NotEqual)
     ]
 
 ternaryOps :: M.Map FunName TernaryOp
-ternaryOps = M.fromList
+ternaryOps =
+  M.fromList
     [ (FunName "pow", PowMod),
       (FunName "range", Range3)
     ]

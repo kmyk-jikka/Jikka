@@ -11,6 +11,7 @@ data Expr
   | UnOp UnaryOp Expr
   | BinOp BinaryOp Expr Expr
   | TerOp TernaryOp Expr Expr Expr
+  | Sub Type Expr Expr
   | ListComp Type Expr VarName Expr (Maybe Expr)
   | ListExt Type [Expr]
   | Call FunName [Expr]
@@ -18,7 +19,7 @@ data Expr
 
 data Sentence
   = If Expr [Sentence] [Sentence]
-  | For VarName Expr [Sentence]
+  | For VarName Type Expr [Sentence]
   | Declare VarName Type [Expr]
   | Assign VarName [Expr] Expr
   | Define VarName Type Expr

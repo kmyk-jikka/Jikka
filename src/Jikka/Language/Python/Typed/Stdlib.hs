@@ -23,6 +23,25 @@ data CurryType expr
   | ATyVar TypeName
   deriving (Eq, Ord, Show, Read)
 
+toChurchType :: CurryType expr -> ChurchType
+toChurchType t = case t of
+  ATyInt -> TyInt
+  ATyBool -> TyBool
+  ATyList t' -> TyList (toChurchType t')
+  ATyNat -> TyInt
+  ATyInterval _ _ -> TyInt
+  ATyIterator t' -> TyIterator (toChurchType t')
+  ATyArray t' _ -> TyList (toChurchType t')
+  ATyVar name -> TyVar name
+
+toCurryType :: ChurchType -> CurryType expr
+toCurryType t = case t of
+  TyInt -> ATyInt
+  TyBool -> ATyBool
+  TyList t' -> ATyList (toCurryType t')
+  TyIterator t' -> ATyIterator (toCurryType t')
+  TyVar name -> ATyVar name
+
 -- 0-ary functions
 data Literal
   = LitInt Integer

@@ -8,25 +8,6 @@ import Jikka.Language.Python.Typed.Type
 --------------------------------------------------------------------------------
 -- basics
 
-toChurchType :: CurryType expr -> ChurchType
-toChurchType t = case t of
-  ATyInt -> TyInt
-  ATyBool -> TyBool
-  ATyList t' -> TyList (toChurchType t')
-  ATyNat -> TyInt
-  ATyInterval _ _ -> TyInt
-  ATyIterator t' -> TyIterator (toChurchType t')
-  ATyArray t' _ -> TyList (toChurchType t')
-  ATyVar name -> TyVar name
-
-toCurryType :: ChurchType -> CurryType expr
-toCurryType t = case t of
-  TyInt -> ATyInt
-  TyBool -> ATyBool
-  TyList t' -> ATyList (toCurryType t')
-  TyIterator t' -> ATyIterator (toCurryType t')
-  TyVar name -> ATyVar name
-
 intersectionType :: (Eq expr, Show expr) => CurryType expr -> CurryType expr -> Either String (CurryType expr)
 intersectionType t1 t2 = case (t1, t2) of
   _ | t1 == t2 -> Right t1
@@ -146,12 +127,6 @@ data TypeEnv
 emptyTypeEnv :: TypeEnv
 emptyTypeEnv = TypeEnv [] []
 
-inferSub :: VarName -> Type -> [Expr] -> Either String Type
-inferSub _ t [] = Right t
-inferSub name (ATyList t) (_ : es) = inferSub name t es
-inferSub name (ATyArray t _) (_ : es) = inferSub name t es
-inferSub name _ _ = Left $ "invalid subscription for: " ++ show (unVarName name)
-
 infer' :: TypeEnv -> Expr -> Either String Type
 infer' env e = case e of
   Var name -> case lookup name (varenv env) of
@@ -161,9 +136,7 @@ infer' env e = case e of
   UnOp op _ -> let (_, ret) = unaryOpType op in Right ret
   BinOp op _ _ -> let (_, _, ret) = binaryOpType op in Right ret
   TerOp op _ _ _ -> let (_, _, _, ret) = ternaryOpType op in Right ret
-  Sub name es -> case lookup name (varenv env) of
-    Nothing -> Left $ "undefined variable: " ++ show (unVarName name)
-    Just t -> inferSub name t es
+  Sub t _ _ -> Right t
   ListComp t _ _ _ _ -> Right $ ATyList t
   ListExt t _ -> Right $ ATyList t
   Call name _ -> case lookup name (funenv env) of
@@ -191,16 +164,6 @@ checkSubtype' env e t = do
   t' <- check' env e
   checkSubtype t' t
 
-checkSub :: TypeEnv -> Type -> [Expr] -> Either String Type
-checkSub _ t [] = Right t
-checkSub env (ATyList t) (e : es) = do
-  checkSubtype' env e ATyInt
-  checkSub env t es
-checkSub env (ATyArray t _) (e : es) = do
-  checkSubtype' env e ATyInt
-  checkSub env t es
-checkSub env t _ = Left $ "subscription for a non-list type: " ++ show t
-
 check' :: TypeEnv -> Expr -> Either String Type
 check' env e = case e of
   Var name -> case lookup name (varenv env) of
@@ -222,9 +185,10 @@ check' env e = case e of
     checkSubtype' env e2 t2
     checkSubtype' env e3 t3
     return ret
-  Sub name es -> case lookup name (varenv env) of
-    Nothing -> Left $ "undefined variable: " ++ show (unVarName name)
-    Just t -> checkSub env t es
+  Sub t e1 e2 -> do
+    checkSubtype' env e1 (ATyList t)
+    checkSubtype' env e2 ATyInt
+    return t
   ListComp t e1 name e2 e3 -> do
     checkSubtype' env e2 (ATyIterator t)
     let env' = env {varenv = (name, t) : varenv env}
