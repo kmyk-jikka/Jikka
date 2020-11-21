@@ -18,6 +18,7 @@ $tab = [\t]
 $digit = [0-9]
 $alpha = [A-Z a-z]
 $alnum = [0-9 A-Z a-z]
+$doublequote = ["]
 
 tokens :-
 
@@ -57,7 +58,7 @@ tokens :-
     "]"             { tok' CloseBracket }
     ")"             { tok' CloseParen }
     "'"             { tok' SingleQuote }
-    "\""            { tok' DoubleQuote }
+    $doublequote    { tok' DoubleQuote }
 
     $alpha [$alnum _] *  { tok Ident }
 

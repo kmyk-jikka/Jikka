@@ -32,3 +32,7 @@ spec = describe "run" $ do
     let input = "i in int ints"
     let tokens = [Ident "i", In, Ident "int", Ident "ints"]
     run' input `shouldBe` Right tokens
+  it "accepts quotes" $ do
+    let input = "'\"'\"'\"'"
+    let tokens = [SingleQuote, DoubleQuote, SingleQuote, DoubleQuote, SingleQuote, DoubleQuote, SingleQuote]
+    run' input `shouldBe` Right tokens

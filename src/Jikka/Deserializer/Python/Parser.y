@@ -128,6 +128,7 @@ VarName :: { WithPos VarName }
     : Name                             { VarName `fmap` $1 }
 FunName :: { WithPos FunName }
     : Name                             { FunName `fmap` $1 }
+    | range                            { withPos $1 $ FunName "range" }
 VarNameOrUnderscore :: { WithPos (Maybe VarName) }
     : VarName                          { Just `fmap` $1 }
     | '_'                              { withPos $1 $ Nothing }
