@@ -168,26 +168,30 @@ alphaMaybeType t = case t of
   Nothing -> return Nothing
   Just t -> Just <$> alphaType t
 
+alphaComprehension :: Comprehension -> Alpha Comprehension
+alphaComprehension (Comprehension e1 name e2 e3) = do
+  e2 <- alphaExpr e2
+  preservedVars <- gets usedVars
+  name' <- case name of
+    Nothing -> VarName <$> genName "_"
+    Just name -> do
+      checkNotFunName name
+      name' <- VarName <$> genName (unVarName name)
+      modify $ \state -> state {usedVars = (name, name') : preservedVars}
+      return name'
+  e3 <- withEnvPreserving $ mapM alphaExpr e3
+  e1 <- withEnvPreserving $ alphaExpr e1
+  modify $ \state -> state {usedVars = preservedVars}
+  return $ Comprehension e1 (Just name') e2 e3
+
 alphaExpr :: Expr' -> Alpha Expr'
 alphaExpr e = withPos e <$> case value e of
   Lit lit -> return $ Lit lit
   Var name -> Var <$> useExistingVarName name
   Sub e1 e2 -> Sub <$> alphaExpr e1 <*> alphaExpr e2
-  ListComp e1 name e2 e3 -> do
-    e2 <- alphaExpr e2
-    preservedVars <- gets usedVars
-    name' <- case name of
-      Nothing -> VarName <$> genName "_"
-      Just name -> do
-        checkNotFunName name
-        name' <- VarName <$> genName (unVarName name)
-        modify $ \state -> state {usedVars = (name, name') : preservedVars}
-        return name'
-    e3 <- withEnvPreserving $ mapM alphaExpr e3
-    e1 <- withEnvPreserving $ alphaExpr e1
-    modify $ \state -> state {usedVars = preservedVars}
-    return $ ListComp e1 (Just name') e2 e3
   ListExt es -> ListExt <$> mapM alphaExpr es
+  ListComp comp -> ListComp <$> alphaComprehension comp
+  IterComp comp -> IterComp <$> alphaComprehension comp
   Call name es -> Call <$> useExistingFunName name <*> mapM alphaExpr es
   Cond e1 e2 e3 -> Cond <$> alphaExpr e1 <*> alphaExpr e2 <*> alphaExpr e3
 

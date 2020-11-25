@@ -121,10 +121,12 @@ spec = describe "run" $ do
                 (VarName "a")
                 Nothing
                 ( ListComp
-                    (Lit (LitInt 0) `at` 5)
-                    Nothing
-                    (Call (FunName "range") [Lit (LitInt 10) `at` 4] `at` 3)
-                    Nothing
+                    ( Comprehension
+                        (Lit (LitInt 0) `at` 5)
+                        Nothing
+                        (Call (FunName "range") [Lit (LitInt 10) `at` 4] `at` 3)
+                        Nothing
+                    )
                     `at` 2
                 )
                 `at` 1
@@ -135,10 +137,12 @@ spec = describe "run" $ do
                 (VarName "a@0")
                 Nothing
                 ( ListComp
-                    (Lit (LitInt 0) `at` 5)
-                    (Just (VarName "_@1"))
-                    (Call (FunName "range") [Lit (LitInt 10) `at` 4] `at` 3)
-                    Nothing
+                    ( Comprehension
+                        (Lit (LitInt 0) `at` 5)
+                        (Just (VarName "_@1"))
+                        (Call (FunName "range") [Lit (LitInt 10) `at` 4] `at` 3)
+                        Nothing
+                    )
                     `at` 2
                 )
                 `at` 1

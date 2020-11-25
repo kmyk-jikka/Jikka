@@ -126,3 +126,91 @@ data TernaryOp
   | -- list functions
     Range3
   deriving (Eq, Ord, Show, Read)
+
+literalType :: Literal -> CurryType expr
+literalType lit = case lit of
+  LitInt n -> if n >= 0 then ATyNat else ATyInt
+  LitBool p -> ATyBool
+
+unaryOpType :: UnaryOp -> (CurryType expr, CurryType expr)
+unaryOpType op =
+  let ii = (ATyInt, ATyInt)
+      nn = (ATyNat, ATyNat)
+      bb = (ATyBool, ATyBool)
+   in case op of
+        -- arithmetical functions
+        Negate -> ii
+        Fact -> nn
+        Abs -> (ATyInt, ATyNat)
+        -- logical functions
+        Not -> bb
+        -- bitwise functions
+        BitNot -> ii
+        -- list functions
+        Len t -> let t' = toCurryType t in (ATyList t', ATyNat)
+        Sum -> (ATyIterator ATyInt, ATyInt)
+        Product -> (ATyIterator ATyInt, ATyInt)
+        Min1 -> (ATyIterator ATyInt, ATyInt)
+        Max1 -> (ATyIterator ATyInt, ATyInt)
+        ArgMin -> (ATyIterator ATyInt, ATyNat)
+        ArgMax -> (ATyIterator ATyInt, ATyNat)
+        All -> (ATyIterator ATyBool, ATyBool)
+        Any -> (ATyIterator ATyBool, ATyBool)
+        Sorted t -> let t' = toCurryType t in (ATyList t', ATyList t')
+        List t -> let t' = toCurryType t in (ATyIterator t', ATyList t')
+        Reversed t -> let t' = toCurryType t in (ATyIterator t', ATyList t')
+        Range1 -> (ATyInt, ATyIterator ATyNat)
+
+binaryOpType :: BinaryOp -> (CurryType expr, CurryType expr, CurryType expr)
+binaryOpType op =
+  let iii = (ATyInt, ATyInt, ATyInt)
+      bbb = (ATyInt, ATyInt, ATyInt)
+      inn = (ATyInt, ATyNat, ATyNat)
+      iib = (ATyBool, ATyBool, ATyInt)
+      nnn = (ATyNat, ATyNat, ATyNat)
+   in case op of
+        -- arithmetical functions
+        Plus -> iii
+        Minus -> iii
+        Mult -> iii
+        FloorDiv -> iii
+        FloorMod -> iii
+        CeilDiv -> iii
+        CeilMod -> iii
+        Pow -> iii
+        Gcd -> iii
+        Lcm -> iii
+        Min -> iii
+        Max -> iii
+        -- modular functions
+        Inv -> inn
+        -- combinational functions
+        Choose -> nnn
+        Permute -> nnn
+        MultiChoose -> nnn
+        -- logical functions
+        And -> bbb
+        Or -> bbb
+        Implies -> bbb
+        -- bitwise functions
+        BitAnd -> iii
+        BitOr -> iii
+        BitXor -> iii
+        BitLeftShift -> iii
+        BitRightShift -> iii
+        -- list functions
+        Range2 -> (ATyInt, ATyInt, ATyIterator ATyInt)
+        -- arithmetical relations
+        LessThan -> iib
+        LessEqual -> iib
+        GreaterThan -> iib
+        GreaterEqual -> iib
+        -- equality relations (polymorphic)
+        Equal t -> let t' = toCurryType t in (t', t', ATyBool)
+        NotEqual t -> let t' = toCurryType t in (t', t', ATyBool)
+
+ternaryOpType :: TernaryOp -> (CurryType expr, CurryType expr, CurryType expr, CurryType expr)
+ternaryOpType op = case op of
+  Cond t -> let t' = toCurryType t in (ATyBool, t', t', t')
+  PowMod -> (ATyInt, ATyInt, ATyNat, ATyNat)
+  Range3 -> (ATyInt, ATyInt, ATyInt, ATyIterator ATyInt)

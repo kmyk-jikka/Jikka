@@ -5,6 +5,9 @@ import Jikka.Language.Python.Typed.Stdlib
 
 type Type = CurryType Expr
 
+data Comprehension = Comprehension Type Expr VarName Type Expr (Maybe Expr)
+  deriving (Eq, Ord, Show, Read)
+
 data Expr
   = Var VarName
   | Lit Literal
@@ -12,8 +15,9 @@ data Expr
   | BinOp BinaryOp Expr Expr
   | TerOp TernaryOp Expr Expr Expr
   | Sub Type Expr Expr
-  | ListComp Type Expr VarName Expr (Maybe Expr)
   | ListExt Type [Expr]
+  | ListComp Comprehension
+  | IterComp Comprehension
   | Call FunName [Expr]
   deriving (Eq, Ord, Show, Read)
 

@@ -103,22 +103,27 @@ convertCall name args = do
         Nothing -> throwError $ "Internal Error: undefined function: " ++ show (unFunName name)
       _ -> throwError $ "Internal Error: undefined function: " ++ show (unFunName name)
 
+convertComprehension :: X.Comprehension -> Conv Y.Comprehension
+convertComprehension (X.Comprehension e1 name e2 e3) = case name of
+  Nothing -> throwError "Internal Error: underscores are already removed at the alpah conversion"
+  Just name -> do
+    t1 <- genType
+    t <- genType
+    e2 <- convertExpr e2
+    e3 <- case e3 of
+      Nothing -> return Nothing
+      Just e3 -> Just <$> convertExpr e3
+    e1 <- convertExpr e1
+    return $ Y.Comprehension t1 e1 name t e2 e3
+
 convertExpr :: X.Expr' -> Conv Y.Expr
 convertExpr e = case value e of
   X.Lit lit -> return $ Y.Lit (convertLiteral lit)
   X.Var name -> return $ Y.Var name
   X.Sub e1 e2 -> Y.Sub <$> genType <*> convertExpr e1 <*> convertExpr e2
-  X.ListComp e1 name e2 e3 -> case name of
-    Nothing -> throwError "Internal Error: underscores are already removed at the alpah conversion"
-    Just name -> do
-      t <- genType
-      e2 <- convertExpr e2
-      e3 <- case e3 of
-        Nothing -> return Nothing
-        Just e3 -> Just <$> convertExpr e3
-      e1 <- convertExpr e1
-      return $ Y.ListComp t e1 name e2 e3
   X.ListExt es -> Y.ListExt <$> genType <*> mapM convertExpr es
+  X.ListComp comp -> Y.ListComp <$> convertComprehension comp
+  X.IterComp comp -> Y.IterComp <$> convertComprehension comp
   X.Call name args -> convertCall name args
   X.Cond e1 e2 e3 -> do
     t <- Y.toChurchType <$> genType

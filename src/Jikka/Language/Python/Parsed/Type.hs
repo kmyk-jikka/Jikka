@@ -26,12 +26,16 @@ data Literal
   | LitBool Bool
   deriving (Eq, Ord, Show, Read)
 
+data Comprehension = Comprehension Expr' (Maybe VarName) Expr' (Maybe Expr')
+  deriving (Eq, Ord, Show, Read)
+
 data Expr
   = Lit Literal
   | Var VarName
   | Sub Expr' Expr'
-  | ListComp Expr' (Maybe VarName) Expr' (Maybe Expr')
   | ListExt [Expr']
+  | ListComp Comprehension
+  | IterComp Comprehension
   | Call FunName [Expr']
   | Cond Expr' Expr' Expr'
   deriving (Eq, Ord, Show, Read)

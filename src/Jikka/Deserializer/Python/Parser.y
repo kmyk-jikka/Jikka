@@ -165,10 +165,10 @@ ExprAtom :: { Expr' }
     : VarName                                    { Var `fmap` $1 }
     | Literal                                    { Lit `fmap` $1 }
     | '[' ActualArgs ']'                         { withPos $1 $ ListExt $2 }
-    | '[' Comprehension ']'                      { let (body, var, iter, pred) = $2 in withPos $1 $ ListComp body (value var) iter pred }
+    | '[' Comprehension ']'                      { let (body, var, iter, pred) = $2 in withPos $1 $ ListComp (Comprehension body (value var) iter pred) }
     | VarName ListSub1                           { foldl (\a i -> withPos $1 $ Sub a i) (Var `fmap` $1) $2 }
     | FunName '(' ActualArgs ')'                 { withPos $1 $ Call (value $1) $3 }
-    | FunName '(' Comprehension ')'              { let (body, var, iter, pred) = $3 in withPos $1 $ Call (value $1) [withPos $2 $ ListComp body (value var) iter pred] }
+    | FunName '(' Comprehension ')'              { let (body, var, iter, pred) = $3 in withPos $1 $ Call (value $1) [withPos $2 $ IterComp (Comprehension body (value var) iter pred)] }
     | '(' Expr ')'                               { $2 }
 ExprPow :: { Expr' }
     : ExprAtom                                   { $1 }
