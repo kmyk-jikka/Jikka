@@ -111,6 +111,7 @@ This means that, if the execution successfully stops on both interpreter of this
 ### intrinsic types
 
 Each terms uniquely belongs its Church-style type.
+Users can make mistakes about these types. Implementations are responsible for checking these types.
 
 -   `int` type represents the set of integers.
 -   `bool` type represents the set of truth values. It has two values `True` and `False`.
@@ -130,6 +131,7 @@ They all come from the standard types of Python.
 ### annotational types
 
 Some terms have some Curry-style types.
+Users are responsible to write correctly about these types, or undefined behaviors appear. Implementations can use these types as hints.
 
 -   `nat` type represents the set of natural numbers.
     -   `nat` is not a standard type of Python.
