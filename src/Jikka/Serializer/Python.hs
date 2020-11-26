@@ -12,18 +12,99 @@ indent = "<indent>"
 dedent :: String
 dedent = "<dedent>"
 
+formatChurchType :: ChurchType -> String
+formatChurchType t = case t of
+  TyInt -> "int"
+  TyBool -> "bool"
+  TyList t -> "List[" ++ formatChurchType t ++ "]"
+  TyIterator t -> "Iterator[" ++ formatChurchType t ++ "]"
+  TyVar name -> unTypeName name
+
 formatLiteral :: Literal -> String
 formatLiteral (LitInt n) = show n
 formatLiteral (LitBool p) = show p
 
 formatUnaryOp :: UnaryOp -> Expr -> String
-formatUnaryOp op e1 = show op ++ "(" ++ formatExpr e1 ++ ")"
+formatUnaryOp op e1 =
+  let fun name = name ++ "(" ++ formatExpr e1 ++ ")"
+      fun' t name = name ++ "<" ++ formatChurchType t ++ ">(" ++ formatExpr e1 ++ ")"
+      nonfun name = name ++ " (" ++ formatExpr e1 ++ ")"
+   in case op of
+        -- arithmetical functions
+        Negate -> nonfun "-"
+        Fact -> fun "fact"
+        Abs -> fun "abs"
+        -- logical functions
+        Not -> nonfun "not"
+        -- bitwise functions
+        BitNot -> nonfun "~"
+        -- list functions
+        Len t -> fun' t "len"
+        Sum -> fun "sum"
+        Product -> fun "product"
+        Min1 -> fun "min"
+        Max1 -> fun "max"
+        ArgMin -> fun "argmin"
+        ArgMax -> fun "argmax"
+        All -> fun "all"
+        Any -> fun "any"
+        Sorted t -> fun' t "sorted"
+        List t -> fun' t "list"
+        Reversed t -> fun' t "reversed"
+        Range1 -> fun "range"
 
 formatBinaryOp :: BinaryOp -> Expr -> Expr -> String
-formatBinaryOp op e1 e2 = show op ++ "(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ")"
+formatBinaryOp op e1 e2 =
+  let fun name = name ++ "(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ")"
+      fun' t name = name ++ "<" ++ formatChurchType t ++ ">(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ")"
+      nonfun name = "(" ++ formatExpr e1 ++ " " ++ name ++ " " ++ formatExpr e2 ++ ")"
+      nonfun' t name = "(" ++ formatExpr e1 ++ " " ++ name ++ "<" ++ formatChurchType t ++ "> " ++ formatExpr e2 ++ ")"
+   in case op of
+        -- arithmetical functions
+        Plus -> nonfun "+"
+        Minus -> nonfun "-"
+        Mult -> nonfun "*"
+        FloorDiv -> nonfun "//"
+        FloorMod -> nonfun "%"
+        CeilDiv -> nonfun "ceildiv"
+        CeilMod -> nonfun "ceilmod"
+        Pow -> nonfun "**"
+        Gcd -> fun "gcd"
+        Lcm -> fun "lcm"
+        Min -> fun "min"
+        Max -> fun "max"
+        -- modular functions
+        Inv -> fun "inv"
+        -- combinational functions
+        Choose -> fun "choose"
+        Permute -> fun "permute"
+        MultiChoose -> fun "multichoose"
+        -- logical functions
+        And -> nonfun "and"
+        Or -> nonfun "or"
+        Implies -> nonfun "implies"
+        -- bitwise functions
+        BitAnd -> nonfun "&"
+        BitOr -> nonfun "|"
+        BitXor -> nonfun "^"
+        BitLeftShift -> nonfun "<<"
+        BitRightShift -> nonfun ">>"
+        -- list functions
+        Range2 -> fun "range"
+        -- arithmetical relations
+        LessThan -> nonfun "<"
+        LessEqual -> nonfun "<="
+        GreaterThan -> nonfun ">"
+        GreaterEqual -> nonfun ">="
+        -- equality relations (polymorphic)
+        Equal t -> nonfun' t "=="
+        NotEqual t -> nonfun' t "!="
 
 formatTernaryOp :: TernaryOp -> Expr -> Expr -> Expr -> String
-formatTernaryOp op e1 e2 e3 = show op ++ "(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ", " ++ formatExpr e3 ++ ")"
+formatTernaryOp op e1 e2 e3 = case op of
+  Cond t -> "(" ++ formatExpr e1 ++ " if<" ++ formatChurchType t ++ "> " ++ formatExpr e2 ++ " else " ++ formatExpr e3 ++ ")"
+  PowMod -> "pow(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ", " ++ formatExpr e3 ++ ")"
+  Range3 -> "range(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ", " ++ formatExpr e3 ++ ")"
 
 formatType :: Type -> String
 formatType t = case t of

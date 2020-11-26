@@ -25,6 +25,6 @@ spec = describe "run" $ do
     let formatted =
           unlines
             [ "def solve@0(x@1: int) -> t@1:",
-              "    return Negate(x@1)"
+              "    return - (x@1)"
             ]
     run' program `shouldBe` formatted

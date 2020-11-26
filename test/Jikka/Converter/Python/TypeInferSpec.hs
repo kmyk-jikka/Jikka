@@ -198,3 +198,23 @@ spec = describe "run" $ do
                 ]
             ]
     run untyped `shouldBe` Right typed
+  it "converts types in operators" $ do
+    let untyped =
+          Program
+            [ FunDef
+                (FunName "solve@0")
+                [(VarName "xs@1", ATyVar (TypeName "t@0"))]
+                (ATyList ATyNat)
+                [ Return (UnOp (Sorted (TyVar (TypeName "t@1"))) (Var (VarName "xs@1")))
+                ]
+            ]
+    let typed =
+          Program
+            [ FunDef
+                (FunName "solve@0")
+                [(VarName "xs@1", ATyList ATyNat)]
+                (ATyList ATyNat)
+                [ Return (UnOp (Sorted TyInt) (Var (VarName "xs@1")))
+                ]
+            ]
+    run untyped `shouldBe` Right typed

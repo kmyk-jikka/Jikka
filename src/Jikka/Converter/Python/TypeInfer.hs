@@ -246,7 +246,7 @@ unifySentence ret sentence = case sentence of
       assertSubtype t' ATyNat
       return e'
     (e, t') <- unifyExpr e
-    assertSubtype t' t
+    assertSubtype (foldr (\_ t' -> ATyList t') t' indices) t
     return $ Assign name indices e
   Define name t e -> do
     t <- unifyType t
@@ -304,6 +304,28 @@ substType' t = case t of
 substType :: Type -> Typing Type
 substType t = stripLeakedVars =<< substType' t
 
+substChurchType :: ChurchType -> Typing ChurchType
+substChurchType t = toChurchType <$> substType (toCurryType t)
+
+substUnaryOp :: UnaryOp -> Typing UnaryOp
+substUnaryOp op = case op of
+  Len t -> Len <$> substChurchType t
+  Sorted t -> Sorted <$> substChurchType t
+  List t -> List <$> substChurchType t
+  Reversed t -> Reversed <$> substChurchType t
+  _ -> return op
+
+substBinaryOp :: BinaryOp -> Typing BinaryOp
+substBinaryOp op = case op of
+  Equal t -> Equal <$> substChurchType t
+  NotEqual t -> NotEqual <$> substChurchType t
+  _ -> return op
+
+substTernaryOp :: TernaryOp -> Typing TernaryOp
+substTernaryOp op = case op of
+  Cond t -> Cond <$> substChurchType t
+  _ -> return op
+
 substComprehension :: Comprehension -> Typing Comprehension
 substComprehension (Comprehension t1 e1 name t e2 e3) = do
   t1 <- substType t1
@@ -320,9 +342,9 @@ substExpr :: Expr -> Typing Expr
 substExpr e = case e of
   Var name -> return $ Var name
   Lit lit -> return $ Lit lit
-  UnOp op e1 -> UnOp op <$> substExpr e1
-  BinOp op e1 e2 -> BinOp op <$> substExpr e1 <*> substExpr e2
-  TerOp op e1 e2 e3 -> TerOp op <$> substExpr e1 <*> substExpr e2 <*> substExpr e3
+  UnOp op e1 -> UnOp <$> substUnaryOp op <*> substExpr e1
+  BinOp op e1 e2 -> BinOp <$> substBinaryOp op <*> substExpr e1 <*> substExpr e2
+  TerOp op e1 e2 e3 -> TerOp <$> substTernaryOp op <*> substExpr e1 <*> substExpr e2 <*> substExpr e3
   Sub t e1 e2 -> Sub <$> substType t <*> substExpr e1 <*> substExpr e2
   ListExt t es -> ListExt <$> substType t <*> mapM substExpr es
   ListComp comp -> ListComp <$> substComprehension comp

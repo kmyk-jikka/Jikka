@@ -29,8 +29,7 @@ run path = do
   prog <- liftEither $ ConvertAlpha.run prog
   put "alpha converted" $ show prog
   prog <- liftEither $ FromParsed.run prog
-  put "converted AST" $ show prog
+  put "converted AT" . unpack =<< liftEither (ToPrettyPython.run prog)
   prog <- liftEither $ TypeInfer.run prog
-  put "infered types" $ show prog
-  put "pretty printed" . unpack =<< liftEither (ToPrettyPython.run prog)
+  put "infered types" . unpack =<< liftEither (ToPrettyPython.run prog)
   return ()
