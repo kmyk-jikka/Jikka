@@ -120,6 +120,7 @@ assertSubtype t1 t2 = case (t1, t2) of
   (ATyArray t1' n1, ATyArray t2' n2) -> assertSubtype t1' t2'
   (ATyList t1', ATyIterator t2') -> assertSubtype t1' t2'
   (ATyArray t1' n1, ATyIterator t2') -> assertSubtype t1' t2'
+  _ -> throwError $ "Internal Error: they are not in subtype relation: " ++ show (t1, t2)
 
 unifyType :: Type -> Typing Type
 unifyType t = case t of

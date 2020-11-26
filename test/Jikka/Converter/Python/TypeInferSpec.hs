@@ -15,8 +15,8 @@ spec = describe "run" $ do
           Program
             [ FunDef
                 (FunName "solve@0")
-                [(VarName "x@1", ATyVar (TypeName "u@0"))]
-                (ATyVar (TypeName "u@1"))
+                [(VarName "x@1", ATyVar (TypeName "t@0"))]
+                (ATyVar (TypeName "t@1"))
                 [ Return (UnOp Negate (Var (VarName "x@1")))
                 ]
             ]
@@ -35,19 +35,19 @@ spec = describe "run" $ do
           Program
             [ FunDef
                 (FunName "solve@0")
-                [ (VarName "xs@1", ATyVar (TypeName "u@0")),
-                  (VarName "y@2", ATyVar (TypeName "u@1"))
+                [ (VarName "xs@1", ATyVar (TypeName "t@0")),
+                  (VarName "y@2", ATyVar (TypeName "t@1"))
                 ]
-                (ATyVar (TypeName "u@2"))
+                (ATyVar (TypeName "t@2"))
                 [ Return
                     ( UnOp
                         Sum
                         ( IterComp
                             ( Comprehension
-                                (ATyVar (TypeName "u@3"))
+                                (ATyVar (TypeName "t@3"))
                                 (Var (VarName "y@2"))
                                 (VarName "x@3")
-                                (ATyVar (TypeName "u@4"))
+                                (ATyVar (TypeName "t@4"))
                                 (Var (VarName "xs@1"))
                                 (Just (Var (VarName "x@3")))
                             )
@@ -85,9 +85,9 @@ spec = describe "run" $ do
           Program
             [ FunDef
                 (FunName "solve@0")
-                [ (VarName "xs@1", ATyList (ATyVar (TypeName "u@0")))
+                [ (VarName "xs@1", ATyList (ATyVar (TypeName "t@0")))
                 ]
-                (ATyVar (TypeName "u@1"))
+                (ATyVar (TypeName "t@1"))
                 [ Return (UnOp Sum (Var (VarName "xs@1")))
                 ]
             ]
@@ -107,18 +107,18 @@ spec = describe "run" $ do
           Program
             [ FunDef
                 (FunName "solve@0")
-                [ (VarName "n@1", ATyVar (TypeName "u@0"))
+                [ (VarName "n@1", ATyVar (TypeName "t@0"))
                 ]
-                (ATyVar (TypeName "u@1"))
+                (ATyVar (TypeName "t@1"))
                 [ Define
                     (VarName "xs@2")
-                    (ATyArray (ATyVar (TypeName "u@2")) (Var (VarName "n@1")))
+                    (ATyArray (ATyVar (TypeName "t@2")) (Var (VarName "n@1")))
                     ( ListComp
                         ( Comprehension
-                            (ATyVar (TypeName "u@3"))
+                            (ATyVar (TypeName "t@3"))
                             (Lit (LitBool False))
                             (VarName "x@3")
-                            (ATyVar (TypeName "u@4"))
+                            (ATyVar (TypeName "t@4"))
                             (UnOp Range1 (Var (VarName "n@1")))
                             Nothing
                         )
@@ -156,17 +156,17 @@ spec = describe "run" $ do
             [ FunDef
                 (FunName "solve@0")
                 []
-                (ATyVar (TypeName "u@0"))
-                [ Define (VarName "n@1") (ATyVar (TypeName "u@1")) (Lit (LitInt 100)),
+                (ATyVar (TypeName "t@0"))
+                [ Define (VarName "n@1") (ATyVar (TypeName "t@1")) (Lit (LitInt 100)),
                   Define
                     (VarName "xs@2")
-                    (ATyArray (ATyVar (TypeName "u@2")) (Var (VarName "n@1")))
+                    (ATyArray (ATyVar (TypeName "t@2")) (Var (VarName "n@1")))
                     ( ListComp
                         ( Comprehension
-                            (ATyVar (TypeName "u@3"))
+                            (ATyVar (TypeName "t@3"))
                             (Lit (LitBool False))
                             (VarName "x@3")
-                            (ATyVar (TypeName "u@4"))
+                            (ATyVar (TypeName "t@4"))
                             (UnOp Range1 (Var (VarName "n@1")))
                             Nothing
                         )

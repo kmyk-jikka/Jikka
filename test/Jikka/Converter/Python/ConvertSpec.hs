@@ -29,9 +29,9 @@ spec = describe "run" $ do
           Y.Program
             [ Y.FunDef
                 (FunName "solve@0")
-                [(VarName "x@1", Y.ATyVar (TypeName "u@0"))]
+                [(VarName "x@1", Y.ATyVar (TypeName "t@0"))]
                 Y.ATyNat
-                [ Y.Define (VarName "y@2") (Y.ATyVar (TypeName "u@1")) (Y.Var (VarName "x@1"))
+                [ Y.Define (VarName "y@2") (Y.ATyVar (TypeName "t@1")) (Y.Var (VarName "x@1"))
                 ]
             ]
     run parsed `shouldBe` Right expected
@@ -50,8 +50,8 @@ spec = describe "run" $ do
           Y.Program
             [ Y.FunDef
                 (FunName "f@0")
-                [(VarName "x@1", Y.ATyVar (TypeName "u@0"))]
-                (Y.ATyVar (TypeName "u@1"))
+                [(VarName "x@1", Y.ATyVar (TypeName "t@0"))]
+                (Y.ATyVar (TypeName "t@1"))
                 [ Y.Return (Y.Call (FunName "f@0") [Y.Var (VarName "x@1")])
                 ]
             ]

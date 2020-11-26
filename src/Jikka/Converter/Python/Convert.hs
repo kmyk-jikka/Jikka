@@ -41,7 +41,7 @@ genTypeName :: Conv TypeName
 genTypeName = do
   id <- gets nextId
   modify $ \state -> state {nextId = id + 1}
-  return $ TypeName ("u@" ++ show id)
+  return $ TypeName ("t@" ++ show id)
 
 genType :: Conv Y.Type
 genType = Y.ATyVar <$> genTypeName

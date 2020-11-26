@@ -6,9 +6,10 @@ import qualified Data.Text.IO as T (readFile)
 import qualified Jikka.Converter.Optimizer as Opt
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha
 import qualified Jikka.Converter.Python.Convert as FromParsed
+import qualified Jikka.Converter.Python.TypeInfer as TypeInfer
 import qualified Jikka.Deserializer.Python.Lexer as PythonLexer
 import qualified Jikka.Deserializer.Python.Parser as PythonParser
-import qualified Jikka.Serializer.Show as ToShow
+import qualified Jikka.Serializer.Python as ToPrettyPython
 
 put :: String -> String -> ExceptT String IO ()
 put title message = do
@@ -29,4 +30,7 @@ run path = do
   put "alpha converted" $ show prog
   prog <- liftEither $ FromParsed.run prog
   put "converted AST" $ show prog
+  prog <- liftEither $ TypeInfer.run prog
+  put "infered types" $ show prog
+  put "pretty printed" . unpack =<< liftEither (ToPrettyPython.run prog)
   return ()
