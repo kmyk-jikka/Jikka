@@ -119,13 +119,17 @@ typecheckExpr env = \case
     Nothing -> Left $ "Internal Error: undefined variable: " ++ show (unVarName x)
     Just t -> return t
   Lit lit -> return $ literalToType lit
-  App e args -> do
-    t <- typecheckExpr env e
-    ts <- mapM (typecheckExpr env) args
-    case t of
-      FunTy ts' ret | ts' == ts -> return ret
-      _ -> Left $ "Internal Error: invalid funcall: " ++ show (App e args, t, ts)
-  Lam args e -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
+  App e args -> case args of
+    [] -> Left $ "Internal Error: empty funapp: " ++ show (App e args)
+    _ -> do
+      t <- typecheckExpr env e
+      ts <- mapM (typecheckExpr env) args
+      case t of
+        FunTy ts' ret | ts' == ts -> return ret
+        _ -> Left $ "Internal Error: invalid funcall: " ++ show (App e args, t, ts)
+  Lam args e -> case args of
+    [] -> Left $ "Internal Error: empty lambda: " ++ show (Lam args e)
+    _ -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     if t == t'
@@ -136,7 +140,9 @@ typecheckToplevelExpr :: TypeEnv -> ToplevelExpr -> Either String Type
 typecheckToplevelExpr env = \case
   ResultExpr e -> typecheckExpr env e
   ToplevelLet rec x args ret body cont -> do
-    let t = FunTy (map snd args) ret
+    let t = case args of
+          [] -> ret
+          _ -> FunTy (map snd args) ret
     ret' <- case rec of
       NonRec -> typecheckExpr (reverse args ++ env) body
       Rec -> typecheckExpr (reverse args ++ (x, t) : env) body

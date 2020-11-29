@@ -244,6 +244,7 @@ builtInOps =
     in M.fromList
         [ op Leftfix 20 ">?"
         , op Leftfix 20 "<?"
+        , op Leftfix 12 "*"
         , op Leftfix 12 "//"
         , op Leftfix 12 "%"
         , op Leftfix 12 "/^"
