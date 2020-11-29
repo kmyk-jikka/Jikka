@@ -5,12 +5,7 @@ import Data.Text (Text, pack)
 import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Stdlib
 import Jikka.Language.Python.Typed.Type
-
-indent :: String
-indent = "<indent>"
-
-dedent :: String
-dedent = "<dedent>"
+import Jikka.Serializer.AutoIndent
 
 formatChurchType :: ChurchType -> String
 formatChurchType t = case t of
@@ -166,18 +161,8 @@ formatToplevelDecl decl = case decl of
 formatProgram :: Program -> [String]
 formatProgram prog = concatMap formatToplevelDecl (decls prog)
 
-makeIndent :: [String] -> [String]
-makeIndent = go 0
-  where
-    go :: Int -> [String] -> [String]
-    go _ [] = []
-    go n (line : lines)
-      | line == indent = go (n + 4) lines
-      | line == dedent = go (n - 4) lines
-      | otherwise = (replicate n ' ' ++ line) : go n lines
-
 run' :: Program -> String
-run' = unlines . makeIndent . formatProgram
+run' = unlines . makeIndent 4 . formatProgram
 
 run :: Program -> Either String Text
 run = Right . pack . run'

@@ -9,6 +9,7 @@ import qualified Jikka.Converter.Python.ToCore as ToCore
 import qualified Jikka.Converter.Python.TypeInfer as TypeInfer
 import qualified Jikka.Deserializer.Python.Lexer as PythonLexer
 import qualified Jikka.Deserializer.Python.Parser as PythonParser
+import qualified Jikka.Serializer.Core as ToPrettyCore
 import qualified Jikka.Serializer.Python as ToPrettyPython
 
 put :: String -> String -> ExceptT String IO ()
@@ -33,5 +34,5 @@ run path = do
   prog <- liftEither $ TypeInfer.run prog
   put "infered types" . unpack =<< liftEither (ToPrettyPython.run prog)
   prog <- liftEither $ ToCore.run prog
-  put "core" $ show prog
+  put "core" . unpack =<< liftEither (ToPrettyCore.run prog)
   return ()
