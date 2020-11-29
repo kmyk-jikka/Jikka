@@ -124,10 +124,29 @@ typecheckExpr env = \case
     ts <- mapM (typecheckExpr env) args
     case t of
       FunTy ts' ret | ts' == ts -> return ret
-      _ -> Left $ "Internal Error: invalid funcall: " ++ show (App e args)
-  Lam args e -> typecheckExpr (reverse args ++ env) e
+      _ -> Left $ "Internal Error: invalid funcall: " ++ show (App e args, t, ts)
+  Lam args e -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     if t == t'
       then typecheckExpr ((x, t) : env) e2
       else Left $ "Internal Error: wrong type binding: " ++ show (Let x t e1 e2)
+
+typecheckToplevelExpr :: TypeEnv -> ToplevelExpr -> Either String Type
+typecheckToplevelExpr env = \case
+  ResultExpr e -> typecheckExpr env e
+  ToplevelLet rec x args ret body cont -> do
+    let t = FunTy (map snd args) ret
+    ret' <- case rec of
+      NonRec -> typecheckExpr (reverse args ++ env) body
+      Rec -> typecheckExpr (reverse args ++ (x, t) : env) body
+    if ret' == ret then return () else Left "Internal Error: returned type is not corrent"
+    typecheckToplevelExpr ((x, t) : env) cont
+
+typecheckProgram :: Program -> Either String Type
+typecheckProgram = typecheckToplevelExpr []
+
+typecheckProgram' :: Program -> Either String Program
+typecheckProgram' prog = do
+  typecheckProgram prog
+  return prog

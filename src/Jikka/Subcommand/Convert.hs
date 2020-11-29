@@ -1,6 +1,7 @@
 module Jikka.Subcommand.Convert (run) where
 
 import Data.Text (Text)
+import qualified Jikka.Converter.Core.Simplify as Simplify
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha
 import qualified Jikka.Converter.Python.Convert as FromParsed
 import qualified Jikka.Converter.Python.ToCore as ToCore
@@ -16,4 +17,5 @@ run path input = do
   prog <- FromParsed.run prog
   prog <- TypeInfer.run prog
   prog <- ToCore.run prog
+  prog <- Simplify.run prog
   ToShow.run prog

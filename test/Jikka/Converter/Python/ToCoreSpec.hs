@@ -26,7 +26,7 @@ spec = describe "run" $ do
             (VarName "solve@0")
             [(VarName "x@1", Y.BoolTy)]
             Y.BoolTy
-            (Y.appBuiltin Y.Not [Y.Var (VarName "x@1")])
+            (Y.AppBuiltin Y.Not [Y.Var (VarName "x@1")])
             (Y.ResultExpr (Y.Var (VarName "solve@0")))
     run input `shouldBe` Right expected
   it "converts a simple loop" $ do
@@ -55,15 +55,15 @@ spec = describe "run" $ do
             ( Y.Let
                 (VarName "xs@2")
                 (Y.ListTy Y.IntTy)
-                ( Y.appBuiltin
+                ( Y.AppBuiltin
                     (Y.Tabulate Y.IntTy)
                     [ Y.Var (VarName "n@1"),
                       Y.Lam
                         [(VarName "i@3", Y.IntTy)]
-                        (Y.appBuiltin Y.Mult [Y.Var (VarName "i@3"), Y.Var (VarName "i@3")])
+                        (Y.AppBuiltin Y.Mult [Y.Var (VarName "i@3"), Y.Var (VarName "i@3")])
                     ]
                 )
-                (Y.appBuiltin Y.Sum [Y.Var (VarName "xs@2")])
+                (Y.AppBuiltin Y.Sum [Y.Var (VarName "xs@2")])
             )
             (Y.ResultExpr (Y.Var (VarName "solve@0")))
     run input `shouldBe` Right expected

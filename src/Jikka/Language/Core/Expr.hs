@@ -1,3 +1,7 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
+
 -- |
 -- Module      : Jikka.Language.Core.Expr
 -- Description : contains data types of our core language.
@@ -130,20 +134,40 @@ data Expr
     Let VarName Type Expr Expr
   deriving (Eq, Ord, Show, Read)
 
-builtin :: Builtin -> Expr
-builtin builtin = Lit (LitBuiltin builtin)
+pattern Fun1Ty t <-
+  (\case FunTy [t1] t0 | t1 == t0 -> Just t0; _ -> Nothing -> Just t)
+  where
+    Fun1Ty t = FunTy [t] t
 
-appBuiltin :: Builtin -> [Expr] -> Expr
-appBuiltin builtin = App (Lit (LitBuiltin builtin))
+pattern Fun2Ty t <-
+  (\case FunTy [t1, t2] t0 | t1 == t0 && t2 == t0 -> Just t0; _ -> Nothing -> Just t)
+  where
+    Fun2Ty t = FunTy [t, t] t
 
-lam1 :: VarName -> Type -> Expr -> Expr
-lam1 x t e = Lam [(x, t)] e
+pattern Fun3Ty t <- (\case FunTy [t1, t2, t3] t0 | t1 == t0 && t2 == t0 && t3 == t0 -> Just t0; _ -> Nothing -> Just t)
 
-lam2 :: VarName -> Type -> VarName -> Type -> Expr -> Expr
-lam2 x1 t1 x2 t2 e = Lam [(x1, t1), (x2, t2)] e
+pattern Lit0 = Lit (LitInt 0)
 
-lam3 :: VarName -> Type -> VarName -> Type -> VarName -> Type -> Expr -> Expr
-lam3 x1 t1 x2 t2 x3 t3 e = Lam [(x1, t1), (x2, t2), (x3, t3)] e
+pattern Lit1 = Lit (LitInt 1)
+
+pattern LitTrue = Lit (LitBool True)
+
+pattern LitFalse = Lit (LitBool False)
+
+pattern Builtin builtin = Lit (LitBuiltin builtin)
+
+pattern AppBuiltin builtin args = App (Lit (LitBuiltin builtin)) args
+
+pattern Lam1 x1 t1 e = Lam [(x1, t1)] e
+
+pattern Lam2 x1 t1 x2 t2 e = Lam [(x1, t1), (x2, t2)] e
+
+pattern Lam3 x1 t1 x2 t2 x3 t3 e = Lam [(x1, t1), (x2, t2), (x3, t3)] e
+
+pattern LamId x t <-
+  (\case Lam [(x, t)] (Var y) | x == y -> Just (x, t); _ -> Nothing -> Just (x, t))
+  where
+    LamId x t = Lam [(x, t)] (Var x)
 
 data RecKind
   = NonRec

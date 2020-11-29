@@ -14,6 +14,7 @@ import Data.Maybe (isNothing)
 import Data.Traversable (forM)
 import Jikka.Language.Common.Name
 import qualified Jikka.Language.Core.Expr as Y
+import qualified Jikka.Language.Core.Lint as Y (typecheckProgram')
 import qualified Jikka.Language.Python.Typed.Stdlib as X
 import qualified Jikka.Language.Python.Typed.Type as X
 
@@ -110,7 +111,7 @@ convertComprehension (X.Comprehension t1 e1 x t e2 Nothing) = do
   e1 <- convertExpr e1
   t <- convertType t
   e2 <- convertExpr e2
-  return $ Y.appBuiltin (Y.Map t t1) [Y.lam1 x t e1, e2]
+  return $ Y.AppBuiltin (Y.Map t t1) [Y.Lam1 x t e1, e2]
 
 convertExpr :: X.Expr -> Either String Y.Expr
 convertExpr = \case
@@ -123,7 +124,7 @@ convertExpr = \case
     t <- convertType t
     e1 <- convertExpr e1
     e2 <- convertExpr e2
-    return $ Y.appBuiltin (Y.At t) [e1, e2]
+    return $ Y.AppBuiltin (Y.At t) [e1, e2]
   X.ListExt _ _ -> Left "Internal Error: list literals are not supported"
   X.ListComp comp -> convertComprehension comp
   X.IterComp comp -> convertComprehension comp
@@ -140,7 +141,7 @@ convertDeclareFor x t shape cnts body = case (t, shape, body) of
           _ -> Left "Internal Error: index is not variable"
         let go (e, t) i = case lookup i cnts of
               Nothing -> Left "Internal Error: variable not found"
-              Just size -> return (Y.appBuiltin (Y.Tabulate t) [size, Y.lam1 i Y.IntTy e], Y.ListTy t)
+              Just size -> return (Y.AppBuiltin (Y.Tabulate t) [size, Y.Lam1 i Y.IntTy e], Y.ListTy t)
         (e, _) <- foldlM go (e, t) indices
         return e
       else Left "Internal Error: unsupported form of declare/for-loop found"
@@ -160,7 +161,7 @@ convertSentences ret = \case
     e <- convertExpr e
     body1 <- convertSentences ret (body1 ++ cont)
     body2 <- convertSentences ret (body2 ++ cont)
-    return $ Y.appBuiltin (Y.If ret) [e, body1, body2]
+    return $ Y.AppBuiltin (Y.If ret) [e, body1, body2]
   (X.For {} : _) -> Left "Internal Error: unsupported form of for-loop found"
   (X.Declare x t shape : sentence : cont) -> do
     t <- convertType t
@@ -196,4 +197,6 @@ convertToplevelDecls last = \case
     return $ Y.ToplevelLet Y.Rec x args ret body cont
 
 run :: X.Program -> Either String Y.Program
-run prog = convertToplevelDecls Nothing (X.decls prog)
+run prog = do
+  prog <- convertToplevelDecls Nothing (X.decls prog)
+  Y.typecheckProgram' prog

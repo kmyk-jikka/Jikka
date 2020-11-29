@@ -20,15 +20,15 @@ spec = describe "run" $ do
             ( Let
                 (VarName "xs@2")
                 (ListTy IntTy)
-                ( appBuiltin
+                ( AppBuiltin
                     (Tabulate IntTy)
                     [ Var (VarName "n@1"),
                       Lam
                         [(VarName "i@3", IntTy)]
-                        (appBuiltin Mult [Var (VarName "i@3"), Var (VarName "i@3")])
+                        (AppBuiltin Mult [Var (VarName "i@3"), Var (VarName "i@3")])
                     ]
                 )
-                (appBuiltin Sum [Var (VarName "xs@2")])
+                (AppBuiltin Sum [Var (VarName "xs@2")])
             )
             (ResultExpr (Var (VarName "solve@0")))
     let expected =
