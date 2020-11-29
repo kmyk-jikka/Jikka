@@ -3,9 +3,9 @@ module Jikka.Subcommand.Debug (run) where
 import Control.Monad.Except
 import Data.Text (Text, unpack)
 import qualified Data.Text.IO as T (readFile)
-import qualified Jikka.Converter.Optimizer as Opt
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha
 import qualified Jikka.Converter.Python.Convert as FromParsed
+import qualified Jikka.Converter.Python.ToCore as ToCore
 import qualified Jikka.Converter.Python.TypeInfer as TypeInfer
 import qualified Jikka.Deserializer.Python.Lexer as PythonLexer
 import qualified Jikka.Deserializer.Python.Parser as PythonParser
@@ -32,4 +32,6 @@ run path = do
   put "converted AT" . unpack =<< liftEither (ToPrettyPython.run prog)
   prog <- liftEither $ TypeInfer.run prog
   put "infered types" . unpack =<< liftEither (ToPrettyPython.run prog)
+  prog <- liftEither $ ToCore.run prog
+  put "core" $ show prog
   return ()

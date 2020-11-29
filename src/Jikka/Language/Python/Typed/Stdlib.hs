@@ -52,8 +52,9 @@ data Literal
 data UnaryOp
   = -- arithmetical functions
     Negate
-  | Fact
   | Abs
+  | -- combinational functions
+    Fact
   | -- logical functions
     Not
   | -- bitwise functions

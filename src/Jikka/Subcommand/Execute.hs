@@ -3,7 +3,6 @@ module Jikka.Subcommand.Execute (run) where
 import Control.Monad.Except
 import Data.Text (Text)
 import qualified Data.Text.IO as T (readFile)
-import qualified Jikka.Converter.Optimizer as Opt
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha
 import qualified Jikka.Converter.Python.Convert as FromParsed
 import qualified Jikka.Deserializer.Python as FromPython
