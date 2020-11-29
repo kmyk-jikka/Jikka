@@ -4,8 +4,8 @@ import Data.Either (isLeft)
 import Jikka.Converter.Python.ToCore (run)
 import Jikka.Language.Common.Name
 import qualified Jikka.Language.Core.Expr as Y
+import qualified Jikka.Language.Python.Typed.Expr as X
 import qualified Jikka.Language.Python.Typed.Stdlib as X
-import qualified Jikka.Language.Python.Typed.Type as X
 import Test.Hspec
 
 spec :: Spec

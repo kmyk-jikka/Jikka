@@ -1,4 +1,4 @@
-module Jikka.Language.Python.Typed.Type where
+module Jikka.Language.Python.Typed.Expr where
 
 import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Stdlib

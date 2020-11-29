@@ -2,8 +2,8 @@ module Jikka.Language.Python.Typed.TypeInfer (TypeEnv (..), emptyTypeEnv, infer'
 
 import Data.List (lookup)
 import Jikka.Language.Common.Name
+import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
-import Jikka.Language.Python.Typed.Type
 
 --------------------------------------------------------------------------------
 -- inference

@@ -3,9 +3,9 @@ module Jikka.Subcommand.Debug (run) where
 import Control.Monad.Except
 import Data.Text (Text, unpack)
 import qualified Data.Text.IO as T (readFile)
-import qualified Jikka.Converter.Core.Simplify as Simplify
+import qualified Jikka.Converter.Core.CleanUp as CleanUp
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha
-import qualified Jikka.Converter.Python.Convert as FromParsed
+import qualified Jikka.Converter.Python.FromParsed as FromParsed
 import qualified Jikka.Converter.Python.ToCore as ToCore
 import qualified Jikka.Converter.Python.TypeInfer as TypeInfer
 import qualified Jikka.Deserializer.Python.Lexer as PythonLexer
@@ -36,6 +36,6 @@ run path = do
   put "infered types" . unpack =<< liftEither (ToPrettyPython.run prog)
   prog <- liftEither $ ToCore.run prog
   put "core" . unpack =<< liftEither (ToPrettyCore.run prog)
-  prog <- liftEither $ Simplify.run prog
+  prog <- liftEither $ CleanUp.run prog
   put "core simplified" . unpack =<< liftEither (ToPrettyCore.run prog)
   return ()

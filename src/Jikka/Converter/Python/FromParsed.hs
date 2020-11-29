@@ -1,4 +1,4 @@
-module Jikka.Converter.Python.Convert (run) where
+module Jikka.Converter.Python.FromParsed (run) where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
@@ -7,10 +7,10 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
+import qualified Jikka.Language.Python.Parsed.Expr as X
 import qualified Jikka.Language.Python.Parsed.Stdlib as X
-import qualified Jikka.Language.Python.Parsed.Type as X
+import qualified Jikka.Language.Python.Typed.Expr as Y
 import qualified Jikka.Language.Python.Typed.Stdlib as Y
-import qualified Jikka.Language.Python.Typed.Type as Y
 
 --------------------------------------------------------------------------------
 -- prepare a monad

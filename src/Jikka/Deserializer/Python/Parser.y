@@ -9,7 +9,7 @@ import qualified Jikka.Deserializer.ShuntingYard as ShuntingYard
 import Jikka.Deserializer.ShuntingYard (BinOpInfo(..), Fixity(..))
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
-import Jikka.Language.Python.Parsed.Type
+import Jikka.Language.Python.Parsed.Expr
 }
 
 %name run

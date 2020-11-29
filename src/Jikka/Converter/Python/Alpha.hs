@@ -10,8 +10,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos (value, withPos)
+import Jikka.Language.Python.Parsed.Expr
 import Jikka.Language.Python.Parsed.Stdlib (operatorNames)
-import Jikka.Language.Python.Parsed.Type
 
 --------------------------------------------------------------------------------
 -- prepare a monad

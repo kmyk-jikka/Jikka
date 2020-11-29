@@ -4,7 +4,7 @@ import Data.Either (isLeft)
 import Jikka.Converter.Python.Alpha (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
-import Jikka.Language.Python.Parsed.Type
+import Jikka.Language.Python.Parsed.Expr
 import Test.Hspec
 
 at :: a -> Int -> WithPos a

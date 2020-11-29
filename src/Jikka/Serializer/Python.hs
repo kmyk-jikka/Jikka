@@ -3,8 +3,8 @@ module Jikka.Serializer.Python (run, run') where
 import Data.List (intercalate, lookup)
 import Data.Text (Text, pack)
 import Jikka.Language.Common.Name
+import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
-import Jikka.Language.Python.Typed.Type
 import Jikka.Serializer.AutoIndent
 
 formatChurchType :: ChurchType -> String

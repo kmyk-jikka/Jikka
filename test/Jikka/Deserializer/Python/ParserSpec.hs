@@ -8,7 +8,7 @@ import qualified Jikka.Deserializer.Python.Lexer as L
 import Jikka.Deserializer.Python.Parser
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
-import Jikka.Language.Python.Parsed.Type
+import Jikka.Language.Python.Parsed.Expr
 import Test.Hspec
 
 at :: a -> (Int, Int) -> WithPos a

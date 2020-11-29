@@ -5,8 +5,8 @@ where
 
 import Data.Text (unpack)
 import Jikka.Language.Common.Name
+import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
-import Jikka.Language.Python.Typed.Type
 import Jikka.Serializer.Python
 import Test.Hspec
 

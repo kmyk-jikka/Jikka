@@ -15,8 +15,8 @@ import Data.Traversable (forM)
 import Jikka.Language.Common.Name
 import qualified Jikka.Language.Core.Expr as Y
 import qualified Jikka.Language.Core.Lint as Y (typecheckProgram')
+import qualified Jikka.Language.Python.Typed.Expr as X
 import qualified Jikka.Language.Python.Typed.Stdlib as X
-import qualified Jikka.Language.Python.Typed.Type as X
 
 convertChurchType :: X.ChurchType -> Either String Y.Type
 convertChurchType = \case

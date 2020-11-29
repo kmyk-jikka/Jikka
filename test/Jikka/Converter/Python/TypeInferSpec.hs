@@ -4,8 +4,8 @@ import Data.Either (isLeft)
 import Jikka.Converter.Python.TypeInfer (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
+import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
-import Jikka.Language.Python.Typed.Type
 import Test.Hspec
 
 spec :: Spec

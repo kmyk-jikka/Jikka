@@ -7,8 +7,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (isNothing)
 import Data.Traversable (forM)
 import Jikka.Language.Common.Name
+import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
-import Jikka.Language.Python.Typed.Type
 
 --------------------------------------------------------------------------------
 -- prepare a monad

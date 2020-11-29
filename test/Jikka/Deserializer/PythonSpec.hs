@@ -7,7 +7,7 @@ import Data.Text (pack)
 import Jikka.Deserializer.Python
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
-import Jikka.Language.Python.Parsed.Type
+import Jikka.Language.Python.Parsed.Expr
 import Test.Hspec
 
 at :: a -> (Int, Int) -> WithPos a

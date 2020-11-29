@@ -1,12 +1,12 @@
-module Jikka.Converter.Python.ConvertSpec (spec) where
+module Jikka.Converter.Python.FromParsedSpec (spec) where
 
 import Data.Either (isLeft)
-import Jikka.Converter.Python.Convert (run)
+import Jikka.Converter.Python.FromParsed (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
-import qualified Jikka.Language.Python.Parsed.Type as X
+import qualified Jikka.Language.Python.Parsed.Expr as X
+import qualified Jikka.Language.Python.Typed.Expr as Y
 import qualified Jikka.Language.Python.Typed.Stdlib as Y
-import qualified Jikka.Language.Python.Typed.Type as Y
 import Test.Hspec
 
 at :: a -> Int -> WithPos a

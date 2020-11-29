@@ -1,7 +1,7 @@
-module Jikka.Converter.Core.SimplifySpec (spec) where
+module Jikka.Converter.Core.CleanUpSpec (spec) where
 
 import Data.Either (isLeft)
-import Jikka.Converter.Core.Simplify (run)
+import Jikka.Converter.Core.CleanUp (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
 import Test.Hspec

@@ -1,4 +1,4 @@
-module Jikka.Language.Python.Parsed.Type where
+module Jikka.Language.Python.Parsed.Expr where
 
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
