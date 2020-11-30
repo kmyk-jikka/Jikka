@@ -3,6 +3,7 @@ module Jikka.Subcommand.Execute (run) where
 import Control.Monad.Except
 import qualified Data.Text.IO as T (readFile)
 import qualified Jikka.Converter.Core.CleanUp as CleanUp
+import qualified Jikka.Converter.Core.MakeEager as MakeEager
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha
 import qualified Jikka.Converter.Python.FromParsed as FromParsed
 import qualified Jikka.Converter.Python.ToCore as ToCore
@@ -19,5 +20,6 @@ run path = do
   prog <- liftEither $ TypeInfer.run prog
   prog <- liftEither $ ToCore.run prog
   prog <- liftEither $ CleanUp.run prog
+  prog <- liftEither $ MakeEager.run prog
   value <- Evaluator.run prog
   liftIO . putStrLn $ show value

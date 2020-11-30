@@ -13,6 +13,7 @@
 -- `Jikka.Evaluator.Core` evaluates exprs to values. Also this recognizes users' inputs at once.
 --
 -- The implementation assumes that all variable names don't conflict even when their scopes are distinct.
+-- Also this assumes that exprs allow the eager evaluation. Please use `Jikka.Converter.Core.MakeEager` if needed.
 module Jikka.Evaluator.Core
   ( run,
     run',
@@ -338,8 +339,10 @@ callLambdaWithTokens tokens env args body = case args of
 
 evaluateToplevelExpr :: [Token] -> Env -> ToplevelExpr -> Either String (Value, [Token])
 evaluateToplevelExpr tokens env = \case
-  ToplevelLet _ f args _ body cont -> do
-    val <- evaluateExpr env (Lam args body)
+  ToplevelLet rec f args _ body cont -> do
+    val <- case rec of
+      NonRec -> evaluateExpr env (Lam args body)
+      Rec -> mfix $ \val -> evaluateExpr ((f, val) : env) (Lam args body)
     evaluateToplevelExpr tokens ((f, val) : env) cont
   ResultExpr e -> do
     val <- evaluateExpr env e

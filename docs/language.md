@@ -177,7 +177,9 @@ logical functions (`Callable[[bool], bool]`, `Callable[[bool, bool], bool]`):
 
 -   `not` not
 -   `and` and
+    -   No short circuit exists.
 -   `or` or
+    -   No short circuit exists.
 
 bitwise functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
 
@@ -224,6 +226,7 @@ arithmetical functions (`Callable[[int, int], int]`):
 logical functions (`Callable[[bool, bool], bool]`):
 
 -   `implies` implication
+    -   No short circuit exists.
 
 
 ### builtin small functions

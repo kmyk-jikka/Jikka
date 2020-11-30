@@ -167,7 +167,7 @@ binaryOpType op =
   let iii = (ATyInt, ATyInt, ATyInt)
       bbb = (ATyInt, ATyInt, ATyInt)
       inn = (ATyInt, ATyNat, ATyNat)
-      iib = (ATyBool, ATyBool, ATyInt)
+      iib = (ATyInt, ATyInt, ATyBool)
       nnn = (ATyNat, ATyNat, ATyNat)
    in case op of
         -- arithmetical functions
