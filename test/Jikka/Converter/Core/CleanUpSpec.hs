@@ -1,6 +1,5 @@
 module Jikka.Converter.Core.CleanUpSpec (spec) where
 
-import Data.Either (isLeft)
 import Jikka.Converter.Core.CleanUp (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr

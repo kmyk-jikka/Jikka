@@ -23,10 +23,9 @@ module Jikka.Evaluator.Core
 where
 
 import Control.Monad.Except
-import Control.Monad.ST
 import qualified Data.Array as A
 import Data.Bits
-import Data.List (lookup, sort)
+import Data.List (sort)
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
 import Jikka.Language.Core.Lint (builtinToType)
@@ -155,7 +154,7 @@ argmaxEither a = return $ snd (maximum (zip a [0 ..]))
 
 inv :: Integer -> Integer -> Either String Integer
 inv a m | m <= 0 || a `mod` m == 0 = throwError $ "Runtime Error: invalid argument for inv: " ++ show (a, m)
-inv a m = error "TODO: implement this"
+inv _ _ = error "TODO: implement this"
 
 powmod :: Integer -> Integer -> Integer -> Either String Integer
 powmod _ _ m | m <= 0 = throwError $ "Runtime Error: invalid argument for powmod: MOD = " ++ show m
@@ -290,6 +289,7 @@ callBuiltin builtin args = case (builtin, args) of
   (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
   (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
   (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
+  _ -> throwError $ "Runtime Error: Internal Error: invalid builtin call: " ++ show (builtin, args)
 
 callLambda :: Env -> [(VarName, Type)] -> Expr -> [Value] -> Either String Value
 callLambda env formalArgs body actualArgs = case (formalArgs, actualArgs) of
@@ -307,18 +307,19 @@ evaluateExpr :: Env -> Expr -> Either String Value
 evaluateExpr env = \case
   Var x -> case lookup x env of
     Nothing -> throwError $ "Runtime Error: Internal Error: undefined variable: " ++ show (unVarName x)
+    Just val -> return val
   Lit lit -> return $ literalToValue lit
   App f args -> do
     f <- evaluateExpr env f
     args <- mapM (evaluateExpr env) args
     callValue f args
   Lam args body -> return $ ValLambda env args body
-  Let x t e1 e2 -> do
+  Let x _ e1 e2 -> do
     v1 <- evaluateExpr env e1
     evaluateExpr ((x, v1) : env) e2
 
-callBuiltinWithTokens :: [Token] -> Env -> Builtin -> Either String (Value, [Token])
-callBuiltinWithTokens tokens env builtin = do
+callBuiltinWithTokens :: [Token] -> Builtin -> Either String (Value, [Token])
+callBuiltinWithTokens tokens builtin = do
   case builtinToType builtin of
     FunTy ts _ -> do
       (args, tokens) <- readInputMap ts tokens
@@ -337,13 +338,13 @@ callLambdaWithTokens tokens env args body = case args of
 
 evaluateToplevelExpr :: [Token] -> Env -> ToplevelExpr -> Either String (Value, [Token])
 evaluateToplevelExpr tokens env = \case
-  ToplevelLet _ f args ret body cont -> do
+  ToplevelLet _ f args _ body cont -> do
     val <- evaluateExpr env (Lam args body)
     evaluateToplevelExpr tokens ((f, val) : env) cont
   ResultExpr e -> do
     val <- evaluateExpr env e
     case val of
-      ValBuiltin builtin -> callBuiltinWithTokens tokens env builtin
+      ValBuiltin builtin -> callBuiltinWithTokens tokens builtin
       ValLambda env args body -> callLambdaWithTokens tokens env args body
       _ -> return (val, tokens)
 

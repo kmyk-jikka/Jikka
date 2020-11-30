@@ -1,8 +1,6 @@
 module Jikka.Main where
 
-import Control.Monad (forM_)
 import Control.Monad.Except
-import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import qualified Jikka.Subcommand.Convert as Convert
@@ -70,9 +68,8 @@ main name args = do
       return $ ExitFailure 1
 
 parseFlags :: String -> [Flag] -> Either String Options
-parseFlags name = go defaultOptions
+parseFlags _ = go defaultOptions
   where
-    usage = usageInfo (header name) options
     go :: Options -> [Flag] -> Either String Options
     go opts [] = Right opts
     go opts (flag : flags) = case flag of
@@ -81,7 +78,7 @@ parseFlags name = go defaultOptions
       Verbose -> go (opts {verbose = True}) flags
 
 runSubcommand :: String -> Options -> FilePath -> ExceptT String IO ()
-runSubcommand subcmd opts path = case subcmd of
+runSubcommand subcmd _ path = case subcmd of
   "convert" -> do
     input <- liftIO $ T.readFile path
     output <- liftEither $ Convert.run path input

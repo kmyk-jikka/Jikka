@@ -4,7 +4,6 @@ module Jikka.Language.Python.Typed.TypeInferSpec
 where
 
 import Data.Either (isLeft)
-import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
 import Jikka.Language.Python.Typed.TypeInfer

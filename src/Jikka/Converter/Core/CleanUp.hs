@@ -20,7 +20,6 @@ module Jikka.Converter.Core.CleanUp
   )
 where
 
-import Debug.Trace
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
 import Jikka.Language.Core.Lint (typecheckProgram')
@@ -79,9 +78,9 @@ cleanApp env f args = case f of
     (Implies, [_, e2]) | e2 == LitTrue -> LitTrue
     (Implies, [e1, _]) | e1 == LitFalse -> LitTrue
     (Implies, [e1, e2]) | e2 == LitFalse -> cleanExpr env (AppBuiltin Not [e1])
-    (If t, [e1, e2, _]) | e1 == LitTrue -> e2
-    (If t, [e1, _, e3]) | e1 == LitFalse -> e3
-    (If t, [_, e2, e3]) | e2 == e3 -> e2
+    (If _, [e1, e2, _]) | e1 == LitTrue -> e2
+    (If _, [e1, _, e3]) | e1 == LitFalse -> e3
+    (If _, [_, e2, e3]) | e2 == e3 -> e2
     -- bitwise functions
     (BitNot, [AppBuiltin BitNot [e]]) -> e
     (BitAnd, [e1, _]) | e1 == Lit0 -> Lit0
@@ -119,7 +118,7 @@ isVarUsed x = \case
   Let y _ e1 e2 -> (y /= x && isVarUsed x e1) || isVarUsed x e2
 
 cleanLet :: TypeEnv -> VarName -> Type -> Expr -> Expr -> Expr
-cleanLet env x t e1 e2
+cleanLet _ x t e1 e2
   | not (isVarUsed x e2) = e2
   | otherwise = Let x t e1 e2
 
@@ -137,7 +136,7 @@ cleanExpr env = \case
      in cleanLet env x t e1' e2'
 
 cleanToplevelExpr :: TypeEnv -> ToplevelExpr -> ToplevelExpr
-cleanToplevelExpr env = \case
+cleanToplevelExpr env e = case e of
   ResultExpr e -> ResultExpr $ cleanExpr env e
   ToplevelLet Rec x args ret body cont
     | not (isVarUsed x body) ->

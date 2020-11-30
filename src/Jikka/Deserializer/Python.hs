@@ -6,6 +6,6 @@ import qualified Jikka.Deserializer.Python.Parser as P
 import Jikka.Language.Python.Parsed.Expr (Program)
 
 run :: FilePath -> Text -> Either String Program
-run path input = do
+run _ input = do
   tokens <- L.run $ unpack input
   P.run tokens

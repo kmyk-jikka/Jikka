@@ -6,7 +6,7 @@ module Jikka.Serializer.Core
   )
 where
 
-import Data.List (intercalate, lookup)
+import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
@@ -111,7 +111,7 @@ formatTemplate = \case
   ts -> "<" ++ intercalate ", " (map formatType ts) ++ ">"
 
 formatFunCall :: String -> [Type] -> [Expr] -> String
-formatFunCall f ts args = f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
+formatFunCall f _ args = f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
 
 formatBuiltinIsolated :: Builtin' -> String
 formatBuiltinIsolated = \case
@@ -125,9 +125,9 @@ formatBuiltin :: Builtin' -> [Expr] -> String
 formatBuiltin builtin args = case (builtin, args) of
   (Fun ts name, _) -> formatFunCall name ts args
   (PrefixOp op, [e1]) -> paren $ op ++ " " ++ formatExpr e1
-  (InfixOp ts op, [e1, e2]) -> paren $ formatExpr e1 ++ " " ++ op ++ " " ++ formatExpr e2
-  (At' t, [e1, e2]) -> paren $ formatExpr e1 ++ ")[" ++ formatExpr e2 ++ "]"
-  (If' t, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr e1 ++ " then " ++ formatExpr e2 ++ " else " ++ formatExpr e3
+  (InfixOp _ op, [e1, e2]) -> paren $ formatExpr e1 ++ " " ++ op ++ " " ++ formatExpr e2
+  (At' _, [e1, e2]) -> paren $ formatExpr e1 ++ ")[" ++ formatExpr e2 ++ "]"
+  (If' _, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr e1 ++ " then " ++ formatExpr e2 ++ " else " ++ formatExpr e3
   _ -> formatFunCall (formatBuiltinIsolated builtin) [] args
 
 formatLiteral :: Literal -> String

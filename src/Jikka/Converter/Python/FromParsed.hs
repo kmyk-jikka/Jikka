@@ -2,9 +2,7 @@ module Jikka.Converter.Python.FromParsed (run) where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
-import Data.List (lookup)
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos
 import qualified Jikka.Language.Python.Parsed.Expr as X
@@ -173,7 +171,7 @@ convertToplevelDecl decl = case value decl of
     declareFun name (map snd args) ret
     body <- mapM convertSentence body
     return [Y.FunDef name args ret body]
-  X.FromImport path -> return []
+  X.FromImport _ -> return []
 
 run :: X.Program -> Either String Y.Program
 run prog = runConv $ do

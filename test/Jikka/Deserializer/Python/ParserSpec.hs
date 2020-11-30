@@ -3,7 +3,6 @@ module Jikka.Deserializer.Python.ParserSpec
   )
 where
 
-import Data.Char (toLower)
 import qualified Jikka.Deserializer.Python.Lexer as L
 import Jikka.Deserializer.Python.Parser
 import Jikka.Language.Common.Name

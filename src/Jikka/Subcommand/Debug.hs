@@ -1,7 +1,7 @@
 module Jikka.Subcommand.Debug (run) where
 
 import Control.Monad.Except
-import Data.Text (Text, unpack)
+import Data.Text (unpack)
 import qualified Data.Text.IO as T (readFile)
 import qualified Jikka.Converter.Core.CleanUp as CleanUp
 import qualified Jikka.Converter.Python.Alpha as ConvertAlpha

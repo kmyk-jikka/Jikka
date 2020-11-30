@@ -1,6 +1,5 @@
 module Jikka.Converter.Python.ToCoreSpec (spec) where
 
-import Data.Either (isLeft)
 import Jikka.Converter.Python.ToCore (run)
 import Jikka.Language.Common.Name
 import qualified Jikka.Language.Core.Expr as Y

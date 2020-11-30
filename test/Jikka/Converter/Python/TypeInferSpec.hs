@@ -1,9 +1,7 @@
 module Jikka.Converter.Python.TypeInferSpec (spec) where
 
-import Data.Either (isLeft)
 import Jikka.Converter.Python.TypeInfer (run)
 import Jikka.Language.Common.Name
-import Jikka.Language.Common.Pos
 import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
 import Test.Hspec

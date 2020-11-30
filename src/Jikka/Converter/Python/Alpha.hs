@@ -5,8 +5,6 @@ where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
-import Data.List (lookup)
-import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Jikka.Language.Common.Name
 import Jikka.Language.Common.Pos (value, withPos)

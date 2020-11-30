@@ -131,7 +131,7 @@ data TernaryOp
 literalType :: Literal -> CurryType expr
 literalType lit = case lit of
   LitInt n -> if n >= 0 then ATyNat else ATyInt
-  LitBool p -> ATyBool
+  LitBool _ -> ATyBool
 
 unaryOpType :: UnaryOp -> (CurryType expr, CurryType expr)
 unaryOpType op =

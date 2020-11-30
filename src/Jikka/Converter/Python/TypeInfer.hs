@@ -2,10 +2,8 @@ module Jikka.Converter.Python.TypeInfer (run) where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
-import Data.List (lookup)
 import qualified Data.Map.Strict as M
 import Data.Maybe (isNothing)
-import Data.Traversable (forM)
 import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib
@@ -115,11 +113,11 @@ assertSubtype t1 t2 = case (t1, t2) of
   _ | toChurchType t1 == toChurchType t2 -> return ()
   (ATyIterator t1', ATyIterator t2') -> assertSubtype t1' t2'
   (ATyList t1', ATyList t2') -> assertSubtype t1' t2'
-  (ATyList t1', ATyArray t2' n2) -> assertSubtype t1' t2'
-  (ATyArray t1' n1, ATyList t2') -> assertSubtype t1' t2'
-  (ATyArray t1' n1, ATyArray t2' n2) -> assertSubtype t1' t2'
+  (ATyList t1', ATyArray t2' _) -> assertSubtype t1' t2'
+  (ATyArray t1' _, ATyList t2') -> assertSubtype t1' t2'
+  (ATyArray t1' _, ATyArray t2' _) -> assertSubtype t1' t2'
   (ATyList t1', ATyIterator t2') -> assertSubtype t1' t2'
-  (ATyArray t1' n1, ATyIterator t2') -> assertSubtype t1' t2'
+  (ATyArray t1' _, ATyIterator t2') -> assertSubtype t1' t2'
   _ -> throwError $ "Internal Error: they are not in subtype relation: " ++ show (t1, t2)
 
 unifyType :: Type -> Typing Type
@@ -425,7 +423,7 @@ hasLeakedVars e = case e of
   Var name -> do
     t <- lookup name <$> gets varenv
     return $ isNothing t
-  Lit lit -> return False
+  Lit _ -> return False
   UnOp _ e1 -> hasLeakedVars e1
   BinOp _ e1 e2 -> do
     p1 <- hasLeakedVars e1

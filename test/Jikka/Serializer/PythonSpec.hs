@@ -3,7 +3,6 @@ module Jikka.Serializer.PythonSpec
   )
 where
 
-import Data.Text (unpack)
 import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Expr
 import Jikka.Language.Python.Typed.Stdlib

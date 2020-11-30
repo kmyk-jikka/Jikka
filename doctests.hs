@@ -4,6 +4,8 @@ import Test.DocTest
 -- TODO: Resolve this issue.
 --
 -- >   main = doctest ["-isrc", "src/Jikka/Main.hs"]
+main :: IO ()
 main = doctest
-    ["src/Jikka/Language/"
-    , "src/Jikka/Converter/"]
+    [ "src/Jikka/Language/"
+    , "src/Jikka/Converter/"
+    ]

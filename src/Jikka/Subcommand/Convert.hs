@@ -7,7 +7,6 @@ import qualified Jikka.Converter.Python.FromParsed as FromParsed
 import qualified Jikka.Converter.Python.ToCore as ToCore
 import qualified Jikka.Converter.Python.TypeInfer as TypeInfer
 import qualified Jikka.Deserializer.Python as FromPython
-import qualified Jikka.Serializer.Python as ToPrettyPython
 import qualified Jikka.Serializer.Show as ToShow
 
 run :: FilePath -> Text -> Either String Text

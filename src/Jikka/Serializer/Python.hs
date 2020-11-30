@@ -1,6 +1,6 @@
 module Jikka.Serializer.Python (run, run') where
 
-import Data.List (intercalate, lookup)
+import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Language.Common.Name
 import Jikka.Language.Python.Typed.Expr
@@ -51,7 +51,6 @@ formatUnaryOp op e1 =
 formatBinaryOp :: BinaryOp -> Expr -> Expr -> String
 formatBinaryOp op e1 e2 =
   let fun name = name ++ "(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ")"
-      fun' t name = name ++ "<" ++ formatChurchType t ++ ">(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ")"
       nonfun name = "(" ++ formatExpr e1 ++ " " ++ name ++ " " ++ formatExpr e2 ++ ")"
       nonfun' t name = "(" ++ formatExpr e1 ++ " " ++ name ++ "<" ++ formatChurchType t ++ "> " ++ formatExpr e2 ++ ")"
    in case op of
@@ -113,7 +112,7 @@ formatType t = case t of
   ATyVar name -> unTypeName name
 
 formatComprehension :: Comprehension -> String
-formatComprehension (Comprehension t1 e1 name t e2 e3) =
+formatComprehension (Comprehension _ e1 name _ e2 e3) =
   let body = formatExpr e1 ++ " for " ++ unVarName name ++ " in " ++ formatExpr e2
       cond = case e3 of
         Nothing -> ""
@@ -143,7 +142,7 @@ formatShape (e : es) = "[" ++ formatShape es ++ " for _ in range(" ++ formatExpr
 formatSentence :: Sentence -> [String]
 formatSentence sentence = case sentence of
   If e body1 body2 -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatSentence body1 ++ [dedent, "else:", indent] ++ concatMap formatSentence body2 ++ [dedent]
-  For name t e body -> ["for " ++ unVarName name ++ " in " ++ formatExpr e ++ ":", indent] ++ concatMap formatSentence body ++ [dedent]
+  For name _ e body -> ["for " ++ unVarName name ++ " in " ++ formatExpr e ++ ":", indent] ++ concatMap formatSentence body ++ [dedent]
   Declare name t shape -> [unVarName name ++ ": " ++ formatType t ++ " = " ++ formatShape shape]
   Assign name indices e -> [unVarName name ++ concatMap (\e' -> "[" ++ formatExpr e' ++ "]") indices ++ " = " ++ formatExpr e]
   Define name t e -> [unVarName name ++ ": " ++ formatType t ++ " = " ++ formatExpr e]

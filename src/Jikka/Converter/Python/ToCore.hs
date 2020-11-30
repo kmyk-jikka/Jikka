@@ -6,12 +6,9 @@ module Jikka.Converter.Python.ToCore
 where
 
 import Control.Monad.Except
-import Control.Monad.State.Strict
 import Data.Foldable (foldlM)
-import Data.List (lookup, sort)
-import qualified Data.Map.Strict as M
+import Data.List (sort)
 import Data.Maybe (isNothing)
-import Data.Traversable (forM)
 import Jikka.Language.Common.Name
 import qualified Jikka.Language.Core.Expr as Y
 import qualified Jikka.Language.Core.Lint as Y (typecheckProgram')
