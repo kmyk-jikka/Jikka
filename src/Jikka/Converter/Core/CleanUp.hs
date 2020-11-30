@@ -145,7 +145,7 @@ cleanToplevelExpr env e = case e of
     let t = FunTy (map snd args) ret
         body' = case rec of
           NonRec -> cleanExpr (insertFormalArgs args env) body
-          Rec -> cleanExpr (insertFormalArgs args $ (x, (t, Nothing)) : env) body'
+          Rec -> cleanExpr (insertFormalArgs args $ (x, (t, Nothing)) : env) body
         cont' = case rec of
           NonRec -> cleanToplevelExpr ((x, (t, Just body)) : env) cont
           Rec -> cleanToplevelExpr ((x, (t, Nothing)) : env) cont
