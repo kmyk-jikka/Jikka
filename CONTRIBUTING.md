@@ -1,5 +1,15 @@
 # Contributing
 
+## TODO
+
+-   write the core optimizer
+-   use a consistent error system
+-   use a robust gensym system
+-   put more precise location info to more nodes of AST
+-   improve our Python subset
+-   write the code generater of C++
+-   write the parser of our ML-like language
+
 ## Tools
 
 ### Tests
