@@ -9,6 +9,7 @@
 -   improve our Python subset
 -   write the code generater of C++
 -   write the parser of our ML-like language
+-   prepare a system to define rewrite rules easily
 
 ## Tools
 

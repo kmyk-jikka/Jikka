@@ -1,6 +1,6 @@
-module Jikka.Converter.Core.CleanUpSpec (spec) where
+module Jikka.Converter.Core.RemoveUnusedVarsSpec (spec) where
 
-import Jikka.Converter.Core.CleanUp (run)
+import Jikka.Converter.Core.RemoveUnusedVars (run)
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
 import Test.Hspec
@@ -14,7 +14,7 @@ spec = describe "run" $ do
             (VarName "solve@0")
             [(VarName "x@1", BoolTy)]
             BoolTy
-            (AppBuiltin Not [AppBuiltin Not [Var (VarName "x@1")]])
+            (Let (VarName "y@2") IntTy Lit0 (Var (VarName "x@1")))
             (ResultExpr (Var (VarName "solve@0")))
     let expected =
           ToplevelLet

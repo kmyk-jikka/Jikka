@@ -21,10 +21,11 @@ import Jikka.Language.Core.Lint (typecheckProgram')
 
 makeEagerExpr :: Expr -> Expr
 makeEagerExpr = \case
-  AppBuiltin (If t) [p, a, b] -> App (AppBuiltin (If (FunTy [] t)) [makeEagerExpr p, Lam [] (makeEagerExpr a), Lam [] (makeEagerExpr b)]) []
   Var x -> Var x
   Lit lit -> Lit lit
-  App f args -> App (makeEagerExpr f) (map makeEagerExpr args)
+  App f args -> case (makeEagerExpr f, args) of
+    (Builtin (If t), [p, a, b]) -> App (AppBuiltin (If (FunTy [] t)) [makeEagerExpr p, Lam [] (makeEagerExpr a), Lam [] (makeEagerExpr b)]) []
+    (f, _) -> App f (map makeEagerExpr args)
   Lam args e -> Lam args (makeEagerExpr e)
   Let x t e1 e2 -> Let x t (makeEagerExpr e1) (makeEagerExpr e2)
 

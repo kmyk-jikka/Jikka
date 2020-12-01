@@ -150,6 +150,10 @@ pattern Lit0 = Lit (LitInt 0)
 
 pattern Lit1 = Lit (LitInt 1)
 
+pattern Lit2 = Lit (LitInt 2)
+
+pattern LitMinus1 = Lit (LitInt (-1))
+
 pattern LitTrue = Lit (LitBool True)
 
 pattern LitFalse = Lit (LitBool False)
