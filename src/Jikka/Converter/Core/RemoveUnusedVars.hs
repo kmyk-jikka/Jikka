@@ -34,19 +34,15 @@ cleanExpr = \case
   Let x t e1 e2 -> cleanLet x t (cleanExpr e1) (cleanExpr e2)
 
 cleanToplevelExpr :: ToplevelExpr -> ToplevelExpr
-cleanToplevelExpr e = case e of
+cleanToplevelExpr = \case
   ResultExpr e -> ResultExpr $ cleanExpr e
-  ToplevelLet Rec x args ret body cont
-    | isUnusedVar x body ->
-      cleanToplevelExpr (ToplevelLet NonRec x args ret body cont)
   ToplevelLet rec x args ret body cont ->
-    let body' = case rec of
-          NonRec -> cleanExpr body
-          Rec -> cleanExpr body
-        cont' = case rec of
-          NonRec -> cleanToplevelExpr cont
-          Rec -> cleanToplevelExpr cont
-     in ToplevelLet rec x args ret body' cont'
+    let rec' = case rec of
+          Rec | isUnusedVar x body -> NonRec
+          _ -> rec
+        body' = cleanExpr body
+        cont' = cleanToplevelExpr cont
+     in ToplevelLet rec' x args ret body' cont'
 
 run :: Program -> Either String Program
 run = typecheckProgram' . cleanToplevelExpr
