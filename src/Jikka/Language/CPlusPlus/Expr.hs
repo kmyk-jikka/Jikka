@@ -1,3 +1,5 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 -- |
 -- Module      : Jikka.Language.CPlusPlus.Expr
 -- Description : contains data types of C++ language.
@@ -11,11 +13,11 @@
 -- The data types are intended to use for the code generation.
 module Jikka.Language.CPlusPlus.Expr where
 
-newtype VarName = VarName {unVarName :: String} deriving (Eq, Ord, Show, Read)
+import Data.String (IsString)
 
-newtype FunName = FunName {unFunName :: String} deriving (Eq, Ord, Show, Read)
+newtype VarName = VarName {unVarName :: String} deriving (Eq, Ord, Show, Read, IsString)
 
-newtype MethodName = MethodName {unMethodName :: String} deriving (Eq, Ord, Show, Read)
+newtype FunName = FunName {unFunName :: String} deriving (Eq, Ord, Show, Read, IsString)
 
 data Type
   = TyAuto
