@@ -15,78 +15,58 @@ module Jikka.Language.Core.Lint where
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
 
-fun1Ty :: Type -> Type
-fun1Ty t = FunTy [t] t
-
--- | `fun2Ty` is a utility to define binary functions.
---
--- >>> fun2Ty IntTy
--- FunTy [IntTy,IntTy] IntTy
-fun2Ty :: Type -> Type
-fun2Ty t = FunTy [t, t] t
-
-fun3Ty :: Type -> Type
-fun3Ty t = FunTy [t, t, t] t
-
--- | `funlTy` is a utility to define unary functions from lists to elements.
---
--- >>> funlTy IntTy
--- FunTy [ListTy IntTy] IntTy
-funlTy :: Type -> Type
-funlTy t = FunTy [ListTy t] t
-
 builtinToType :: Builtin -> Type
 builtinToType = \case
   -- arithmetical functions
-  Negate -> fun1Ty IntTy
-  Plus -> fun2Ty IntTy
-  Minus -> fun2Ty IntTy
-  Mult -> fun2Ty IntTy
-  FloorDiv -> fun2Ty IntTy
-  FloorMod -> fun2Ty IntTy
-  CeilDiv -> fun2Ty IntTy
-  CeilMod -> fun2Ty IntTy
-  Pow -> fun2Ty IntTy
+  Negate -> Fun1Ty IntTy
+  Plus -> Fun2Ty IntTy
+  Minus -> Fun2Ty IntTy
+  Mult -> Fun2Ty IntTy
+  FloorDiv -> Fun2Ty IntTy
+  FloorMod -> Fun2Ty IntTy
+  CeilDiv -> Fun2Ty IntTy
+  CeilMod -> Fun2Ty IntTy
+  Pow -> Fun2Ty IntTy
   -- induction functions
   NatInd t -> FunTy [t, FunTy [IntTy, t] t, IntTy] t
   -- advanced arithmetical functions
-  Abs -> fun1Ty IntTy
-  Gcd -> fun2Ty IntTy
-  Lcm -> fun2Ty IntTy
-  Min -> fun2Ty IntTy
-  Max -> fun2Ty IntTy
+  Abs -> Fun1Ty IntTy
+  Gcd -> Fun2Ty IntTy
+  Lcm -> Fun2Ty IntTy
+  Min -> Fun2Ty IntTy
+  Max -> Fun2Ty IntTy
   -- logical functions
-  Not -> fun1Ty BoolTy
-  And -> fun2Ty BoolTy
-  Or -> fun2Ty BoolTy
-  Implies -> fun2Ty BoolTy
+  Not -> Fun1Ty BoolTy
+  And -> Fun2Ty BoolTy
+  Or -> Fun2Ty BoolTy
+  Implies -> Fun2Ty BoolTy
   If t -> FunTy [BoolTy, t, t] t
   -- bitwise functions
-  BitNot -> fun1Ty IntTy
-  BitAnd -> fun2Ty IntTy
-  BitOr -> fun2Ty IntTy
-  BitXor -> fun2Ty IntTy
-  BitLeftShift -> fun2Ty IntTy
-  BitRightShift -> fun2Ty IntTy
+  BitNot -> Fun1Ty IntTy
+  BitAnd -> Fun2Ty IntTy
+  BitOr -> Fun2Ty IntTy
+  BitXor -> Fun2Ty IntTy
+  BitLeftShift -> Fun2Ty IntTy
+  BitRightShift -> Fun2Ty IntTy
   -- modular functions
-  Inv -> fun2Ty IntTy
-  PowMod -> fun3Ty IntTy
+  Inv -> Fun2Ty IntTy
+  PowMod -> Fun3Ty IntTy
   -- list functions
   Len t -> FunTy [ListTy t] IntTy
   Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)
   Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)
   At t -> FunTy [ListTy t, IntTy] t
-  Sum -> funlTy IntTy
-  Product -> funlTy IntTy
-  Min1 -> funlTy IntTy
-  Max1 -> funlTy IntTy
-  ArgMin -> funlTy IntTy
-  ArgMax -> funlTy IntTy
-  All -> funlTy BoolTy
-  Any -> funlTy BoolTy
-  Sorted t -> fun1Ty (ListTy t)
-  List t -> fun1Ty (ListTy t)
-  Reversed t -> fun1Ty (ListTy t)
+  Sum -> FunLTy IntTy
+  Product -> FunLTy IntTy
+  Min1 -> FunLTy IntTy
+  Max1 -> FunLTy IntTy
+  ArgMin -> FunLTy IntTy
+  ArgMax -> FunLTy IntTy
+  All -> FunLTy BoolTy
+  Any -> FunLTy BoolTy
+  Sorted t -> Fun1Ty (ListTy t)
+  List t -> Fun1Ty (ListTy t)
+  Reversed t -> Fun1Ty (ListTy t)
   Range1 -> FunTy [IntTy] (ListTy IntTy)
   Range2 -> FunTy [IntTy, IntTy] (ListTy IntTy)
   Range3 -> FunTy [IntTy, IntTy, IntTy] (ListTy IntTy)
@@ -99,10 +79,10 @@ builtinToType = \case
   Equal t -> FunTy [t, t] BoolTy
   NotEqual t -> FunTy [t, t] BoolTy
   -- combinational functions
-  Fact -> fun1Ty IntTy
-  Choose -> fun2Ty IntTy
-  Permute -> fun2Ty IntTy
-  MultiChoose -> fun2Ty IntTy
+  Fact -> Fun1Ty IntTy
+  Choose -> Fun2Ty IntTy
+  Permute -> Fun2Ty IntTy
+  MultiChoose -> Fun2Ty IntTy
 
 literalToType :: Literal -> Type
 literalToType = \case

@@ -144,7 +144,15 @@ pattern Fun2Ty t <-
   where
     Fun2Ty t = FunTy [t, t] t
 
-pattern Fun3Ty t <- (\case FunTy [t1, t2, t3] t0 | t1 == t0 && t2 == t0 && t3 == t0 -> Just t0; _ -> Nothing -> Just t)
+pattern Fun3Ty t <-
+  (\case FunTy [t1, t2, t3] t0 | t1 == t0 && t2 == t0 && t3 == t0 -> Just t0; _ -> Nothing -> Just t)
+  where
+    Fun3Ty t = FunTy [t, t, t] t
+
+pattern FunLTy t <-
+  (\case FunTy [ListTy t1] t0 | t1 == t0 -> Just t0; _ -> Nothing -> Just t)
+  where
+    FunLTy t = FunTy [ListTy t] t
 
 pattern Lit0 = Lit (LitInt 0)
 
