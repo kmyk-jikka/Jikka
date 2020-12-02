@@ -171,7 +171,7 @@ formatProgram :: Program -> [String]
 formatProgram = formatToplevelExpr
 
 run' :: Program -> String
-run' = unlines . makeIndent 4 . formatProgram
+run' = unlines . makeIndentFromMarkers 4 . formatProgram
 
 run :: Program -> Either String Text
 run = Right . pack . run'

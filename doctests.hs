@@ -8,4 +8,5 @@ main :: IO ()
 main = doctest
     [ "src/Jikka/Language/"
     , "src/Jikka/Converter/"
+    , "src/Jikka/Serializer/"
     ]
