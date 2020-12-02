@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 
 -- |
@@ -10,11 +12,7 @@
 -- Portability : portable
 --
 -- `Jikka.Language.Core.Alpha` renames variables in exprs to avoid name conflictions, even if the scopes of two variables are distinct.
-module Jikka.Converter.Core.Alpha
-  ( run,
-    run',
-  )
-where
+module Jikka.Converter.Core.Alpha where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
@@ -25,30 +23,38 @@ import Jikka.Language.Core.Lint (typecheckProgram')
 -- -----------------------------------------------------------------------------
 -- monad
 
-newtype Env
-  = Env
-      { counter :: Int
-      }
+type Alpha = StateT Int (Either String)
 
-type Alpha = StateT Env (Either String)
+class Monad m => MonadAlpha m where
+  nextCounter :: m Int
+
+instance Monad m => MonadAlpha (StateT Int m) where
+  nextCounter = state $ \i -> (i, i + 1)
 
 runAlpha :: Int -> Alpha a -> Either String (a, Int)
-runAlpha i a = do
-  let env = Env i
-  (a, Env i) <- runStateT a env
-  return (a, i)
+runAlpha i a = runStateT a i
 
-gensym :: VarName -> Alpha VarName
-gensym hint = do
-  i <- gets counter
-  modify $ \env -> env {counter = counter env + 1}
+evalAlpha :: Int -> Alpha a -> Either String a
+evalAlpha i = fmap fst . runAlpha i
+
+evalAlpha' :: Alpha a -> Either String a
+evalAlpha' = evalAlpha 0
+
+gensym :: MonadAlpha m => m VarName
+gensym = rename' (VarName "x") <$> nextCounter
+
+rename :: MonadAlpha m => VarName -> m VarName
+rename hint = rename' hint <$> nextCounter
+
+rename' :: VarName -> Int -> VarName
+rename' hint i =
   let base = takeWhile (/= '@') (unVarName hint)
-  return $ VarName (base ++ "@" ++ show i)
+   in VarName (base ++ "@" ++ show i)
 
 -- -----------------------------------------------------------------------------
 -- run
 
-runExpr :: [(VarName, VarName)] -> Expr -> Alpha Expr
+runExpr :: (MonadAlpha m, MonadError String m) => [(VarName, VarName)] -> Expr -> m Expr
 runExpr env = \case
   Var x -> case lookup x env of
     Nothing -> throwError $ "Internal Error: undefined variable: " ++ show x
@@ -57,7 +63,7 @@ runExpr env = \case
   App f args -> App <$> runExpr env f <*> mapM (runExpr env) args
   Lam args body -> do
     args <- forM args $ \(x, t) -> do
-      y <- gensym x
+      y <- rename x
       return (x, y, t)
     let args1 = map (\(x, y, _) -> (x, y)) args
     let args2 = map (\(_, y, t) -> (y, t)) args
@@ -65,17 +71,17 @@ runExpr env = \case
     return $ Lam args2 body
   Let x t e1 e2 -> do
     e1 <- runExpr env e1
-    y <- gensym x
+    y <- rename x
     e2 <- runExpr ((x, y) : env) e2
     return $ Let y t e1 e2
 
-runToplevelExpr :: [(VarName, VarName)] -> ToplevelExpr -> Alpha ToplevelExpr
+runToplevelExpr :: (MonadAlpha m, MonadError String m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr <$> runExpr env e
   ToplevelLet rec f args ret body cont -> do
-    g <- gensym f
+    g <- rename f
     args <- forM args $ \(x, t) -> do
-      y <- gensym x
+      y <- rename x
       return (x, y, t)
     let args1 = map (\(x, y, _) -> (x, y)) args
     let args2 = map (\(_, y, t) -> (y, t)) args
@@ -85,9 +91,12 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((f, g) : env) cont
     return $ ToplevelLet rec g args2 ret body cont
 
+runProgram :: (MonadAlpha m, MonadError String m) => Program -> m Program
+runProgram = runToplevelExpr []
+
 run' :: Program -> Int -> Either String (Program, Int)
 run' prog i = do
-  (prog, i) <- runAlpha i $ runToplevelExpr [] prog
+  (prog, i) <- runAlpha i $ runProgram prog
   prog <- typecheckProgram' prog
   return (prog, i)
 
