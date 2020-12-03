@@ -1,6 +1,4 @@
-from jikka.compat import *
-
-def f(n: nat) -> nat:
+def f(n: int) -> int:
     if n == 0:
         return 1
     else:
