@@ -1,6 +1,6 @@
 # Changelog for Jikka
 
-## 2020-11-??: v5.0.1.0
+## 2020-12-03: v5.0.1.0
 
 `v5.0.1.0` is the first version of the third prototype.
 This version is a more realistic one, which reads a very restricted subset of Python.
