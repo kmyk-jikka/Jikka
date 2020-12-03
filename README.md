@@ -11,7 +11,16 @@ Jikka はそのような問題を自動で解きます。
 そのような問題をとても制限された Python のサブセット言語のコードの形で入力として受け取り、計算量を落とすような最適化を行い、C++ の実装に変換して出力します。
 
 
-## Examples
+## Usage
+
+``` console
+$ stack run convert PYTHON_FILE
+```
+
+[Stack](https://www.haskellstack.org/) is required.
+
+
+## Examples (`v3.1.0`)
 
 The below are examples of old the version (at `v3.1.0`). The input was a ML code.
 
@@ -63,6 +72,37 @@ f
 ```
 
 Output, O(N): <https://atcoder.jp/contests/abc134/submissions/6526623>
+
+
+## Examples (`v5.0.1.0`)
+
+``` console
+$ cat examples/fact.py
+def f(n: int) -> int:
+    if n == 0:
+        return 1
+    else:
+        return n * f(n - 1)
+
+$ stack run convert examples/fact.py
+int64_t f0_f(int64_t a1_n) {
+    bool x2 = a1_n == 0;
+    if (x2) {
+        return 1;
+    } else {
+        int64_t x3 = - 1;
+        int64_t x4 = x3;
+        int64_t x5 = x4;
+        int64_t x6 = a1_n + x5;
+        int64_t x7 = x6;
+        int64_t x8 = f0_f(x7);
+        return a1_n * x8;
+    }
+}
+int64_t solve(int64_t a9) {
+    return f0_f(a9);
+}
+```
 
 
 ## License
