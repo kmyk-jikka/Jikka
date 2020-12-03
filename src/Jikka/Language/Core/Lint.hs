@@ -1,114 +1,136 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
+
+-- |
+-- Module      : Jikka.Language.Core.Lint
+-- Description : checks the invariants (e.g. types) of data types of our core language.
+-- Copyright   : (c) Kimiyuki Onaka, 2020
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
+--
+-- `Jikka.Language.Core.Lint` module checks the invariants of data types. Mainly, this checks types of `Expr`.
 module Jikka.Language.Core.Lint where
 
-import Control.Monad (forM_)
-import qualified Data.Map.Strict as M
-import Jikka.Language.Core.Type
+import Control.Monad.Except
+import Jikka.Language.Common.Name
+import Jikka.Language.Core.Expr
 
-unitType :: Type
-unitType = TyConApp UnitTyCon []
+builtinToType :: Builtin -> Type
+builtinToType = \case
+  -- arithmetical functions
+  Negate -> Fun1Ty IntTy
+  Plus -> Fun2Ty IntTy
+  Minus -> Fun2Ty IntTy
+  Mult -> Fun2Ty IntTy
+  FloorDiv -> Fun2Ty IntTy
+  FloorMod -> Fun2Ty IntTy
+  CeilDiv -> Fun2Ty IntTy
+  CeilMod -> Fun2Ty IntTy
+  Pow -> Fun2Ty IntTy
+  -- induction functions
+  NatInd t -> FunTy [t, FunTy [IntTy, t] t, IntTy] t
+  -- advanced arithmetical functions
+  Abs -> Fun1Ty IntTy
+  Gcd -> Fun2Ty IntTy
+  Lcm -> Fun2Ty IntTy
+  Min -> Fun2Ty IntTy
+  Max -> Fun2Ty IntTy
+  -- logical functions
+  Not -> Fun1Ty BoolTy
+  And -> Fun2Ty BoolTy
+  Or -> Fun2Ty BoolTy
+  Implies -> Fun2Ty BoolTy
+  If t -> FunTy [BoolTy, t, t] t
+  -- bitwise functions
+  BitNot -> Fun1Ty IntTy
+  BitAnd -> Fun2Ty IntTy
+  BitOr -> Fun2Ty IntTy
+  BitXor -> Fun2Ty IntTy
+  BitLeftShift -> Fun2Ty IntTy
+  BitRightShift -> Fun2Ty IntTy
+  -- modular functions
+  Inv -> Fun2Ty IntTy
+  PowMod -> Fun3Ty IntTy
+  -- list functions
+  Len t -> FunTy [ListTy t] IntTy
+  Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)
+  Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)
+  At t -> FunTy [ListTy t, IntTy] t
+  Sum -> FunLTy IntTy
+  Product -> FunLTy IntTy
+  Min1 -> FunLTy IntTy
+  Max1 -> FunLTy IntTy
+  ArgMin -> FunLTy IntTy
+  ArgMax -> FunLTy IntTy
+  All -> FunLTy BoolTy
+  Any -> FunLTy BoolTy
+  Sorted t -> Fun1Ty (ListTy t)
+  List t -> Fun1Ty (ListTy t)
+  Reversed t -> Fun1Ty (ListTy t)
+  Range1 -> FunTy [IntTy] (ListTy IntTy)
+  Range2 -> FunTy [IntTy, IntTy] (ListTy IntTy)
+  Range3 -> FunTy [IntTy, IntTy, IntTy] (ListTy IntTy)
+  -- arithmetical relations
+  LessThan -> FunTy [IntTy, IntTy] BoolTy
+  LessEqual -> FunTy [IntTy, IntTy] BoolTy
+  GreaterThan -> FunTy [IntTy, IntTy] BoolTy
+  GreaterEqual -> FunTy [IntTy, IntTy] BoolTy
+  -- equality relations (polymorphic)
+  Equal t -> FunTy [t, t] BoolTy
+  NotEqual t -> FunTy [t, t] BoolTy
+  -- combinational functions
+  Fact -> Fun1Ty IntTy
+  Choose -> Fun2Ty IntTy
+  Permute -> Fun2Ty IntTy
+  MultiChoose -> Fun2Ty IntTy
 
-boolType :: Type
-boolType = TyConApp BoolTyCon []
+literalToType :: Literal -> Type
+literalToType = \case
+  LitBuiltin builtin -> builtinToType builtin
+  LitInt _ -> IntTy
+  LitBool _ -> BoolTy
 
-intType :: Type
-intType = TyConApp IntTyCon []
+type TypeEnv = [(VarName, Type)]
 
-listType :: Type -> Type
-listType t = TyConApp ListTyCon [t]
+-- | `typecheckExpr` checks that the given `Expr` has the correct types.
+typecheckExpr :: MonadError String m => TypeEnv -> Expr -> m Type
+typecheckExpr env = \case
+  Var x -> case lookup x env of
+    Nothing -> throwError $ "Internal Error: undefined variable: " ++ show (unVarName x)
+    Just t -> return t
+  Lit lit -> return $ literalToType lit
+  App e args -> do
+    t <- typecheckExpr env e
+    ts <- mapM (typecheckExpr env) args
+    case t of
+      FunTy ts' ret | ts' == ts -> return ret
+      _ -> throwError $ "Internal Error: invalid funcall: " ++ show (App e args, t, ts)
+  Lam args e -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
+  Let x t e1 e2 -> do
+    t' <- typecheckExpr env e1
+    if t == t'
+      then typecheckExpr ((x, t) : env) e2
+      else throwError $ "Internal Error: wrong type binding: " ++ show (Let x t e1 e2)
 
-litType :: Literal -> Type
-litType lit = case lit of
-  Unit -> unitType
-  Bool _ -> boolType
-  Int _ -> intType
+typecheckToplevelExpr :: MonadError String m => TypeEnv -> ToplevelExpr -> m Type
+typecheckToplevelExpr env = \case
+  ResultExpr e -> typecheckExpr env e
+  ToplevelLet rec x args ret body cont -> do
+    let t = case args of
+          [] -> ret
+          _ -> FunTy (map snd args) ret
+    ret' <- case rec of
+      NonRec -> typecheckExpr (reverse args ++ env) body
+      Rec -> typecheckExpr (reverse args ++ (x, t) : env) body
+    if ret' == ret then return () else throwError "Internal Error: returned type is not corrent"
+    typecheckToplevelExpr ((x, t) : env) cont
 
-returnTy :: Type -> Type -> Maybe Type
-returnTy (FunTy t1 t2) t3 | t1 == t3 = Just t2
-returnTy _ _ = Nothing
+typecheckProgram :: MonadError String m => Program -> m Type
+typecheckProgram = typecheckToplevelExpr []
 
--- | 'exprType' assumes the input expr is well-typed
-exprType :: Expr -> Type
-exprType e = case e of
-  Var x -> varType x
-  Lit lit -> litType lit
-  App e1 e2 -> do
-    let t1 = exprType e1
-    let t2 = exprType e2
-    case returnTy t1 t2 of
-      Just t -> t
-      Nothing -> error ("type mismatch: cannot apply " ++ show t1 ++ " to " ++ show t2)
-  Lam x e -> FunTy (varType x) (exprType e)
-  Let _ e -> exprType e
-  Case _ _ t _ -> t
-
-type ErrorMessage = String
-
-validateTrue :: Bool -> String -> Either String ()
-validateTrue True _ = Right ()
-validateTrue False err = Left err
-
-validateEqualType :: Type -> Type -> Either String ()
-validateEqualType t1 t2 = validateTrue (t1 == t2) ("type mismatch: " ++ show t1 ++ " and " ++ show t2)
-
-maybeToEither :: a -> Maybe b -> Either a b
-maybeToEither a Nothing = Left a
-maybeToEither _ (Just b) = Right b
-
-validateExistingName :: M.Map Name Var -> Name -> Either String Type
-validateExistingName env x' = do
-  x <- maybeToEither ("symbol not found: " ++ show x') $ M.lookup x' env
-  return $ varType x
-
-validateExistingVar :: M.Map Name Var -> Var -> Either String Type
-validateExistingVar env x = do
-  t <- validateExistingName env (varName x)
-  validateEqualType t (varType x)
-  return t
-
-validateNewVar :: M.Map Name Var -> Var -> Either String Type
-validateNewVar env x = do
-  validateTrue (varName x `M.notMember` env) ("symbol already defined: " ++ show (varName x))
-  return $ varType x
-
-validateAlt :: M.Map Name Var -> Type -> Alt -> Either String ()
-validateAlt env t (altcon, vars, e) = case altcon of
-  DataAlt datacon -> undefined -- TODO
-  LitAlt lit -> do
-    validateEqualType t (litType lit)
-    _ <- validateExpr env e
-    return ()
-  DEFAULT -> do
-    _ <- validateExpr env e
-    return ()
-
-validateExpr :: M.Map Name Var -> Expr -> Either String Type
-validateExpr env e = case e of
-  Var x ->
-    validateExistingVar env x
-  Lit lit ->
-    return $ litType lit
-  App e1 e2 -> do
-    t1 <- validateExpr env e1
-    t2 <- validateExpr env e2
-    case returnTy t1 t2 of
-      Nothing -> Left ("type mismatch: cannot apply " ++ show t1 ++ " to " ++ show t2)
-      Just t -> return t
-  Lam x e -> do
-    t1 <- validateNewVar env x
-    let env' = M.insert (varName x) x env
-    t2 <- validateExpr env' e
-    return $ FunTy t1 t2
-  Let (NonRec x e1) e2 -> do
-    t1 <- validateNewVar env x
-    t1' <- validateExpr env e1
-    validateEqualType t1 t1'
-    validateExpr env e
-  Let (Rec xes) e2 ->
-    undefined -- TODO
-  Case e1 x t alts -> do
-    t1 <- validateExpr env e1
-    t1' <- validateNewVar env x
-    validateEqualType t1 t1'
-    let env' = M.insert (varName x) x env
-    forM_ alts (validateAlt env' t1)
-    return t
+typecheckProgram' :: MonadError String m => Program -> m Program
+typecheckProgram' prog = do
+  typecheckProgram prog
+  return prog

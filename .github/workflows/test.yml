@@ -3,7 +3,7 @@ name: test
 on: [push, pull_request]
 
 jobs:
-  format:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +17,7 @@ jobs:
         restore-keys: ${{ runner.os }}-stack-
 
     - name: Set up Haskell
-      uses: actions/setup-haskell@v1.1
+      uses: actions/setup-haskell@v1
       with:
         enable-stack: true
 
