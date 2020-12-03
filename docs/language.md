@@ -5,99 +5,188 @@
 a very restricted subset of Python + additional builtin functions
 
 
-## Syntax
+## Syntax Overview
 
 ### Lexical Analysis
 
-This is the almost same to Python.
+It's the almost same to Python.
 
 ### Grammer
 
-```ebnf
-<program> ::= <toplevel-def> +
+It's highly restricted, but basically the same to Python.
 
-# types
-<type> ::= "int"
-         | "nat"
-         | "bool"
-         | "Interval" "[" <quoted-expr>, <quoted-expr> "]"
-         | "List" "[" <type> "]"
-         | "Array" "[" <type> "," <quoted-expr> "]"
-<quoted-expr> ::= "'" <expr> "'"
-                | "\"" <expr> "\""
+### Expression
 
-# literals
-<int-literal> ::= ...
-<bool-literal> ::= "True" | "False"
-<literal> ::= <int-literal>
-            | <bool-literal>
+The followings are available:
 
-# names
-<var-name> ::= ...
-<fun-name> ::= ...
-<var-name-or-underscore> ::= <var-name>
-                           | "_"
+-   literals
+    -   `0`, `1`, `2`, ...
+    -   `True`, `False`
+-   list
+    -   `[a, b, c, ...]`
+    -   `[... for ... in ...]`
+-   generator
+    -   `(... for ... in ...)`
+-   subscription
+    -   `a[i]`
+-   call
+    -   `f(a, b, c, ...)`
+    -   `f(... for ... in ...)`
+-   operators
+    -   See the "Standard Library" section.
+-   conditional operator
+    -   `... if ... eles ...`
 
-# args
-<actual-args> ::= EMPTY
-                | <expr> ("," <expr>) *
-<formal-args> ::= EMPTY
-                | <var-name> ":" <type> ("," <var-name> ":" <type>) *
+The followings (and the other features) are unavailable:
 
-# lists
-<comprehension> ::= <expr> "for" <var-name-or-underscore> "in" <expr> [ "if" <expr> ]
-<list-shape> ::= "None"
-               | '[' <list-shape> "for" "_" "in" "range" "(" <expr> ")" "]"
-<list-subscript> ::= '[' Expr ']'
-                   | '[' Expr ']' <list-subscript>
+-   list with stars
+    -   `[x, *xs]`
+-   comprehensions with filtering
+    -   `... for ... in ... if ...`
+-   slicing
+    -   `a[l : r]`
+-   attribute reference
+    -   `foo.bar`
+-   complicated calls
+    -   `f(foo=a, bar=b)`
+    -   `f(*args)`
+-   lambdas
+    -   `lambda x: ...`
 
-# operators
-<unary-op> ::= ...
-<binary-op> ::= ...
 
-# exprs
-<expr> ::= <var-name>
-         | <literal>
-         | "[" <actual-args> "]"
-         | "[" <comprehension> "]"
-         | <var-name> ( "[" <expr> "]" ) +
-         | <fun-name> "(" <actual-args> ")"
-         | <fun-name> "(" <comprehension> ")"
-         | "(" <expr> ")"
-         | <unary-op> <expr>
-         | <expr> <binary-op> <expr>
-         | <expr> "if" <expr> "else" <expr>
+### Simple statement
 
-# simple statements
-<variable-def> ::= <var-name> [ ":" <type> ] "=" <expr>
-<variable-decl> ::= <var-name> [ ":" <type> ] "=" <list-shape>
-<variable-assign> ::= <var-name> <list-subscript> "=" <expr>
-<simple-stmt> ::= <variable-def>
-                | <variable-decl>
-                | <variable-assign>
-                | "assert" <expr>
-                | "return" <expr>
+The followings are available:
 
-# compound statements
-<compound-stmt> ::= <if-stmt>
-                  | <for-stmt>
-<if-stmt> ::= "if" <expr> ":" <suite>
-              ("elif" <expr> ":" <suite>) *
-              "else" <expr> ":" <suite>
-<for-stmt> ::= "for" <var-name> "in" <expr> ":" <suite>
+-   assignment statement
+    -   `x = 0`
+    -   `a[y][x] = b`
+    -   `a, b = b, a`
+-   augmented assignment statement
+    -   `x += 1`
+-   annotated assignment statements
+    -   `xs: List[List[int]] = []`
+-   assert
+    -   `assert 0 <= n`
+-   pass
+    -   `pass`
+-   return
+    -   `return n + 1`
+-   import
+    -   `import ...`
+    -   `from ... import ...`
 
-# statements
-<suite> ::= NEWLINE INDENT NEWLINE + (<statement> NEWLINE +) + DEDENT
-<statement> ::= <simple-statement>
-              | <compound-statement>
+The followings (and the other features) are unavailable:
 
-# toplevel declarations
-<from-import> ::= "from" "jikka" "." "compat" "import" "*"
-                | "from" "math" "import" "*"
-<function-def> ::= "def" <fun-name> "(" <formal-args> ")" "->" <type> ":" <suite>
-<toplevel-def> ::= <from-import> NEWLINE
-                  | <variable-def>
-                  | <function-def>
+-   complicated assignment statement
+    -   `x, *xs = a`
+    -   `a[l : r] = b`
+-   expression statement
+    -   `print("Hello")`
+    -   There are no features which have side-effects, so expression statements are meaningless.
+-   yield
+-   raise
+-   break
+-   continue
+
+
+### Compound statement
+
+The followings are available:
+
+-   if-else
+    -   `if cond: ... else: ...`
+    -   `if cond: ... elif cond: ... else: ...`
+-   for
+    -   `for x in xs: ...`
+-   def
+    -   `def f(x): ...`
+    -   `def f(x: t) -> t: ...`
+
+The followings (and the other features) are unavailable:
+
+-   if
+    -   `if: ...`
+-   while
+-   try
+-   with
+-   class
+
+
+## Syntax
+
+### import
+
+`import` statements have no effects. They are just ignored.
+
+### def
+
+`def` defines a function. This is available only the toplevel.
+The self-recursion is allowed, but mutual-recursion is not allowed.
+
+The followings cause undefined behaviors:
+
+-   name conflicts between global variables and the function itself
+-   name conflicts between global variables and local variables
+
+### return
+
+`return` declares the result value of `def`.
+All code paths of `def` must contain at least one `return`.
+
+### assignment
+
+The assignments `x = a` binds the value `a` to the variable `x`.
+You can use this on toplevel and in `def`.
+
+You can think this as `let x = a in ...` of ML.
+
+### if-else
+
+`if-else` branches the execution.
+This is a syntax suger of the combinational operator `... if ... else ...`.
+
+It must have the `else:` branch, and all branches must end with `return`.
+
+TODO: allow more flexible `if` statements?
+
+### for
+
+`for` runs loops.
+This is a syntax suger of some list operations.
+
+There must be declarations of target variables.
+A target variable is a usual variable or a variable which is assigned a list using the special keyword `None`.
+The `for` has the assignments to the target variables.
+When a list target variable is used, the container which `for` runs must be `range(...)` or `enumerate(...)`, and the size of the list target and the size of container must relates.
+
+For example, the below is a valid form of `for`-loop. This is a syntax suger of `a = [f(i) for i in range(N)]; b = sum(sum(1 for j in range(M)) for i in range(N))`.
+
+``` python
+    a = [None for _ in range(N)]
+    b = 0
+    for i in range(N):
+        a[i] = f(i)
+        for j in range(M):
+            b += 1
+```
+
+The below is also a valid form of `for`-loop.
+
+``` python
+    a = [None for _ in range(N + 1)]
+    a[0] = 1
+    for i in range(N):
+        a[i + 1] = a[i] + g(i)
+```
+
+The below is not a valid form of `for`-loop.
+
+``` python
+    b = [3, 5, 8]
+    a = [False for _ in range(10)]
+    for b_i in b:
+        a[b_i] = True
 ```
 
 
@@ -106,57 +195,36 @@ This is the almost same to Python.
 ### Python compatibility
 
 This language is compatible with Python.
-This means that, if the execution successfully stops on both interpreter of this language and Python, the result is the same.
+This means that, if the execution successfully stops without any undefined behavior on both interpreter of this language and Python, then the result is the same.
 
-### intrinsic types
 
-Each terms uniquely belongs its Church-style type.
+### types
+
+Each terms uniquely belongs its type (Church-style).
 Users can make mistakes about these types. Implementations are responsible for checking these types.
 
 -   `int` type represents the set of integers.
 -   `bool` type represents the set of truth values. It has two values `True` and `False`.
--   For any type `T`, `List[T]` type represents the set of finite sequences of values in `T`. They are immutable.
-
-Also, some additional types exist.
-
--   For any type `T`, `Iterator[T]` type represents the class of iterator objects.
-    -   This type is used internally only for the compatibility with Python.
-    -   You cannot bind values of `Iterator[T]` to any variables.
-    -   For any types `T` and `S`, if `S` is a subtype of `T`, then `List[S]` is treated as a subtype of `Iterator[T]` (covariant).
+-   For any type `T`, `Sequence[T]` type represents the set of finite or infinite sequences of values in `T`. They are immutable.
+-   For any types `T1`, `T2`, ..., and `Tn`, `Tuple[T1, T2, ..., Tn]` is the direct product of `T1`, `T2`, ..., and `Tn`.
+    -   `n` is a non-negative number.
 -   For any types `T1`, `T2`, ..., `Tn`, and `R`, `Callable[[T1, T2, ..., Tn], R]` is the set of functions from `T1`, `T2`, ..., `Tn` to `R`.
+    -   `n` is a non-negative number.
     -   This is used only on documents.
 
-They all come from the standard types of Python.
 
 ### annotational types
 
-Some terms have some Curry-style types.
-Users are responsible to write correctly about these types, or undefined behaviors appear. Implementations can use these types as hints.
+Some terms may have some annotational types (Curry-style).
+Users are responsible to write correctly about these types, or undefined behavior appears. Implementations can use these types as hints.
 
--   `nat` type represents the set of natural numbers.
-    -   `nat` is not a standard type of Python.
-    -   `nat` is a subtype of `int`.
-    -   `0` is a natural number.
--   For integers `l` and `r` which `l <= r` holds, `Interval[l, r]` type represents the closed interval `[l, r]`.
-    -   `Interval[l, r]` is a subtype of `int`.
-    -   `Interval[l, r]` is a subtype of `nat` when `l >= 0`.
-    -   `r` is included.
--   For any type `T` and an integer `n`, `Array[T, n]` type represents the set of sequences of values in `T` with the length `n`. They are immutable.
-    -   `Array[T, n]` is not a standard type of Python.
-    -   `Array[T, n]` is a subtype of `List[T]`.
+-   For any type `T`, `Optional[T]` is an alias of `T`.
+-   For any type `T`, `Iterator[T]` is an alias of `Sequence[T]`.
+-   For any type `T`, `List[T]` is an subtype of `Sequence[T]`. This is the set of all finite sequences.
 
-### single assignment
+There are the additional rule for `Iterator[T]`. When a variable is annotated as `Iterator[T]`, you cannot use the object twice. For example, `list(xs) == list(xs)` for a variable `xs: Iterator[int]` causes an undefined behavior.
+This means that, implementations of Jikka can entirely ignores the differences of lists and iterators of the standard Python, but we don't think this fact as the incompatibility with Python.
 
-The keyword `None` is just a placeholder.
-It's not a value.
-
-The behavior is undefined when a variable without value (i.e. in `None`) is used as an argument of a function call or an operation. However, if possible, the compiler should detect it and stop as a compiler error.
-
-### iterators
-
-For any type `T`, `Iterator[T]` is the special type represents the set of iterator objects of values in `T`. This is not immutable, so used only as a types of builtin functions. You cannot make a variable which has the iterator type.
-
-TODO: should we allow iterators which have the infinite length?
 
 ## Standard Library
 
@@ -198,9 +266,10 @@ arithmetical relations (`Callable[[int, int], bool]`):
 -   `<=` less-or-equal
 -   `>=` greater-or-equal
 
-the combinational function (polymorphic, `Callable[[T, bool, T], T]`):
+the combinational operator (polymorphic, `Callable[[T, bool, T], T]`):
 
 -   `... if ... else ...`
+    -   Short circuits exist.
 
 equality relations (polymorphic, `Callable[[T, T], bool]` only for `int` and `bool`).
 
