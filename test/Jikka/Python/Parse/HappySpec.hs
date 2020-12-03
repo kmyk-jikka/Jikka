@@ -1,4 +1,4 @@
-module Jikka.Python.Parse.ParserSpec
+module Jikka.Python.Parse.HappySpec
   ( spec,
   )
 where
@@ -6,8 +6,8 @@ where
 import Jikka.Common.Language.Name
 import Jikka.Common.Language.Pos
 import Jikka.Python.Language.Expr
-import qualified Jikka.Python.Parse.Lexer as L
-import Jikka.Python.Parse.Parser
+import qualified Jikka.Python.Parse.Alex as L
+import Jikka.Python.Parse.Happy
 import Test.Hspec
 
 at :: a -> (Int, Int) -> WithPos a

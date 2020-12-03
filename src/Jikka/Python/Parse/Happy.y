@@ -1,10 +1,10 @@
 {
 -- vim: filetype=haskell
-module Jikka.Python.Parse.Parser (run) where
+module Jikka.Python.Parse.Happy (run) where
 
 import Data.List (intercalate)
 import qualified Data.Map.Strict as M
-import qualified Jikka.Python.Parse.Lexer as L (Token(..))
+import qualified Jikka.Python.Parse.Alex as L (Token(..))
 import qualified Jikka.Common.Parse.ShuntingYard as ShuntingYard
 import Jikka.Common.Parse.ShuntingYard (BinOpInfo(..), Fixity(..))
 import Jikka.Common.Language.Name

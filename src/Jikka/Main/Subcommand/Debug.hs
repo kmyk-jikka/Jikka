@@ -11,8 +11,8 @@ import qualified Jikka.Core.Convert.ValueApps as ValueApps
 import qualified Jikka.Core.Format as FormatCore
 import qualified Jikka.Python.Convert.Alpha as ConvertAlpha
 import qualified Jikka.Python.Convert.FromParsed as FromParsed
-import qualified Jikka.Python.Parse.Lexer as PythonLexer
-import qualified Jikka.Python.Parse.Parser as PythonParser
+import qualified Jikka.Python.Parse.Alex as PythonLexer
+import qualified Jikka.Python.Parse.Happy as PythonParser
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 import qualified Jikka.RestrictedPython.Format as FormatPython

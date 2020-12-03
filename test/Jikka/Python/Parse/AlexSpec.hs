@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jikka.Python.Parse.LexerSpec
+module Jikka.Python.Parse.AlexSpec
   ( spec,
   )
 where
 
 import Jikka.Common.Language.Pos
-import Jikka.Python.Parse.Lexer (Token (..), run)
+import Jikka.Python.Parse.Alex (Token (..), run)
 import Test.Hspec
 
 run' :: String -> Either String [Token]

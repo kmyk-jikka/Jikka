@@ -1,6 +1,6 @@
 {
 -- vim: filetype=haskell
-module Jikka.Python.Parse.Lexer
+module Jikka.Python.Parse.Alex
     ( Token(..)
     , run
     ) where
