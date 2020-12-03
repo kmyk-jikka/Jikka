@@ -6,6 +6,7 @@ module Jikka.Common.Parse.OffsideRuleSpec
 where
 
 import Data.Either (isLeft)
+import Jikka.Common.Error (Error)
 import Jikka.Common.Language.Pos
 import Jikka.Common.Parse.OffsideRule (IndentSetting (..), insertIndentTokens)
 import Test.Hspec
@@ -25,7 +26,7 @@ open = "<open>"
 close :: String
 close = "<close>"
 
-run :: [WithPos String] -> Either String [String]
+run :: [WithPos String] -> Either Error [String]
 run tokens = map value <$> insertIndentTokens setting tokens
   where
     setting :: IndentSetting String

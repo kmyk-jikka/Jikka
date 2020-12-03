@@ -1,11 +1,15 @@
 {
+{-# LANGUAGE FlexibleContexts #-}
+
 -- vim: filetype=haskell
 module Jikka.Python.Parse.Alex
     ( Token(..)
     , run
     ) where
 
+import Text.Read (readMaybe)
 import Jikka.Common.Language.Pos
+import Jikka.Common.Error
 import Jikka.Common.Parse.OffsideRule (insertIndentTokens, IndentSetting(..))
 }
 
@@ -112,6 +116,8 @@ tokens :-
     "with"          { reservedError }
     "yield"         { reservedError }
 
+    -- catch error
+    .               { lexicalError }
 {
 alexEOF :: Alex (Maybe (WithPos Token))
 alexEOF = return $ Nothing
@@ -170,7 +176,14 @@ data Token
     deriving (Eq, Ord, Show, Read)
 
 reservedError :: AlexAction a
-reservedError (_, _, _, s) n = alexError (show (take n s) ++ " is a reserved Python keyword")
+reservedError (AlexPn _ line column, _, _, s) n = alexError (show err) where
+  msg = show (take n s) ++ " is a reserved Python keyword"
+  err = (line, column, msg)
+
+lexicalError :: AlexAction a
+lexicalError (AlexPn _ line column, _, _, s) n = alexError (show err) where
+  msg = show (take n s) ++ " is not a acceptable character"
+  err = (line, column, msg)
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
 unfoldM f = do
@@ -179,9 +192,13 @@ unfoldM f = do
         Nothing -> return []
         Just x -> (x :) <$> unfoldM f
 
-run :: String -> Either String [WithPos Token]
-run input = do
-    tokens <- runAlex input (unfoldM alexMonadScan)
+run :: MonadError Error m => String -> m [WithPos Token]
+run input = wrapError' "Jikka.Python.Parse.Alex failed" $ do
+    tokens <- case runAlex input (unfoldM alexMonadScan) of
+      Left err -> case readMaybe err of
+        Nothing -> throwInternalError ("failed to parse: " ++ show err)
+        Just (line, column, msg) -> throwLexicalErrorAt (Pos line column) msg
+      Right tokens -> return tokens
     let setting = IndentSetting
             { indentToken = Indent
             , dedentToken = Dedent

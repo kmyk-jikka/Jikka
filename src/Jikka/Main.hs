@@ -1,8 +1,8 @@
 module Jikka.Main where
 
-import Control.Monad.Except
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
+import Jikka.Common.Error
 import qualified Jikka.Main.Subcommand.Convert as Convert
 import qualified Jikka.Main.Subcommand.Debug as Debug
 import qualified Jikka.Main.Subcommand.Execute as Execute
@@ -49,35 +49,37 @@ main name args = do
       putStrLn $ showVersion version
       return ExitSuccess
     (parsed, [subcmd, path], []) -> case parseFlags name parsed of
-      Left error -> do
-        hPutStrLn stderr error
+      Left err -> do
+        hPutStrLn stderr (prettyError err)
         return $ ExitFailure 1
       Right opts -> do
         result <- runExceptT $ runSubcommand subcmd opts path
         case result of
-          Left error -> do
-            hPutStrLn stderr error
+          Left err -> do
+            hPutStrLn stderr (prettyError err)
             return $ ExitFailure 1
           Right () -> do
             return ExitSuccess
     (_, _, errors) | errors /= [] -> do
-      mapM_ (\error -> hPutStr stderr $ name ++ ": " ++ error) errors
+      forM_ errors $ \msg -> do
+        let err = WithGroup CommandLineError (Error msg)
+        hPutStr stderr (prettyError err)
       return $ ExitFailure 1
     _ -> do
       hPutStr stderr usage
       return $ ExitFailure 1
 
-parseFlags :: String -> [Flag] -> Either String Options
+parseFlags :: String -> [Flag] -> Either Error Options
 parseFlags _ = go defaultOptions
   where
-    go :: Options -> [Flag] -> Either String Options
+    go :: Options -> [Flag] -> Either Error Options
     go opts [] = Right opts
     go opts (flag : flags) = case flag of
-      Help -> error "parseFlags is not called when --help is specified"
-      Version -> error "parseFlags is not called when --version is specified"
+      Help -> throwCommandLineError "parseFlags is not called when --help is specified"
+      Version -> throwCommandLineError "parseFlags is not called when --version is specified"
       Verbose -> go (opts {verbose = True}) flags
 
-runSubcommand :: String -> Options -> FilePath -> ExceptT String IO ()
+runSubcommand :: String -> Options -> FilePath -> ExceptT Error IO ()
 runSubcommand subcmd _ path = case subcmd of
   "convert" -> do
     input <- liftIO $ T.readFile path
@@ -85,4 +87,4 @@ runSubcommand subcmd _ path = case subcmd of
     liftIO $ T.putStr output
   "debug" -> Debug.run path
   "execute" -> Execute.run path
-  _ -> throwError $ "undefined subcommand: " ++ show subcmd
+  _ -> throwCommandLineError $ "undefined subcommand: " ++ show subcmd

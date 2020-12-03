@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -27,6 +28,7 @@ import Control.Monad.Except
 import qualified Data.Array as A
 import Data.Bits
 import Data.List (sort)
+import Jikka.Common.Error
 import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (builtinToType)
@@ -49,20 +51,20 @@ literalToValue = \case
   LitInt n -> ValInt n
   LitBool p -> ValBool p
 
-valueToInt :: Value -> Either String Integer
+valueToInt :: MonadError Error m => Value -> m Integer
 valueToInt = \case
-  ValInt n -> Right n
-  val -> Left $ "Runtime Error: Internal Error: not int: " ++ show val
+  ValInt n -> return n
+  val -> throwRuntimeError $ "Internal Error: not int: " ++ show val
 
-valueToIntList :: A.Array Int Value -> Either String [Integer]
+valueToIntList :: MonadError Error m => A.Array Int Value -> m [Integer]
 valueToIntList = mapM valueToInt . A.elems
 
-valueToBool :: Value -> Either String Bool
+valueToBool :: MonadError Error m => Value -> m Bool
 valueToBool = \case
-  ValBool p -> Right p
-  val -> Left $ "Runtime Error: Internal Error: not bool: " ++ show val
+  ValBool p -> return p
+  val -> throwRuntimeError $ "Internal Error: not bool: " ++ show val
 
-valueToBoolList :: A.Array Int Value -> Either String [Bool]
+valueToBoolList :: MonadError Error m => A.Array Int Value -> m [Bool]
 valueToBoolList = mapM valueToBool . A.elems
 
 -- -----------------------------------------------------------------------------
@@ -74,20 +76,22 @@ newtype Token = Token {unToken :: String}
 tokenize :: String -> [Token]
 tokenize = map Token . words
 
-readToken :: Read a => Token -> Either String a
-readToken = readEither . unToken
+readToken :: (MonadError Error m, Read a) => Token -> m a
+readToken token = case readEither (unToken token) of
+  Left msg -> throwRuntimeError $ "Wrong Input: " ++ msg
+  Right a -> return a
 
-readInputList :: Type -> Int -> [Token] -> Either String ([Value], [Token])
+readInputList :: MonadError Error m => Type -> Int -> [Token] -> m ([Value], [Token])
 readInputList t = go
   where
-    go n _ | n < 0 = throwError "Runtime Error: Wrong Input: negative size of list in input"
+    go n _ | n < 0 = throwRuntimeError "Wrong Input: negative size of list in input"
     go 0 tokens = return ([], tokens)
     go n tokens = do
       (x, tokens) <- readInput t tokens
       (xs, tokens) <- go (n - 1) tokens
       return (x : xs, tokens)
 
-readInputMap :: [Type] -> [Token] -> Either String ([Value], [Token])
+readInputMap :: MonadError Error m => [Type] -> [Token] -> m ([Value], [Token])
 readInputMap ts tokens = case ts of
   [] -> return ([], tokens)
   (t : ts) -> do
@@ -95,9 +99,9 @@ readInputMap ts tokens = case ts of
     (vals, tokens) <- readInputMap ts tokens
     return (val : vals, tokens)
 
-readInput :: Type -> [Token] -> Either String (Value, [Token])
+readInput :: MonadError Error m => Type -> [Token] -> m (Value, [Token])
 readInput t tokens = case (t, tokens) of
-  (_, []) -> throwError "Runtime Error: Wrong Input: it reaches EOF"
+  (_, []) -> throwRuntimeError "Wrong Input: it reaches EOF"
   (IntTy, token : tokens) -> do
     n <- readToken token
     return (ValInt n, tokens)
@@ -109,56 +113,56 @@ readInput t tokens = case (t, tokens) of
     (a, tokens) <- readInputList t n tokens
     let a' = A.listArray (0, n - 1) a
     return (ValList a', tokens)
-  (FunTy _ _, _) -> throwError "Runtime Error: Wrong Input: we cannot use functions as inputs"
+  (FunTy _ _, _) -> throwRuntimeError "Wrong Input: we cannot use functions as inputs"
 
 -- -----------------------------------------------------------------------------
 -- builtins
 
-floorDiv :: Integer -> Integer -> Either String Integer
-floorDiv _ 0 = throwError "Runtime Error: zero div"
+floorDiv :: MonadError Error m => Integer -> Integer -> m Integer
+floorDiv _ 0 = throwRuntimeError "zero div"
 floorDiv a b = return (a `div` b)
 
-floorMod :: Integer -> Integer -> Either String Integer
-floorMod _ 0 = throwError "Runtime Error: zero div"
+floorMod :: MonadError Error m => Integer -> Integer -> m Integer
+floorMod _ 0 = throwRuntimeError "zero div"
 floorMod a b = return (a `mod` b)
 
-ceilDiv :: Integer -> Integer -> Either String Integer
-ceilDiv _ 0 = throwError "Runtime Error: zero div"
+ceilDiv :: MonadError Error m => Integer -> Integer -> m Integer
+ceilDiv _ 0 = throwRuntimeError "zero div"
 ceilDiv a b = return ((a + b - 1) `div` b)
 
-ceilMod :: Integer -> Integer -> Either String Integer
-ceilMod _ 0 = throwError "Runtime Error: zero div"
+ceilMod :: MonadError Error m => Integer -> Integer -> m Integer
+ceilMod _ 0 = throwRuntimeError "zero div"
 ceilMod a b = return (a - ((a + b - 1) `div` b) * b)
 
-natind :: Value -> Value -> Integer -> Either String Value
-natind _ _ n | n < 0 = throwError $ "Runtime Error: negative number for mathematical induction: " ++ show n
+natind :: MonadError Error m => Value -> Value -> Integer -> m Value
+natind _ _ n | n < 0 = throwRuntimeError $ "negative number for mathematical induction: " ++ show n
 natind base _ 0 = return base
 natind base step n = do
   val <- natind base step (n - 1)
   callValue step [val, ValInt (n - 1)]
 
-minimumEither :: Ord a => [a] -> Either String a
-minimumEither [] = throwError "Runtime Error: there is no minimum for the empty list"
+minimumEither :: (MonadError Error m, Ord a) => [a] -> m a
+minimumEither [] = throwRuntimeError "there is no minimum for the empty list"
 minimumEither a = return $ minimum a
 
-maximumEither :: Ord a => [a] -> Either String a
-maximumEither [] = throwError "Runtime Error: there is no maximum for the empty list"
+maximumEither :: (MonadError Error m, Ord a) => [a] -> m a
+maximumEither [] = throwRuntimeError "there is no maximum for the empty list"
 maximumEither a = return $ maximum a
 
-argminEither :: Ord a => [a] -> Either String Integer
-argminEither [] = throwError "Runtime Error: there is no minimum for the empty list"
+argminEither :: (MonadError Error m, Ord a) => [a] -> m Integer
+argminEither [] = throwRuntimeError "there is no minimum for the empty list"
 argminEither a = return $ snd (minimum (zip a [0 ..]))
 
-argmaxEither :: Ord a => [a] -> Either String Integer
-argmaxEither [] = throwError "Runtime Error: there is no maximum for the empty list"
+argmaxEither :: (MonadError Error m, Ord a) => [a] -> m Integer
+argmaxEither [] = throwRuntimeError "there is no maximum for the empty list"
 argmaxEither a = return $ snd (maximum (zip a [0 ..]))
 
-inv :: Integer -> Integer -> Either String Integer
-inv a m | m <= 0 || a `mod` m == 0 = throwError $ "Runtime Error: invalid argument for inv: " ++ show (a, m)
-inv _ _ = error "TODO: implement this"
+inv :: MonadError Error m => Integer -> Integer -> m Integer
+inv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
+inv _ _ = throwInternalError "TODO: implement inv()"
 
-powmod :: Integer -> Integer -> Integer -> Either String Integer
-powmod _ _ m | m <= 0 = throwError $ "Runtime Error: invalid argument for powmod: MOD = " ++ show m
+powmod :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
+powmod _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for powmod: MOD = " ++ show m
 powmod a b m = return $ (a ^ b) `mod` m
 
 listToArray :: [a] -> A.Array Int a
@@ -169,18 +173,18 @@ lengthArray a =
   let (l, r) = A.bounds a
    in toInteger (r - l + 1)
 
-tabulate :: Integer -> Value -> Either String (A.Array Int Value)
+tabulate :: MonadError Error m => Integer -> Value -> m (A.Array Int Value)
 tabulate n f = listToArray <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
 
-map' :: Value -> A.Array Int Value -> Either String (A.Array Int Value)
+map' :: MonadError Error m => Value -> A.Array Int Value -> m (A.Array Int Value)
 map' f a = listToArray <$> mapM (\val -> callValue f [val]) (A.elems a)
 
-atEither :: A.Array Int a -> Integer -> Either String a
+atEither :: MonadError Error m => A.Array Int a -> Integer -> m a
 atEither a n =
   let (l, r) = A.bounds a
    in if toInteger l <= n && n <= toInteger r
         then return (a A.! fromInteger n)
-        else throwError $ "Runtime Error: out of bounds: " ++ show (l, r, n)
+        else throwRuntimeError $ "out of bounds: " ++ show (l, r, n)
 
 sortArray :: Ord a => A.Array Int a -> A.Array Int a
 sortArray = listToArray . sort . A.elems
@@ -188,32 +192,32 @@ sortArray = listToArray . sort . A.elems
 reverseArray :: A.Array Int a -> A.Array Int a
 reverseArray = listToArray . reverse . A.elems
 
-range1 :: Integer -> Either String (A.Array Int Value)
-range1 n | n < 0 = throwError $ "Runtime Error: invalid argument for range1: " ++ show n
+range1 :: MonadError Error m => Integer -> m (A.Array Int Value)
+range1 n | n < 0 = throwRuntimeError $ "invalid argument for range1: " ++ show n
 range1 n = return $ listToArray (map ValInt [0 .. n - 1])
 
-range2 :: Integer -> Integer -> Either String (A.Array Int Value)
-range2 l r | l > r = throwError $ "Runtime Error: invalid argument for range2: " ++ show (l, r)
+range2 :: MonadError Error m => Integer -> Integer -> m (A.Array Int Value)
+range2 l r | l > r = throwRuntimeError $ "invalid argument for range2: " ++ show (l, r)
 range2 l r = return $ listToArray (map ValInt [l .. r - 1])
 
-range3 :: Integer -> Integer -> Integer -> Either String (A.Array Int Value)
-range3 l r step | not (l <= r && step >= 0) = throwError $ "Runtime Error: invalid argument for range3: " ++ show (l, r, step)
+range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (A.Array Int Value)
+range3 l r step | not (l <= r && step >= 0) = throwRuntimeError $ "invalid argument for range3: " ++ show (l, r, step)
 range3 l r step = return $ listToArray (map ValInt [l, l + step .. r])
 
-fact :: Integer -> Either String Integer
-fact n | n < 0 = throwError $ "Runtime Error: invalid argument for fact: " ++ show n
+fact :: MonadError Error m => Integer -> m Integer
+fact n | n < 0 = throwRuntimeError $ "invalid argument for fact: " ++ show n
 fact n = return $ product [1 .. n]
 
-choose :: Integer -> Integer -> Either String Integer
-choose n r | not (0 <= r && r <= n) = throwError $ "Runtime Error: invalid argument for choose: " ++ show (n, r)
+choose :: MonadError Error m => Integer -> Integer -> m Integer
+choose n r | not (0 <= r && r <= n) = throwRuntimeError $ "invalid argument for choose: " ++ show (n, r)
 choose n r = return $ product [n - r + 1 .. n] `div` product [1 .. r]
 
-permute :: Integer -> Integer -> Either String Integer
-permute n r | not (0 <= r && r <= n) = throwError $ "Runtime Error: invalid argument for choose: " ++ show (n, r)
+permute :: MonadError Error m => Integer -> Integer -> m Integer
+permute n r | not (0 <= r && r <= n) = throwRuntimeError $ "invalid argument for choose: " ++ show (n, r)
 permute n r = return $ product [n - r + 1 .. n]
 
-multichoose :: Integer -> Integer -> Either String Integer
-multichoose n r | not (0 <= r && r <= n) = throwError $ "Runtime Error: invalid argument for multichoose: " ++ show (n, r)
+multichoose :: MonadError Error m => Integer -> Integer -> m Integer
+multichoose n r | not (0 <= r && r <= n) = throwRuntimeError $ "invalid argument for multichoose: " ++ show (n, r)
 multichoose 0 0 = return 1
 multichoose n r = choose (n + r - 1) r
 
@@ -222,7 +226,7 @@ multichoose n r = choose (n + r - 1) r
 
 type Env = [(VarName, Value)]
 
-callBuiltin :: Builtin -> [Value] -> Either String Value
+callBuiltin :: MonadError Error m => Builtin -> [Value] -> m Value
 callBuiltin builtin args = case (builtin, args) of
   -- arithmetical functions
   (Negate, [ValInt n]) -> return $ ValInt (- n)
@@ -290,24 +294,24 @@ callBuiltin builtin args = case (builtin, args) of
   (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
   (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
   (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
-  _ -> throwError $ "Runtime Error: Internal Error: invalid builtin call: " ++ show (builtin, args)
+  _ -> throwRuntimeError $ "Internal Error: invalid builtin call: " ++ show (builtin, args)
 
-callLambda :: Env -> [(VarName, Type)] -> Expr -> [Value] -> Either String Value
+callLambda :: MonadError Error m => Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
 callLambda env formalArgs body actualArgs = case (formalArgs, actualArgs) of
   ([], []) -> evaluateExpr env body
   ((x, _) : formalArgs, val : actualArgs) -> callLambda ((x, val) : env) formalArgs body actualArgs
-  _ -> Left "Runtime Error: Internal Error: wrong number of arguments for lambda function"
+  _ -> throwRuntimeError "Internal Error: wrong number of arguments for lambda function"
 
-callValue :: Value -> [Value] -> Either String Value
+callValue :: MonadError Error m => Value -> [Value] -> m Value
 callValue f args = case f of
   ValBuiltin builtin -> callBuiltin builtin args
   ValLambda env args' body -> callLambda env args' body args
-  _ -> Left $ "Runtime Error: Internal Error: call non-function: " ++ show f
+  _ -> throwRuntimeError $ "Internal Error: call non-function: " ++ show f
 
-evaluateExpr :: Env -> Expr -> Either String Value
+evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
 evaluateExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwError $ "Runtime Error: Internal Error: undefined variable: " ++ show (unVarName x)
+    Nothing -> throwRuntimeError $ "Internal Error: undefined variable: " ++ show (unVarName x)
     Just val -> return val
   Lit lit -> return $ literalToValue lit
   App f args -> do
@@ -319,16 +323,16 @@ evaluateExpr env = \case
     v1 <- evaluateExpr env e1
     evaluateExpr ((x, v1) : env) e2
 
-callBuiltinWithTokens :: [Token] -> Builtin -> Either String (Value, [Token])
+callBuiltinWithTokens :: MonadError Error m => [Token] -> Builtin -> m (Value, [Token])
 callBuiltinWithTokens tokens builtin = do
   case builtinToType builtin of
     FunTy ts _ -> do
       (args, tokens) <- readInputMap ts tokens
       val <- callBuiltin builtin args
       return (val, tokens)
-    _ -> throwError "Runtime Error: Internal Error: all builtin are functions"
+    _ -> throwRuntimeError "Internal Error: all builtin are functions"
 
-callLambdaWithTokens :: [Token] -> Env -> [(VarName, Type)] -> Expr -> Either String (Value, [Token])
+callLambdaWithTokens :: MonadError Error m => [Token] -> Env -> [(VarName, Type)] -> Expr -> m (Value, [Token])
 callLambdaWithTokens tokens env args body = case args of
   ((x, t) : args) -> do
     (val, tokens) <- readInput t tokens
@@ -337,7 +341,7 @@ callLambdaWithTokens tokens env args body = case args of
     val <- evaluateExpr env body
     return (val, tokens)
 
-evaluateToplevelExpr :: [Token] -> Env -> ToplevelExpr -> Either String (Value, [Token])
+evaluateToplevelExpr :: (MonadFix m, MonadError Error m) => [Token] -> Env -> ToplevelExpr -> m (Value, [Token])
 evaluateToplevelExpr tokens env = \case
   ToplevelLet rec f args _ body cont -> do
     val <- case rec of
@@ -351,21 +355,21 @@ evaluateToplevelExpr tokens env = \case
       ValLambda env args body -> callLambdaWithTokens tokens env args body
       _ -> return (val, tokens)
 
-evaluateProgram :: [Token] -> Program -> Either String Value
+evaluateProgram :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
 evaluateProgram tokens prog = do
   (val, tokens) <- evaluateToplevelExpr tokens [] prog
   if null tokens
     then return val
-    else throwError $ "Runtime Error: Wrong Input: evaluation succeeds, but unused inputs remain: " ++ show (val, tokens)
+    else throwRuntimeError $ "Wrong Input: evaluation succeeds, but unused inputs remain: " ++ show (val, tokens)
 
 -- -----------------------------------------------------------------------------
 -- run
 
-run' :: [Token] -> Program -> Either String Value
-run' = evaluateProgram
+run' :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
+run' tokens prog = wrapError' "Jikka.Core.Evaluate.run' failed" $ evaluateProgram tokens prog
 
-run :: Program -> ExceptT String IO Value
+run :: (MonadIO m, MonadFix m, MonadError Error m) => Program -> m Value
 run prog = do
   contents <- liftIO getContents
   let tokens = tokenize contents
-  liftEither $ evaluateProgram tokens prog
+  liftEither $ run' tokens prog

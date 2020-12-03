@@ -5,11 +5,12 @@ module Jikka.Python.Parse.AlexSpec
   )
 where
 
+import Jikka.Common.Error (Error)
 import Jikka.Common.Language.Pos
 import Jikka.Python.Parse.Alex (Token (..), run)
 import Test.Hspec
 
-run' :: String -> Either String [Token]
+run' :: String -> Either Error [Token]
 run' input = do
   tokens <- run input
   return $ map value tokens

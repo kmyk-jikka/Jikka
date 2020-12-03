@@ -3,6 +3,7 @@ module Jikka.Python.Parse.HappySpec
   )
 where
 
+import Jikka.Common.Error (Error)
 import Jikka.Common.Language.Name
 import Jikka.Common.Language.Pos
 import Jikka.Python.Language.Expr
@@ -13,7 +14,7 @@ import Test.Hspec
 at :: a -> (Int, Int) -> WithPos a
 at token (y, x) = WithPos (Pos y x) token
 
-run' :: [[L.Token]] -> Either String Program
+run' :: [[L.Token]] -> Either Error Program
 run' tokens = run . concat $ zipWith (\y -> zipWith (\x token -> token `at` (y, x)) [1 ..]) [1 ..] tokens
 
 spec :: Spec

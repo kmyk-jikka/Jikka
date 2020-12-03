@@ -1,7 +1,10 @@
 {
+{-# LANGUAGE FlexibleContexts #-}
+
 -- vim: filetype=haskell
 module Jikka.Python.Parse.Happy (run) where
 
+import Jikka.Common.Error
 import Data.List (intercalate)
 import qualified Data.Map.Strict as M
 import qualified Jikka.Python.Parse.Alex as L (Token(..))
@@ -12,9 +15,9 @@ import Jikka.Common.Language.Pos
 import Jikka.Python.Language.Expr
 }
 
-%name run
+%name runEither
 %tokentype { WithPos L.Token }
-%monad { Either String }
+%monad { Either Error }
 %error { happyErrorExpList }
 %errorhandlertype explist
 
@@ -263,24 +266,38 @@ builtInOps =
         , op Nonfix 6 ">="
         ]
 
-useShuntingYard :: (Expr', [(WithPos FunName, Expr')]) -> Either String Expr'
+useShuntingYard :: (Expr', [(WithPos FunName, Expr')]) -> Either Error Expr'
 useShuntingYard = ShuntingYard.run info apply where
-    info :: FunName -> Either String BinOpInfo
+    info :: FunName -> Either Error BinOpInfo
     info op = case M.lookup op builtInOps of
-        Nothing -> Left $ show op ++ " is not defined"
+        Nothing -> Left (WithGroup InternalError (Error (show op ++ " is not defined")))
         Just op -> Right op
     apply :: WithPos FunName -> Expr' -> Expr' -> Expr'
     apply op x y = withPos x $ Call (value op) [x, y]
 
-happyErrorExpList :: ([WithPos L.Token], [String]) -> Either String a
-happyErrorExpList (tokens, expected) = Left $ "Syntax error at " ++ pos' tokens ++ ": " ++ tok tokens ++ " is got, but " ++ exp expected ++ " expected" where
-    pos' [] = "EOF"
-    pos' (token : _) = prettyPos (pos token)
+happyErrorExpList :: ([WithPos L.Token], [String]) -> Either Error a
+happyErrorExpList (tokens, expected) = Left err where
+    err :: Error
+    err = WithGroup SyntaxError (withLocation tokens (Error msg))
+    withLocation :: [WithPos L.Token] -> Error -> Error
+    withLocation [] err = err
+    withLocation (token : _) err = WithLocation(pos token) err
+    msg :: String
+    msg = tok tokens ++ " is got, but " ++ exp expected ++ " expected"
+    tok :: [WithPos L.Token] -> String
     tok [] = "EOF"
     tok (token : _) = wrap . show $ value token
+    exp :: [String] -> String
     exp [] = "EOF is"
     exp [item] = wrap item ++ " is"
     exp items = intercalate ", " (map wrap $ init items) ++ ", or " ++ (wrap $ last items) ++ " are"
+    wrap :: String -> String
     wrap ('\'' : s) = '`' : s
     wrap s = "`" ++ s ++ "'"
+
+run :: MonadError Error m => [WithPos L.Token] -> m Program
+run tokens = wrapError' "Jikka.Python.Parse.Happy.run failed" $ do
+    case runEither tokens of
+        Left err -> throwError err
+        Right prog -> return prog
 }

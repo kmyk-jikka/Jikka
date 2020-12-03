@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jikka.Common.Parse.ShuntingYardSpec
@@ -7,6 +8,7 @@ where
 
 import Data.Either (isLeft)
 import qualified Data.Map.Strict as M
+import Jikka.Common.Error
 import Jikka.Common.Language.Pos
 import Jikka.Common.Parse.ShuntingYard (BinOpInfo (..), Fixity (..), run)
 import Test.Hspec
@@ -32,14 +34,10 @@ builtInOps =
           op Rightfix 2 "||"
         ]
 
-maybeToEither :: a -> Maybe b -> Either a b
-maybeToEither a Nothing = Left a
-maybeToEither _ (Just b) = Right b
-
-run' :: [String] -> Either String String
+run' :: [String] -> Either Error String
 run' tokens = value <$> run info apply (f (map putPos tokens))
   where
-    info op = maybeToEither (show op ++ " is not defined") $ M.lookup op builtInOps
+    info op = maybeToError (Error (show op ++ " is not defined")) $ M.lookup op builtInOps
     apply op x y = putPos $ "(" ++ value x ++ " " ++ value op ++ " " ++ value y ++ ")"
     f [] = error "the length of tokens must be odd"
     f [z] = (z, [])

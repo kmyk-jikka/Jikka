@@ -4,6 +4,7 @@ module Jikka.Python.ParseSpec
 where
 
 import Data.Text (pack)
+import Jikka.Common.Error (Error)
 import Jikka.Common.Language.Name
 import Jikka.Common.Language.Pos
 import Jikka.Python.Language.Expr
@@ -13,7 +14,7 @@ import Test.Hspec
 at :: a -> (Int, Int) -> WithPos a
 at a (y, x) = WithPos (Pos y x) a
 
-run' :: [String] -> Either String Program
+run' :: [String] -> Either Error Program
 run' lines = run "test.py" (pack . concat $ map (++ "\n") lines)
 
 spec :: Spec

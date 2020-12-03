@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Jikka.Common.Parse.OffsideRule
@@ -6,6 +7,7 @@ module Jikka.Common.Parse.OffsideRule
   )
 where
 
+import Jikka.Common.Error
 import Jikka.Common.Language.Pos
 
 data IndentSetting a
@@ -19,17 +21,17 @@ data IndentSetting a
         allowNoMatchingDedent :: Bool
       }
 
-computeDelta :: forall a. IndentSetting a -> Int -> [Int] -> Pos -> Either String (Int, [Int], [WithPos a])
+computeDelta :: forall m a. MonadError Error m => IndentSetting a -> Int -> [Int] -> Pos -> m (Int, [Int], [WithPos a])
 computeDelta setting = go
   where
-    go :: Int -> [Int] -> Pos -> Either String (Int, [Int], [WithPos a])
-    go _ [] _ = error "indent state must be non-empty"
+    go :: Int -> [Int] -> Pos -> m (Int, [Int], [WithPos a])
+    go _ [] _ = throwInternalError "indent state must be non-empty"
     go y (x : xs) pos@(Pos y' x') =
       case (compare y y', compare x x') of
-        (GT, _) -> error "tokens must be in chronological order"
-        (EQ, GT) -> error "tokens must be in chronological order"
+        (GT, _) -> throwInternalError "tokens must be in chronological order"
+        (EQ, GT) -> throwInternalError "tokens must be in chronological order"
         (EQ, _) -> return (y', x : xs, [])
-        (LT, GT) | not (allowNoMatchingDedent setting) && x' `notElem` xs -> Left $ "Lexical error at " ++ prettyPos pos ++ ": no matching <indent> for <dedent>"
+        (LT, GT) | not (allowNoMatchingDedent setting) && x' `notElem` xs -> throwSyntaxErrorAt pos "no matching <indent> for <dedent>"
         (LT, GT) -> do
           (y', xs', tokens) <- go y xs (Pos y' x')
           let token = WithPos (Pos y' (initialColumn setting)) (dedentToken setting)
@@ -39,10 +41,10 @@ computeDelta setting = go
           let token = WithPos (Pos y' (initialColumn setting)) (indentToken setting)
            in return (y', x' : x : xs, [token])
 
-insertIndentTokens :: forall a. IndentSetting a -> [WithPos a] -> Either String [WithPos a]
+insertIndentTokens :: forall m a. MonadError Error m => IndentSetting a -> [WithPos a] -> m [WithPos a]
 insertIndentTokens setting = go 0 (initialLine setting - 1) [initialColumn setting]
   where
-    go :: Int -> Int -> [Int] -> [WithPos a] -> Either String [WithPos a]
+    go :: Int -> Int -> [Int] -> [WithPos a] -> m [WithPos a]
     go _ y xs [] =
       let token = WithPos (Pos (y + 1) 0) (dedentToken setting)
        in return $ replicate (length xs - 1) token
