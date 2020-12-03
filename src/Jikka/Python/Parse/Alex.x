@@ -8,7 +8,7 @@ module Jikka.Python.Parse.Alex
     ) where
 
 import Text.Read (readMaybe)
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Common.Error
 import Jikka.Common.Parse.OffsideRule (insertIndentTokens, IndentSetting(..))
 }
@@ -119,19 +119,20 @@ tokens :-
     -- catch error
     .               { lexicalError }
 {
-alexEOF :: Alex (Maybe (WithPos Token))
+alexEOF :: Alex (Maybe (WithLoc Token))
 alexEOF = return $ Nothing
 
-tok :: (String -> Token) -> AlexAction (Maybe (WithPos Token))
-tok f (AlexPn _ line column, _, _, s) n = return . Just $ WithPos
+tok :: (String -> Token) -> AlexAction (Maybe (WithLoc Token))
+tok f (AlexPn _ line column, _, _, s) n = return . Just $ WithLoc
     { value = f (take n s)
-    , pos = Pos
+    , loc = Loc
         { line = line
         , column = column
+        , width = n
         }
     }
 
-tok' :: Token -> AlexAction (Maybe (WithPos Token))
+tok' :: Token -> AlexAction (Maybe (WithLoc Token))
 tok' token = tok (const token)
 
 data Token
@@ -178,12 +179,12 @@ data Token
 reservedError :: AlexAction a
 reservedError (AlexPn _ line column, _, _, s) n = alexError (show err) where
   msg = show (take n s) ++ " is a reserved Python keyword"
-  err = (line, column, msg)
+  err = (line, column, n, msg)
 
 lexicalError :: AlexAction a
 lexicalError (AlexPn _ line column, _, _, s) n = alexError (show err) where
   msg = show (take n s) ++ " is not a acceptable character"
-  err = (line, column, msg)
+  err = (line, column, n, msg)
 
 unfoldM :: Monad m => m (Maybe a) -> m [a]
 unfoldM f = do
@@ -192,12 +193,12 @@ unfoldM f = do
         Nothing -> return []
         Just x -> (x :) <$> unfoldM f
 
-run :: MonadError Error m => String -> m [WithPos Token]
+run :: MonadError Error m => String -> m [WithLoc Token]
 run input = wrapError' "Jikka.Python.Parse.Alex failed" $ do
     tokens <- case runAlex input (unfoldM alexMonadScan) of
       Left err -> case readMaybe err of
         Nothing -> throwInternalError ("failed to parse: " ++ show err)
-        Just (line, column, msg) -> throwLexicalErrorAt (Pos line column) msg
+        Just (line, column, width, msg) -> throwLexicalErrorAt (Loc line column width) msg
       Right tokens -> return tokens
     let setting = IndentSetting
             { indentToken = Indent

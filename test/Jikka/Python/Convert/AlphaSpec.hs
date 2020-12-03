@@ -2,13 +2,13 @@ module Jikka.Python.Convert.AlphaSpec (spec) where
 
 import Data.Either (isLeft)
 import Jikka.Common.Language.Name
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Python.Convert.Alpha (run)
 import Jikka.Python.Language.Expr
 import Test.Hspec
 
-at :: a -> Int -> WithPos a
-at a x = WithPos (Pos 0 x) a
+at :: a -> Int -> WithLoc a
+at a x = WithLoc (Loc 0 x (-1)) a
 
 spec :: Spec
 spec = describe "run" $ do

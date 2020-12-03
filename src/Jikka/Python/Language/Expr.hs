@@ -1,15 +1,15 @@
 module Jikka.Python.Language.Expr where
 
 import Jikka.Common.Language.Name
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 
-type Type' = WithPos Type
+type Type' = WithLoc Type
 
-type Expr' = WithPos Expr
+type Expr' = WithLoc Expr
 
-type Sentence' = WithPos Sentence
+type Sentence' = WithLoc Sentence
 
-type ToplevelDecl' = WithPos ToplevelDecl
+type ToplevelDecl' = WithLoc ToplevelDecl
 
 data Type
   = TyInt

@@ -27,7 +27,7 @@ module Jikka.Common.Error
 where
 
 import Control.Monad.Except
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 
 data Responsibility
   = UserMistake
@@ -63,7 +63,7 @@ data Error
   = Error String
   | WithGroup ErrorGroup Error
   | WithWrapped String Error
-  | WithLocation Pos Error
+  | WithLocation Loc Error
   | WithResponsibility Responsibility Error
   deriving (Eq, Ord, Show, Read)
 
@@ -84,19 +84,19 @@ eitherToError (Right b) = return b
 throwLexicalError :: MonadError Error m => String -> m a
 throwLexicalError = throwError . WithGroup LexicalError . Error
 
-throwLexicalErrorAt :: MonadError Error m => Pos -> String -> m a
+throwLexicalErrorAt :: MonadError Error m => Loc -> String -> m a
 throwLexicalErrorAt loc = throwError . WithLocation loc . WithGroup LexicalError . Error
 
 throwSyntaxError :: MonadError Error m => String -> m a
 throwSyntaxError = throwError . WithGroup SyntaxError . Error
 
-throwSyntaxErrorAt :: MonadError Error m => Pos -> String -> m a
+throwSyntaxErrorAt :: MonadError Error m => Loc -> String -> m a
 throwSyntaxErrorAt loc = throwError . WithLocation loc . WithGroup SyntaxError . Error
 
 throwSymbolError :: MonadError Error m => String -> m a
 throwSymbolError = throwError . WithGroup SymbolError . Error
 
-throwSymbolErrorAt :: MonadError Error m => Pos -> String -> m a
+throwSymbolErrorAt :: MonadError Error m => Loc -> String -> m a
 throwSymbolErrorAt loc = throwError . WithLocation loc . WithGroup SymbolError . Error
 
 throwTypeError :: MonadError Error m => String -> m a

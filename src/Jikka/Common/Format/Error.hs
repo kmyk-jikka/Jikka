@@ -3,36 +3,47 @@
 
 module Jikka.Common.Format.Error
   ( prettyError,
+    prettyErrorWithText,
   )
 where
 
 import Data.List (intercalate)
+import Data.Text (Text)
 import Jikka.Common.Error
-import Jikka.Common.Language.Pos
+import Jikka.Common.Format.Location
+import Jikka.Common.Location
 
 prettyError :: Error -> String
 prettyError err = intercalate ": " ((group ++ loc ++ resp) : getMessages err)
   where
-    group = case getErrorGroup err of
-      Nothing -> "Error"
-      Just LexicalError -> "Lexical Error"
-      Just SyntaxError -> "Syntax Error"
-      Just SemanticError -> "Semantic Error"
-      Just SymbolError -> "Symbol Error"
-      Just TypeError -> "Type Error"
-      Just EvaluationError -> "Evaluation Error"
-      Just RuntimeError -> "Runtime Error"
-      Just AssertionError -> "Assertion Error"
-      Just CommandLineError -> "Command Line Error"
-      Just WrongInputError -> "Wrong Input Error"
-      Just InternalError -> "Internal Error"
+    group = prettyGroup (getErrorGroup err)
     loc = case getLocation err of
       Nothing -> ""
-      Just loc -> " (" ++ prettyPos loc ++ ")"
+      Just loc -> " (" ++ prettyLoc loc ++ ")"
     resp = case getResponsibility err of
       Just UserMistake -> " (user's mistake?)"
       Just ImplementationBug -> " (implementation's bug?)"
       Nothing -> ""
+
+prettyErrorWithText :: Text -> Error -> [String]
+prettyErrorWithText text err = case getLocation err of
+  Nothing -> [prettyError err]
+  Just loc -> prettyError err : prettyLocWithText text loc
+
+prettyGroup :: Maybe ErrorGroup -> String
+prettyGroup = \case
+  Nothing -> "Error"
+  Just LexicalError -> "Lexical Error"
+  Just SyntaxError -> "Syntax Error"
+  Just SemanticError -> "Semantic Error"
+  Just SymbolError -> "Symbol Error"
+  Just TypeError -> "Type Error"
+  Just EvaluationError -> "Evaluation Error"
+  Just RuntimeError -> "Runtime Error"
+  Just AssertionError -> "Assertion Error"
+  Just CommandLineError -> "Command Line Error"
+  Just WrongInputError -> "Wrong Input Error"
+  Just InternalError -> "Internal Error"
 
 getMessages :: Error -> [String]
 getMessages = \case
@@ -50,7 +61,7 @@ getErrorGroup = \case
   WithLocation _ err -> getErrorGroup err
   WithResponsibility _ err -> getErrorGroup err
 
-getLocation :: Error -> Maybe Pos
+getLocation :: Error -> Maybe Loc
 getLocation = \case
   Error _ -> Nothing
   WithGroup _ err -> getLocation err

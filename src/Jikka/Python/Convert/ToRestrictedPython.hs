@@ -4,7 +4,7 @@ import Control.Monad.Except
 import Control.Monad.State.Strict
 import qualified Data.Map.Strict as M
 import Jikka.Common.Language.Name
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import qualified Jikka.Python.Language.Expr as X
 import qualified Jikka.Python.Language.Stdlib as X
 import qualified Jikka.RestrictedPython.Language.Expr as Y

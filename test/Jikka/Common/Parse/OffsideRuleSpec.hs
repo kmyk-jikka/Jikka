@@ -7,12 +7,12 @@ where
 
 import Data.Either (isLeft)
 import Jikka.Common.Error (Error)
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Common.Parse.OffsideRule (IndentSetting (..), insertIndentTokens)
 import Test.Hspec
 
-token :: Int -> Int -> a -> WithPos a
-token line column = WithPos (Pos line column)
+token :: Int -> Int -> a -> WithLoc a
+token line column = WithLoc (Loc line column (-1))
 
 indent :: String
 indent = "<indent>"
@@ -26,7 +26,7 @@ open = "<open>"
 close :: String
 close = "<close>"
 
-run :: [WithPos String] -> Either Error [String]
+run :: [WithLoc String] -> Either Error [String]
 run tokens = map value <$> insertIndentTokens setting tokens
   where
     setting :: IndentSetting String

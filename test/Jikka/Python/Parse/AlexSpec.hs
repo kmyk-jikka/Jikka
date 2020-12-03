@@ -6,7 +6,7 @@ module Jikka.Python.Parse.AlexSpec
 where
 
 import Jikka.Common.Error (Error)
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Python.Parse.Alex (Token (..), run)
 import Test.Hspec
 
@@ -23,7 +23,7 @@ spec = describe "run" $ do
     run' input `shouldBe` Right tokens
   it "puts 1-based position info" $ do
     let input = "abc def\n123"
-    let tokens = [WithPos (Pos 1 1) $ Ident "abc", WithPos (Pos 1 5) Def, WithPos (Pos 1 8) Newline, WithPos (Pos 2 1) $ Int 123]
+    let tokens = [WithLoc (Loc 1 1 3) $ Ident "abc", WithLoc (Loc 1 5 3) Def, WithLoc (Loc 1 8 1) Newline, WithLoc (Loc 2 1 3) $ Int 123]
     run input `shouldBe` Right tokens
   it "inserts <indent> tokens" $ do
     let input = "if:\n    return"

@@ -5,14 +5,14 @@ where
 
 import Jikka.Common.Error (Error)
 import Jikka.Common.Language.Name
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Python.Language.Expr
 import qualified Jikka.Python.Parse.Alex as L
 import Jikka.Python.Parse.Happy
 import Test.Hspec
 
-at :: a -> (Int, Int) -> WithPos a
-at token (y, x) = WithPos (Pos y x) token
+at :: a -> (Int, Int) -> WithLoc a
+at token (y, x) = WithLoc (Loc y x (-1)) token
 
 run' :: [[L.Token]] -> Either Error Program
 run' tokens = run . concat $ zipWith (\y -> zipWith (\x token -> token `at` (y, x)) [1 ..]) [1 ..] tokens

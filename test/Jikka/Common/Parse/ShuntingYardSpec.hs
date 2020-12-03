@@ -9,7 +9,7 @@ where
 import Data.Either (isLeft)
 import qualified Data.Map.Strict as M
 import Jikka.Common.Error
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Common.Parse.ShuntingYard (BinOpInfo (..), Fixity (..), run)
 import Test.Hspec
 
@@ -42,7 +42,7 @@ run' tokens = value <$> run info apply (f (map putPos tokens))
     f [] = error "the length of tokens must be odd"
     f [z] = (z, [])
     f (x : y : zs) = let (z, ws) = f zs in (x, (y, z) : ws)
-    putPos = WithPos (Pos 0 0)
+    putPos = WithLoc (Loc 0 0 (-1))
 
 spec :: Spec
 spec = describe "run" $ do

@@ -3,7 +3,7 @@ module Jikka.Main where
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Jikka.Common.Error
-import Jikka.Common.Format.Error (prettyError)
+import Jikka.Common.Format.Error (prettyError, prettyErrorWithText)
 import qualified Jikka.Main.Subcommand.Convert as Convert
 import qualified Jikka.Main.Subcommand.Debug as Debug
 import qualified Jikka.Main.Subcommand.Execute as Execute
@@ -57,7 +57,8 @@ main name args = do
         result <- runExceptT $ runSubcommand subcmd opts path
         case result of
           Left err -> do
-            hPutStrLn stderr (prettyError err)
+            text <- liftIO $ T.readFile path
+            mapM_ (hPutStrLn stderr) (prettyErrorWithText text err)
             return $ ExitFailure 1
           Right () -> do
             return ExitSuccess

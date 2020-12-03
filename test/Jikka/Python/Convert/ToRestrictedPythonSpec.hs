@@ -2,15 +2,15 @@ module Jikka.Python.Convert.ToRestrictedPythonSpec (spec) where
 
 import Data.Either (isLeft)
 import Jikka.Common.Language.Name
-import Jikka.Common.Language.Pos
+import Jikka.Common.Location
 import Jikka.Python.Convert.ToRestrictedPython (run)
 import qualified Jikka.Python.Language.Expr as X
 import qualified Jikka.RestrictedPython.Language.Expr as Y
 import qualified Jikka.RestrictedPython.Language.Stdlib as Y
 import Test.Hspec
 
-at :: a -> Int -> WithPos a
-at a x = WithPos (Pos 0 x) a
+at :: a -> Int -> WithLoc a
+at a x = WithLoc (Loc 0 x (-1)) a
 
 spec :: Spec
 spec = describe "run" $ do

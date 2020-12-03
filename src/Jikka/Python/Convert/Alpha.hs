@@ -7,7 +7,7 @@ import Control.Monad.Except
 import Control.Monad.State.Strict
 import qualified Data.Set as S
 import Jikka.Common.Language.Name
-import Jikka.Common.Language.Pos (value, withPos)
+import Jikka.Common.Location (value)
 import Jikka.Python.Language.Expr
 import Jikka.Python.Language.Stdlib (operatorNames)
 
@@ -152,7 +152,7 @@ withBreakingEnv cont = do
 -- convert AST
 
 alphaType :: Type' -> Alpha Type'
-alphaType t = withPos t <$> case value t of
+alphaType t = (<$ t) <$> case value t of
   TyInt -> return TyInt
   TyNat -> return TyNat
   TyInterval l r -> TyInterval <$> alphaExpr l <*> alphaExpr r
@@ -183,7 +183,7 @@ alphaComprehension (Comprehension e1 name e2 e3) = do
   return $ Comprehension e1 (Just name') e2 e3
 
 alphaExpr :: Expr' -> Alpha Expr'
-alphaExpr e = withPos e <$> case value e of
+alphaExpr e = (<$ e) <$> case value e of
   Lit lit -> return $ Lit lit
   Var name -> Var <$> useExistingVarName name
   Sub e1 e2 -> Sub <$> alphaExpr e1 <*> alphaExpr e2
@@ -199,7 +199,7 @@ alphaListShape shape = case shape of
   ListShape t n -> ListShape <$> alphaListShape t <*> alphaExpr n
 
 alphaSentence :: Sentence' -> Alpha Sentence'
-alphaSentence sentence = withPos sentence <$> case value sentence of
+alphaSentence sentence = (<$ sentence) <$> case value sentence of
   If e body1 body2 -> do
     e <- alphaExpr e
     body1 <- withBreakingEnv $ mapM alphaSentence body1
@@ -229,7 +229,7 @@ alphaSentence sentence = withPos sentence <$> case value sentence of
   Return e -> Return <$> alphaExpr e
 
 alphaToplevelDecl :: ToplevelDecl' -> Alpha ToplevelDecl'
-alphaToplevelDecl decl = withPos decl <$> case value decl of
+alphaToplevelDecl decl = (<$ decl) <$> case value decl of
   ConstDef name t e -> do
     name <- defineNewVarName name
     t <- withEnvPreserving $ alphaMaybeType t
