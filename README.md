@@ -10,11 +10,12 @@ Jikka takes such problems as input in the form of a program of a very restricted
 Jikka はそのような問題を自動で解きます。
 そのような問題をとても制限された Python のサブセット言語のコードの形で入力として受け取り、計算量を落とすような最適化を行い、C++ の実装に変換して出力します。
 
-## Examples (`v3.1.0`)
 
-The below are examples of old the version. The input was a ML code.
+## Examples
 
-### 例題
+The below are examples of old the version (at `v3.1.0`). The input was a ML code.
+
+### Sum of Max
 
 Problem:
 You are given a natural number K and a sequence A = (a₀, a₁, …, aₙ) of length N.
@@ -62,3 +63,8 @@ f
 ```
 
 Output, O(N): <https://atcoder.jp/contests/abc134/submissions/6526623>
+
+
+## License
+
+Appache License 2.0
