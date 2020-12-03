@@ -18,10 +18,14 @@ prettyError err = intercalate ": " ((group ++ loc ++ resp) : getMessages err)
       Just LexicalError -> "Lexical Error"
       Just SyntaxError -> "Syntax Error"
       Just SemanticError -> "Semantic Error"
-      Just InternalError -> "Internal Error"
+      Just SymbolError -> "Symbol Error"
+      Just TypeError -> "Type Error"
       Just EvaluationError -> "Evaluation Error"
       Just RuntimeError -> "Runtime Error"
+      Just AssertionError -> "Assertion Error"
       Just CommandLineError -> "Command Line Error"
+      Just WrongInputError -> "Wrong Input Error"
+      Just InternalError -> "Internal Error"
     loc = case getLocation err of
       Nothing -> ""
       Just loc -> " (" ++ prettyPos loc ++ ")"
@@ -56,6 +60,8 @@ getLocation = \case
 
 getResponsibilityFromErrorGroup :: ErrorGroup -> Maybe Responsibility
 getResponsibilityFromErrorGroup = \case
+  CommandLineError -> Nothing
+  WrongInputError -> Nothing
   InternalError -> Just ImplementationBug
   _ -> Just UserMistake
 

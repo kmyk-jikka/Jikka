@@ -78,13 +78,13 @@ tokenize = map Token . words
 
 readToken :: (MonadError Error m, Read a) => Token -> m a
 readToken token = case readEither (unToken token) of
-  Left msg -> throwRuntimeError $ "Wrong Input: " ++ msg
+  Left msg -> throwWrongInputError msg
   Right a -> return a
 
 readInputList :: MonadError Error m => Type -> Int -> [Token] -> m ([Value], [Token])
 readInputList t = go
   where
-    go n _ | n < 0 = throwRuntimeError "Wrong Input: negative size of list in input"
+    go n _ | n < 0 = throwWrongInputError "negative size of list in input"
     go 0 tokens = return ([], tokens)
     go n tokens = do
       (x, tokens) <- readInput t tokens
@@ -101,7 +101,7 @@ readInputMap ts tokens = case ts of
 
 readInput :: MonadError Error m => Type -> [Token] -> m (Value, [Token])
 readInput t tokens = case (t, tokens) of
-  (_, []) -> throwRuntimeError "Wrong Input: it reaches EOF"
+  (_, []) -> throwWrongInputError "it reaches EOF"
   (IntTy, token : tokens) -> do
     n <- readToken token
     return (ValInt n, tokens)
@@ -113,7 +113,7 @@ readInput t tokens = case (t, tokens) of
     (a, tokens) <- readInputList t n tokens
     let a' = A.listArray (0, n - 1) a
     return (ValList a', tokens)
-  (FunTy _ _, _) -> throwRuntimeError "Wrong Input: we cannot use functions as inputs"
+  (FunTy _ _, _) -> throwWrongInputError "we cannot use functions as inputs"
 
 -- -----------------------------------------------------------------------------
 -- builtins
@@ -294,19 +294,19 @@ callBuiltin builtin args = case (builtin, args) of
   (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
   (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
   (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
-  _ -> throwRuntimeError $ "Internal Error: invalid builtin call: " ++ show (builtin, args)
+  _ -> throwInternalError $ "invalid builtin call: " ++ show (builtin, args)
 
 callLambda :: MonadError Error m => Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
 callLambda env formalArgs body actualArgs = case (formalArgs, actualArgs) of
   ([], []) -> evaluateExpr env body
   ((x, _) : formalArgs, val : actualArgs) -> callLambda ((x, val) : env) formalArgs body actualArgs
-  _ -> throwRuntimeError "Internal Error: wrong number of arguments for lambda function"
+  _ -> throwInternalError "wrong number of arguments for lambda function"
 
 callValue :: MonadError Error m => Value -> [Value] -> m Value
 callValue f args = case f of
   ValBuiltin builtin -> callBuiltin builtin args
   ValLambda env args' body -> callLambda env args' body args
-  _ -> throwRuntimeError $ "Internal Error: call non-function: " ++ show f
+  _ -> throwInternalError $ "call non-function: " ++ show f
 
 evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
 evaluateExpr env = \case
@@ -330,7 +330,7 @@ callBuiltinWithTokens tokens builtin = do
       (args, tokens) <- readInputMap ts tokens
       val <- callBuiltin builtin args
       return (val, tokens)
-    _ -> throwRuntimeError "Internal Error: all builtin are functions"
+    _ -> throwInternalError "all builtin must be functions"
 
 callLambdaWithTokens :: MonadError Error m => [Token] -> Env -> [(VarName, Type)] -> Expr -> m (Value, [Token])
 callLambdaWithTokens tokens env args body = case args of
@@ -360,7 +360,7 @@ evaluateProgram tokens prog = do
   (val, tokens) <- evaluateToplevelExpr tokens [] prog
   if null tokens
     then return val
-    else throwRuntimeError $ "Wrong Input: evaluation succeeds, but unused inputs remain: " ++ show (val, tokens)
+    else throwWrongInputError $ "evaluation succeeds, but unused inputs remain: " ++ show (val, tokens)
 
 -- -----------------------------------------------------------------------------
 -- run
