@@ -6,7 +6,7 @@ import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import qualified Jikka.Core.Convert.Optimize as Optimize
 import qualified Jikka.Core.Evaluate as Evaluator
 import qualified Jikka.Python.Convert.Alpha as ConvertAlpha
-import qualified Jikka.Python.Convert.FromParsed as FromParsed
+import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
@@ -16,7 +16,7 @@ run path = do
   prog <- liftIO $ T.readFile path
   prog <- liftEither $ FromPython.run path prog
   prog <- liftEither $ ConvertAlpha.run prog
-  prog <- liftEither $ FromParsed.run prog
+  prog <- liftEither $ ToRestrictedPython.run prog
   prog <- liftEither $ TypeInfer.run prog
   prog <- liftEither $ ToCore.run prog
   prog <- liftEither $ Optimize.run prog

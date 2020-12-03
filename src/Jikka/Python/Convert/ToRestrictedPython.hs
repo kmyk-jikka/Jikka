@@ -1,4 +1,4 @@
-module Jikka.Python.Convert.FromParsed (run) where
+module Jikka.Python.Convert.ToRestrictedPython (run) where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict

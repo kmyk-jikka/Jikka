@@ -1,9 +1,9 @@
-module Jikka.Python.Convert.FromParsedSpec (spec) where
+module Jikka.Python.Convert.ToRestrictedPythonSpec (spec) where
 
 import Data.Either (isLeft)
 import Jikka.Common.Language.Name
 import Jikka.Common.Language.Pos
-import Jikka.Python.Convert.FromParsed (run)
+import Jikka.Python.Convert.ToRestrictedPython (run)
 import qualified Jikka.Python.Language.Expr as X
 import qualified Jikka.RestrictedPython.Language.Expr as Y
 import qualified Jikka.RestrictedPython.Language.Stdlib as Y

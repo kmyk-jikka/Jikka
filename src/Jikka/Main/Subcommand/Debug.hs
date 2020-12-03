@@ -10,7 +10,7 @@ import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.ValueApps as ValueApps
 import qualified Jikka.Core.Format as FormatCore
 import qualified Jikka.Python.Convert.Alpha as ConvertAlpha
-import qualified Jikka.Python.Convert.FromParsed as FromParsed
+import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse.Alex as PythonLexer
 import qualified Jikka.Python.Parse.Happy as PythonParser
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
@@ -34,7 +34,7 @@ run path = do
   put "parsed" $ show prog
   prog <- liftEither $ ConvertAlpha.run prog
   put "alpha converted" $ show prog
-  prog <- liftEither $ FromParsed.run prog
+  prog <- liftEither $ ToRestrictedPython.run prog
   put "converted AT" . unpack =<< liftEither (FormatPython.run prog)
   prog <- liftEither $ TypeInfer.run prog
   put "infered types" . unpack =<< liftEither (FormatPython.run prog)
