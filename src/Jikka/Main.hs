@@ -3,6 +3,7 @@ module Jikka.Main where
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Jikka.Common.Error
+import Jikka.Common.Format.Error (prettyError)
 import qualified Jikka.Main.Subcommand.Convert as Convert
 import qualified Jikka.Main.Subcommand.Debug as Debug
 import qualified Jikka.Main.Subcommand.Execute as Execute
