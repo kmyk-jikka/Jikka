@@ -1,0 +1,785 @@
+\documentclass{ltjsarticle}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{braket}
+\usepackage{colortbl}
+\usepackage{ebproof}
+\usepackage{enumitem}
+\usepackage{here}
+\usepackage{latexsym}
+\usepackage{lscape}
+\usepackage[linguistics]{forest}
+\usepackage{mathtools}
+\usepackage[pdfencoding=auto]{hyperref}
+\usepackage{tikz}
+
+\usepackage{bibentry}
+\nobibliography*
+
+\newtheorem{problem*}{問題}[section]
+\newenvironment{problem}{\begin{problem*}\renewcommand{\qedsymbol}{\(\diamond\)}\pushQED{\qed}}{\popQED\end{problem*}}
+\newtheorem{definition*}{定義}[section]
+\newenvironment{definition}{\begin{definition*}\renewcommand{\qedsymbol}{\(\diamond\)}\pushQED{\qed}}{\popQED\end{definition*}}
+
+
+\title{競技プログラミングの問題は機械的に解けるか？}
+\author{Kimiyuki Onaka}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\setcounter{section}{-1}
+\section{概要}
+
+この PDF では、競技プログラミングの問題を機械的に解くことについて議論する。
+
+まず $3$ 章までで競技プログラミングの問題を機械的に解くことについての概要を見る。
+$1$ 章でいくつかの問題が解かれる過程を分析し、機械によって競技プログラミングの問題を解くことは有望であることを確認する。
+問題の形式化を取り扱わないことにすれば、 AtCoder 水色程度の能力のプログラムができうるだろうというのが結論である。
+$2$ 章では、機械的に解くことが難しいだろう問題の例を見る。
+問題自体に再帰が含まれるような複雑な問題 (たとえばゲームに関する問題) などでは困難が大きいことを見る。
+また、問題の形式化そのものが問われている問題 (たとえば幾何問題) は今回の手法の範囲外であることも確認する。
+$3$ 章では、自動で問題を解くプログラムを作ることの意義を説明する。
+ここまでは一般の競技プログラマーに向けての文章である。
+
+$4$ 章では競技プログラミングの問題を解くプログラムの実装のための背景の理論を説明する。
+これはそのようなプログラムの開発者に向けての文章である。
+
+\section{いくつかの問題はプログラムによって解ける}
+
+\subsection{手作業による機械的な変形で解くことができる問題がある}
+
+AtCoder Beginner Contest 100 の $4$ 問目 Patisserie ABC (\url{https://atcoder.jp/contests/abc100/tasks/abc100_d}) を例に見てみよう。
+これは整理すると以下のような問題である。
+そこまで難しくはないので、自分がどうこの問題を解いているのかを観察しながら一度自分で解いてみて、それから続きを読み進めてほしい。
+
+\begin{problem}[Patisserie ABC から引用]
+    \label{patisserie-abc}
+    \begin{quotation}
+        高橋君はプロのパティシエになり, AtCoder Beginner Contest 100 を記念して, 「ABC洋菓子店」というお店を開いた.
+
+        ABC洋菓子店では, $N$ 種類のケーキを売っている.
+        各種類のケーキには「綺麗さ」「おいしさ」「人気度」の $3$ つの値を持ち, $i$ 種類目のケーキの綺麗さは $x_i$ , おいしさは $y_i$ , 人気度は $z_i$ である.
+        これらの値は $0$ 以下である可能性もある.
+
+        りんごさんは, ABC洋菓子店で $M$ 個のケーキを食べることにした.
+        彼は次のように, 食べるケーキの組み合わせを選ぶことにした.
+        \begin{itemize}
+            \item 同じ種類のケーキを $2$ 個以上食べない.
+            \item 上の条件を満たしつつ, (綺麗さの合計の絶対値) + (おいしさの合計の絶対値) + (人気度の合計の絶対値) が最大になるように選ぶ.
+        \end{itemize}
+        このとき, りんごさんが選ぶケーキの (綺麗さの合計の絶対値) + (おいしさの合計の絶対値) + (人気度の合計の絶対値) の最大値を求めなさい.
+    \end{quotation}
+\end{problem}
+
+形式的に書けば以下のようになる。
+
+\begin{problem}[形式化された問題\ref{patisserie-abc}]
+    \label{patisserie-abc-formal}
+    長さ $N$ の整数列 $x = (x_0, x_1, \dots, x _ {N - 1}), \; y = (y_0, y_1, \dots, y _ {N - 1}), \; z = (z_0, z_1, \dots, z _ {N - 1})$ と自然数 $M \le N$ が与えられる。
+    集合 $X \subseteq N = \{ 0, 1, \dots, N - 1 \}$ に対し
+    \[
+        f(X) = \left|\sum_{i \in X} x_i\right| + \left|\sum_{i \in X} y_i\right| + \left|\sum_{i \in X} z_i\right|
+    \]
+    と定義する。
+    このとき $\max \Set{ f(X) | X \subseteq N \land \lvert X \rvert = M }$ を求めよ。
+\end{problem}
+
+これは機械的に解ける。
+このとき求める値 $y$ は
+\[
+    y = \max \Set{ \lvert a \rvert + b | \dots }
+\]
+の形の式で定義されている。
+$\lvert a \rvert = \max \Set{ a, -a }$ であるので、このような式は
+\[
+    y = \max \Set{ \max \Set{ a, -a } + b | \dots }
+\]
+を経由して
+\[
+    y = \max \Set{ \max \Set{ a + b | \dots }, \max \Set{ - a + b | \dots } }
+\]
+と変形できる。
+この変形を可能な限り繰り返すと、求める式は
+\[
+    y = \max \Set{
+        \begin{array}{l}
+            \max \Set{ + \sum_{i \in X} x_i + \sum_{i \in X} y_i + \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ + \sum_{i \in X} x_i + \sum_{i \in X} y_i - \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ + \sum_{i \in X} x_i - \sum_{i \in X} y_i + \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ + \sum_{i \in X} x_i - \sum_{i \in X} y_i - \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ - \sum_{i \in X} x_i + \sum_{i \in X} y_i + \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ - \sum_{i \in X} x_i + \sum_{i \in X} y_i - \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ - \sum_{i \in X} x_i - \sum_{i \in X} y_i + \sum_{i \in X} z_i | \ldots X \ldots }, \\
+            \max \Set{ - \sum_{i \in X} x_i - \sum_{i \in X} y_i - \sum_{i \in X} z_i | \ldots X \ldots }  \\
+        \end{array}
+    }
+\]
+となる。
+次に絶対値記号が取れた $\max \Set{ \pm \sum x_i \pm \sum y_i \pm \sum z_i | \ldots X \ldots }$ の形の $8$ 本の式の計算が必要である。
+$x_i' = - x_i$ とおけば $- \sum x_i = \sum x_i'$ であるなど、符号の正負は同様に扱える。つまり次の式の計算だけを考えればよい。
+\[
+    \max \Set{ \sum_{i \in X} x_i + \sum_{i \in X} y_i + \sum_{i \in X} z_i | X \subseteq N \land \lvert X \rvert = M }
+\]
+$\sum_{\phi(i)} f(i) + \sum_{\psi(i)} g(i)$ は $\phi(i) \leftrightarrow \psi(i)$ のとき $\sum_{\phi(i)} (f(i) + g(i))$ で置き換えられる。
+$w_i = x_i + y_i + z_i$ とおいて次の式の計算だけを考えればよい。
+\[
+    \max \Set{ \sum_{i \in X} w_i | X \subseteq N \land \lvert X \rvert = M }
+\]
+この形の式「$N$ 個のものから $M \le N$ 個選んだときの重み総和の最大値」は十分典型的でかつこれ以上分解できそうにないものであり、これを $O(N M)$ で解くための変形の残りの部分はすべて埋め込んでおいてよいだろう \footnote{$O(N \log N)$ や $O(N)$ でもよい。}。
+よってこれは計算できる式であり、機械的な変形により $y$ が $O(N M)$ で計算できることが分かった。
+$N, M$ の上限と計算時間制限が与えられていれば、これが時間内に計算できることも機械的に判定できる。
+よってこの問題は機械的に解けると言える。
+
+\subsection{このような手動での機械的な変形は、プログラムによっても可能である}
+
+引き続き Patisserie ABC を例に見ていこう。
+「このようにして機械的に解ける」と主張した上の説明を分析して裏に隠されたものも明示すれば、さらにいくつかの要素に分解することができる。
+主には以下のような $3$ 段階のものとして説明できる。
+
+\begin{enumerate}[label=(\arabic{enumi}.)]
+    \item 自然言語で入力された問題を形式的な形に変形する
+    \item 適用するべき変換規則を選択し適用する
+    \item 十分に簡単な形に変形された問題を実際の実装として出力する
+\end{enumerate}
+
+順番に見ていこう。
+
+\subsubsection{プログラムは形式的な入力のみを受け付けることとする}
+
+まず (1.) について。
+これはプログラムによっては扱わず、プログラムの利用者に行わせるものとする。
+Haskell や ML 系言語 \footnote{F\# や Standard ML など。} に似た文法のできるだけ高級な言語を用意し、問題をそのままこの言語の上に翻訳したものを入力させることになる。
+入力されたプログラムを解釈した結果は、たとえば図\ref{input-syntax}のような構文木として理解できる。
+
+\begin{figure}[p]
+    \label{input-syntax}
+    \begin{center}
+        \begin{forest}
+            [$\mathrm{max}$
+                [$\Set{\ldots | \ldots}$
+                    [$+$
+                        [$\lvert \ldots \rvert$
+                            [$\sum$
+                                [$\in$
+                                    [$i$]
+                                    [$X$]
+                                ]
+                                [$x_{\dots}$
+                                    [$i$]
+                                ]
+                            ]
+                        ]
+                        [$+$
+                            [$\lvert \ldots \rvert$
+                                [$\sum$
+                                    [$\in$
+                                        [$i$]
+                                        [$X$]
+                                    ]
+                                    [$y_{\dots}$
+                                        [$i$]
+                                    ]
+                                ]
+                            ]
+                            [$\lvert \ldots \rvert$
+                                [$\sum$
+                                    [$\in$
+                                        [$i$]
+                                        [$X$]
+                                    ]
+                                    [$z_{\dots}$
+                                        [$i$]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                    [$\land$
+                        [$\subseteq$
+                            [$X$]
+                            [$N$]
+                        ]
+                        [${=}$
+                            [$\lvert \ldots \rvert$
+                                [$X$]
+                            ]
+                            [$N$]
+                        ]
+                    ]
+                ]
+            ]
+        \end{forest}
+    \end{center}
+    \caption{形式化された問題\ref{patisserie-abc-formal}を表現する構文木の一例 \footnote{これは例示であり、実際にはもうすこし \lambda 項に寄せた表現を用いる。}}
+\end{figure}
+
+我々は汎用人工知能を作りたいのでも自然言語処理をしたいのでもない。
+もしいま無理にこれを行おうとしても、たいへんな苦労の後に実用に耐えない精度のものができあがるだけだろう。
+
+\subsubsection{変換規則は人間が列挙し、どのような順序で適用するかは機械に探索させる}
+
+次に (2.) について。
+
+問題\ref{patisserie-abc}を機械的に解く過程で出現した変形は主に以下の $5$ 種であった \footnote{$a + (b + c) = (a + b) + c$ や、$a = b$ ならば $f(a) = f(b)$ であるといった自明な等式については省略した。}。
+
+\begin{itemize}
+    \item $\lvert a \rvert = \max \Set{ a, -a }$ という等式に基づく変換
+    \item $\max \Set{ \max \Set{ a, b } + c | \dots } = \max \Set{ \max \Set{ a + c | \dots }, \max \Set{ b + c | \dots } }$ という等式に基づく変換
+    \item $- \sum_{i \in X} a_i = \sum_{i \in X} b_i$ という等式に基づく変換 (ただし $b_i = - a_i$ とおく)
+    \item $\sum_{i \in X} a_i + \sum_{i \in X} b_i = \sum_{i \in X} c_i$ という等式に基づく変換 (ただし $c_i = a_i + b_i$ とおく)
+    \item $\max \Set{ \sum_{i \in X} w_i | X \subseteq N \land \lvert X \rvert = M }$ から適切な式 \footnote{たとえば列 $w' = \mathrm{reverse}(\mathrm{sort}(w))$ を計算した後に $\sum_{i < M} w'_i$ を計算するような式。} への変換
+\end{itemize}
+
+
+変換規則と構文木が与えられたとき「変換が適用できるかを判定すること」および「変換を適用した結果を得ること」はプログラムによって可能である。
+実際、このような規則は図\ref{max-max-rule}に示すような木から木への組み換えとして理解できる。
+
+\begin{figure}[p]
+    \label{max-max-rule}
+    \begin{center}
+        \begin{forest}
+            [,phantom,s sep=20ex
+                [$\max$,name=left
+                    [$\Set{\ldots | \ldots}$
+                        [$+$
+                            [$\max$
+                                [$\Set{\ldots}$
+                                    [$a$]
+                                    [$b$]
+                                ]
+                            ]
+                            [$c$]
+                        ]
+                        [$\varphi$]
+                    ]
+                ]
+                [$\max$,name=right
+                    [$\Set{\ldots}$
+                        [$\max$
+                            [$\Set{\ldots | \ldots}$
+                                [$+$
+                                    [$a$]
+                                    [$c$]
+                                ]
+                                [$\varphi$]
+                            ]
+                        ]
+                        [$\max$
+                            [$\Set{\ldots | \ldots}$
+                                [$+$
+                                    [$a$]
+                                    [$b$]
+                                ]
+                                [$\varphi$]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+            \draw[-latex,dotted] (left) edge[out=north east,in=north west] (right);
+        \end{forest}
+    \end{center}
+    \caption{等式 $\max \Set{ \max \Set{ a, b } + c | \dots } = \max \Set{ \max \Set{ a + c | \dots }, \max \Set{ b + c | \dots } }$ に基づく変換規則の、構文木の書き換えとしての表現}
+\end{figure}
+
+ただしもちろん、これらの変換規則を人の手によって事前に組み込んでおくことが前提である。
+「$\dots = \dots$ という等式に基づく変換」と表記したことから明らかであるように、「競技プログラミングをする上で有用な等式」を「変換の向きと共に」列挙することとなる。
+これらの変換規則を自動で獲得することは、個々の問題を解くよりはるかに難しい課題であるので行わない。
+
+変換の個々の適用が可能であることだけでは十分でない。
+考えられる変換はこれらだけではないため「適用する変換を適切に選択できること」もまた必要だからである。
+この変換の選択の部分は自明ではない。
+いまのところ式の複雑さが減少するにように貪欲に変換すればたいていの場合で上手くいくだろうと予想しているが、もしそれが偽ならヒューリスティックな探索を行うことになるだろう。
+
+\subsubsection{変形結果の式をソースコードとして出力することは難しくない}
+
+最後に (3.) について。
+そもそも操作対象である形式的な数式はそれ自体がある種のソースコードである。
+これを C++ のような高級言語に変換することは難しくない。
+
+
+\subsection{そのようにして解ける問題の数は少なくはない}
+
+実際に AtCoder Beginner Contest の第 $100$ 回から第 $104$ 回までの $20$ 問\footnote{問題をどこから持ってくるかによっても結果は変わるだろう。}を、その問題が機械的に解けそうであるかを判断\footnote{主観的な基準で}した結果を表\ref{table-analysis}に示す。
+ここから直ちに言えることは次の $2$ 点だろう。
+
+\begin{itemize}
+    \item 解けるか解けないかは問題との相性の面が大きい
+    \item AtCoder Beginner Contest の C, D 問題が $5$ 問に $1$ 問ぐらいは解ける
+\end{itemize}
+
+\begin{table}[p]
+    \caption{\label{table-analysis} AtCoder Beginner Contest の問題が機械的に解けそうか判断した結果の一覧}
+    \begin{center}
+        \scalebox{0.8}{
+            \begin{tabular}{|l|l|c|l|} \hline
+                コンテスト & 問題 & 機械的に解けうるか & それはなぜか \\ \hline \hline
+
+                \href{https://atcoder.jp/contests/abc100}{AtCoder Beginner Contest 100} & \href{https://atcoder.jp/contests/abc100/tasks/abc100_a}{A - Happy Birthday!} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc101}{AtCoder Beginner Contest 101} & \href{https://atcoder.jp/contests/abc101/tasks/abc101_a}{A - Eating Symbols Easy} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc102}{AtCoder Beginner Contest 102} & \href{https://atcoder.jp/contests/abc102/tasks/abc102_a}{A - Multiple of 2 and N} & Yes? & 自明ではあるが面倒 \\ \hline
+                \href{https://atcoder.jp/contests/abc103}{AtCoder Beginner Contest 103} & \href{https://atcoder.jp/contests/abc103/tasks/abc103_a}{A - Task Scheduling Problem} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc104}{AtCoder Beginner Contest 104} & \href{https://atcoder.jp/contests/abc104/tasks/abc104_a}{A - Rated for Me} & Yes & 自明 \\ \hline \hline
+
+                \href{https://atcoder.jp/contests/abc100}{AtCoder Beginner Contest 100} & \href{https://atcoder.jp/contests/abc100/tasks/abc100_b}{B - Ringo's Favorite Numbers} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc101}{AtCoder Beginner Contest 101} & \href{https://atcoder.jp/contests/abc101/tasks/abc101_b}{B - Digit Sums} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc102}{AtCoder Beginner Contest 102} & \href{https://atcoder.jp/contests/abc102/tasks/abc102_b}{B - Maximum Difference} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc103}{AtCoder Beginner Contest 103} & \href{https://atcoder.jp/contests/abc103/tasks/abc103_b}{B - String Rotation} & Yes & 自明 \\ \hline
+                \href{https://atcoder.jp/contests/abc104}{AtCoder Beginner Contest 104} & \href{https://atcoder.jp/contests/abc104/tasks/abc104_b}{B - AcCepted} & Yes & 自明 \\ \hline \hline
+
+                \href{https://atcoder.jp/contests/abc100}{AtCoder Beginner Contest 100} & \href{https://atcoder.jp/contests/abc100/tasks/abc100_c}{C - *3 or /2} & No & 機械的な手法とあまり相性が良くない \\ \hline
+                \href{https://atcoder.jp/contests/abc101}{AtCoder Beginner Contest 101} & \href{https://atcoder.jp/contests/abc101/tasks/arc099_a}{C - Minimization} & No & 機械的な手法とあまり相性が良くない \\ \hline
+                \href{https://atcoder.jp/contests/abc102}{AtCoder Beginner Contest 102} & \href{https://atcoder.jp/contests/abc102/tasks/arc100_a}{C - Linear Approximation} & Yes? & 難しいが可能なはず \\ \hline
+                \href{https://atcoder.jp/contests/abc103}{AtCoder Beginner Contest 103} & \href{https://atcoder.jp/contests/abc103/tasks/abc103_c}{C - Modulo Summation} & No & 剰余は意外と面倒。難しそう \\ \hline
+                \href{https://atcoder.jp/contests/abc104}{AtCoder Beginner Contest 104} & \href{https://atcoder.jp/contests/abc104/tasks/abc104_c}{C - All Green} & No & 貪欲を含むので難しい \\ \hline \hline
+
+                \href{https://atcoder.jp/contests/abc100}{AtCoder Beginner Contest 100} & \href{https://atcoder.jp/contests/abc100/tasks/abc100_d}{D - Patisserie ABC} & Yes & 機械的な手法が有効に働く問題である \\ \hline
+                \href{https://atcoder.jp/contests/abc101}{AtCoder Beginner Contest 101} & \href{https://atcoder.jp/contests/abc101/tasks/arc099_b}{D - Snuke Numbers} & No & 機械的な手法と明らかに相性が悪い \\ \hline
+                \href{https://atcoder.jp/contests/abc102}{AtCoder Beginner Contest 102} & \href{https://atcoder.jp/contests/abc102/tasks/arc100_b}{D - Equal Cut} & No & 単純に問題が難しい \\ \hline
+                \href{https://atcoder.jp/contests/abc103}{AtCoder Beginner Contest 103} & \href{https://atcoder.jp/contests/abc103/tasks/abc103_d}{D - Islands War} & No & 形式化の形次第だが難しそう \\ \hline
+                \href{https://atcoder.jp/contests/abc104}{AtCoder Beginner Contest 104} & \href{https://atcoder.jp/contests/abc104/tasks/abc104_d}{D - We Love ABC} & Yes? & 難しいが可能なはず \\ \hline
+            \end{tabular}
+        }
+    \end{center}
+\end{table}
+
+
+
+\section{すべての問題が解けるわけではない}
+
+形式化との相性が悪い問題がいくらか存在する。
+次のような問題を解くことは難しい。
+
+\begin{enumerate}
+    \item 形式的に証明を書くことが難しい問題
+    \item 形式化する能力が問うている問題
+\end{enumerate}
+
+\subsection{妥当性の説得は簡単であっても、証明として書き下すことが難しい解法がある}
+
+競技プログラミングにおいて、解法は必ずしも証明を伴なわない。
+たとえば貪欲法を用いた解法の証明を数学的に厳密に与えることは難しい。
+小さい入力の値を表示した結果から帰納的に解法を推測することもある。
+しかしわれわれの手法は必然的に解法に証明を伴う。
+真であることが知られている等式を用いて自明な式変形を繰り返すことを基本にしているので「証明はできないがおそらく正しいであろう解法\footnote{乱択アルゴリズムのことではない}」は基本的に\footnote{実験結果の先頭 $n$ 個を使って OEIS を引くとか、無根拠に貪欲だと決め付けるなどは可能だが、まったく有意義でない}生成できない。
+
+AtCoder Beginners Selection の $7$ 問目 Card Game for Two (\url{https://atcoder.jp/contests/abs/tasks/abc088_b}) がその例である。
+これは以下のような問題である。
+
+\begin{problem}[Card Game for Two から引用]
+    \label{card-game-for-two}
+    \begin{quotation}
+        $N$ 枚のカードがあります.
+        $i$ 枚目のカードには, $a_i$ という数が書かれています.
+        Alice と Bob は, これらのカードを使ってゲームを行います.
+        ゲームでは, Alice と Bob が交互に $1$ 枚ずつカードを取っていきます.
+        Alice が先にカードを取ります.
+        $2$ 人がすべてのカードを取ったときゲームは終了し, 取ったカードの数の合計がその人の得点になります.
+        $2$ 人とも自分の得点を最大化するように最適な戦略を取った時, Alice は Bob より何点多く取るか求めてください.
+    \end{quotation}
+\end{problem}
+
+この問題は人間にとっては簡単である。
+単純な貪欲法でよい。
+その時点で残っているカードの中から最大のものを選ぶことが誰にとっても最適である。
+つまり列 $A$ を降順にソートし ($1$ から数えて) 奇数番目の数の総和から偶数番目の数の総和を引いたものが答えである。
+計算量は $O(N \log N)$ となる。
+
+この問題を機械によって解くにはどうすべきだろうか？
+そもそも問題を機械に入力する時点ですでに自明ではない。
+単純には minimax 法のようにして、以下のように形式化できる。
+
+\begin{problem}[形式化された問題\ref{card-game-for-two}]
+    \label{card-game-for-two-formal}
+    整数の多重集合 \footnote{多重集合とは重複を許す集合のこと。それぞれの要素 $x$ からそれがいくつ含まれているか (重複度) を表す自然数 $m(x) \in \mathbb{N}$ への関数 $m : X \to \mathbb{N}$ のことだとして理解できる。} $A \in \mathbb{N}^\mathbb{Z}$ \footnote{$Y^X$ は $X$ から $Y$ への関数全体の集合 $\Set{ f | f : X \to Y }$ のことである。ただし計算不可能な関数などの面倒は考えないこととする} に対し関数 $f : \mathbb{N}^\mathbb{Z} \to \mathbb{Z}$ を
+    \[
+        f(A) = \begin{cases}
+            0 & (A = \emptyset) \\
+            \max \Set{ a - f(A \setminus \Set{ a }) | a \in A } & (A \ne \emptyset)
+        \end{cases}
+    \]
+    と定義する。
+    多重集合 $A$ が入力される。
+    値 $f(A)$ を出力せよ。
+\end{problem}
+
+このような式は複雑である。
+式の形だけを見ても (1.) 集合を引数とするような (2.) 再帰関数であって (3.) その漸化式に集合の最大値を得る操作を含むためである\footnote{展開すれば $N$ 段の $\max$ と $\min$ の交互の繰り返しになっている、つまりある種の $\Pi_N$ 文のような性質を持つと思うと難しさが分かりやすい。}。
+人間であってもこのような再帰的な式だけから「貪欲に取ればよい」という解法に至るのは手間がかかるはずである\footnote{このことから「この事態は適切な形式化ができていない証拠であり、形式言語の表現力がとぼしいことが原因である」とみることができるかもしれない。}。
+
+そしてこれに対し証明を与えるのはなお難しい。
+実際に証明を書き下してみると以下のようになる。
+機械的に解く場合は解法と同時に証明が出力されるようなものであるべきだが、これを自動で導出するのは困難だろう。
+
+\begin{proof}[問題\ref{card-game-for-two}の貪欲解の正当性の証明]
+    重複がある場合も以下の議論はほとんど同様である。
+    簡単のため、入力される重複集合に重複はないとする。
+    つまり問題は有限集合 $A \subseteq_\mathrm{fin} \mathbb{Z}$ が与えられるものとみなしてよい。
+
+    関数 $g : \Set{ A \subseteq \mathbb{Z} \mid A \text{~is finite} } \to \mathbb{Z}$ を
+    \[
+        g(A) = \begin{cases}
+            0 & (A = \emptyset) \\
+            \max A - f(A \setminus \Set{ \max A }) & (A \ne \emptyset)
+        \end{cases}
+    \] と定義する。
+    任意の $A$ に対し $f(A) = g(A)$ を示せば、貪欲解が最適であると言える。
+
+    集合 $A$ の大きさ $\lvert A \rvert \in \mathbb{N}$ に関する帰納法を用いる。
+    \begin{itemize}
+        \item $\lvert A \rvert \le 1$ のときは明らか。
+        \item $n$ 未満の場合の成立を仮定し $\lvert A \rvert = n \ge 2$ での場合を示す。
+            $a = \max A$ とする。
+            $b \in A$ であって $b - f(A \setminus \Set{ b }) \ge a - f(A \setminus \Set{ a })$ なものをとる。
+            $b = a$ を示せば $f(A) = g(A)$ であることが示せる。
+
+            帰納法の仮定から左辺は $b - f(A \setminus \Set{ b }) = b - g(A \setminus \Set{ b }) = b - a + g(A \setminus \Set{ a, b })$ である。
+            どんな $c \in A$ についても $c - f(A \setminus \Set{ c }) \le f(A)$ であることを使って、右辺は $a - f(A \setminus \Set{ a }) \ge a - b + f(A \setminus \Set{ a, b }) = a - b + g(A \setminus \Set{ a, b })$ である。
+            あわせると $b - a + g(A \setminus \Set{ a, b }) \ge a - b + g(A \setminus \Set{ a, b })$ が得られる。
+            これを整理すると $b \ge a$ が得られ、つまり $b = a$ である。
+    \end{itemize}
+\end{proof}
+
+\subsection{形式化する部分が問われている問題には役に立たない}
+
+こちらは手法の枠組みに起因する難しさである。
+「形式的に表現された式を自動で変形しアルゴリズム的な改善をする」ことは「そもそも形式化することが難しい」問題には無力である。
+
+たとえば ICPC 2019 年度国内予選の $5$ 問目 立方体表面パズル (\url{https://onlinejudge.u-aizu.ac.jp/challenges/sources/ICPC/Prelim/1636}) を見てみよう。
+問題文は長いので詳細は該当ページやその図解を直接見てほしいが、簡潔には以下のようなものである。
+
+\begin{problem}
+    \label{cube-surface-puzzle}
+    立方体表面パズルとは、次のようなパズルである:
+    \begin{itemize}
+        \item $1 \times 1 \times 1$ の大きさの単位立方体 $n^3 - (n - 2)^3$ 個で構成された $n \times n \times n$ の中空の立方体がある。
+            この立方体を $6$ 分割したもの (ピース) が与えられる。
+            これを組み立てて元の立方体を復元する遊びが立方体表面パズルである。
+    \end{itemize}
+    さて、立方体表面パズルの $6$ 個のピースが入力される。
+    ただし必ずしも立方体が復元できるものとは限らない。
+    立方体が復元できるならば復元した結果を、できないならできないと出力せよ。
+\end{problem}
+
+実際に解こうとしてみれば、この問題が「アルゴリズムを用いて計算量を落とすこと」でなくむしろ「問題文の内容を正確にプログラミング言語に翻訳すること」を問うていることが分かる。
+特に、この問題が始めて出題されたコンテストでは実行時間制限は実質 $1$ 時間程度であり、アルゴリズム的な工夫はほとんど不要であった。
+
+
+\section{自動で問題を解くプログラムは有用である}
+
+次のような用途が考えられる。
+
+\begin{enumerate}[label=(\arabic{enumi}.)]
+    \item 自分では解けない問題を解くために用いる。
+    \item 学習のために用いる。
+    \item 考察や実装の仮定で手間を省くために用いる。
+\end{enumerate}
+
+この節の議論の多くは「電卓があれば算数は不要か？」「Google などの検索エンジンが使えるのに単語を覚える必要はあるか？」のような議論と類似していることを注意しておく。
+
+\subsection{自分では解けない問題を解くために用いることは難しいだろう}
+
+まず (1.) について。
+ここまで議論してきたような方法で自動で競技プログラミングの問題を解くプログラムを、自分では解けないような問題を解くために用いることは難しいだろう。
+
+原因は次の $3$ つである。
+
+\begin{enumerate}[label=(\alph{enumi}.)]
+    \item 形式化する作業の難しさ
+    \item 機械的に解ける問題の判定の難しさ
+    \item コンテスト環境への影響
+\end{enumerate}
+
+今回の手法では問題を形式化することはユーザの役割である。
+一般に、なにか与えられたものを正確に読みとってその結果を形式的に (あるいは厳密に) 表現することは、表現される対象と表現のための手法への理解が必要である。
+そのような理解を持つ人間であれば、プログラムによって機械的に解けてしまうような問題 (つまり比較的単純な問題) の多くを手動で機械的に解くことができるはずである。
+たとえば $\max \Set{ f(X) | X \subseteq N \land \lvert X \rvert = M }$ のような表現を読み書きできるほど数学に慣れている人間であれば、$\lvert a \rvert = \max \Set{ a, -a }$ を使うような簡単な式変形にも同様に慣れているだろう。
+
+プログラムですべての問題が解けるわけではないので、ユーザは「問題が機械的に解けるのはどのような場合であるか」を大まかに判断できる必要がある。
+機械的に解けうる問題であっても入力の与え方次第では解けないことも多いので、この判断を行なえることはプログラムの利用のために必要である。
+しかしそのような判断ができるには、やはりユーザ自身の能力が要求される。
+
+コンテスト環境への影響も無視できない。
+問題を機械的に解くプログラムが十分に普及すれば、機械的には解けない問題のみが出題されるようになることは明らかである。
+
+\subsection{競技プログラミングの初心者にとっては、学習のために役に立つだろう}
+
+次に (2.) について。
+競技プログラミングの問題を解くプログラムは「競技プログラミングをする上で有用な等式や定理やデータ構造を集めたもの」であり、また、規則に従って変換を繰り返すことから「問題を解く過程をギャップの小さい変形の列として出力できる」という性質を持つ。
+これらは学習のためのリソースとして利用できるだろう。
+
+\subsection{競技プログラミングの上級者ならば、機械的には解けない問題の考察や実装の道具として用いることができる}
+
+最後に (3.) について。
+これが最も重要であり、主に意図される用途である。
+
+競技プログラミングの簡単な問題を解くプログラムがあったとしても、実際の難しい問題は人が解くしかないだろう。
+しかしそのような場合でも、難しい部分を人間が解決したあとに帰着されて残る簡単な部分は機械によって処理可能である。
+つまりわれわれは、問題のより本質的な部分にのみ注力することができるようになる。
+
+単に実装の手間を省くのみならず、考察の手段としても利用することができる。
+式を入力すればそれをアルゴリズムに改善した結果の計算量を出力してくれるシステムとしても利用できるからである。
+立てた式の計算量が瞬時に分かることは、高度なアルゴリズムの設計の効率化に寄与する。
+
+\subsection{これらの用途は総合的に、競技プログラミングの界隈のレベルの上昇に寄与する}
+
+(1.) により出題される問題の質が上昇し、(2.) と (3.) により多くの競技者の能力が上昇することが期待できる。
+これらから、機械的に問題を解くプログラムは競技プログラミングの界隈にとって有益であると言える。
+
+
+\section{この機械的な手法はどのような理論に基づくものか}
+
+\subsection{事前知識として何が必要か}
+
+今回の手法は主に数理論理学の、特に証明に関する範囲の知識に基づくものである。
+これに関する比較的平易な和書として、次の $2$ 冊をおすすめしておく。
+
+\begin{itemize}
+    \item \bibentry{ono-logic}
+    \item \bibentry{terui-computer-math}
+\end{itemize}
+
+実際の開発においては、型システムやコンパイラの実装についての理解も必要である。
+対象言語の設計には{\lambda}計算や集合論の知識も役に立つだろう。
+これには次の $3$ 冊を紹介しておく。
+
+\begin{itemize}
+    \item \bibentry{tapl}
+    \item \bibentry{tiger-book}
+    \item \bibentry{kunen-foundation}
+\end{itemize}
+
+アルゴリズムや競技プログラミングについての知識が、ドメイン知識として必要である。
+データ構造も数学に寄せて扱うので永続データ構造に関する知識もあるとよい。
+これには次の $2$ 冊をおすすめしておく。
+
+\begin{itemize}
+    \item \bibentry{arihon}
+    \item \bibentry{okasaki-data-structure}
+\end{itemize}
+
+一方で統計学に関連する知識は不要である。
+ここまでの議論から明らかなように、いま考えている手法は統計的手法ではない。
+ビッグデータは用いず、ディープラーニングは行わない、基本的に一切の学習を行わないシステムである。
+エキスパートシステムという名前で説明されるのが適切だろう。
+
+\subsection{推論を形式化した体系としてのシークエント計算を援用する}
+
+シークエント計算は単なる形式的な証明の体系としてのみならず、型推論や定理証明支援系のための道具としても利用されている。
+われわれの手法も、明示的にであれ暗黙的にであれシークエント計算に類似した構造を利用することになるだろう。
+これは「どのような値について計算が終わっているか」などの情報を保持することが重要であることによる。
+
+「式」や「型」がどのようなものであるかについては、事前に適切に定義をしておくとする。
+「式 $e$ は型 $T$ を持つ」という言明を $e \in T$ と書くことにする。
+
+\begin{definition}[シークエント]
+「言明の集合 $\Gamma = \Set{ e_0 \in T_0, \dots, e_{n - 1} \in T_{n - 1} }$ に含まれる式 $e_0, \dots, e_{n - 1}$ の値がすべて与えられているとき、型 $T$ を持つ式 $e$ が時間計算量 $O(f)$ で計算できる」という言明を $\Gamma \vdash e \in T \cap O(f)$ と書くこととする\footnote{言明を正確に表現できさえすれば具体的な記法は重要でないことに注意せよ。たとえば $R(\Gamma, e, T, f)$ や $\fbox{\begin{tabular}{|c|c|} \hline \Gamma & e \\ \hline T & f \\ \hline \end{tabular}}$ と書くということにしても、以下の議論にまったく影響はない}。
+このような形で書かれた言明をシークエントと呼ぶ。
+\end{definition}
+
+たとえば「自然数 $K \in \mathbb{N}$ と関数 $f \in \mathbb{Z}^\mathbb{N} $ が与えられているとき式 $\sum_{i < n} f(i)$ の値は整数であって計算量 $O(K)$ で計算できる」という言明は $K \in \mathbb{N}, f \in \mathbb{Z}^\mathbb{N}  \vdash \sum_{i < n} f(i) \in \mathbb{Z} \cap O(K)$ というシークエントで書かれる。
+あるシークエントが表現する言明が正しいとき、そのシークエントを妥当であるという。
+
+\begin{definition}[推論規則]
+「シークエント $\Gamma \vdash e \in T \cap O(f)$ が妥当であるならば、シークエント $\Gamma' \vdash e' \in T' \cap O(f')$ も妥当である」という言明を
+\begin{center}
+    \begin{prooftree}
+        \hypo{ \Gamma \vdash e \in T \cap O(f) }
+        \infer1{ \Gamma' \vdash e' \in T' \cap O(f') }
+    \end{prooftree}
+\end{center}
+と書くこととする。
+ただし条件となるシークエントは複数 ($0$ 以上の有限個) あってもよく、その場合は
+\begin{center}
+    \begin{prooftree}
+        \hypo{ \Gamma_0 \vdash e_0 \in T_0 \cap O(f_0) }
+        \hypo{ \Gamma_1 \vdash e_1 \in T_1 \cap O(f_1) }
+        \hypo{ \dots }
+        \hypo{ \Gamma_{n - 1} e_{n - 1} T_{n - 1} O(f_{n - 1}) }
+        \infer4{ \Gamma' \vdash e' \in T' \cap O(f') }
+    \end{prooftree}
+\end{center}
+のように書く。
+このような形で書かれた言明を推論規則と呼ぶ。
+\end{definition}
+
+分かりやすさのために推論規則の名前を横棒の右に書いて示すことがある。
+条件が $0$ 個の推論規則は、始式あるいは公理とも呼ばれる。
+ある推論規則が表現する言明が正しいとき、その推論規則は健全であるという。
+
+たとえば「自然数 $n \in \mathbb{N}$ と関数 $f : \mathbb{N} \to \mathbb{Z}$ が与えられているとする。このとき $- \min_{i < n} f(i)$ が $O(N)$ で計算できるならば、$\max_{i < n} - f(i)$ も $O(N)$ で計算できる」という言明は
+\begin{center}
+    \begin{prooftree}
+        \hypo{ n \in \mathbb{N}, f \in \mathbb{Z}^\mathbb{N} \vdash - \min_{i < n} f(i) \in \mathbb{Z} \cap O(N) }
+        \infer1{ n \in \mathbb{N}, f \in \mathbb{Z}^\mathbb{N} \vdash \max_{i < n} - f(i) \in \mathbb{Z} \cap O(N) }
+    \end{prooftree}
+\end{center}
+と書かれる。
+「式 $e$ が $O(f)$ で計算でき、$e$ の計算結果があれば式 $e'$ が $O(f')$ で計算できるならば、全体としては式 $e'$ は $O(f + f')$ で計算できる」という言明は
+\begin{center}
+    \begin{prooftree}
+        \hypo{ \Gamma \vdash e \in T \cap O(f) }
+        \hypo{ e \in T, \Gamma \vdash e' \in T' \cap O(f') }
+        \infer2[cut]{ \Gamma \vdash e' \in T' \cap O(f + f') }
+    \end{prooftree}
+\end{center}
+と書ける\footnote{この形の規則はカット規則と呼ばれる}。
+
+\begin{definition}[推論木]
+ある判断したいシークエントから始めて、推論規則を逆向きに使って木を組み上げることを考える。
+そのような木を推論木と呼ぶ。
+推論規則の集合を固定した上で、次のように定義される。
+
+\begin{enumerate}[label=(\arabic{enumi}.)]
+    \item シークエント $S$ は推論木である。そのような推論木の終式とはシークエント $S$ 自体である。
+    \item 未完成の推論木 $\Delta_0, \dots, \Delta_{n - 1}$ に対し、その終式 $S_0, \dots, S_{n - 1}$ を前提としシークエント $S'$ を結論とする推論規則があるならば、これらを
+        \begin{prooftree}
+            \hypo{ \vdots }
+            \infer[no rule]1{ S_0 }
+            \hypo{ \cdots }
+            \hypo{ \vdots }
+            \infer[no rule]1{ S_{n - 1} }
+            \infer3{ S' }
+        \end{prooftree}
+        と繋げて書いたものも推論木である。
+        その終式とはシークエント $S'$ である。
+\end{enumerate}
+
+\end{definition}
+
+推論木の定義の (1.) を使わず構成された推論木を完成した推論木と呼ぶ。
+推論規則が適切であれば完成した推論木の終式は妥当なシークエントであり、推論木を逆から読むと形式的な証明とみなせる。
+また、そこからプログラムを抽出することができる。
+
+\subsection{シークエント計算の利用の具体例}
+
+たとえば AtCoder Beginner Contest 134: C - Exception Handling (\url{https://atcoder.jp/contests/abc134/tasks/abc134_c}) を例に見てみよう。
+これは次のように形式化できる問題である。
+
+\begin{problem}[形式化された Exception Handling]
+    \label{exception-handling-formal}
+    自然数 $N$ と長さ $N$ の数列 $A$ が与えられる。
+    関数 $f(i) = \max \Set{ A(j) | j < n \land j \ne i }$ の値を $O(N)$ ですべて計算せよ。
+\end{problem}
+
+これは終式を $N \in \mathbb{N},~ A \in \mathbb{N}^N \vdash \lambda i. \max \Set{ A(j) | j < n \land j \ne i }  \in \mathbb{N}^N \cap O(N)$ とする完成した推論木を構築せよという問題に等しい。
+次の推論規則が用意されているとする。
+以下の推論規則はすべて健全である。
+
+\begin{itemize}
+
+    \item 「式 $e$ が $O(f)$ で計算でき、$e$ の計算結果 $a$ があれば式 $e'$ が $O(f')$ で計算できるならば、全体としては式 $e'$ は $O(f + f')$ で計算できる」
+        \begin{center}
+            \begin{prooftree}
+                \hypo{ \Gamma \vdash e \in T \cap O(f) }
+                \hypo{ e,~ \Gamma \vdash e' \in T \cap O(f') }
+                \infer2[cut]{ \Gamma \vdash e' \in T \cap O(f + f') }
+            \end{prooftree}
+        \end{center}
+
+    \item 「$\max \Set{ \max \Set{ e(j) | j < i }, \max \Set{ e(j) | i < j < n } }$ が計算できるならば  $\max \Set{ e(j) | j < n \land j \ne i }$ も計算できる」
+        \begin{center}
+            \begin{prooftree}
+                \hypo{ \Gamma \vdash \max \Set{ \max \Set{ e | j < i }, \max \Set{ e | i < j < n } } \in T \cap O(f) }
+                \infer1[split-$\max$]{ \Gamma \vdash \max \Set{ e | j < n \land j \ne i } \in T \cap O(f) }
+            \end{prooftree}
+        \end{center}
+
+    \item 「自然数 $N$ 未満の自然数 $i < N$ を使って値 $e(i) \in T$ が $O(f)$ で計算できるならば、$O(N)$ で関数 $e : N \to T$ のすべての値を計算できる」
+        \begin{center}
+            \begin{prooftree}
+                \hypo{ N \in \mathbb{N},~ i \in N, \Gamma \vdash e \in T \cap O(f) }
+                \infer1[$\to$右]{ \Gamma \vdash \lambda i. e \in T \cap O(N f) }
+            \end{prooftree}
+        \end{center}
+
+    \item 「関数 $A : N \to \mathbb{Z}$ のすべての値が計算されているとき関数 $\lambda i. \max \Set{ A(j) | j < i }$ は $O(N)$ ですべての値を計算できる」
+        \begin{center}
+            \begin{prooftree}
+                \infer0{ N \in \mathbb{N},~ A \in \mathbb{Z}^N \vdash \lambda i. \max \Set{ A(j) | j < i } \in \mathbb{Z}^N \cap O(N) }
+            \end{prooftree}
+        \end{center}
+
+    \item 「関数 $A : N \to \mathbb{Z}$ のすべての値が計算されているとき関数 $\lambda i. \max \Set{ A(j) | i < j < N }$ は $O(N)$ ですべての値を計算できる」
+        \begin{center}
+            \begin{prooftree}
+                \infer0{ N \in \mathbb{N},~ A \in \mathbb{Z}^N \vdash \lambda i. \max \Set{ A(j) | i < j < N } \in \mathbb{Z}^N \cap O(N) }
+            \end{prooftree}
+        \end{center}
+
+    \item 「$\max \Set{ l(i), r(i) }$ のような自明な式は $O(1)$ で計算できる」
+        \begin{center}
+            \begin{prooftree}
+                \infer0{ i \in N,~ l = \ldots,~ r = \ldots,~ \Gamma \vdash & \max \Set{ l(i), r(i) } \in \mathbb{Z} \cap O(1) }
+            \end{prooftree}
+        \end{center}
+
+\end{itemize}
+
+$\Gamma = \Set{ N \in \mathbb{N}, A \in \mathbb{N}^N }$ と書くことにし、これらの推論規則を使えば問題\ref{exception-handling-formal}のシークエントを終式とする完成した推論木が図\ref{proof-tree}のように書ける。
+そして、これらの推論規則がどのようにして健全であったかに基づいて、推論木からプログラムを復元できる。
+実際、たとえばカット規則「式 $e$ が $O(f)$ で計算でき、$e$ の計算結果 $a$ があれば式 $e'$ が $O(f')$ で計算できるならば、全体としては式 $e'$ は $O(f + f')$ で計算できる」はつまり「まず $e$ を計算し、それを使って $e'$ を計算する」ようなプログラムの断片を指示している。
+
+\begin{landscape}
+    \begin{figure}[p]
+        \label{proof-tree}
+        \begin{center}
+            \scalebox{0.9}{
+                \begin{prooftree}[rule margin=2ex]
+                    \infer0{ \Gamma \vdash \lambda i. \max \Set{ A(j) | j < i } \in \mathbb{N}^N \cap O(N) }
+                    \infer0{ l = \ldots,~ \Gamma \vdash \lambda i. \max \Set{ A(j) | i < j < N } \in \mathbb{N}^N \cap O(N) }
+                    \infer0{ i \in N,~ l = \ldots,~ r = \ldots,~ \Gamma \vdash & \max \Set{ l(i), r(i) } \in \mathbb{N} \cap O(1) }
+                    \infer1[$\to$右]{ l = \ldots,~ r = \max \Set{ A(j) | i < j < N },~ \Gamma \vdash & \lambda i. \max \Set{ l(i), r(i) } \in \mathbb{N}^N \cap O(N) }
+                    \infer2[cut]{ l = \max \Set{ A(j) | j < i },~ \Gamma \vdash & \lambda i. \max \Set{ l(i), \max \Set{ A(j) | i < j < n } } \in \mathbb{N}^N \cap O(N) }
+                    \infer2[cut]{ \Gamma \vdash & \lambda i. \max \Set{ \max \Set{ A(j) | j < i }, \max \Set{ A(j) | i < j < N } } \in \mathbb{N}^N \cap O(N) }
+                    \infer1[split-$\max$]{ \Gamma \vdash & \lambda i. \max \Set{ A(j) | j < N \land j \ne i } \in \mathbb{N}^N \cap O(N) }
+                \end{prooftree}
+            }
+        \end{center}
+        \caption{問題\ref{exception-handling-formal}に関する推論木}
+    \end{figure}
+\end{landscape}
+
+
+\subsection{利用可能な既存のソルバについて}
+
+個別的に解ける問題のクラスがいくつか知られている。
+
+\begin{enumerate}[label=(\arabic{enumi}.)]
+    \item データ構造によるもの
+    \item 線型計画問題
+    \item 燃やす埋める問題
+    \item 正規表現に関連するもの
+    \item 構文解析に関連するもの
+    \item Robinson 算術の式として書かれるもの
+    \item 実閉体の言語の式として書かれるもの
+    \item 数列に関連するもの
+\end{enumerate}
+
+(1.) のような、データ構造を利用できる問題はその汎用性から重要である。
+利用可能であるかどうかの判定が比較的容易であり、他のソルバと違ってユーザが陽に指定しなくても自然に利用しやすいだろう。
+segment tree や convex hull trick のような汎用的なデータ構造や wavelet matrix や van Emde Boas tree や top tree などの強力なデータ構造がすべて自動で利用されるようにしておくべきである。
+
+(2.) の線型計画問題は有名な問題クラスである。
+単体法や Karmarkar のアルゴリズムなど解ける。
+(3.) は競技プログラミングのコミュニティ内で特有の呼称であり、Project Selection Problem とも呼ばれる。
+整理すると「$x_0 \land \dots \land x_{s - 1} \to x_s \lor \dots \lor x_{s + t - 1}$ の形の命題論理式と自然数の対の集合 $\Set{ (\varphi_0, c_0), \dots, (\varphi_{n-1}, c_{n-1}) }$ が与えられる。付値 $v : \mathrm{PropVar} \to \Set{ \top, \bot }$ に対する関数 $f(v) = \sum_{v(\varphi_i) = \bot} c_i$ を最小化する付値 $v$ を求めよ」という形の問題のクラスに等しい。少なくない問題をこれに帰着させることができ、最大流アルゴリズムで解ける。
+
+(4.) の正規表現は扱いやすい対象のひとつである。
+たとえば「ある正規表現 $\gamma$ に受理されるような文字列の個数を数えよ」と等しい問題はしばしば出題され、これは syntactic monoid \cite{hopcroft} などを使えば解ける。
+(5.) はよりやさしい。構文解析については Lex や Yacc のようなツールが整備されており、これを利用することができる。
+
+(6.), (7.) は量化子除去アルゴリズムを用いて自明な形に変換可能である。
+国立情報学研究所の東ロボくんプロジェクトでも実際に用いられたそうである\cite{tourobo}。
+
+(8.) には OEIS と呼ばれるデータベース (The On-Line Encyclopedia of Integer Sequences®, \url{https://oeis.org/}) を利用することができる。
+
+
+\bibliography{how-it-works}
+\bibliographystyle{junsrt}
+
+\end{document}
