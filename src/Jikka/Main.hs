@@ -3,9 +3,9 @@ module Jikka.Main where
 import Control.Monad.Except
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
-import qualified Jikka.Subcommand.Convert as Convert
-import qualified Jikka.Subcommand.Debug as Debug
-import qualified Jikka.Subcommand.Execute as Execute
+import qualified Jikka.Main.Subcommand.Convert as Convert
+import qualified Jikka.Main.Subcommand.Debug as Debug
+import qualified Jikka.Main.Subcommand.Execute as Execute
 import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))

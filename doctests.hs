@@ -6,7 +6,8 @@ import Test.DocTest
 -- >   main = doctest ["-isrc", "src/Jikka/Main.hs"]
 main :: IO ()
 main = doctest
-    [ "src/Jikka/Language/"
-    , "src/Jikka/Converter/"
-    , "src/Jikka/Serializer/"
+    [ "src/Jikka/Common/"
+    , "src/Jikka/Core/"
+    , "src/Jikka/CPlusPlus/"
+    , "src/Jikka/RestrictedPython/"
     ]
