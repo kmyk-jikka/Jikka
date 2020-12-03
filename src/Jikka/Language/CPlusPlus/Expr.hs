@@ -37,8 +37,9 @@ data Literal
   deriving (Eq, Ord, Show, Read)
 
 data Function
-  = Function FunName
-  | Method FunName
+  = Callable Expr
+  | Function FunName [Type]
+  | Method Expr FunName
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp
@@ -57,8 +58,8 @@ data BinaryOp
   | BitAnd
   | BitOr
   | BitXor
-  | LeftShift
-  | RightShift
+  | BitLeftShift
+  | BitRightShift
   | And
   | Or
   | LessThan
@@ -76,8 +77,8 @@ data AssignOp
   | MulAssign
   | DivAssign
   | ModAssign
-  | LeftShiftAssign
-  | RightShiftAssign
+  | BitLeftShiftAssign
+  | BitRightShiftAssign
   | BitAndAssign
   | BitOrAssign
   | BitXorAssign
@@ -89,7 +90,8 @@ data Expr
   | UnOp UnaryOp Expr
   | BinOp BinaryOp Expr Expr
   | Cond Expr Expr Expr
-  | Call FunName [Expr]
+  | Lam [(Type, VarName)] Type [Statement]
+  | Call Function [Expr]
   | VecExt Type [Expr]
   | At Expr Expr
   | Cast Type Expr
@@ -121,7 +123,7 @@ data Statement
 
 data ToplevelStatement
   = VarDef Type VarName Expr
-  | FunDef Type FunName [(Type, VarName)] [Statement]
+  | FunDef Type VarName [(Type, VarName)] [Statement]
   deriving (Eq, Ord, Show, Read)
 
 newtype Program

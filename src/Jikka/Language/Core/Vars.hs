@@ -57,4 +57,4 @@ findFreshVar' es = head . filter pred $ map getAnonymousVar [0 ..]
     pred x = all (\e -> not (x `isFreeVarOrScopedVar` e)) es
 
 getAnonymousVar :: Int -> VarName
-getAnonymousVar i = VarName ("a@" ++ show i)
+getAnonymousVar i = VarName ("@" ++ show i)

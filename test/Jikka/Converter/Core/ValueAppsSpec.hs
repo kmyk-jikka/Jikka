@@ -21,8 +21,8 @@ spec = describe "run" $ do
     let expected =
           ResultExpr
             $ Let "x@0" IntTy Lit1
-            $ Let "x@3" (Fun1Ty IntTy) (Lam1 "x@1" IntTy (Var "x@1"))
-            $ Let "x@2" (Fun1Ty IntTy) (Var "x@3")
-            $ Let "x@4" IntTy (App (Var "x@2") [Lit1])
-            $ Plus' (Var "x@0") (Var "x@4")
+            $ Let "@3" (Fun1Ty IntTy) (Lam1 "x@1" IntTy (Var "x@1"))
+            $ Let "@2" (Fun1Ty IntTy) (Var "@3")
+            $ Let "@4" IntTy (App (Var "@2") [Lit1])
+            $ Plus' (Var "x@0") (Var "@4")
     run input `shouldBe` Right expected

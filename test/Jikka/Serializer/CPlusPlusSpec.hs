@@ -14,7 +14,7 @@ spec = describe "run" $ do
           Program
             [ FunDef
                 TyInt64
-                (FunName "solve")
+                (VarName "solve")
                 [(TyInt32, VarName "n")]
                 [ Declare TyInt64 (VarName "x") (Just (Lit (LitInt64 0))),
                   For

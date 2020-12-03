@@ -12,13 +12,16 @@
 --
 -- `Jikka.Language.Core.ValueApps` removes complicated exprs in lambda applications.
 -- This removes `App`, `Lam` and `Let` from the callee and arguments of `App`, and removes `Let` from the bound value of `Let`.
+--
+-- TODO: rename to a better name
 module Jikka.Converter.Core.ValueApps
   ( run,
   )
 where
 
 import Control.Monad.Except
-import Jikka.Converter.Core.Alpha (MonadAlpha, evalAlpha', gensym)
+import Jikka.Common.Alpha (MonadAlpha, evalAlpha')
+import Jikka.Converter.Core.Alpha (gensym)
 import qualified Jikka.Converter.Core.Alpha as Alpha (runProgram)
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
@@ -60,7 +63,11 @@ runExpr env = \case
   App f args -> do
     f <- runExpr env f
     args <- mapM (runExpr env) args
-    runApp env f args
+    case (f, args) of
+      (Lit (LitBuiltin (If _)), [e1, e2, e3]) -> do
+        (_, ctx, e1) <- destruct env e1
+        return $ ctx (App f [e1, e2, e3])
+      _ -> runApp env f args
   Lam args body -> Lam args <$> runExpr (reverse args ++ env) body
   Let x t e1 e2 -> do
     e1 <- runExpr env e1

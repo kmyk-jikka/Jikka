@@ -15,33 +15,13 @@
 module Jikka.Converter.Core.Alpha where
 
 import Control.Monad.Except
-import Control.Monad.State.Strict
+import Jikka.Common.Alpha
 import Jikka.Language.Common.Name
 import Jikka.Language.Core.Expr
 import Jikka.Language.Core.Lint (typecheckProgram')
 
--- -----------------------------------------------------------------------------
--- monad
-
-type Alpha = StateT Int (Either String)
-
-class Monad m => MonadAlpha m where
-  nextCounter :: m Int
-
-instance Monad m => MonadAlpha (StateT Int m) where
-  nextCounter = state $ \i -> (i, i + 1)
-
-runAlpha :: Int -> Alpha a -> Either String (a, Int)
-runAlpha i a = runStateT a i
-
-evalAlpha :: Int -> Alpha a -> Either String a
-evalAlpha i = fmap fst . runAlpha i
-
-evalAlpha' :: Alpha a -> Either String a
-evalAlpha' = evalAlpha 0
-
 gensym :: MonadAlpha m => m VarName
-gensym = rename' (VarName "x") <$> nextCounter
+gensym = rename' (VarName "") <$> nextCounter
 
 rename :: MonadAlpha m => VarName -> m VarName
 rename hint = rename' hint <$> nextCounter
@@ -86,8 +66,8 @@ runToplevelExpr env = \case
     let args1 = map (\(x, y, _) -> (x, y)) args
     let args2 = map (\(_, y, t) -> (y, t)) args
     body <- case rec of
-      NonRec -> runExpr (args1 ++ (f, g) : env) body
-      Rec -> runExpr (args1 ++ env) body
+      NonRec -> runExpr (args1 ++ env) body
+      Rec -> runExpr (args1 ++ (f, g) : env) body
     cont <- runToplevelExpr ((f, g) : env) cont
     return $ ToplevelLet rec g args2 ret body cont
 

@@ -105,8 +105,8 @@ formatBinaryOp = \case
   Mul -> ("*", MultPrec)
   Div -> ("/", MultPrec)
   Mod -> ("%", MultPrec)
-  LeftShift -> ("<<", ShiftPrec)
-  RightShift -> (">>", ShiftPrec)
+  BitLeftShift -> ("<<", ShiftPrec)
+  BitRightShift -> (">>", ShiftPrec)
   LessThan -> ("<", LessThanPrec)
   LessEqual -> ("<=", LessThanPrec)
   GreaterThan -> (">", LessThanPrec)
@@ -127,8 +127,8 @@ formatAssignOp = \case
   MulAssign -> ("*=", AssignPrec)
   DivAssign -> ("/=", AssignPrec)
   ModAssign -> ("%=", AssignPrec)
-  LeftShiftAssign -> ("<<=", AssignPrec)
-  RightShiftAssign -> (">>=", AssignPrec)
+  BitLeftShiftAssign -> ("<<=", AssignPrec)
+  BitRightShiftAssign -> (">>=", AssignPrec)
   BitAndAssign -> ("&=", AssignPrec)
   BitOrAssign -> ("|=", AssignPrec)
   BitXorAssign -> ("^=", AssignPrec)
@@ -199,7 +199,17 @@ formatExpr = \case
         e1' = resolvePrecLeft prec (formatExpr e1)
         e2' = resolvePrecRight prec (formatExpr e2)
      in (e1' ++ " " ++ op' ++ " " ++ e2', prec)
-  Call f args -> (unFunName f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+  Lam args ret body ->
+    let args' = map (\(t, x) -> formatType t ++ " " ++ unVarName x) args
+        ret' = formatType ret
+        body' = concatMap formatStatement body
+     in ("[&](" ++ intercalate ", " args' ++ ") -> " ++ ret' ++ "{ " ++ unwords body' ++ " }", FunCallPrec)
+  Call f args -> case f of
+    Callable f -> (formatExpr' FunCallPrec f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+    Function f ts ->
+      let template = if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">"
+       in (unFunName f ++ template ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+    Method x f -> (formatExpr' FunCallPrec x ++ "." ++ unFunName f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
   Cond e1 e2 e3 ->
     let e1' = resolvePrecLeft CondPrec (formatExpr e1)
         e2' = resolvePrec CondPrec (formatExpr e2)
@@ -280,7 +290,7 @@ formatToplevelStatement = \case
     let ret' = formatType ret
         args' = intercalate ", " $ map (\(t, x) -> formatType t ++ " " ++ unVarName x) args
         body' = concatMap formatStatement body
-     in [ret' ++ " " ++ unFunName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
+     in [ret' ++ " " ++ unVarName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
 
 formatProgram :: Program -> [Code]
 formatProgram prog = concatMap formatToplevelStatement (decls prog)
