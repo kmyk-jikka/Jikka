@@ -13,8 +13,25 @@ import Jikka.Common.Error
 import Jikka.Common.Format.Location
 import Jikka.Common.Location
 
-prettyError :: Error -> String
-prettyError err = intercalate ": " ((group ++ loc ++ resp) : getMessages err)
+-- | `unpackCombinedErrors` removes `ErrorList` ctor from the given `Error`.
+unpackCombinedErrors :: Error -> [Error]
+unpackCombinedErrors = go
+  where
+    go :: Error -> [Error]
+    go = \case
+      err@(Error _) -> [err]
+      ErrorList errs -> errs
+      WithGroup group err -> map (WithGroup group) (go err)
+      WithWrapped msg err -> map (WithWrapped msg) (go err)
+      WithLocation loc err -> map (WithLocation loc) (go err)
+      WithResponsibility resp err -> map (WithResponsibility resp) (go err)
+
+prettyError :: Error -> [String]
+prettyError = map prettyError1 . unpackCombinedErrors
+
+-- | @err@ must not have `ErrorList`.
+prettyError1 :: Error -> String
+prettyError1 err = intercalate ": " ((group ++ loc ++ resp) : getMessages err)
   where
     group = prettyGroup (getErrorGroup err)
     loc = case getLocation err of
@@ -26,9 +43,13 @@ prettyError err = intercalate ": " ((group ++ loc ++ resp) : getMessages err)
       Nothing -> ""
 
 prettyErrorWithText :: Text -> Error -> [String]
-prettyErrorWithText text err = case getLocation err of
-  Nothing -> [prettyError err]
-  Just loc -> prettyError err : prettyLocWithText text loc
+prettyErrorWithText text = intercalate [""] . map (prettyErrorWithText1 text) . unpackCombinedErrors
+
+-- | @err@ must not have `ErrorList`.
+prettyErrorWithText1 :: Text -> Error -> [String]
+prettyErrorWithText1 text err = case getLocation err of
+  Nothing -> [prettyError1 err]
+  Just loc -> prettyError1 err : prettyLocWithText text loc
 
 prettyGroup :: Maybe ErrorGroup -> String
 prettyGroup = \case
@@ -45,25 +66,31 @@ prettyGroup = \case
   Just WrongInputError -> "Wrong Input Error"
   Just InternalError -> "Internal Error"
 
+-- | @err@ must not have `ErrorList`.
 getMessages :: Error -> [String]
 getMessages = \case
   Error message -> [message]
+  ErrorList _ -> bug "ErrorList is not allowed in getLocation"
   WithGroup _ err -> getMessages err
   WithWrapped message err -> message : getMessages err
   WithLocation _ err -> getMessages err
   WithResponsibility _ err -> getMessages err
 
+-- | @err@ must not have `ErrorList`.
 getErrorGroup :: Error -> Maybe ErrorGroup
 getErrorGroup = \case
   Error _ -> Nothing
+  ErrorList _ -> bug "ErrorList is not allowed in getLocation"
   WithGroup group _ -> Just group
   WithWrapped _ err -> getErrorGroup err
   WithLocation _ err -> getErrorGroup err
   WithResponsibility _ err -> getErrorGroup err
 
+-- | @err@ must not have `ErrorList`.
 getLocation :: Error -> Maybe Loc
 getLocation = \case
   Error _ -> Nothing
+  ErrorList _ -> bug "ErrorList is not allowed in getLocation"
   WithGroup _ err -> getLocation err
   WithWrapped _ err -> getLocation err
   WithLocation loc _ -> Just loc
@@ -76,9 +103,11 @@ getResponsibilityFromErrorGroup = \case
   InternalError -> Just ImplementationBug
   _ -> Just UserMistake
 
+-- | @err@ must not have `ErrorList`.
 getResponsibility :: Error -> Maybe Responsibility
 getResponsibility = \case
   Error _ -> Nothing
+  ErrorList _ -> bug "ErrorList is not allowed in getLocation"
   WithGroup group err -> case getResponsibility err of
     Just resp -> Just resp
     Nothing -> getResponsibilityFromErrorGroup group

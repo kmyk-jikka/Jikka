@@ -117,7 +117,7 @@ tokens :-
     "yield"         { reservedError }
 
     -- catch error
-    .               { lexicalError }
+    .               { skip' }
 {
 alexEOF :: Alex (Maybe (WithLoc Token))
 alexEOF = return $ Nothing
@@ -181,8 +181,8 @@ reservedError (AlexPn _ line column, _, _, s) n = alexError (show err) where
   msg = show (take n s) ++ " is a reserved Python keyword"
   err = (line, column, n, msg)
 
-lexicalError :: AlexAction a
-lexicalError (AlexPn _ line column, _, _, s) n = alexError (show err) where
+skip' :: AlexAction a
+skip' (AlexPn _ line column, _, _, s) n = alexError (show err) where
   msg = show (take n s) ++ " is not a acceptable character"
   err = (line, column, n, msg)
 

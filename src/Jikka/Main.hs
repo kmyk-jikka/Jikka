@@ -51,7 +51,7 @@ main name args = do
       return ExitSuccess
     (parsed, [subcmd, path], []) -> case parseFlags name parsed of
       Left err -> do
-        hPutStrLn stderr (prettyError err)
+        mapM_ (hPutStrLn stderr) (prettyError err)
         return $ ExitFailure 1
       Right opts -> do
         result <- runExceptT $ runSubcommand subcmd opts path
@@ -65,7 +65,7 @@ main name args = do
     (_, _, errors) | errors /= [] -> do
       forM_ errors $ \msg -> do
         let err = WithGroup CommandLineError (Error msg)
-        hPutStr stderr (prettyError err)
+        mapM_ (hPutStr stderr) (prettyError err)
       return $ ExitFailure 1
     _ -> do
       hPutStr stderr usage
