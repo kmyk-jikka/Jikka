@@ -2,57 +2,44 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Jikka.Common.Parse.OffsideRule
-  ( insertIndentTokens,
-    IndentSetting (..),
+  ( insertIndents,
   )
 where
 
 import Jikka.Common.Error
 import Jikka.Common.Location
 
-data IndentSetting a
-  = IndentSetting
-      { indentToken :: a,
-        dedentToken :: a,
-        initialLine :: Int,
-        initialColumn :: Int,
-        isOpenParenToken :: a -> Bool,
-        isCloseParenToken :: a -> Bool,
-        allowNoMatchingDedent :: Bool
-      }
-
-computeDelta :: forall m a. MonadError Error m => IndentSetting a -> Int -> [Int] -> Loc -> m (Int, [Int], [WithLoc a])
-computeDelta setting = go
+splitToLines :: forall a. (a -> Bool) -> [WithLoc a] -> [[WithLoc a]]
+splitToLines isNewline = go []
   where
-    go :: Int -> [Int] -> Loc -> m (Int, [Int], [WithLoc a])
-    go _ [] _ = throwInternalError "indent state must be non-empty"
-    go y (x : xs) loc@(Loc y' x' _) =
-      case (compare y y', compare x x') of
-        (GT, _) -> throwInternalError "tokens must be in chronological order"
-        (EQ, GT) -> throwInternalError "tokens must be in chronological order"
-        (EQ, _) -> return (y', x : xs, [])
-        (LT, GT) | not (allowNoMatchingDedent setting) && x' `notElem` xs -> throwSyntaxErrorAt loc "no matching <indent> for <dedent>"
-        (LT, GT) -> do
-          (y', xs', tokens) <- go y xs (Loc y' x' (-1))
-          let token = WithLoc (Loc y' (initialColumn setting) (-1)) (dedentToken setting)
-          return (y', xs', token : tokens)
-        (LT, EQ) -> return (y', x : xs, [])
-        (LT, LT) ->
-          let token = WithLoc (Loc y' (initialColumn setting) (-1)) (indentToken setting)
-           in return (y', x' : x : xs, [token])
+    go :: [WithLoc a] -> [WithLoc a] -> [[WithLoc a]]
+    go [] [] = []
+    go acc [] = [reverse acc]
+    go acc (token : tokens)
+      | isNewline (value token) = reverse (token : acc) : go [] tokens
+      | otherwise = go (token : acc) tokens
 
-insertIndentTokens :: forall m a. MonadError Error m => IndentSetting a -> [WithLoc a] -> m [WithLoc a]
-insertIndentTokens setting = go 0 (initialLine setting - 1) [initialColumn setting]
+insertIndents' :: forall m a. (MonadError Error m, Show a) => a -> a -> [[WithLoc a]] -> m [WithLoc a]
+insertIndents' indent dedent = go [1]
   where
-    go :: Int -> Int -> [Int] -> [WithLoc a] -> m [WithLoc a]
-    go _ y xs [] =
-      let token = WithLoc (Loc (y + 1) 0 (-1)) (dedentToken setting)
-       in return $ replicate (length xs - 1) token
-    go paren y xs (token : tokens) = case () of
-      _ | isOpenParenToken setting (value token) -> (token :) <$> go (paren + 1) y xs tokens
-      _ | isCloseParenToken setting (value token) -> (token :) <$> go (paren - 1) y xs tokens
-      _ | paren /= 0 -> (token :) <$> go paren y xs tokens
-      _ -> do
-        (y', xs', delta) <- computeDelta setting y xs (loc token)
-        tokens' <- go 0 y' xs' tokens
-        return $ delta ++ token : tokens'
+    go :: [Int] -> [[WithLoc a]] -> m [WithLoc a]
+    go stk tokens = case (stk, tokens) of
+      ([_], []) -> return []
+      (_ : stk, []) -> (WithLoc (Loc 0 1 0) dedent :) <$> go stk []
+      (_, [] : _) -> throwInternalError "a line must be non-empty"
+      (_, (token : _) : _) | column (loc token) < 0 -> throwInternalError $ "column must be 1-based for insertIndents': " ++ show token
+      ([], _) -> throwInternalError "too many dedents"
+      (x : stk, line@(token : _) : tokens') -> case compare x (column (loc token)) of
+        LT -> (withLoc (loc token) indent :) . (line ++) <$> go (column (loc token) : x : stk) tokens'
+        EQ -> (line ++) <$> go (x : stk) tokens'
+        GT -> case stk of
+          [] -> throwInternalError "too many dedents"
+          (x' : stk)
+            | column (loc token) < x' -> throwLexicalErrorAt (loc token) $ "unindent does not match any outer indentation level: " ++ show token
+            | otherwise -> (withLoc (loc token) dedent :) <$> go stk (line : tokens')
+    withLoc :: Loc -> a -> WithLoc a
+    withLoc (Loc y x _) a = WithLoc (Loc y x 0) a
+
+-- | `insertIndents` inserts @INDENT@ and @DEDENT@ tokens with Python's way (<https://docs.python.org/3/reference/lexical_analysis.html#indentation>). The `column` of `Loc` must be 1-based. This doen't use physical `line` of `Loc` because logical lines are used for indentation.
+insertIndents :: forall m a. (MonadError Error m, Show a) => a -> a -> (a -> Bool) -> [WithLoc a] -> m [WithLoc a]
+insertIndents indent dedent isNewline tokens = insertIndents' indent dedent (splitToLines isNewline tokens)

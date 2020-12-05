@@ -10,7 +10,8 @@ module Jikka.Python.Parse.Alex
 import Text.Read (readMaybe)
 import Jikka.Common.Location
 import Jikka.Common.Error
-import Jikka.Common.Parse.OffsideRule (insertIndentTokens, IndentSetting(..))
+import Jikka.Common.Parse.OffsideRule (insertIndents)
+import Jikka.Common.Parse.JoinLines (joinLinesWithParens, removeEmptyLines)
 }
 
 %wrapper "monad"
@@ -200,15 +201,8 @@ run input = wrapError' "Jikka.Python.Parse.Alex failed" $ do
         Nothing -> throwInternalError ("failed to parse: " ++ show err)
         Just (line, column, width, msg) -> throwLexicalErrorAt (Loc line column width) msg
       Right tokens -> return tokens
-    let setting = IndentSetting
-            { indentToken = Indent
-            , dedentToken = Dedent
-            , initialLine = 1
-            , initialColumn = 1
-            , isOpenParenToken = (`elem` [OpenParen, OpenBracket, OpenBrace])
-            , isCloseParenToken = (`elem` [CloseParen, CloseBracket, CloseBrace])
-            , allowNoMatchingDedent = False
-            }
-    tokens <- insertIndentTokens setting tokens
+    tokens <- joinLinesWithParens (`elem` [OpenParen, OpenBracket, OpenBrace]) (`elem` [CloseParen, CloseBracket, CloseBrace]) (== Newline) tokens
+    tokens <- return $ removeEmptyLines (== Newline) tokens
+    tokens <- insertIndents Indent Dedent (== Newline) tokens
     return tokens
 }

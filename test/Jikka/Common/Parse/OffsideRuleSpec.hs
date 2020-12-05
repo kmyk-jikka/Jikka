@@ -8,11 +8,8 @@ where
 import Data.Either (isLeft)
 import Jikka.Common.Error (Error)
 import Jikka.Common.Location
-import Jikka.Common.Parse.OffsideRule (IndentSetting (..), insertIndentTokens)
+import Jikka.Common.Parse.OffsideRule (insertIndents)
 import Test.Hspec
-
-token :: Int -> Int -> a -> WithLoc a
-token line column = WithLoc (Loc line column (-1))
 
 indent :: String
 indent = "<indent>"
@@ -20,65 +17,26 @@ indent = "<indent>"
 dedent :: String
 dedent = "<dedent>"
 
-open :: String
-open = "<open>"
+newline :: String
+newline = "<newline>"
 
-close :: String
-close = "<close>"
+-- | This takes only `column` because `insertIndents` doesn't use `line` values.
+token :: String -> Int -> WithLoc String
+token s x = WithLoc (Loc 0 x 0) s
 
 run :: [WithLoc String] -> Either Error [String]
-run tokens = map value <$> insertIndentTokens setting tokens
+run = post . go
   where
-    setting :: IndentSetting String
-    setting =
-      IndentSetting
-        { indentToken = indent,
-          dedentToken = dedent,
-          initialLine = 0,
-          initialColumn = 0,
-          isOpenParenToken = (== open),
-          isCloseParenToken = (== close),
-          allowNoMatchingDedent = False
-        }
+    go :: [WithLoc String] -> Either Error [WithLoc String]
+    go = insertIndents indent dedent (== newline)
+    post = fmap (map value)
 
 spec :: Spec
 spec = describe "insertIndentTokens" $ do
   it "works" $ do
-    let tokens = [token 0 0 "def", token 0 4 "main():", token 1 4 "print(\"Hello, world!\")"]
-    let inserted = ["def", "main():", indent, "print(\"Hello, world!\")", dedent]
-    run tokens `shouldBe` Right inserted
-  it "works'" $ do
-    let tokens = [token 0 0 "def", token 0 4 "main():", token 1 4 "print(\"Hello, world!\")", token 2 0 "if __name__ == '__main__':", token 3 4 "main()"]
-    let inserted = ["def", "main():", indent, "print(\"Hello, world!\")", dedent, "if __name__ == '__main__':", indent, "main()", dedent]
-    run tokens `shouldBe` Right inserted
-  it "inserts all <dedent> when it reaches EOF during indented" $ do
-    let tokens = [token 0 0 "a", token 1 4 "b", token 2 8 "c", token 3 12 "d"]
-    let inserted = ["a", indent, "b", indent, "c", indent, "d", dedent, dedent, dedent]
-    run tokens `shouldBe` Right inserted
-  it "ignores blank lines" $ do
-    let tokens = [token 10 0 "foo", token 20 0 "bar"]
-    let inserted = ["foo", "bar"]
-    run tokens `shouldBe` Right inserted
-  it "doesn't insert <dedent> for blank lines" $ do
-    let tokens = [token 0 0 "baz", token 10 4 "foo", token 20 4 "bar"]
-    let inserted = ["baz", indent, "foo", "bar", dedent]
-    run tokens `shouldBe` Right inserted
-  it "does nothing without indent" $ do
-    let tokens = [token 0 0 "a", token 1 0 "b", token 2 0 "c"]
-    let inserted = ["a", "b", "c"]
-    run tokens `shouldBe` Right inserted
-  it "inserts <indent> when the first line is indented" $ do
-    let tokens = [token 0 4 "a", token 1 8 "b", token 2 4 "c"]
-    let inserted = [indent, "a", indent, "b", dedent, "c", dedent]
-    run tokens `shouldBe` Right inserted
-  it "fails when there is no matching <indent> for <dedent> (allowNoMatchingDedent = False)" $ do
-    let tokens = [token 0 0 "a", token 1 8 "b", token 2 4 "c"]
+    let tokens = [token "if:" 1, token newline 4, token "return" 5]
+    let expected = ["if:", newline, indent, "return", dedent]
+    run tokens `shouldBe` Right expected
+  it "fails on unmatching dedents" $ do
+    let tokens = [token "if:" 1, token newline 4, token "return" 5, token newline 11, token "err" 3]
     run tokens `shouldSatisfy` isLeft
-  it "doesn't insert <indent> in parens" $ do
-    let tokens = [token 0 0 "a", token 0 4 open, token 1 8 "b", token 2 4 "c", token 3 0 close, token 4 4 "d"]
-    let inserted = ["a", open, "b", "c", close, indent, "d", dedent]
-    run tokens `shouldBe` Right inserted
-  it "doesn't blame about broken parens" $ do
-    let tokens = [token 0 0 close]
-    let inserted = [close]
-    run tokens `shouldBe` Right inserted
