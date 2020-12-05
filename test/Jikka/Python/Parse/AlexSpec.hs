@@ -7,7 +7,8 @@ where
 
 import Jikka.Common.Error (Error)
 import Jikka.Common.Location
-import Jikka.Python.Parse.Alex (Token (..), run)
+import Jikka.Python.Parse.Alex (run)
+import Jikka.Python.Parse.Token (Token (..))
 import Test.Hspec
 
 run' :: String -> Either Error [Token]
@@ -19,7 +20,7 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let input = "abc ** 123"
-    let tokens = [Ident "abc", Op "**", Int 123]
+    let tokens = [Ident "abc", PowOp, Int 123]
     run' input `shouldBe` Right tokens
   it "puts 1-based position info" $ do
     let input = "abc def\n123"
@@ -32,8 +33,4 @@ spec = describe "run" $ do
   it "uses the longest match" $ do
     let input = "i in int ints"
     let tokens = [Ident "i", In, Ident "int", Ident "ints"]
-    run' input `shouldBe` Right tokens
-  it "accepts quotes" $ do
-    let input = "'\"'\"'\"'"
-    let tokens = [SingleQuote, DoubleQuote, SingleQuote, DoubleQuote, SingleQuote, DoubleQuote, SingleQuote]
     run' input `shouldBe` Right tokens

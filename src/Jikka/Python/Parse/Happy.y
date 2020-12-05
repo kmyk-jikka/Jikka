@@ -2,6 +2,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- vim: filetype=haskell
+
+-- |
+-- Module      : Jikka.Core.Parse.Happy
+-- Description : parses the code of the standard Python with Happy.
+-- Copyright   : (c) Kimiyuki Onaka, 2020
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Python.Parse.Happy (run) where
 
 import Data.Functor (($>))
@@ -13,7 +22,7 @@ import Jikka.Common.Location
 import qualified Jikka.Common.Parse.ShuntingYard as ShuntingYard
 import Jikka.Common.Parse.ShuntingYard (BinOpInfo(..), Fixity(..))
 import Jikka.Python.Language.Expr
-import qualified Jikka.Python.Parse.Alex as L (Token(..))
+import qualified Jikka.Python.Parse.Token as L (Token(..))
 }
 
 %name runEither
@@ -23,10 +32,16 @@ import qualified Jikka.Python.Parse.Alex as L (Token(..))
 %errorhandlertype explist
 
 %token
+    -- literals
     none            { WithLoc _ L.None }
     integer         { WithLoc _ (L.Int _) }
     boolean         { WithLoc _ (L.Bool _) }
+    string          { WithLoc _ (L.String _) }
+    bytes           { WithLoc _ (L.Bytes _) }
+    float           { WithLoc _ (L.Float _) }
+    imaginary       { WithLoc _ (L.Imaginary _) }
 
+    -- keywords
     def             { WithLoc _ L.Def }
     if              { WithLoc _ L.If }
     elif            { WithLoc _ L.Elif }
@@ -35,47 +50,80 @@ import qualified Jikka.Python.Parse.Alex as L (Token(..))
     in              { WithLoc _ L.In }
     assert          { WithLoc _ L.Assert }
     return          { WithLoc _ L.Return }
-    import          { WithLoc _ L.Import }
-    from            { WithLoc _ L.From }
 
+    -- punctuations
     '->'            { WithLoc _ L.Arrow }
     ':'             { WithLoc _ L.Colon }
+    ';'             { WithLoc _ L.Semicolon }
     ','             { WithLoc _ L.Comma }
     '.'             { WithLoc _ L.Dot }
     '='             { WithLoc _ L.Equal }
     '_'             { WithLoc _ L.Underscore }
 
+    -- parens
     '['             { WithLoc _ L.OpenBracket }
     '('             { WithLoc _ L.OpenParen }
+    '{'             { WithLoc _ L.OpenBrace }
     ']'             { WithLoc _ L.CloseBracket }
     ')'             { WithLoc _ L.CloseParen }
-    '\''            { WithLoc _ L.SingleQuote }
-    '"'             { WithLoc _ L.DoubleQuote }
+    '}'             { WithLoc _ L.CloseBrace }
 
+    -- TODO: remove
     int             { WithLoc _ (L.Ident "int") }
-    nat             { WithLoc _ (L.Ident "nat") }
     bool            { WithLoc _ (L.Ident "bool") }
-    interval        { WithLoc _ (L.Ident "Interval") }
     list            { WithLoc _ (L.Ident "List") }
-    array           { WithLoc _ (L.Ident "Array") }
     range           { WithLoc _ (L.Ident "range") }
-    not             { WithLoc _ (L.Ident "not") }
-    and             { WithLoc _ (L.Ident "and") }
-    or              { WithLoc _ (L.Ident "or") }
-    implies         { WithLoc _ (L.Ident "implies") }
+
+    -- identifier
     ident           { WithLoc _ (L.Ident _) }
 
-    '+'             { WithLoc _ (L.Op "+") }
-    '-'             { WithLoc _ (L.Op "-") }
-    '~'             { WithLoc _ (L.Op "-") }
-    '*'             { WithLoc _ (L.Op "*") }
-    '**'            { WithLoc _ (L.Op "**") }
-    op              { WithLoc _ (L.Op _) }
+    -- operator
+    walrus          { WithLoc _ L.WalrusOp }
+    implies         { WithLoc _ L.ImpliesOp }
+    or              { WithLoc _ L.OrOp }
+    and             { WithLoc _ L.AndOp }
+    not             { WithLoc _ L.NotOp }
+    comp_operator   { WithLoc _ (L.CmpOp _) }
+    '<?'            { WithLoc _ L.MinOp }
+    '>?'            { WithLoc _ L.MaxOp }
+    '|'             { WithLoc _ L.BitOrOp }
+    '^'             { WithLoc _ L.BitXorOp }
+    '&'             { WithLoc _ L.BitAndOp }
+    '<<'            { WithLoc _ L.BitLShiftOp }
+    '>>'            { WithLoc _ L.BitRShiftOp }
+    '+'             { WithLoc _ L.PlusOp }
+    '-'             { WithLoc _ L.MinusOp }
+    '*'             { WithLoc _ L.MulOp }
+    divmod_operator { WithLoc _ (L.DivModOp _) }
+    '~'             { WithLoc _ L.BitNotOp }
+    '**'            { WithLoc _ L.PowOp }
 
+    -- indent
     newline         { WithLoc _ L.Newline }
     indent          { WithLoc _ L.Indent }
     dedent          { WithLoc _ L.Dedent }
 
+    -- reserved
+    as              { WithLoc _ L.As }
+    async           { WithLoc _ L.Async }
+    await           { WithLoc _ L.Await }
+    break           { WithLoc _ L.Break }
+    class           { WithLoc _ L.Class }
+    continue        { WithLoc _ L.Continue }
+    del             { WithLoc _ L.Del }
+    except          { WithLoc _ L.Except }
+    finally         { WithLoc _ L.Finally }
+    from            { WithLoc _ L.From }
+    global          { WithLoc _ L.Global }
+    import          { WithLoc _ L.Import }
+    is              { WithLoc _ L.Is }
+    nonlocal        { WithLoc _ L.Nonlocal }
+    pass            { WithLoc _ L.Pass }
+    raise           { WithLoc _ L.Raise }
+    try             { WithLoc _ L.Try }
+    while           { WithLoc _ L.While }
+    with            { WithLoc _ L.With }
+    yield           { WithLoc _ L.Yield }
 %%
 
 Start :: { Program }
@@ -105,14 +153,8 @@ sep(p, q) -- :: { [a] }
 -- types
 Type :: { Type' }
     : int                                        { $1 @> TyInt }
-    | nat                                        { $1 @> TyNat }
-    | interval '[' QuotedExpr ',' QuotedExpr ']' { $1 @> TyInterval $3 $5 }
     | bool                                       { $1 @> TyBool }
     | list '[' Type ']'                          { $1 @> TyList $3 }
-    | array '[' Type ',' QuotedExpr ']'          { $1 @> TyArray $3 $5 }
-QuotedExpr :: { Expr' }
-    : '"' Expr '"'                               { $2 }
-    | '\'' Expr '\''                             { $2 }
 OptColonType :: { Maybe Type' }
     : {- empty -}                                { Nothing }
     | ':' Type                                   { Just $2 }
@@ -158,10 +200,25 @@ ListSub1 :: { [Expr'] }
 
 -- operators
 BinaryOp :: { WithLoc FunName }
-    : op                               { toFunName' $1 }
+    : walrus                           { toFunName' $1 }
+    | implies                          { toFunName' $1 }
+    | or                               { toFunName' $1 }
+    | and                              { toFunName' $1 }
+    | not                              { toFunName' $1 }
+    | comp_operator                    { toFunName' $1 }
+    | '<?'                             { toFunName' $1 }
+    | '>?'                             { toFunName' $1 }
+    | '|'                              { toFunName' $1 }
+    | '^'                              { toFunName' $1 }
+    | '&'                              { toFunName' $1 }
+    | '<<'                             { toFunName' $1 }
+    | '>>'                             { toFunName' $1 }
     | '+'                              { toFunName' $1 }
     | '-'                              { toFunName' $1 }
     | '*'                              { toFunName' $1 }
+    | divmod_operator                  { toFunName' $1 }
+    | '~'                              { toFunName' $1 }
+    | '**'                             { toFunName' $1 }
 
 -- exprs
 -- The operator precedence of Python is listed at https://docs.python.org/3/reference/expressions.html#operator-precedence
@@ -179,7 +236,6 @@ ExprPow :: { Expr' }
     | ExprAtom '**' ExprPow                      { $1 @> Call (toFunName $2) [$1, $3] }
 ExprUnOp :: { Expr' }
     : ExprPow                                    { $1 }
-    | '+' ExprUnOp                               { $1 @> Call (toFunName $1) [$2] }
     | '-' ExprUnOp                               { $1 @> Call (toFunName $1) [$2] }
     | '~' ExprUnOp                               { $1 @> Call (toFunName $1) [$2] }
 ExprBinOpList :: { (Expr', [(WithLoc FunName, Expr')]) }
@@ -238,9 +294,11 @@ ToplevelDecl :: { ToplevelDecl' }
 
 toFunName' :: WithLoc L.Token -> WithLoc FunName
 toFunName' token = f <$> token where
-    f (L.Ident name) = FunName name
-    f (L.Op name) = FunName name
-    f _ = error "invalid token as a function name"
+    f L.PlusOp = FunName "-"
+    f L.MinusOp = FunName "-"
+    f L.MulOp = FunName "*"
+    f L.PowOp = FunName "**"
+    f _ = bug "invalid token as a function name"
 
 toFunName :: WithLoc L.Token -> FunName
 toFunName = value . toFunName'

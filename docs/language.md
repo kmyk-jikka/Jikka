@@ -287,16 +287,30 @@ arithmetical functions (`Callable[[int, int], int]`):
 -   `/^` division (ceil)
     -   same to `(x + y - 1) // y`
     -   TODO: is this definition appropriate for negative numbers?
+-   `%^` modulo (ceil, consistent to `/^`)
+    -   It means `(x /^ y) * y + (x %^ y) == x` always holds.
 -   `<?` min
     -   comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html)
+    -   The operators `<?` and `>?` have the precedence between bit-ops and comparisons.
+        They are left-to-right associative.
+        For example, `a ^ 1 <? b == c` is `((a ^ 1) <? b) == c`.
+        `a <? b <? c ?> d <? e` is `((((a <? b) <? c) ?> d) <? e)`.
 -   `>?` max
-    -   comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html)
+    -   same to min
 
 logical functions (`Callable[[bool, bool], bool]`):
 
 -   `implies` implication
     -   No short circuit exists.
+    -   The operator `implies` has the precedence between `or`-op and `if`-`else`.
+        They are right-to-left associative.
+        For example, `a implies b if c else d implies e` is `(a implies b) if (c) eles (d implies e)`
+        `a implies b implies c` is `a implies (b implies c)`.
 
+The operators `<?` and `>?` have the precedence between bit ops and comparisons.
+They are left-to-right associative.
+For example, `a ^ 1 <? b == c` is `((a ^ 1) <? b) == c`.
+`a <? b <? c ?> d <? e` is `((((a <? b) <? c) ?> d) <? e)`.
 
 ### builtin small functions
 

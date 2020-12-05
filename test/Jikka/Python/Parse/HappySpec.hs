@@ -7,8 +7,8 @@ import Jikka.Common.Error (Error)
 import Jikka.Common.Language.Name
 import Jikka.Common.Location
 import Jikka.Python.Language.Expr
-import qualified Jikka.Python.Parse.Alex as L
 import Jikka.Python.Parse.Happy
+import qualified Jikka.Python.Parse.Token as L
 import Test.Hspec
 
 at :: a -> (Int, Int) -> WithLoc a

@@ -34,9 +34,27 @@ run = post . go
 spec :: Spec
 spec = describe "insertIndentTokens" $ do
   it "works" $ do
-    let tokens = [token "if:" 1, token newline 4, token "return" 5]
-    let expected = ["if:", newline, indent, "return", dedent]
+    let tokens =
+          concat
+            [ [token "if:" 1, token newline 4],
+              [token "return" 5, token newline 11],
+              [token "else:" 1, token newline 6],
+              [token "return:" 5, token newline 11]
+            ]
+    let expected =
+          concat
+            [ ["if:", newline],
+              [indent, "return", newline],
+              [dedent, "else:", newline],
+              [indent, "return:", newline],
+              [dedent]
+            ]
     run tokens `shouldBe` Right expected
   it "fails on unmatching dedents" $ do
-    let tokens = [token "if:" 1, token newline 4, token "return" 5, token newline 11, token "err" 3]
+    let tokens =
+          concat
+            [ [token "if:" 1, token newline 4],
+              [token "return" 5, token newline 11],
+              [token "err" 3]
+            ]
     run tokens `shouldSatisfy` isLeft
