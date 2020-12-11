@@ -6,7 +6,6 @@ module Jikka.Common.Parse.OffsideRule
   )
 where
 
-import Debug.Trace
 import Jikka.Common.Error
 import Jikka.Common.Location
 
@@ -24,7 +23,7 @@ insertIndents' :: forall m a. (MonadError Error m, Show a) => a -> a -> [[WithLo
 insertIndents' indent dedent = go [1]
   where
     go :: [Int] -> [[WithLoc a]] -> m [WithLoc a]
-    go stk tokens = trace (show (stk, map (map value) tokens)) $ case (stk, tokens) of
+    go stk tokens = case (stk, tokens) of
       ([1], []) -> return []
       (_ : stk, []) -> (WithLoc (Loc 0 1 0) dedent :) <$> go stk []
       (_, [] : _) -> throwInternalError "a line must be non-empty"
