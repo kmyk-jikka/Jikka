@@ -111,23 +111,24 @@ tokens :-
     "and"           { tok AndOp }
     "or"            { tok OrOp }
     "not"           { tok NotOp }
-    "@"             { tok (DivModOp At) }
+    "@"             { tok AtOp }
     ":="            { tok WalrusOp }
 
     -- assignment operators
-    "+="            { tok' AssignOp }
-    "-="            { tok' AssignOp }
-    "*="            { tok' AssignOp }
-    "/="            { tok' AssignOp }
-    "//="           { tok' AssignOp }
-    "%="            { tok' AssignOp }
-    "@="            { tok' AssignOp }
-    "&="            { tok' AssignOp }
-    "|="            { tok' AssignOp }
-    "^="            { tok' AssignOp }
-    "<<="           { tok' AssignOp }
-    ">>="           { tok' AssignOp }
-    "**="           { tok' AssignOp }
+    "+="            { tok (AugOp AugAdd) }
+    "-="            { tok (AugOp AugSub) }
+    "@="            { tok (AugOp AugMul) }
+    "*="            { tok (AugOp AugAt) }
+    "/="            { tok (AugOp AugDiv) }
+    "//="           { tok (AugOp AugFloorDiv) }
+    "%="            { tok (AugOp AugFloorMod) }
+    "%^="           { tok (AugOp AugCeilMod) }
+    "**="           { tok (AugOp AugPow) }
+    "<<="           { tok (AugOp AugBitRShift) }
+    ">>="           { tok (AugOp AugBitLShift) }
+    "&="            { tok (AugOp AugBitAnd) }
+    "^="            { tok (AugOp AugBitXor) }
+    "|="            { tok (AugOp AugBitOr) }
 
     -- additional operators
     "/^"            { tok (DivModOp CeilDiv) }
@@ -135,9 +136,9 @@ tokens :-
     "<?"            { tok MinOp }
     ">?"            { tok MaxOp }
     "implies"       { tok ImpliesOp }
-    "/^="           { tok' AssignOp }
-    "<?="           { tok' AssignOp }
-    ">?="           { tok' AssignOp }
+    "/^="           { tok (AugOp AugCeilDiv) }
+    "<?="           { tok (AugOp AugMin) }
+    ">?="           { tok (AugOp AugMax) }
 
     -- Python reserved
     "as"            { tok As }

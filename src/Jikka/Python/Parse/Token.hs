@@ -26,7 +26,26 @@ data DivModOp
   | FloorMod
   | CeilDiv
   | CeilMod
-  | At
+  deriving (Eq, Ord, Show, Read)
+
+data AugOp
+  = AugAdd
+  | AugSub
+  | AugMul
+  | AugAt
+  | AugDiv
+  | AugFloorDiv
+  | AugFloorMod
+  | AugCeilDiv
+  | AugCeilMod
+  | AugPow
+  | AugBitRShift
+  | AugBitLShift
+  | AugBitAnd
+  | AugBitXor
+  | AugBitOr
+  | AugMin
+  | AugMax
   deriving (Eq, Ord, Show, Read)
 
 -- | We don't have to classify tokens in detail, but it's convenient for testing and debugging.
@@ -84,9 +103,10 @@ data Token
   | MinusOp
   | MulOp
   | DivModOp DivModOp
+  | AtOp
   | BitNotOp
   | PowOp
-  | AssignOp String
+  | AugOp AugOp
   | -- indent
     Newline
   | Indent
