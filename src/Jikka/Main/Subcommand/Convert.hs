@@ -4,8 +4,8 @@ import Data.Text (Text)
 import qualified Jikka.CPlusPlus.Convert.FromCore as FromCore
 import qualified Jikka.CPlusPlus.Format as FormatCPlusPlus
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.Optimize as Optimize
-import qualified Jikka.Core.Convert.ValueApps as ValueApps
 import qualified Jikka.Python.Convert.Alpha as ConvertAlpha
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
@@ -26,6 +26,6 @@ run path input = do
   prog <- lift' $ TypeInfer.run prog
   prog <- lift' $ ToCore.run prog
   prog <- lift' $ Optimize.run prog
-  prog <- lift' $ ValueApps.run prog
+  prog <- lift' $ ANormal.run prog
   prog <- lift' $ FromCore.run prog
   lift' $ FormatCPlusPlus.run prog

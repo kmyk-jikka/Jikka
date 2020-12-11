@@ -2,19 +2,14 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- |
--- Module      : Jikka.Core.Convert.ValueApps
--- Description : removes complicated exprs in lambda applications.
+-- Module      : Jikka.Core.Convert.ANormal
+-- Description : convert exprs to A-normal form.
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
 -- Stability   : experimental
 -- Portability : portable
---
--- `Jikka.Language.Core.ValueApps` removes complicated exprs in lambda applications.
--- This removes `App`, `Lam` and `Let` from the callee and arguments of `App`, and removes `Let` from the bound value of `Let`.
---
--- TODO: rename to a better name
-module Jikka.Core.Convert.ValueApps
+module Jikka.Core.Convert.ANormal
   ( run,
   )
 where

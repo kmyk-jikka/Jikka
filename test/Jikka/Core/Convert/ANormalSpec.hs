@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jikka.Core.Convert.ValueAppsSpec
+module Jikka.Core.Convert.ANormalSpec
   ( spec,
   )
 where
 
-import Jikka.Core.Convert.ValueApps (run)
+import Jikka.Core.Convert.ANormal (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec

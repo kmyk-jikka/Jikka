@@ -5,9 +5,9 @@ import qualified Data.Text.IO as T (readFile)
 import qualified Jikka.CPlusPlus.Convert.FromCore as FromCore
 import qualified Jikka.CPlusPlus.Format as FormatCPlusPlus
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
-import qualified Jikka.Core.Convert.ValueApps as ValueApps
 import qualified Jikka.Core.Format as FormatCore
 import qualified Jikka.Python.Convert.Alpha as ConvertAlpha
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
@@ -50,7 +50,7 @@ run path = do
   put "core simplified" . unpack =<< liftEither' (FormatCore.run prog)
   prog <- liftEither' $ StrengthReduction.run prog
   put "core reduced" . unpack =<< liftEither' (FormatCore.run prog)
-  prog <- liftEither' $ ValueApps.run prog
+  prog <- liftEither' $ ANormal.run prog
   put "simplify for codgen" . unpack =<< liftEither' (FormatCore.run prog)
   prog <- liftEither' $ FromCore.run prog
   put "generated code" . unpack =<< liftEither' (FormatCPlusPlus.run prog)
