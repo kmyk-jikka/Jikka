@@ -145,6 +145,8 @@ rev_sep1(p, q) -- :: { [a] }
     | rev_sep1(p, q) q p               { $3 : $1 }
 sep1(p, q) -- :: { [a] }
     : rev_sep1(p, q)                   { reverse $1 }
+sep1opt(p, q) -- :: { [a] }
+    : rev_sep1(p, q) opt(q)            { reverse $1 }
 fst(p, q)
     : p q                              { $1 }
 snd(p, q)
@@ -273,9 +275,9 @@ min_expr :: { Expr' }
     | min_expr ">?" or_expr                                 { $1 @> BinOp $1 Max $3 }
 
 -- 6.10. Comparisons
-comparison :: { Expr' }
-    : min_expr                                              { $1 }
-    | min_expr list1(both(comp_operator, min_expr))         { $1 @> Compare $1 $2 }
+comparison :: { (Expr', [(CmpOp, Expr')]) }
+    : min_expr                                              { ($1, []) }
+    | comparison comp_operator min_expr                     { let (e1, e2) = $1 in (e1, e2 ++ [($2, $3)]) }
 comp_operator :: { CmpOp }
     : COMP_OPERATOR                                         { fromCmpOp $1 }
     | "is"                                                  { Is }
@@ -285,7 +287,7 @@ comp_operator :: { CmpOp }
 
 -- 6.11. Boolean operations
 not_test :: { Expr' }
-    : comparison                                            { $1 }
+    : comparison                                            { convertCompare $1 }
     | "not" not_test                                        { $1 @> UnaryOp Not $2 }
 and_test :: { Expr' }
     : not_test                                              { $1 }
@@ -312,9 +314,11 @@ expression_nocond :: { Expr' }
 
 -- 6.14. Lambda
 lambda_expr :: { Expr' }
-    : "lambda" opt(parameter_list) ":" expression           { $1 @> Lambda (convertArguments $2) $4}
+    : "lambda" ":" expression                                         { $1 @> Lambda emptyArguments $3}
+    | "lambda" sep1opt(identifier, ",") ":" expression                { $1 @> Lambda (convertArguments' (reverse $2)) $4}
 lambda_expr_nocond :: { Expr' }
-    : "lambda" opt(parameter_list) ":" expression_nocond    { $1 @> Lambda (convertArguments $2) $4}
+    : "lambda" ":" expression_nocond                                  { $1 @> Lambda emptyArguments $3}
+    | "lambda" sep1opt(identifier, ",") ":" expression_nocond         { $1 @> Lambda (convertArguments' (reverse $2)) $4}
 
 -- 6.15. Expression lists
 expression_list :: { ([Expr'], Bool) }
@@ -340,7 +344,7 @@ simple_stmt :: { Statement' }
 
 -- 7.2. Assignment statements
 assignment_stmt :: { Statement' }
-    : list1(fst(expression_list, "=")) expression           { convertAssign $1 $2 }
+    : expression_list "=" expression                        { convertAssign $1 $3 }
 
 -- 7.2.1. Augmented assignment statements
 augmented_assignment_stmt :: { Statement' }
@@ -429,7 +433,7 @@ while_stmt :: { Statement' }
 
 -- 8.3. The for statement
 for_stmt :: { Statement' }
-    : "for" expression_list "in" expression_list ":" suite opt(snd("else", snd(":", suite)))                          { $1 @> For (uncurry fromExprList $2) (uncurry fromExprList $4) $6 (fromMaybe [] $7) }
+    : "for" identifier "in" expression_list ":" suite opt(snd("else", snd(":", suite)))                               { $1 @> For ($2 @> Name $2) (uncurry fromExprList $4) $6 (fromMaybe [] $7) }
 
 -- 8.6. Function definitions
 funcdef :: { Statement' }
@@ -493,18 +497,22 @@ fromAugOp = \case
 convertArguments :: Maybe [Arg] -> Arguments
 convertArguments args = emptyArguments { argsArgs = fromMaybe [] args }
 
+convertArguments' :: [Ident'] -> Arguments
+convertArguments' args = emptyArguments { argsArgs = map (\x -> (x, Nothing)) args }
+
 convertIfElse :: WithLoc a -> Expr' -> [Statement'] -> [((WithLoc a, Expr'), [Statement'])] -> Maybe [Statement'] -> Statement'
 convertIfElse head cond body elifs orelse = head @> If cond body cont where
   cont = case elifs of
     [] -> fromMaybe [] orelse
     ((head', cond'), body') : elifs -> [convertIfElse head' cond' body' elifs orelse]
 
-convertAssign :: [([Expr'], Bool)] -> Expr' -> Statement'
-convertAssign [] e = bug "empty targets for convertAssign"
-convertAssign targets value = head (fst (head targets)) $> Assign (map f targets) value where
-  f ([], _) = bug "empty tuple for convertAssign"
-  f (es@(e : _), comma) = fromExprList es comma
+convertCompare :: (Expr', [(CmpOp, Expr')]) -> Expr'
+convertCompare (e, []) = e
+convertCompare (e, ops) = e $> Compare e ops
 
+convertAssign :: ([Expr'], Bool) -> Expr' -> Statement'
+convertAssign ([], _) _ = bug "empty targets for convertAssign"
+convertAssign (xs, comma) e = head xs $> Assign [fromExprList xs comma] e
 
 happyErrorExpList :: ([WithLoc L.Token], [String]) -> Either Error a
 happyErrorExpList (tokens, expected) = Left err where
