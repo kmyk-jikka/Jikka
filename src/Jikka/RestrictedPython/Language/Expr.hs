@@ -53,10 +53,9 @@ data Constant
   deriving (Eq, Ord, Show, Read)
 
 data Target
-  = SubscriptTrg Type Target Expr
+  = SubscriptTrg Type Ident [Expr]
   | NameTrg Ident
-  | ListTrg Type [Target]
-  | TupleTrg [(Target, Type)]
+  | TupleTrg [(Ident, Type)]
   deriving (Eq, Ord, Show, Read)
 
 data Comprehension = Comprehension Target Type Expr (Maybe Expr)

@@ -94,13 +94,12 @@ formatComprehension (Comprehension x _ iter ifs) =
 
 formatTarget :: Target -> String
 formatTarget = \case
-  SubscriptTrg _ x e -> formatTarget x ++ "[" ++ formatExpr e ++ "]"
+  SubscriptTrg _ x indices -> unIdent x ++ concatMap (\e -> "[" ++ formatExpr e ++ "]") indices
   NameTrg x -> unIdent x
-  ListTrg _ xs -> "[" ++ intercalate ", " (map formatTarget xs) ++ "]"
   TupleTrg xts -> case xts of
     [] -> "()"
-    [(x, _)] -> formatTarget x ++ ","
-    _ -> intercalate ", " (map (formatTarget . fst) xts)
+    [(x, _)] -> unIdent x ++ ","
+    _ -> intercalate ", " (map (unIdent . fst) xts)
 
 formatExpr :: Expr -> String
 formatExpr = \case

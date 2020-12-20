@@ -57,24 +57,33 @@ runConstant = \case
   X.ConstBool p -> return $ Y.ConstBool p
   e -> throwSemanticError ("unsupported constant: " ++ show e)
 
+runTargetSubscript :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m (Y.Ident, [Y.Expr])
+runTargetSubscript e = case value e of
+  X.Name x -> return (runIdent x, [])
+  X.Subscript e1 e2 -> do
+    (x, indices) <- runTargetSubscript e1
+    e2 <- runExpr e2
+    return (x, indices ++ [e2])
+  _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
+
+runTargetName :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Ident
+runTargetName e = case value e of
+  X.Name x -> return $ runIdent x
+  _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
+
 runTarget :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Target
 runTarget e = case value e of
-  X.Subscript e1 e2 -> do
+  X.Subscript _ _ -> do
     t <- genType
-    e1 <- runTarget e1
-    e2 <- runExpr e2
-    return $ Y.SubscriptTrg t e1 e2
-  X.Name x -> return $ Y.NameTrg (runIdent x)
-  X.List es -> do
-    t <- genType
-    es <- mapM runTarget es
-    return $ Y.ListTrg t es
+    (x, indices) <- runTargetSubscript e
+    return $ Y.SubscriptTrg t x indices
+  X.Name _ -> Y.NameTrg <$> runTargetName e
   X.Tuple es -> do
-    es <- forM es $ \e -> do
-      e <- runTarget e
+    xs <- forM es $ \e -> do
+      x <- runTargetName e
       t <- genType
-      return (e, t)
-    return $ Y.TupleTrg es
+      return (x, t)
+    return $ Y.TupleTrg xs
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
 
 runTargetIdent :: MonadError Error m => X.Expr' -> m Y.Ident
