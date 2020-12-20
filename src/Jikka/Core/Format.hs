@@ -1,5 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Core.Format
+-- Description : converts the expr of core language to strings.
+-- Copyright   : (c) Kimiyuki Onaka, 2020
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
+--
+-- TODO: add parens with considering precedences.
 module Jikka.Core.Format
   ( run,
     run',

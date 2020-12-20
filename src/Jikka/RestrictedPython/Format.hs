@@ -1,5 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.RestrictedPython.Format
+-- Description : converts the AST of the restricted Python to strings.
+-- Copyright   : (c) Kimiyuki Onaka, 2020
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
+--
+-- TODO: add parens with considering precedences.
 module Jikka.RestrictedPython.Format
   ( run,
     run',
