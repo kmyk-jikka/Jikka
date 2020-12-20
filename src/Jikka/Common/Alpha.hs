@@ -18,16 +18,13 @@ import Control.Monad.State.Strict
 class Monad m => MonadAlpha m where
   nextCounter :: m Int
 
-type Alpha = StateT Int (Either String)
+type AlphaT m = StateT Int m
 
 instance Monad m => MonadAlpha (StateT Int m) where
   nextCounter = state $ \i -> (i, i + 1)
 
-runAlpha :: Int -> Alpha a -> Either String (a, Int)
-runAlpha i a = runStateT a i
+runAlphaT :: Int -> AlphaT m a -> m (a, Int)
+runAlphaT i f = runStateT f i
 
-evalAlpha :: Int -> Alpha a -> Either String a
-evalAlpha i = fmap fst . runAlpha i
-
-evalAlpha' :: Alpha a -> Either String a
-evalAlpha' = evalAlpha 0
+evalAlphaT :: Functor m => Int -> AlphaT m a -> m a
+evalAlphaT i f = fst <$> runAlphaT i f

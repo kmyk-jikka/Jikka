@@ -2,11 +2,11 @@ module Jikka.Main.Subcommand.Execute (run) where
 
 import Control.Monad.Except
 import qualified Data.Text.IO as T (readFile)
+import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import qualified Jikka.Core.Convert.Optimize as Optimize
 import qualified Jikka.Core.Evaluate as Evaluator
-import qualified Jikka.Python.Convert.Alpha as ConvertAlpha
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
@@ -20,10 +20,10 @@ liftEither' f = case f of
 
 run :: FilePath -> ExceptT Error IO ()
 run path = do
+  let counter = 0
   prog <- liftIO $ T.readFile path
   prog <- liftEither $ FromPython.run path prog
-  prog <- liftEither' $ ConvertAlpha.run prog
-  prog <- liftEither' $ ToRestrictedPython.run prog
+  (prog, _) <- runAlphaT counter $ ToRestrictedPython.run prog
   prog <- liftEither' $ TypeInfer.run prog
   prog <- liftEither' $ ToCore.run prog
   prog <- liftEither' $ Optimize.run prog

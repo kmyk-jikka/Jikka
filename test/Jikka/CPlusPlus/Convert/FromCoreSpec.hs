@@ -7,9 +7,13 @@ where
 
 import Jikka.CPlusPlus.Convert.FromCore
 import qualified Jikka.CPlusPlus.Language.Expr as Y
+import Jikka.Common.Alpha
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
 import Test.Hspec
+
+run' :: X.Program -> Either String Y.Program
+run' = evalAlphaT 0 . run
 
 spec :: Spec
 spec = describe "run" $ do
@@ -55,4 +59,4 @@ spec = describe "run" $ do
             [(Y.TyInt64, "a2")]
             [Y.Return (Y.Call (Y.Callable (Y.Var "f0_f")) [Y.Var "a2"])]
     let expected = Y.Program [expectedF, expectedSolve]
-    run prog `shouldBe` Right expected
+    run' prog `shouldBe` Right expected

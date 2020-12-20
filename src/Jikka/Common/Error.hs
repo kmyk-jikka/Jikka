@@ -19,6 +19,7 @@ module Jikka.Common.Error
     -- * general utilities for `Control.Monad.Except`
     wrapError,
     wrapError',
+    wrapAt,
     maybeToError,
     eitherToError,
 
@@ -54,7 +55,9 @@ module Jikka.Common.Error
     throwSymbolError,
     throwSymbolErrorAt,
     throwTypeError,
+    throwTypeErrorAt,
     throwSemanticError,
+    throwSemanticErrorAt,
     throwEvaluationError,
     throwRuntimeError,
     throwAssertionError,
@@ -124,6 +127,9 @@ wrapError wrap f = f `catchError` (\err -> throwError (wrap err))
 
 wrapError' :: MonadError Error m => String -> m a -> m a
 wrapError' message f = wrapError (WithWrapped message) f
+
+wrapAt :: MonadError Error m => Loc -> m a -> m a
+wrapAt loc = wrapError (WithLocation loc)
 
 maybeToError :: MonadError a m => a -> Maybe b -> m b
 maybeToError a Nothing = throwError a
@@ -220,8 +226,14 @@ throwSymbolErrorAt loc = throwError . WithLocation loc . WithGroup SymbolError .
 throwTypeError :: MonadError Error m => String -> m a
 throwTypeError = throwError . WithGroup TypeError . Error
 
+throwTypeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwTypeErrorAt loc = throwError . WithLocation loc . WithGroup TypeError . Error
+
 throwSemanticError :: MonadError Error m => String -> m a
 throwSemanticError = throwError . WithGroup SemanticError . Error
+
+throwSemanticErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSemanticErrorAt loc = throwError . WithLocation loc . WithGroup SemanticError . Error
 
 throwEvaluationError :: MonadError Error m => String -> m a
 throwEvaluationError = throwError . WithGroup EvaluationError . Error

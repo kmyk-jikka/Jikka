@@ -236,5 +236,5 @@ runToplevelExpr env = \case
 runProgram :: (MonadAlpha m, MonadError String m) => X.Program -> m Y.Program
 runProgram prog = Y.Program <$> runToplevelExpr [] prog
 
-run :: X.Program -> Either String Y.Program
-run = evalAlpha' . runProgram
+run :: (MonadAlpha m, MonadError String m) => X.Program -> m Y.Program
+run = runProgram

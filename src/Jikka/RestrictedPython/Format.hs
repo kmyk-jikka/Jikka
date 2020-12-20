@@ -1,164 +1,147 @@
-module Jikka.RestrictedPython.Format (run, run') where
+{-# LANGUAGE LambdaCase #-}
+
+module Jikka.RestrictedPython.Format
+  ( run,
+    run',
+  )
+where
 
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
-import Jikka.Common.Language.Name
 import Jikka.RestrictedPython.Language.Expr
-import Jikka.RestrictedPython.Language.Stdlib
-
-formatChurchType :: ChurchType -> String
-formatChurchType t = case t of
-  TyInt -> "int"
-  TyBool -> "bool"
-  TyList t -> "List[" ++ formatChurchType t ++ "]"
-  TyIterator t -> "Iterator[" ++ formatChurchType t ++ "]"
-  TyVar name -> unTypeName name
-
-formatLiteral :: Literal -> String
-formatLiteral (LitInt n) = show n
-formatLiteral (LitBool p) = show p
-
-formatUnaryOp :: UnaryOp -> Expr -> String
-formatUnaryOp op e1 =
-  let fun name = name ++ "(" ++ formatExpr e1 ++ ")"
-      fun' t name = name ++ "<" ++ formatChurchType t ++ ">(" ++ formatExpr e1 ++ ")"
-      nonfun name = name ++ " (" ++ formatExpr e1 ++ ")"
-   in case op of
-        -- arithmetical functions
-        Negate -> nonfun "-"
-        Fact -> fun "fact"
-        Abs -> fun "abs"
-        -- logical functions
-        Not -> nonfun "not"
-        -- bitwise functions
-        BitNot -> nonfun "~"
-        -- list functions
-        Len t -> fun' t "len"
-        Sum -> fun "sum"
-        Product -> fun "product"
-        Min1 -> fun "min"
-        Max1 -> fun "max"
-        ArgMin -> fun "argmin"
-        ArgMax -> fun "argmax"
-        All -> fun "all"
-        Any -> fun "any"
-        Sorted t -> fun' t "sorted"
-        List t -> fun' t "list"
-        Reversed t -> fun' t "reversed"
-        Range1 -> fun "range"
-
-formatBinaryOp :: BinaryOp -> Expr -> Expr -> String
-formatBinaryOp op e1 e2 =
-  let fun name = name ++ "(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ")"
-      nonfun name = "(" ++ formatExpr e1 ++ " " ++ name ++ " " ++ formatExpr e2 ++ ")"
-      nonfun' t name = "(" ++ formatExpr e1 ++ " " ++ name ++ "<" ++ formatChurchType t ++ "> " ++ formatExpr e2 ++ ")"
-   in case op of
-        -- arithmetical functions
-        Plus -> nonfun "+"
-        Minus -> nonfun "-"
-        Mult -> nonfun "*"
-        FloorDiv -> nonfun "//"
-        FloorMod -> nonfun "%"
-        CeilDiv -> nonfun "ceildiv"
-        CeilMod -> nonfun "ceilmod"
-        Pow -> nonfun "**"
-        Gcd -> fun "gcd"
-        Lcm -> fun "lcm"
-        Min -> fun "min"
-        Max -> fun "max"
-        -- modular functions
-        Inv -> fun "inv"
-        -- combinational functions
-        Choose -> fun "choose"
-        Permute -> fun "permute"
-        MultiChoose -> fun "multichoose"
-        -- logical functions
-        And -> nonfun "and"
-        Or -> nonfun "or"
-        Implies -> nonfun "implies"
-        -- bitwise functions
-        BitAnd -> nonfun "&"
-        BitOr -> nonfun "|"
-        BitXor -> nonfun "^"
-        BitLeftShift -> nonfun "<<"
-        BitRightShift -> nonfun ">>"
-        -- list functions
-        Range2 -> fun "range"
-        -- arithmetical relations
-        LessThan -> nonfun "<"
-        LessEqual -> nonfun "<="
-        GreaterThan -> nonfun ">"
-        GreaterEqual -> nonfun ">="
-        -- equality relations (polymorphic)
-        Equal t -> nonfun' t "=="
-        NotEqual t -> nonfun' t "!="
-
-formatTernaryOp :: TernaryOp -> Expr -> Expr -> Expr -> String
-formatTernaryOp op e1 e2 e3 = case op of
-  Cond t -> "(" ++ formatExpr e1 ++ " if<" ++ formatChurchType t ++ "> " ++ formatExpr e2 ++ " else " ++ formatExpr e3 ++ ")"
-  PowMod -> "pow(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ", " ++ formatExpr e3 ++ ")"
-  Range3 -> "range(" ++ formatExpr e1 ++ ", " ++ formatExpr e2 ++ ", " ++ formatExpr e3 ++ ")"
 
 formatType :: Type -> String
 formatType t = case t of
-  ATyInt -> "int"
-  ATyBool -> "bool"
-  ATyList t -> "List[" ++ formatType t ++ "]"
-  ATyNat -> "nat"
-  ATyInterval l r -> "Interval[" ++ formatExpr l ++ ", " ++ formatExpr r ++ "]"
-  ATyIterator t -> "Iterator[" ++ formatType t ++ "]"
-  ATyArray t n -> "Array[" ++ formatType t ++ ", " ++ formatExpr n ++ "]"
-  ATyVar name -> unTypeName name
+  VarTy x -> unIdent x
+  NoneTy -> "None"
+  IntTy -> "int"
+  BoolTy -> "bool"
+  ListTy t -> "List[" ++ formatType t ++ "]"
+  SequenceTy t -> "Sequence[" ++ formatType t ++ "]"
+  IteratorTy t -> "Iterator[" ++ formatType t ++ "]"
+  TupleTy ts -> "Tuple[" ++ intercalate ", " (map formatType ts) ++ "]"
+  CallableTy ts ret -> "Callable[[" ++ intercalate ", " (map formatType ts) ++ "], " ++ formatType ret ++ "]"
+
+formatConstant :: Constant -> String
+formatConstant ConstNone = "None"
+formatConstant (ConstInt n) = show n
+formatConstant (ConstBool p) = show p
+
+formatBoolOp :: BoolOp -> String
+formatBoolOp = \case
+  And -> "and"
+  Or -> "or"
+  Implies -> "implies"
+
+formatOperator :: Operator -> String
+formatOperator = \case
+  Add -> "+"
+  Sub -> "-"
+  Mult -> "*"
+  MatMult -> "@"
+  Div -> "/"
+  FloorDiv -> "//"
+  FloorMod -> "%"
+  CeilDiv -> "/^"
+  CeilMod -> "%^"
+  Pow -> "**"
+  BitLShift -> "<<"
+  BitRShift -> ">>"
+  BitOr -> "|"
+  BitXor -> "^"
+  BitAnd -> "&"
+  Max -> ">?"
+  Min -> "<?"
+
+formatUnaryOp :: UnaryOp -> String
+formatUnaryOp = \case
+  Invert -> "~"
+  Not -> "not"
+  UAdd -> "+"
+  USub -> "-"
+
+formatCmpOp :: CmpOp -> String
+formatCmpOp = \case
+  Eq' -> "=="
+  NotEq -> "!="
+  Lt -> "<"
+  LtE -> "<="
+  Gt -> ">"
+  GtE -> ">="
+  Is -> "is"
+  IsNot -> "is not"
+  In -> "in"
+  NotIn -> "not in"
 
 formatComprehension :: Comprehension -> String
-formatComprehension (Comprehension _ e1 name _ e2 e3) =
-  let body = formatExpr e1 ++ " for " ++ unVarName name ++ " in " ++ formatExpr e2
-      cond = case e3 of
+formatComprehension (Comprehension x _ iter ifs) =
+  let body = "for " ++ formatTarget x ++ " in " ++ formatExpr iter
+      ifs' = case ifs of
         Nothing -> ""
-        Just e3 -> " if " ++ formatExpr e3
-   in body ++ cond
+        Just ifs -> " if " ++ formatExpr ifs
+   in body ++ ifs'
+
+formatTarget :: Target -> String
+formatTarget = \case
+  SubscriptTrg _ x e -> formatTarget x ++ "[" ++ formatExpr e ++ "]"
+  NameTrg x -> unIdent x
+  ListTrg _ xs -> "[" ++ intercalate ", " (map formatTarget xs) ++ "]"
+  TupleTrg xts -> case xts of
+    [] -> "()"
+    [(x, _)] -> formatTarget x ++ ","
+    _ -> intercalate ", " (map (formatTarget . fst) xts)
 
 formatExpr :: Expr -> String
-formatExpr e = case e of
-  Var name -> unVarName name
-  Lit lit -> formatLiteral lit
-  UnOp op e1 -> formatUnaryOp op e1
-  BinOp op e1 e2 -> formatBinaryOp op e1 e2
-  TerOp op e1 e2 e3 -> formatTernaryOp op e1 e2 e3
-  Sub _ (Var name) e2 -> unVarName name ++ "[" ++ formatExpr e2 ++ "]"
-  Sub _ e1@Sub {} e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
-  Sub _ e1 e2 -> "(" ++ formatExpr e1 ++ ")[" ++ formatExpr e2 ++ "]"
-  ListExt _ es -> "[" ++ intercalate ", " (map formatExpr es) ++ "]"
-  ListComp comp -> "[" ++ formatComprehension comp ++ "]"
-  IterComp comp -> "(" ++ formatComprehension comp ++ ")"
-  Call name [IterComp comp] -> unFunName name ++ "(" ++ formatComprehension comp ++ ")"
-  Call name args -> unFunName name ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
+formatExpr = \case
+  BoolOp e1 op e2 -> formatExpr e1 ++ " " ++ formatBoolOp op ++ " " ++ formatExpr e2
+  BinOp e1 op e2 -> formatExpr e1 ++ " " ++ formatOperator op ++ " " ++ formatExpr e2
+  UnaryOp op e -> formatUnaryOp op ++ " " ++ formatExpr e
+  Lambda args _ body -> case args of
+    [] -> "lambda: " ++ formatExpr body
+    _ -> "lambda " ++ intercalate ", " (map (unIdent . fst) args) ++ ": " ++ formatExpr body
+  IfExp _ e1 e2 e3 -> formatExpr e2 ++ " if " ++ formatExpr e1 ++ " else " ++ formatExpr e3
+  ListComp _ e comp -> "[" ++ formatExpr e ++ " " ++ formatComprehension comp ++ "]"
+  Compare e1 op e2 -> formatExpr e1 ++ " " ++ formatCmpOp op ++ " " ++ formatExpr e2
+  Call _ f args -> case args of
+    [ListComp _ e comp] -> formatExpr f ++ "(" ++ formatExpr e ++ " " ++ formatComprehension comp ++ ")"
+    _ -> formatExpr f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
+  Constant const -> formatConstant const
+  Subscript _ e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
+  Name x -> unIdent x
+  List _ es -> "[" ++ intercalate ", " (map formatExpr es) ++ "]"
+  Tuple es -> case es of
+    [] -> "()"
+    [(e, _)] -> "(" ++ formatExpr e ++ ",)"
+    _ -> "(" ++ intercalate ", " (map (formatExpr . fst) es) ++ ")"
+  SubscriptSlice _ e from to step ->
+    let from' = maybe "" formatExpr from
+        to' = maybe "" formatExpr to
+        step' = maybe "" ((':' :) . formatExpr) step
+     in formatExpr e ++ "[" ++ from' ++ ":" ++ to' ++ step' ++ "]"
 
-formatShape :: [Expr] -> String
-formatShape [] = "None"
-formatShape (e : es) = "[" ++ formatShape es ++ " for _ in range(" ++ formatExpr e ++ ")]"
-
-formatSentence :: Sentence -> [String]
-formatSentence sentence = case sentence of
-  If e body1 body2 -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatSentence body1 ++ [dedent, "else:", indent] ++ concatMap formatSentence body2 ++ [dedent]
-  For name _ e body -> ["for " ++ unVarName name ++ " in " ++ formatExpr e ++ ":", indent] ++ concatMap formatSentence body ++ [dedent]
-  Declare name t shape -> [unVarName name ++ ": " ++ formatType t ++ " = " ++ formatShape shape]
-  Assign name indices e -> [unVarName name ++ concatMap (\e' -> "[" ++ formatExpr e' ++ "]") indices ++ " = " ++ formatExpr e]
-  Define name t e -> [unVarName name ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
-  Assert e -> ["assert " ++ formatExpr e]
+formatStatement :: Statement -> [String]
+formatStatement = \case
   Return e -> ["return " ++ formatExpr e]
+  AugAssign x op e -> [formatTarget x ++ " " ++ formatOperator op ++ "= " ++ formatExpr e]
+  AnnAssign x t e -> [formatTarget x ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
+  For x _ iter body -> ["for " ++ formatTarget x ++ " in " ++ formatExpr iter ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
+  If e body1 body2 -> case body2 of
+    [] -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent]
+    [body2@(If _ _ _)] ->
+      let elif : cont = formatStatement body2
+       in ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent, "el" ++ elif] ++ cont
+    _ -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent, "else:", indent] ++ concatMap formatStatement body2 ++ [dedent]
+  Assert e -> ["assert " ++ formatExpr e]
 
-formatToplevelDecl :: ToplevelDecl -> [String]
-formatToplevelDecl decl = case decl of
-  ConstDef name t e -> [unVarName name ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
-  FunDef name args ret body ->
-    let args' = intercalate ", " $ map (\(name, t) -> unVarName name ++ ": " ++ formatType t) args
-        def = "def " ++ unFunName name ++ "(" ++ args' ++ ") -> " ++ formatType ret ++ ":"
-     in [def, indent] ++ concatMap formatSentence body ++ [dedent]
+formatToplevelStatement :: ToplevelStatement -> [String]
+formatToplevelStatement = \case
+  ToplevelAnnAssign x t e -> [unIdent x ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
+  ToplevelFunctionDef f args body ret -> ["def " ++ unIdent f ++ "(" ++ intercalate ", " (map (\(x, t) -> unIdent x ++ ": " ++ formatType t) args) ++ ") -> " ++ formatType ret ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
+  ToplevelAssert e -> ["assert " ++ formatExpr e]
 
 formatProgram :: Program -> [String]
-formatProgram prog = concatMap formatToplevelDecl (decls prog)
+formatProgram prog = concatMap formatToplevelStatement prog
 
 run' :: Program -> String
 run' = unlines . makeIndentFromMarkers 4 . formatProgram

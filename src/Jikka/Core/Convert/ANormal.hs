@@ -15,7 +15,7 @@ module Jikka.Core.Convert.ANormal
 where
 
 import Control.Monad.Except
-import Jikka.Common.Alpha (MonadAlpha, evalAlpha')
+import Jikka.Common.Alpha (MonadAlpha, evalAlphaT)
 import Jikka.Common.Language.Name
 import Jikka.Core.Convert.Alpha (gensym)
 import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
@@ -83,7 +83,7 @@ runToplevelExpr env = \case
 
 run :: Program -> Either String Program
 run prog = do
-  prog <- evalAlpha' $ do
+  prog <- evalAlphaT 0 $ do
     prog <- Alpha.runProgram prog
     runToplevelExpr [] prog
   typecheckProgram' prog

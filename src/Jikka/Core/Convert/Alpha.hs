@@ -76,11 +76,11 @@ runProgram = runToplevelExpr []
 
 run' :: Program -> Int -> Either String (Program, Int)
 run' prog i = do
-  (prog, i) <- runAlpha i $ runProgram prog
+  (prog, i) <- runAlphaT i $ runProgram prog
   prog <- typecheckProgram' prog
   return (prog, i)
 
 run :: Program -> Either String Program
 run prog = do
-  (prog, _) <- runAlpha 0 $ runToplevelExpr [] prog
+  (prog, _) <- runAlphaT 0 $ runToplevelExpr [] prog
   typecheckProgram' prog
