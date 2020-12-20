@@ -13,6 +13,7 @@ import qualified Jikka.Core.Format as FormatCore
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse.Alex as PythonLexer
 import qualified Jikka.Python.Parse.Happy as PythonParser
+import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 import qualified Jikka.RestrictedPython.Format as FormatPython
@@ -41,6 +42,8 @@ run path = do
   put "parsed" $ show prog
   (prog, counter) <- runAlphaT counter $ ToRestrictedPython.run prog
   put "restricted" . unpack =<< liftEither' (FormatPython.run prog)
+  (prog, counter) <- runAlphaT counter $ Alpha.run prog
+  put "alpha" . unpack =<< liftEither' (FormatPython.run prog)
   prog <- liftEither' $ TypeInfer.run prog
   put "infered types" . unpack =<< liftEither' (FormatPython.run prog)
   prog <- liftEither' $ ToCore.run prog

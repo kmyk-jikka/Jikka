@@ -9,6 +9,7 @@ import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.Optimize as Optimize
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
+import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 
@@ -23,6 +24,7 @@ run path input = do
   let counter = 0
   prog <- FromPython.run path input
   (prog, counter) <- runAlphaT counter $ ToRestrictedPython.run prog
+  (prog, counter) <- runAlphaT counter $ Alpha.run prog
   prog <- lift' $ TypeInfer.run prog
   prog <- lift' $ ToCore.run prog
   prog <- lift' $ Optimize.run prog
