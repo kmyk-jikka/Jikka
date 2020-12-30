@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 -- |
 -- Module      : Jikka.Core.Convert.Optimize
 -- Description : is a meta module to combine other optimizers.
@@ -13,11 +15,13 @@ module Jikka.Core.Convert.Optimize
   )
 where
 
+import Jikka.Common.Alpha
+import Jikka.Common.Error
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import Jikka.Core.Language.Expr
 
-run :: Program -> Either String Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = do
   prog <- RemoveUnusedVars.run prog
   StrengthReduction.run prog

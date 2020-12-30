@@ -5,10 +5,15 @@ module Jikka.Core.Convert.AlphaSpec
   )
 where
 
+import Jikka.Common.Alpha
+import Jikka.Common.Error
 import Jikka.Core.Convert.Alpha (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
+
+run' :: Program -> Either Error Program
+run' = evalAlphaT 0 . run
 
 spec :: Spec
 spec = describe "run" $ do
@@ -39,4 +44,4 @@ spec = describe "run" $ do
                     (Var "x@1")
                 )
             )
-    run input `shouldBe` Right expected
+    run' input `shouldBe` Right expected

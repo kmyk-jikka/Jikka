@@ -17,10 +17,10 @@ module Jikka.CPlusPlus.Convert.FromCore
   )
 where
 
-import Control.Monad.Except
 import Data.Char (isAlphaNum)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import Jikka.Common.Alpha
+import Jikka.Common.Error
 import qualified Jikka.Common.Language.Name as X
 import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
@@ -43,31 +43,31 @@ renameVarName kind x = Y.VarName <$> newFreshName kind (X.unVarName x)
 
 type Env = [(X.VarName, X.Type, Y.VarName)]
 
-typecheckExpr :: MonadError String m => Env -> X.Expr -> m X.Type
+typecheckExpr :: MonadError Error m => Env -> X.Expr -> m X.Type
 typecheckExpr env = X.typecheckExpr (map (\(x, t, _) -> (x, t)) env)
 
-lookupVarName :: MonadError String m => Env -> X.VarName -> m Y.VarName
+lookupVarName :: MonadError Error m => Env -> X.VarName -> m Y.VarName
 lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
   Just y -> return y
-  Nothing -> throwError $ "CodeGen Error: undefined variable: " ++ show x
+  Nothing -> throwInternalError $ "undefined variable: " ++ show x
 
 --------------------------------------------------------------------------------
 -- run
 
-runType :: MonadError String m => X.Type -> m Y.Type
+runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
-  t@X.FunTy {} -> throwError $ "CodeGen Error: function type appears at invalid place: " ++ show t
+  t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ show t
 
-runLiteral :: MonadError String m => X.Literal -> m Y.Literal
+runLiteral :: MonadError Error m => X.Literal -> m Y.Literal
 runLiteral = \case
-  X.LitBuiltin builtin -> throwError $ "CodeGen Error: cannot use builtin functaions as values: " ++ show builtin
+  X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ show builtin
   X.LitInt n -> return $ Y.LitInt64 n
   X.LitBool p -> return $ Y.LitBool p
 
-runAppBuiltin :: MonadError String m => X.Builtin -> [Y.Expr] -> m Y.Expr
+runAppBuiltin :: MonadError Error m => X.Builtin -> [Y.Expr] -> m Y.Expr
 runAppBuiltin f args = case (f, args) of
   -- arithmetical functions
   (X.Negate, [e]) -> return $ Y.UnOp Y.Negate e
@@ -146,9 +146,9 @@ runAppBuiltin f args = case (f, args) of
   (X.Choose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::choose" []) [e1, e2]
   (X.Permute, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::permute" []) [e1, e2]
   (X.MultiChoose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::multiChoose" []) [e1, e2]
-  _ -> throwError "CodeGen Error: invalid builtin call"
+  _ -> throwInternalError "invalid builtin call"
 
-runExpr :: (MonadAlpha m, MonadError String m) => Env -> X.Expr -> m Y.Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
   X.Var x -> Y.Var <$> lookupVarName env x
   X.Lit lit -> Y.Lit <$> runLiteral lit
@@ -172,7 +172,7 @@ runExpr env = \case
     return $ Y.Lam args ret body
   X.Let x _ e1 e2 -> runExpr env $ X.substitute x e1 e2
 
-runExprToStatements :: (MonadAlpha m, MonadError String m) => Env -> X.Expr -> m [Y.Statement]
+runExprToStatements :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m [Y.Statement]
 runExprToStatements env = \case
   X.Let x t e1 e2 -> do
     y <- renameVarName "x" x
@@ -189,7 +189,7 @@ runExprToStatements env = \case
     e <- runExpr env e
     return [Y.Return e]
 
-runToplevelFunDef :: (MonadAlpha m, MonadError String m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
+runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelFunDef env f args ret body = do
   ret <- runType ret
   args <- forM args $ \(x, t) -> do
@@ -201,13 +201,13 @@ runToplevelFunDef env f args ret body = do
     return (t, y)
   return [Y.FunDef ret f args body]
 
-runToplevelVarDef :: (MonadAlpha m, MonadError String m) => Env -> Y.VarName -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
+runToplevelVarDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelVarDef env x t e = do
   t <- runType t
   e <- runExpr env e
   return [Y.VarDef t x e]
 
-runToplevelExpr :: (MonadAlpha m, MonadError String m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
+runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case
   X.ResultExpr e -> do
     t <- typecheckExpr env e
@@ -233,8 +233,8 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((f, t, g) : env) cont
     return $ stmt ++ cont
 
-runProgram :: (MonadAlpha m, MonadError String m) => X.Program -> m Y.Program
+runProgram :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 runProgram prog = Y.Program <$> runToplevelExpr [] prog
 
-run :: (MonadAlpha m, MonadError String m) => X.Program -> m Y.Program
+run :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 run = runProgram

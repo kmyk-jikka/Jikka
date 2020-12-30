@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 -- |
@@ -15,6 +16,7 @@ module Jikka.Core.Convert.RemoveUnusedVars
   )
 where
 
+import Jikka.Common.Error
 import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (typecheckProgram')
@@ -44,5 +46,5 @@ cleanToplevelExpr = \case
         cont' = cleanToplevelExpr cont
      in ToplevelLet rec' x args ret body' cont'
 
-run :: Program -> Either String Program
+run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . cleanToplevelExpr

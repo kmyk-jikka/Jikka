@@ -13,22 +13,15 @@ import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 
--- | TODO: remove this
-liftEither' :: Either String a -> ExceptT Error IO a
-liftEither' f = case f of
-  Left msg -> throwError (Error msg)
-  Right x -> return x
-
 run :: FilePath -> ExceptT Error IO ()
-run path = do
-  let counter = 0
+run path = evalAlphaT 0 $ do
   prog <- liftIO $ T.readFile path
   prog <- liftEither $ FromPython.run path prog
-  (prog, counter) <- runAlphaT counter $ ToRestrictedPython.run prog
-  (prog, _) <- runAlphaT counter $ Alpha.run prog
-  prog <- liftEither' $ TypeInfer.run prog
-  prog <- liftEither' $ ToCore.run prog
-  prog <- liftEither' $ Optimize.run prog
-  prog <- liftEither' $ MakeEager.run prog
+  prog <- ToRestrictedPython.run prog
+  prog <- Alpha.run prog
+  prog <- TypeInfer.run prog
+  prog <- ToCore.run prog
+  prog <- Optimize.run prog
+  prog <- MakeEager.run prog
   value <- Evaluator.run prog
-  liftIO . putStrLn $ show value
+  liftIO $ print value

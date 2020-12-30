@@ -13,21 +13,14 @@ import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 
--- | TODO: remove this
-lift' :: Either String a -> Either Error a
-lift' f = case f of
-  Left msg -> throwError (Error msg)
-  Right x -> return x
-
 run :: FilePath -> Text -> Either Error Text
-run path input = do
-  let counter = 0
+run path input = evalAlphaT 0 $ do
   prog <- FromPython.run path input
-  (prog, counter) <- runAlphaT counter $ ToRestrictedPython.run prog
-  (prog, counter) <- runAlphaT counter $ Alpha.run prog
-  prog <- lift' $ TypeInfer.run prog
-  prog <- lift' $ ToCore.run prog
-  prog <- lift' $ Optimize.run prog
-  prog <- lift' $ ANormal.run prog
-  (prog, _) <- lift' . runAlphaT counter $ FromCore.run prog
-  lift' $ FormatCPlusPlus.run prog
+  prog <- ToRestrictedPython.run prog
+  prog <- Alpha.run prog
+  prog <- TypeInfer.run prog
+  prog <- ToCore.run prog
+  prog <- Optimize.run prog
+  prog <- ANormal.run prog
+  prog <- FromCore.run prog
+  FormatCPlusPlus.run prog

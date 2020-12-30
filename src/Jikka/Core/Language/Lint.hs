@@ -13,7 +13,7 @@
 -- `Jikka.Core.Language.Lint` module checks the invariants of data types. Mainly, this checks types of `Expr`.
 module Jikka.Core.Language.Lint where
 
-import Control.Monad.Except
+import Jikka.Common.Error
 import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 
@@ -95,10 +95,10 @@ literalToType = \case
 type TypeEnv = [(VarName, Type)]
 
 -- | `typecheckExpr` checks that the given `Expr` has the correct types.
-typecheckExpr :: MonadError String m => TypeEnv -> Expr -> m Type
+typecheckExpr :: MonadError Error m => TypeEnv -> Expr -> m Type
 typecheckExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwError $ "Internal Error: undefined variable: " ++ show (unVarName x)
+    Nothing -> throwInternalError $ "undefined variable: " ++ show (unVarName x)
     Just t -> return t
   Lit lit -> return $ literalToType lit
   App e args -> do
@@ -106,15 +106,15 @@ typecheckExpr env = \case
     ts <- mapM (typecheckExpr env) args
     case t of
       FunTy ts' ret | ts' == ts -> return ret
-      _ -> throwError $ "Internal Error: invalid funcall: " ++ show (App e args, t, ts)
+      _ -> throwInternalError $ "invalid funcall: " ++ show (App e args, t, ts)
   Lam args e -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     if t == t'
       then typecheckExpr ((x, t) : env) e2
-      else throwError $ "Internal Error: wrong type binding: " ++ show (Let x t e1 e2)
+      else throwInternalError $ "wrong type binding: " ++ show (Let x t e1 e2)
 
-typecheckToplevelExpr :: MonadError String m => TypeEnv -> ToplevelExpr -> m Type
+typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckToplevelExpr env = \case
   ResultExpr e -> typecheckExpr env e
   ToplevelLet rec x args ret body cont -> do
@@ -124,13 +124,13 @@ typecheckToplevelExpr env = \case
     ret' <- case rec of
       NonRec -> typecheckExpr (reverse args ++ env) body
       Rec -> typecheckExpr (reverse args ++ (x, t) : env) body
-    if ret' == ret then return () else throwError "Internal Error: returned type is not corrent"
+    if ret' == ret then return () else throwInternalError "returned type is not corrent"
     typecheckToplevelExpr ((x, t) : env) cont
 
-typecheckProgram :: MonadError String m => Program -> m Type
+typecheckProgram :: MonadError Error m => Program -> m Type
 typecheckProgram = typecheckToplevelExpr []
 
-typecheckProgram' :: MonadError String m => Program -> m Program
+typecheckProgram' :: MonadError Error m => Program -> m Program
 typecheckProgram' prog = do
   typecheckProgram prog
   return prog

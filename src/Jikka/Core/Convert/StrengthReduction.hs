@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 -- |
@@ -16,6 +17,7 @@ module Jikka.Core.Convert.StrengthReduction
   )
 where
 
+import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (typecheckProgram')
@@ -223,5 +225,5 @@ weakenToplevelExpr e = case e of
   ResultExpr e -> ResultExpr $ weakenExpr e
   ToplevelLet rec x args ret body cont -> ToplevelLet rec x args ret (weakenExpr body) (weakenToplevelExpr cont)
 
-run :: Program -> Either String Program
+run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . weakenToplevelExpr

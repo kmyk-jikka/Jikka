@@ -14,8 +14,8 @@
 -- `Jikka.Language.Core.Alpha` renames variables in exprs to avoid name conflictions, even if the scopes of two variables are distinct.
 module Jikka.Core.Convert.Alpha where
 
-import Control.Monad.Except
 import Jikka.Common.Alpha
+import Jikka.Common.Error
 import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (typecheckProgram')
@@ -34,10 +34,10 @@ rename' hint i =
 -- -----------------------------------------------------------------------------
 -- run
 
-runExpr :: (MonadAlpha m, MonadError String m) => [(VarName, VarName)] -> Expr -> m Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
 runExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwError $ "Internal Error: undefined variable: " ++ show x
+    Nothing -> throwInternalError $ "undefined variable: " ++ show x
     Just y -> return $ Var y
   Lit lit -> return $ Lit lit
   App f args -> App <$> runExpr env f <*> mapM (runExpr env) args
@@ -55,7 +55,7 @@ runExpr env = \case
     e2 <- runExpr ((x, y) : env) e2
     return $ Let y t e1 e2
 
-runToplevelExpr :: (MonadAlpha m, MonadError String m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
+runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr <$> runExpr env e
   ToplevelLet rec f args ret body cont -> do
@@ -71,16 +71,10 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((f, g) : env) cont
     return $ ToplevelLet rec g args2 ret body cont
 
-runProgram :: (MonadAlpha m, MonadError String m) => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = runToplevelExpr []
 
-run' :: Program -> Int -> Either String (Program, Int)
-run' prog i = do
-  (prog, i) <- runAlphaT i $ runProgram prog
-  prog <- typecheckProgram' prog
-  return (prog, i)
-
-run :: Program -> Either String Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = do
-  (prog, _) <- runAlphaT 0 $ runToplevelExpr [] prog
+  prog <- runToplevelExpr [] prog
   typecheckProgram' prog

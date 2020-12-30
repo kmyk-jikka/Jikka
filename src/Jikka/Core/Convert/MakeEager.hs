@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 -- |
@@ -16,6 +17,7 @@ module Jikka.Core.Convert.MakeEager
   )
 where
 
+import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (typecheckProgram')
 
@@ -34,5 +36,5 @@ makeEagerToplevelExpr e = case e of
   ResultExpr e -> ResultExpr $ makeEagerExpr e
   ToplevelLet rec x args ret body cont -> ToplevelLet rec x args ret (makeEagerExpr body) (makeEagerToplevelExpr cont)
 
-run :: Program -> Either String Program
+run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . makeEagerToplevelExpr

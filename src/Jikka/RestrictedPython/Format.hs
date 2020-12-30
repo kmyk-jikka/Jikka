@@ -155,5 +155,5 @@ formatProgram prog = concatMap formatToplevelStatement prog
 run' :: Program -> String
 run' = unlines . makeIndentFromMarkers 4 . formatProgram
 
-run :: Program -> Either String Text
-run = Right . pack . run'
+run :: Applicative m => Program -> m Text
+run = pure . pack . run'

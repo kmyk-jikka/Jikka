@@ -8,11 +8,12 @@ where
 import Jikka.CPlusPlus.Convert.FromCore
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import Jikka.Common.Alpha
+import Jikka.Common.Error
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
 import Test.Hspec
 
-run' :: X.Program -> Either String Y.Program
+run' :: X.Program -> Either Error Y.Program
 run' = evalAlphaT 0 . run
 
 spec :: Spec

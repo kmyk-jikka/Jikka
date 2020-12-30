@@ -298,5 +298,5 @@ formatProgram prog = concatMap formatToplevelStatement (decls prog)
 run' :: Program -> String
 run' = unlines . makeIndentFromBraces 4 . formatProgram
 
-run :: Program -> Either String Text
-run = Right . pack . run'
+run :: Applicative m => Program -> m Text
+run = pure . pack . run'

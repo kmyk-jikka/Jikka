@@ -14,15 +14,15 @@ module Jikka.Core.Convert.ANormal
   )
 where
 
-import Control.Monad.Except
-import Jikka.Common.Alpha (MonadAlpha, evalAlphaT)
+import Jikka.Common.Alpha (MonadAlpha)
+import Jikka.Common.Error
 import Jikka.Common.Language.Name
 import Jikka.Core.Convert.Alpha (gensym)
 import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (TypeEnv, typecheckExpr, typecheckProgram')
 
-destruct :: (MonadAlpha m, MonadError String m) => TypeEnv -> Expr -> m (TypeEnv, Expr -> Expr, Expr)
+destruct :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m (TypeEnv, Expr -> Expr, Expr)
 destruct env = \case
   e@Var {} -> return (env, id, e)
   e@Lit {} -> return (env, id, e)
@@ -39,10 +39,10 @@ destruct env = \case
     (env, ctx', e2) <- destruct ((x, t) : env) e2
     return (env, ctx . Let x t e1 . ctx', e2)
 
-runApp :: (MonadAlpha m, MonadError String m) => TypeEnv -> Expr -> [Expr] -> m Expr
+runApp :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> [Expr] -> m Expr
 runApp env f args = go env id args
   where
-    go :: (MonadAlpha m, MonadError String m) => [(VarName, Type)] -> ([Expr] -> [Expr]) -> [Expr] -> m Expr
+    go :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ([Expr] -> [Expr]) -> [Expr] -> m Expr
     go env acc [] = do
       (_, ctx, f) <- destruct env f
       return $ ctx (App f (acc []))
@@ -51,7 +51,7 @@ runApp env f args = go env id args
       e <- go env (acc . (arg :)) args
       return $ ctx e
 
-runExpr :: (MonadAlpha m, MonadError String m) => TypeEnv -> Expr -> m Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m Expr
 runExpr env = \case
   Var x -> return $ Var x
   Lit lit -> return $ Lit lit
@@ -70,7 +70,7 @@ runExpr env = \case
     e2 <- runExpr ((x, t) : env) e2
     return $ ctx (Let x t e1 e2)
 
-runToplevelExpr :: (MonadAlpha m, MonadError String m) => TypeEnv -> ToplevelExpr -> m ToplevelExpr
+runToplevelExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr <$> runExpr env e
   ToplevelLet rec f args ret body cont -> do
@@ -81,9 +81,8 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((f, t) : env) cont
     return $ ToplevelLet rec f args ret body cont
 
-run :: Program -> Either String Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = do
-  prog <- evalAlphaT 0 $ do
-    prog <- Alpha.runProgram prog
-    runToplevelExpr [] prog
+  prog <- Alpha.runProgram prog
+  prog <- runToplevelExpr [] prog
   typecheckProgram' prog
