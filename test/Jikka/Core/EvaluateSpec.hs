@@ -1,6 +1,5 @@
 module Jikka.Core.EvaluateSpec (spec) where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Evaluate (Token (..), Value (..), run')
 import Jikka.Core.Language.Expr
 import Test.Hspec

@@ -29,7 +29,6 @@ import qualified Data.Array as A
 import Data.Bits
 import Data.List (sort)
 import Jikka.Common.Error
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (builtinToType)
 import Text.Read (readEither)

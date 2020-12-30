@@ -5,7 +5,6 @@ module Jikka.Core.Language.BetaSpec
   )
 where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Beta
 import Jikka.Core.Language.Expr
 import Test.Hspec

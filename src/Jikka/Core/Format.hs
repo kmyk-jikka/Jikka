@@ -19,7 +19,6 @@ where
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 
 paren :: String -> String

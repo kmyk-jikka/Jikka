@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -15,7 +16,12 @@
 -- They are similar to the GHC Core language.
 module Jikka.Core.Language.Expr where
 
-import Jikka.Common.Language.Name
+import Data.String (IsString)
+
+newtype VarName = VarName String deriving (Eq, Ord, Show, Read, IsString)
+
+unVarName :: VarName -> String
+unVarName (VarName name) = name
 
 -- | `Type` represents the types of our core language. This is similar to the `Type` of GHC Core.
 -- See also [commentary/compiler/type-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/type-type).

@@ -14,7 +14,6 @@
 module Jikka.Core.Language.Lint where
 
 import Jikka.Common.Error
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 
 builtinToType :: Builtin -> Type

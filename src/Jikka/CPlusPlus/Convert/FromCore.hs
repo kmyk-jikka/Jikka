@@ -21,7 +21,6 @@ import Data.Char (isAlphaNum)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Common.Language.Name as X
 import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X

@@ -1,6 +1,5 @@
 module Jikka.Core.Convert.StrengthReductionSpec (spec) where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Convert.StrengthReduction (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr

@@ -3,7 +3,6 @@ module Jikka.Core.FormatSpec
   )
 where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Format
 import Jikka.Core.Language.Expr
 import Test.Hspec

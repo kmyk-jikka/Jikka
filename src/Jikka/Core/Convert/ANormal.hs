@@ -16,7 +16,6 @@ where
 
 import Jikka.Common.Alpha (MonadAlpha)
 import Jikka.Common.Error
-import Jikka.Common.Language.Name
 import Jikka.Core.Convert.Alpha (gensym)
 import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
 import Jikka.Core.Language.Expr

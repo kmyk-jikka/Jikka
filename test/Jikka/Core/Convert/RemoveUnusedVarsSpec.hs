@@ -1,6 +1,5 @@
 module Jikka.Core.Convert.RemoveUnusedVarsSpec (spec) where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Convert.RemoveUnusedVars (run)
 import Jikka.Core.Language.Expr
 import Test.Hspec

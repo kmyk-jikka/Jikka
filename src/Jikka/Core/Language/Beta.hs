@@ -14,7 +14,6 @@ module Jikka.Core.Language.Beta
   )
 where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Vars
 

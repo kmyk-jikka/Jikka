@@ -10,7 +10,6 @@
 -- Portability : portable
 module Jikka.Core.Language.Vars where
 
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 
 -- | `isFreeVar` checks if the given variable occurs in the tiven expr. This considers contexts.

@@ -17,7 +17,6 @@ module Jikka.Core.Convert.RemoveUnusedVars
 where
 
 import Jikka.Common.Error
-import Jikka.Common.Language.Name
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (typecheckProgram')
 import Jikka.Core.Language.Vars (isUnusedVar)
