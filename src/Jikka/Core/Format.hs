@@ -26,9 +26,11 @@ paren s = "(" ++ s ++ ")"
 
 formatType :: Type -> String
 formatType = \case
+  VarTy (TypeName a) -> a
   IntTy -> "int"
   BoolTy -> "bool"
   ListTy t -> formatType t ++ " list"
+  TupleTy ts -> paren $ intercalate " * " (map formatType ts)
   FunTy ts ret -> paren $ intercalate " * " (map formatType ts) ++ " -> " ++ formatType ret
 
 data Builtin'

@@ -23,22 +23,31 @@ newtype VarName = VarName String deriving (Eq, Ord, Show, Read, IsString)
 unVarName :: VarName -> String
 unVarName (VarName name) = name
 
+newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, IsString)
+
+unTypeName :: TypeName -> String
+unTypeName (TypeName name) = name
+
 -- | `Type` represents the types of our core language. This is similar to the `Type` of GHC Core.
 -- See also [commentary/compiler/type-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/type-type).
 --
 -- \[
 --     \begin{array}{rl}
---         \tau ::= & \mathbf{int} \\
+--         \tau ::= & \alpha \\
+--         \vert & \mathbf{int} \\
 --         \vert & \mathbf{bool} \\
 --         \vert & \mathbf{list}(\tau) \\
+--         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1}
 --         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \to \tau_n
 --     \end{array}
 -- \]
 data Type
-  = IntTy
+  = VarTy TypeName
+  | IntTy
   | BoolTy
   | ListTy Type
-  | -- | The functions are not curried.
+  | TupleTy [Type]
+  | -- | The functions are not curried. TODO: currying?
     FunTy [Type] Type
   deriving (Eq, Ord, Show, Read)
 

@@ -55,9 +55,11 @@ lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ show t
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
+  X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
   t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ show t
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Literal

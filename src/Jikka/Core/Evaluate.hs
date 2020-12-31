@@ -25,6 +25,7 @@ module Jikka.Core.Evaluate
 where
 
 import Control.Monad.Except
+import Control.Monad.State.Strict
 import qualified Data.Array as A
 import Data.Bits
 import Data.List (sort)
@@ -40,6 +41,7 @@ data Value
   = ValInt Integer
   | ValBool Bool
   | ValList (A.Array Int Value)
+  | ValTuple [Value]
   | ValBuiltin Builtin
   | ValLambda Env [(VarName, Type)] Expr
   deriving (Eq, Ord, Show, Read)
@@ -100,7 +102,7 @@ readInputMap ts tokens = case ts of
 
 readInput :: MonadError Error m => Type -> [Token] -> m (Value, [Token])
 readInput t tokens = case (t, tokens) of
-  (_, []) -> throwWrongInputError "it reaches EOF"
+  (VarTy a, _) -> throwInternalError $ "input type is undetermined: " ++ show a
   (IntTy, token : tokens) -> do
     n <- readToken token
     return (ValInt n, tokens)
@@ -112,7 +114,13 @@ readInput t tokens = case (t, tokens) of
     (a, tokens) <- readInputList t n tokens
     let a' = A.listArray (0, n - 1) a
     return (ValList a', tokens)
+  (TupleTy ts, _) -> do
+    let readInput' :: MonadError Error m => Type -> StateT [Token] m Value
+        readInput' t = StateT (readInput t)
+    (values, tokens) <- runStateT (mapM readInput' ts) tokens
+    return (ValTuple values, tokens)
   (FunTy _ _, _) -> throwWrongInputError "we cannot use functions as inputs"
+  (_, []) -> throwWrongInputError "it reaches EOF"
 
 -- -----------------------------------------------------------------------------
 -- builtins
