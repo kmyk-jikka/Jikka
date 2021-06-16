@@ -30,13 +30,13 @@ runIdent (WithLoc _ (X.Ident x)) = Y.Ident x
 runType :: (MonadAlpha m, MonadError Error m) => X.Type' -> m Y.Type
 runType t = wrapAt (loc t) $ case value t of
   X.Constant (X.ConstString _) -> genType
-  X.Name (WithLoc _ (X.Ident "None")) -> return Y.NoneTy
+  X.Name (WithLoc _ (X.Ident "None")) -> return $ Y.TupleTy []
   X.Name (WithLoc _ (X.Ident "int")) -> return Y.IntTy
   X.Name (WithLoc _ (X.Ident "bool")) -> return Y.BoolTy
   X.Subscript (WithLoc _ (X.Name (WithLoc _ (X.Ident f)))) e -> case (f, e) of
     ("List", _) -> Y.ListTy <$> runType e
-    ("Iterator", _) -> Y.IteratorTy <$> runType e
-    ("Sequence", _) -> Y.SequenceTy <$> runType e
+    ("Iterator", _) -> Y.ListTy <$> runType e
+    ("Sequence", _) -> Y.ListTy <$> runType e
     ("Tuple", WithLoc _ (X.Tuple es)) -> Y.TupleTy <$> mapM runType es
     ("Tuple", _) -> Y.TupleTy . (: []) <$> runType e
     ("Callable", WithLoc _ (X.Tuple [WithLoc _ (X.List es), e])) -> do

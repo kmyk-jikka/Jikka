@@ -108,14 +108,14 @@ spec = describe "run" $ do
     let parsed =
           [ ToplevelAnnAssign
               "a"
-              (IteratorTy IntTy)
+              (ListTy IntTy)
               ( ListComp
                   IntTy
                   (Constant (ConstInt 0))
                   ( Comprehension
                       (NameTrg "_")
                       IntTy
-                      (Call (IteratorTy IntTy) (Name "range") [Constant (ConstInt 10)])
+                      (Call (ListTy IntTy) (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )
               )
@@ -123,14 +123,14 @@ spec = describe "run" $ do
     let expected =
           [ ToplevelAnnAssign
               "a$0"
-              (IteratorTy IntTy)
+              (ListTy IntTy)
               ( ListComp
                   IntTy
                   (Constant (ConstInt 0))
                   ( Comprehension
                       (NameTrg "$1")
                       IntTy
-                      (Call (IteratorTy IntTy) (Name "range") [Constant (ConstInt 10)])
+                      (Call (ListTy IntTy) (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )
               )

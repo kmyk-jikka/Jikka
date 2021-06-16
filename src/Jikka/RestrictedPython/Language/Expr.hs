@@ -39,24 +39,20 @@ unIdent (Ident x) = x
 -- \[
 --     \begin{array}{rl}
 --         \tau ::= & \alpha \\
---         \vert & \mathbf{None} \\
 --         \vert & \mathbf{int} \\
 --         \vert & \mathbf{bool} \\
---         \vert & \mathbf{List}\lbrack\tau\rbrack \\
---         \vert & \mathbf{Iterator}\lbrack\tau\rbrack \\
---         \vert & \mathbf{Sequence}\lbrack\tau\rbrack \\
+--         \vert & \mathbf{list}(\tau) \\
 --         \vert & \tau \times \tau \times \dots \times \tau \\
 --         \vert & \tau \times \tau \times \dots \times \tau \to \tau
 --     \end{array}
 -- \]
+--
+-- NOTE: \(\mathbf{None}\) is represented as the 0-tuple.
 data Type
   = VarTy Ident
-  | NoneTy
   | IntTy
   | BoolTy
   | ListTy Type
-  | IteratorTy Type
-  | SequenceTy Type
   | TupleTy [Type]
   | CallableTy [Type] Type
   deriving (Eq, Ord, Show, Read)

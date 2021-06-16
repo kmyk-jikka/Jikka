@@ -24,12 +24,10 @@ import Jikka.RestrictedPython.Language.Expr
 formatType :: Type -> String
 formatType t = case t of
   VarTy x -> unIdent x
-  NoneTy -> "None"
   IntTy -> "int"
   BoolTy -> "bool"
   ListTy t -> "List[" ++ formatType t ++ "]"
-  SequenceTy t -> "Sequence[" ++ formatType t ++ "]"
-  IteratorTy t -> "Iterator[" ++ formatType t ++ "]"
+  TupleTy [] -> "None"
   TupleTy ts -> "Tuple[" ++ intercalate ", " (map formatType ts) ++ "]"
   CallableTy ts ret -> "Callable[[" ++ intercalate ", " (map formatType ts) ++ "], " ++ formatType ret ++ "]"
 
