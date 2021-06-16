@@ -159,7 +159,9 @@ data Operator
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp
+  -- | on int
   = Invert
+  -- | on bool
   | Not
   | UAdd
   | USub
