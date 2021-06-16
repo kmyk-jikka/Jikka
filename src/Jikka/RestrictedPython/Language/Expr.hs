@@ -64,21 +64,22 @@ data Constant
   deriving (Eq, Ord, Show, Read)
 
 -- | `Target` represents the lvalue of our restricted Python-like language.
+-- All variables in `Target` are annotated by their types.
 --
 -- \[
 --     \begin{array}{rl}
---         y ::= & x \lbrack e \rbrack \lbrack e \rbrack \dots \lbrack e \rbrack _ \tau \\
---         \vert & x \\
+--         y ::= & x _ \tau \lbrack e \rbrack \lbrack e \rbrack \dots \lbrack e \rbrack \\
+--         \vert & x _ \tau \\
 --         \vert & (x _ \tau, x _ \tau, \dots,  x _ \tau) \\
 --     \end{array}
 -- \]
 data Target
-  = SubscriptTrg Type Ident [Expr]
-  | NameTrg Ident
+  = SubscriptTrg Ident Type [Expr]
+  | NameTrg Ident Type
   | TupleTrg [(Ident, Type)]
   deriving (Eq, Ord, Show, Read)
 
-data Comprehension = Comprehension Target Type Expr (Maybe Expr)
+data Comprehension = Comprehension Target Expr (Maybe Expr)
   deriving (Eq, Ord, Show, Read)
 
 -- | `Expr` represents the exprs of our restricted Python-like language.
@@ -88,32 +89,32 @@ data Comprehension = Comprehension Target Type Expr (Maybe Expr)
 --         e ::= & e \operatorname{boolop} e \\
 --         \vert & e \operatorname{binop} e \\
 --         \vert & \operatorname{unaryop} e \\
---         \vert & \mathbf{if} _ \tau~ e ~\mathbf{then}~ e ~\mathbf{else}~ e \\
---         \vert & \lbrack e ~\mathbf{for}~ y _ \tau ~\mathbf{in}~ e ~(\mathbf{if}~ e)? \rbrack _ \tau \\
+--         \vert & \mathbf{if}~ e ~\mathbf{then}~ e ~\mathbf{else}~ e \\
+--         \vert & \lbrack e ~\mathbf{for}~ y ~\mathbf{in}~ e ~(\mathbf{if}~ e)? \rbrack \\
 --         \vert & e \operatorname{cmpop} e \\
---         \vert & e (e, e, \dots, e) _ \tau \\
+--         \vert & e (e, e, \dots, e) \\
 --         \vert & \operatorname{constant} \\
---         \vert & e \lbrack e \rbrack _ \tau \\
+--         \vert & e \lbrack e \rbrack \\
 --         \vert & x \\
 --         \vert & \lbrack e, e, \dots, e \rbrack _ \tau \\
---         \vert & e \lbrack e? \colon e? \colon e? \rbrack _ \tau \\
+--         \vert & e \lbrack e? \colon e? \colon e? \rbrack \\
 --     \end{array}
 -- \]
 data Expr
   = BoolOp Expr BoolOp Expr
   | BinOp Expr Operator Expr
   | UnaryOp UnaryOp Expr
-  | Lambda [(Ident, Type)] Type Expr
-  | IfExp Type Expr Expr Expr
-  | ListComp Type Expr Comprehension
+  | Lambda [(Ident, Type)] Expr
+  | IfExp Expr Expr Expr
+  | ListComp Expr Comprehension
   | Compare Expr CmpOp Expr
-  | Call Type Expr [Expr]
+  | Call Expr [Expr]
   | Constant Constant
-  | Subscript Type Expr Expr
+  | Subscript Expr Expr
   | Name Ident
   | List Type [Expr]
-  | Tuple [(Expr, Type)]
-  | SubscriptSlice Type Expr (Maybe Expr) (Maybe Expr) (Maybe Expr)
+  | Tuple [Expr]
+  | SubscriptSlice Expr (Maybe Expr) (Maybe Expr) (Maybe Expr)
   deriving (Eq, Ord, Show, Read)
 
 -- | `Statement` represents the statements of our restricted Python-like language.
@@ -123,8 +124,8 @@ data Expr
 --     \begin{array}{rl}
 --         \mathrm{stmt} ::= & \mathbf{return}~ e \\
 --         \vert & y \operatorname{binop} = e \\
---         \vert & y = _ \tau e \\
---         \vert & \mathbf{for}~ y _ \tau ~\mathbf{in}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt} \\
+--         \vert & y := e \\
+--         \vert & \mathbf{for}~ y ~\mathbf{in}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt} \\
 --         \vert & \mathbf{if}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt};\quad \mathbf{else}\colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt} \\
 --         \vert & \mathbf{assert}~ e \\
 --     \end{array}
@@ -132,8 +133,8 @@ data Expr
 data Statement
   = Return Expr
   | AugAssign Target Operator Expr
-  | AnnAssign Target Type Expr
-  | For Target Type Expr [Statement]
+  | AnnAssign Target Expr
+  | For Target Expr [Statement]
   | If Expr [Statement] [Statement]
   | Assert Expr
   deriving (Eq, Ord, Show, Read)
@@ -143,14 +144,14 @@ data Statement
 --
 -- \[
 --     \begin{array}{rl}
---         \mathrm{tlstmt} ::= & x = _ \tau e \\
+--         \mathrm{tlstmt} ::= & x _ \tau := e \\
 --         \vert & \mathbf{def}~ x (x _ \tau, x _ \tau, \dots, x _ \tau) \to \tau \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt} \\
 --         \vert & \mathbf{assert}~ e \\
 --     \end{array}
 -- \]
 data ToplevelStatement
   = ToplevelAnnAssign Ident Type Expr
-  | ToplevelFunctionDef Ident [(Ident, Type)] [Statement] Type
+  | ToplevelFunctionDef Ident [(Ident, Type)] Type [Statement]
   | ToplevelAssert Expr
   deriving (Eq, Ord, Show, Read)
 

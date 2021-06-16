@@ -35,13 +35,13 @@ lookup' x env = case lookup x env of
 
 runTarget :: (MonadAlpha m, MonadError Error m) => Env -> Target -> m (Target, Env)
 runTarget env = \case
-  SubscriptTrg t x indices -> do
+  SubscriptTrg x t indices -> do
     x <- lookup' x env
     indices <- mapM (runExpr env) indices
-    return (SubscriptTrg t x indices, env)
-  NameTrg x -> do
+    return (SubscriptTrg x t indices, env)
+  NameTrg x t -> do
     y <- rename x
-    return (NameTrg y, push x y env)
+    return (NameTrg y t, push x y env)
   TupleTrg xs -> do
     xs <- forM xs $ \(x, t) -> do
       y <- rename x
@@ -55,45 +55,41 @@ runExpr env = \case
   BoolOp e1 op e2 -> BoolOp <$> runExpr env e1 <*> return op <*> runExpr env e2
   BinOp e1 op e2 -> BinOp <$> runExpr env e1 <*> return op <*> runExpr env e2
   UnaryOp op e -> UnaryOp op <$> runExpr env e
-  Lambda args ret body -> do
+  Lambda args body -> do
     args <- forM args $ \(x, t) -> do
       y <- rename x
       return (x, y, t)
     let env' = push' args env
     let args' = map (\(_, y, t) -> (y, t)) args
     body <- runExpr env' body
-    return $ Lambda args' ret body
-  IfExp t e1 e2 e3 -> do
+    return $ Lambda args' body
+  IfExp e1 e2 e3 -> do
     e1 <- runExpr env e1
     e2 <- runExpr env e2
     e3 <- runExpr env e3
-    return $ IfExp t e1 e2 e3
-  ListComp t e (Comprehension x t' iter ifs) -> do
+    return $ IfExp e1 e2 e3
+  ListComp e (Comprehension x iter ifs) -> do
     iter <- runExpr env iter
     (y, env) <- runTarget env x
     ifs <- mapM (runExpr env) ifs
     e <- runExpr env e
-    return $ ListComp t e (Comprehension y t' iter ifs)
+    return $ ListComp e (Comprehension y iter ifs)
   Compare e1 op e2 -> Compare <$> runExpr env e1 <*> return op <*> runExpr env e2
-  Call t f args -> do
+  Call f args -> do
     f <- runExpr env f
     args <- mapM (runExpr env) args
-    return $ Call t f args
+    return $ Call f args
   Constant const -> return $ Constant const
-  Subscript t e1 e2 -> Subscript t <$> runExpr env e1 <*> runExpr env e2
+  Subscript e1 e2 -> Subscript <$> runExpr env e1 <*> runExpr env e2
   Name x -> Name <$> lookup' x env
   List t es -> List t <$> mapM (runExpr env) es
-  Tuple es -> do
-    es <- forM es $ \(e, t) -> do
-      e <- runExpr env e
-      return (e, t)
-    return $ Tuple es
-  SubscriptSlice t e from to step -> do
+  Tuple es -> Tuple <$> mapM (runExpr env) es
+  SubscriptSlice e from to step -> do
     e <- runExpr env e
     from <- mapM (runExpr env) from
     to <- mapM (runExpr env) to
     step <- mapM (runExpr env) step
-    return $ SubscriptSlice t e from to step
+    return $ SubscriptSlice e from to step
 
 runStatement :: (MonadAlpha m, MonadError Error m) => Env -> Statement -> m (Statement, Env)
 runStatement env = \case
@@ -104,15 +100,15 @@ runStatement env = \case
     e <- runExpr env e
     (x, env) <- runTarget env x
     return (AugAssign x op e, env)
-  AnnAssign x t e -> do
+  AnnAssign x e -> do
     e <- runExpr env e
     (x, env) <- runTarget env x
-    return (AnnAssign x t e, env)
-  For x t e body -> do
+    return (AnnAssign x e, env)
+  For x e body -> do
     (y, env) <- runTarget env x
     e <- runExpr env e
     (body, _) <- runStatements env body
-    return (For y t e body, env)
+    return (For y e body, env)
   If e body1 body2 -> do
     e <- runExpr env e
     (body1, _) <- runStatements env body1
@@ -147,7 +143,7 @@ runToplevelStatement env = \case
     let env' = push x y env
     e <- runExpr env' e
     return (ToplevelAnnAssign y t e, env')
-  ToplevelFunctionDef f args body ret -> do
+  ToplevelFunctionDef f args ret body -> do
     g <- rename f
     let env' = push f g env
     args <- forM args $ \(x, t) -> do
@@ -156,7 +152,7 @@ runToplevelStatement env = \case
     let args' = map (\(_, y, t) -> (y, t)) args
     let env'' = push' args env'
     (body, _) <- runStatements env'' body
-    return (ToplevelFunctionDef g args' body ret, env')
+    return (ToplevelFunctionDef g args' ret body, env')
   ToplevelAssert e -> do
     e <- runExpr env e
     return (ToplevelAssert e, env)

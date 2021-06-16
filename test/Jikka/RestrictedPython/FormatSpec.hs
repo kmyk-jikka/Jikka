@@ -16,9 +16,9 @@ spec = describe "run" $ do
           [ ToplevelFunctionDef
               "solve$0"
               [("x$1", IntTy)]
+              (VarTy "t$1")
               [ Return (UnaryOp USub (Name "x$1"))
               ]
-              (VarTy "t$1")
           ]
     let formatted =
           unlines

@@ -76,8 +76,8 @@ runTarget e = case value e of
   X.Subscript _ _ -> do
     t <- genType
     (x, indices) <- runTargetSubscript e
-    return $ Y.SubscriptTrg t x indices
-  X.Name _ -> Y.NameTrg <$> runTargetName e
+    return $ Y.SubscriptTrg x t indices
+  X.Name _ -> Y.NameTrg <$> runTargetName e <*> genType
   X.Tuple es -> do
     xs <- forM es $ \e -> do
       x <- runTargetName e
@@ -85,6 +85,11 @@ runTarget e = case value e of
       return (x, t)
     return $ Y.TupleTrg xs
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
+
+runTargetWithAnnotation :: (MonadAlpha m, MonadError Error m) => X.Expr' -> X.Type' -> m Y.Target
+runTargetWithAnnotation e t = case value e of
+  X.Name _ -> Y.NameTrg <$> runTargetName e <*> runType t
+  _ -> throwSemanticErrorAt (loc e) ("The target of an annotated assignment should be a variable: " ++ show e)
 
 runTargetIdent :: MonadError Error m => X.Expr' -> m Y.Ident
 runTargetIdent e = case value e of
@@ -95,10 +100,9 @@ runComprehension :: (MonadAlpha m, MonadError Error m) => [X.Comprehension] -> m
 runComprehension = \case
   [comp] -> do
     x <- runTarget (X.compTarget comp)
-    t <- genType
     iter <- runExpr (X.compIter comp)
     ifs <- mapM runExpr (X.compIfs comp)
-    return $ Y.Comprehension x t iter ifs
+    return $ Y.Comprehension x iter ifs
   comp -> throwSemanticError ("many comprehensions are unsupported: " ++ show comp)
 
 runArguments :: (MonadAlpha m, MonadError Error m) => X.Arguments -> m [(Y.Ident, Y.Type)]
@@ -135,24 +139,19 @@ runExpr e = case value e of
   X.BoolOp e1 op e2 -> Y.BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
   X.BinOp e1 op e2 -> Y.BinOp <$> runExpr e1 <*> return op <*> runExpr e2
   X.UnaryOp op e -> Y.UnaryOp op <$> runExpr e
-  X.Lambda args body -> Y.Lambda <$> runArguments args <*> genType <*> runExpr body
-  X.IfExp e1 e2 e3 -> Y.IfExp <$> genType <*> runExpr e1 <*> runExpr e2 <*> runExpr e3
-  X.ListComp e comp -> Y.ListComp <$> genType <*> runExpr e <*> runComprehension comp
-  X.GeneratorExp e comp -> Y.ListComp <$> genType <*> runExpr e <*> runComprehension comp
+  X.Lambda args body -> Y.Lambda <$> runArguments args <*> runExpr body
+  X.IfExp e1 e2 e3 -> Y.IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
+  X.ListComp e comp -> Y.ListComp <$> runExpr e <*> runComprehension comp
+  X.GeneratorExp e comp -> Y.ListComp <$> runExpr e <*> runComprehension comp
   X.Compare e1 e2 -> runCompareExpr e1 e2
-  X.Call f args [] -> Y.Call <$> genType <*> runExpr f <*> mapM runExpr args
+  X.Call f args [] -> Y.Call <$> runExpr f <*> mapM runExpr args
   X.Constant const -> Y.Constant <$> runConstant const
   X.Subscript e1 e2 -> case value e2 of
-    X.Slice from to step -> Y.SubscriptSlice <$> genType <*> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
-    _ -> Y.Subscript <$> genType <*> runExpr e1 <*> runExpr e2
+    X.Slice from to step -> Y.SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
+    _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2
   X.Name x -> return $ Y.Name (runIdent x)
   X.List es -> Y.List <$> genType <*> mapM runExpr es
-  X.Tuple es -> do
-    es <- forM es $ \e -> do
-      e <- runExpr e
-      t <- genType
-      return (e, t)
-    return $ Y.Tuple es
+  X.Tuple es -> Y.Tuple <$> mapM runExpr es
   _ -> throwSemanticErrorAt (loc e) ("unsupported expr: " ++ show e)
 
 runStatement :: (MonadAlpha m, MonadError Error m) => X.Statement' -> m [Y.Statement]
@@ -170,9 +169,8 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
     [] -> return []
     [x] -> do
       x <- runTarget x
-      t <- genType
       e <- runExpr e
-      return [Y.AnnAssign x t e]
+      return [Y.AnnAssign x e]
     _ -> throwSemanticError "assign statement with multiple targets is not allowed in def statement"
   X.AugAssign x op e -> do
     x <- runTarget x
@@ -181,17 +179,15 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.AnnAssign x t e -> case e of
     Nothing -> throwSemanticError "annotated assignment statement without value is not allowed in def statement"
     Just e -> do
-      x <- runTarget x
-      t <- runType t
+      x <- runTargetWithAnnotation x t
       e <- runExpr e
-      return [Y.AnnAssign x t e]
+      return [Y.AnnAssign x e]
   X.For x e body orelse -> do
     x <- runTarget x
-    t <- genType
     e <- runExpr e
     body <- runStatements body
     orelse <- runStatements orelse
-    return $ Y.For x t e body : orelse
+    return $ Y.For x e body : orelse
   X.AsyncFor _ _ _ _ -> throwSemanticError "async-for statement is not allowed in def statement"
   X.While _ _ _ -> throwSemanticError "while statement is not allowed in def statement"
   X.If e body1 body2 -> do
@@ -228,7 +224,7 @@ runToplevelStatement stmt = wrapAt (loc stmt) $ case value stmt of
       args <- runArguments args
       body <- runStatements body
       ret <- runMaybeType ret
-      return [Y.ToplevelFunctionDef f' args body ret]
+      return [Y.ToplevelFunctionDef f' args ret body]
     _ -> throwSemanticError "def statement with decorators is not allowed at toplevel"
   X.AsyncFunctionDef _ _ _ _ _ -> throwSemanticError "async-def statement is not allowed at toplevel"
   X.ClassDef _ _ _ _ _ -> throwSemanticError "class statement is not allowed at toplevel"

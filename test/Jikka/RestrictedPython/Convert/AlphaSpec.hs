@@ -21,17 +21,17 @@ spec = describe "run" $ do
           [ ToplevelFunctionDef
               "solve"
               [("x", IntTy)]
-              [ AnnAssign (NameTrg "y") IntTy (Name "x")
-              ]
               IntTy
+              [ AnnAssign (NameTrg "y" IntTy) (Name "x")
+              ]
           ]
     let expected =
           [ ToplevelFunctionDef
               "solve$0"
               [("x$1", IntTy)]
-              [ AnnAssign (NameTrg "y$2") IntTy (Name "x$1")
-              ]
               IntTy
+              [ AnnAssign (NameTrg "y$2" IntTy) (Name "x$1")
+              ]
           ]
     run' parsed `shouldBe` Right expected
   it "distinguishes local variables in two diffrent functions" $ do
@@ -39,29 +39,29 @@ spec = describe "run" $ do
           [ ToplevelFunctionDef
               "foo"
               [("x", IntTy)]
-              [ AnnAssign (NameTrg "y") IntTy (Name "x")
-              ]
-              IntTy,
+              IntTy
+              [ AnnAssign (NameTrg "y" IntTy) (Name "x")
+              ],
             ToplevelFunctionDef
               "bar"
               [("x", IntTy)]
-              [ AnnAssign (NameTrg "y") IntTy (Name "x")
-              ]
               IntTy
+              [ AnnAssign (NameTrg "y" IntTy) (Name "x")
+              ]
           ]
     let expected =
           [ ToplevelFunctionDef
               "foo$0"
               [("x$1", IntTy)]
-              [ AnnAssign (NameTrg "y$2") IntTy (Name "x$1")
-              ]
-              IntTy,
+              IntTy
+              [ AnnAssign (NameTrg "y$2" IntTy) (Name "x$1")
+              ],
             ToplevelFunctionDef
               "bar$3"
               [("x$4", IntTy)]
-              [ AnnAssign (NameTrg "y$5") IntTy (Name "x$4")
-              ]
               IntTy
+              [ AnnAssign (NameTrg "y$5" IntTy) (Name "x$4")
+              ]
           ]
     run' parsed `shouldBe` Right expected
   it "distinguishes variables in two diffrent for-loops" $ do
@@ -69,39 +69,35 @@ spec = describe "run" $ do
           [ ToplevelFunctionDef
               "solve"
               []
+              IntTy
               [ For
-                  (NameTrg "i")
-                  IntTy
+                  (NameTrg "i" IntTy)
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x") IntTy (Name "i")
+                  [ AnnAssign (NameTrg "x" IntTy) (Name "i")
                   ],
                 For
-                  (NameTrg "i")
-                  IntTy
+                  (NameTrg "i" IntTy)
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x") IntTy (Name "i")
+                  [ AnnAssign (NameTrg "x" IntTy) (Name "i")
                   ]
               ]
-              IntTy
           ]
     let expected =
           [ ToplevelFunctionDef
               "solve$0"
               []
+              IntTy
               [ For
-                  (NameTrg "i$1")
-                  IntTy
+                  (NameTrg "i$1" IntTy)
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$2") IntTy (Name "i$1")
+                  [ AnnAssign (NameTrg "x$2" IntTy) (Name "i$1")
                   ],
                 For
-                  (NameTrg "i$3")
-                  IntTy
+                  (NameTrg "i$3" IntTy)
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$4") IntTy (Name "i$3")
+                  [ AnnAssign (NameTrg "x$4" IntTy) (Name "i$3")
                   ]
               ]
-              IntTy
           ]
     run' parsed `shouldBe` Right expected
   it "removes underscoes" $ do
@@ -110,12 +106,10 @@ spec = describe "run" $ do
               "a"
               (ListTy IntTy)
               ( ListComp
-                  IntTy
                   (Constant (ConstInt 0))
                   ( Comprehension
-                      (NameTrg "_")
-                      IntTy
-                      (Call (ListTy IntTy) (Name "range") [Constant (ConstInt 10)])
+                      (NameTrg "_" IntTy)
+                      (Call (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )
               )
@@ -125,12 +119,10 @@ spec = describe "run" $ do
               "a$0"
               (ListTy IntTy)
               ( ListComp
-                  IntTy
                   (Constant (ConstInt 0))
                   ( Comprehension
-                      (NameTrg "$1")
-                      IntTy
-                      (Call (ListTy IntTy) (Name "range") [Constant (ConstInt 10)])
+                      (NameTrg "$1" IntTy)
+                      (Call (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )
               )
@@ -141,17 +133,17 @@ spec = describe "run" $ do
           [ ToplevelFunctionDef
               "f"
               [("x", IntTy)]
-              [ Return (Call IntTy (Name "f") [Name "x"])
-              ]
               IntTy
+              [ Return (Call (Name "f") [Name "x"])
+              ]
           ]
     let expected =
           [ ToplevelFunctionDef
               "f$0"
               [("x$1", IntTy)]
-              [ Return (Call IntTy (Name "f$0") [Name "x$1"])
-              ]
               IntTy
+              [ Return (Call (Name "f$0") [Name "x$1"])
+              ]
           ]
     run' parsed `shouldBe` Right expected
   it "doesn't rename type variables" $ do
@@ -159,16 +151,16 @@ spec = describe "run" $ do
           [ ToplevelFunctionDef
               "f"
               [("x", VarTy "x")]
-              [ Return (Call (VarTy "t") (Name "f") [Name "x"])
-              ]
               (VarTy "f")
+              [ Return (Call (Name "f") [Name "x"])
+              ]
           ]
     let expected =
           [ ToplevelFunctionDef
               "f$0"
               [("x$1", VarTy "x")]
-              [ Return (Call (VarTy "t") (Name "f$0") [Name "x$1"])
-              ]
               (VarTy "f")
+              [ Return (Call (Name "f$0") [Name "x$1"])
+              ]
           ]
     run' parsed `shouldBe` Right expected

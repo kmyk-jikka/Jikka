@@ -83,7 +83,7 @@ formatCmpOp = \case
   NotIn -> "not in"
 
 formatComprehension :: Comprehension -> String
-formatComprehension (Comprehension x _ iter ifs) =
+formatComprehension (Comprehension x iter ifs) =
   let body = "for " ++ formatTarget x ++ " in " ++ formatExpr iter
       ifs' = case ifs of
         Nothing -> ""
@@ -92,8 +92,8 @@ formatComprehension (Comprehension x _ iter ifs) =
 
 formatTarget :: Target -> String
 formatTarget = \case
-  SubscriptTrg _ x indices -> unIdent x ++ concatMap (\e -> "[" ++ formatExpr e ++ "]") indices
-  NameTrg x -> unIdent x
+  SubscriptTrg x _ indices -> unIdent x ++ concatMap (\e -> "[" ++ formatExpr e ++ "]") indices
+  NameTrg x _ -> unIdent x
   TupleTrg xts -> case xts of
     [] -> "()"
     [(x, _)] -> unIdent x ++ ","
@@ -104,24 +104,24 @@ formatExpr = \case
   BoolOp e1 op e2 -> formatExpr e1 ++ " " ++ formatBoolOp op ++ " " ++ formatExpr e2
   BinOp e1 op e2 -> formatExpr e1 ++ " " ++ formatOperator op ++ " " ++ formatExpr e2
   UnaryOp op e -> formatUnaryOp op ++ " " ++ formatExpr e
-  Lambda args _ body -> case args of
+  Lambda args body -> case args of
     [] -> "lambda: " ++ formatExpr body
     _ -> "lambda " ++ intercalate ", " (map (unIdent . fst) args) ++ ": " ++ formatExpr body
-  IfExp _ e1 e2 e3 -> formatExpr e2 ++ " if " ++ formatExpr e1 ++ " else " ++ formatExpr e3
-  ListComp _ e comp -> "[" ++ formatExpr e ++ " " ++ formatComprehension comp ++ "]"
+  IfExp e1 e2 e3 -> formatExpr e2 ++ " if " ++ formatExpr e1 ++ " else " ++ formatExpr e3
+  ListComp e comp -> "[" ++ formatExpr e ++ " " ++ formatComprehension comp ++ "]"
   Compare e1 op e2 -> formatExpr e1 ++ " " ++ formatCmpOp op ++ " " ++ formatExpr e2
-  Call _ f args -> case args of
-    [ListComp _ e comp] -> formatExpr f ++ "(" ++ formatExpr e ++ " " ++ formatComprehension comp ++ ")"
+  Call f args -> case args of
+    [ListComp e comp] -> formatExpr f ++ "(" ++ formatExpr e ++ " " ++ formatComprehension comp ++ ")"
     _ -> formatExpr f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
   Constant const -> formatConstant const
-  Subscript _ e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
+  Subscript e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
   Name x -> unIdent x
   List _ es -> "[" ++ intercalate ", " (map formatExpr es) ++ "]"
   Tuple es -> case es of
     [] -> "()"
-    [(e, _)] -> "(" ++ formatExpr e ++ ",)"
-    _ -> "(" ++ intercalate ", " (map (formatExpr . fst) es) ++ ")"
-  SubscriptSlice _ e from to step ->
+    [e] -> "(" ++ formatExpr e ++ ",)"
+    _ -> "(" ++ intercalate ", " (map formatExpr es) ++ ")"
+  SubscriptSlice e from to step ->
     let from' = maybe "" formatExpr from
         to' = maybe "" formatExpr to
         step' = maybe "" ((':' :) . formatExpr) step
@@ -131,8 +131,8 @@ formatStatement :: Statement -> [String]
 formatStatement = \case
   Return e -> ["return " ++ formatExpr e]
   AugAssign x op e -> [formatTarget x ++ " " ++ formatOperator op ++ "= " ++ formatExpr e]
-  AnnAssign x t e -> [formatTarget x ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
-  For x _ iter body -> ["for " ++ formatTarget x ++ " in " ++ formatExpr iter ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
+  AnnAssign x e -> [formatTarget x ++ " = " ++ formatExpr e]
+  For x iter body -> ["for " ++ formatTarget x ++ " in " ++ formatExpr iter ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
   If e body1 body2 -> case body2 of
     [] -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent]
     [body2@(If _ _ _)] ->
@@ -144,7 +144,7 @@ formatStatement = \case
 formatToplevelStatement :: ToplevelStatement -> [String]
 formatToplevelStatement = \case
   ToplevelAnnAssign x t e -> [unIdent x ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
-  ToplevelFunctionDef f args body ret -> ["def " ++ unIdent f ++ "(" ++ intercalate ", " (map (\(x, t) -> unIdent x ++ ": " ++ formatType t) args) ++ ") -> " ++ formatType ret ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
+  ToplevelFunctionDef f args ret body -> ["def " ++ unIdent f ++ "(" ++ intercalate ", " (map (\(x, t) -> unIdent x ++ ": " ++ formatType t) args) ++ ") -> " ++ formatType ret ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
   ToplevelAssert e -> ["assert " ++ formatExpr e]
 
 formatProgram :: Program -> [String]

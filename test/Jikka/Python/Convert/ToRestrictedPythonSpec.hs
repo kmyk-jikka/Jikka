@@ -36,9 +36,9 @@ spec = describe "run" $ do
           [ Y.ToplevelFunctionDef
               "solve"
               [("x", Y.VarTy "$0")]
-              [ Y.AnnAssign (Y.NameTrg "y") (Y.VarTy "$1") (Y.Name "x")
-              ]
               Y.IntTy
+              [ Y.AnnAssign (Y.NameTrg "y" (Y.VarTy "$1")) (Y.Name "x")
+              ]
           ]
     run' parsed `shouldBe` Right expected
   it "works on recursive functions" $ do
@@ -56,8 +56,8 @@ spec = describe "run" $ do
           [ Y.ToplevelFunctionDef
               "f"
               [("x", Y.VarTy "$0")]
-              [ Y.Return (Y.Call (Y.VarTy "$1") (Y.Name "f") [Y.Name "x"])
+              (Y.VarTy "$1")
+              [ Y.Return (Y.Call (Y.Name "f") [Y.Name "x"])
               ]
-              (Y.VarTy "$2")
           ]
     run' parsed `shouldBe` Right expected
