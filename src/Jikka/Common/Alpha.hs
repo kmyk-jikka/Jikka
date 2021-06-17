@@ -13,7 +13,9 @@
 -- `Jikka.Common.Alpha` provides a monad to run alpha-conversion. This monad has only a feature to make unique numbers.
 module Jikka.Common.Alpha where
 
+import Control.Monad.Reader
 import Control.Monad.State.Strict
+import Control.Monad.Writer.Strict
 
 class Monad m => MonadAlpha m where
   nextCounter :: m Int
@@ -28,3 +30,9 @@ runAlphaT i f = runStateT f i
 
 evalAlphaT :: Functor m => Int -> AlphaT m a -> m a
 evalAlphaT i f = fst <$> runAlphaT i f
+
+instance MonadAlpha m => MonadAlpha (ReaderT r m) where
+  nextCounter = lift nextCounter
+
+instance (MonadAlpha m, Monoid w) => MonadAlpha (WriterT w m) where
+  nextCounter = lift nextCounter

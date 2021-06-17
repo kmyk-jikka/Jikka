@@ -11,13 +11,24 @@
 -- Portability : portable
 module Jikka.RestrictedPython.Convert.TypeInfer
   ( run,
+    Equation(..),
+    formularizeProgram,
+    Env(..),
+    sortEquations,
+    makeGamma,
+    Subst(..),
+    subst,
+    solveEquations,
+    substGamma,
+    substUnitGamma,
+    substProgram,
   )
 where
 
+import Control.Arrow (second)
 import Control.Monad.Reader
-import Control.Monad.State
-import Control.Monad.Writer
-import Data.Monoid (Dual(..))
+import Control.Monad.State.Strict
+import Control.Monad.Writer.Strict
 import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -38,78 +49,78 @@ gensym = do
 genType :: MonadAlpha m => m Type
 genType = VarTy <$> gensym
 
-unifyType :: MonadWriter Eqns m => Type -> Type -> m ()
-unifyType t1 t2 = tell $ Dual [TypeEquation t1 t2]
+formularizeType :: MonadWriter Eqns m => Type -> Type -> m ()
+formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
 
-unifyIdent :: MonadWriter Eqns m => Ident -> Type -> m ()
-unifyIdent x t = tell $ Dual [TypeAssertion x t]
+formularizeIdent :: MonadWriter Eqns m => Ident -> Type -> m ()
+formularizeIdent x t = tell $ Dual [TypeAssertion x t]
 
-unifyTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target -> m Type
-unifyTarget = \case
+formularizeTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target -> m Type
+formularizeTarget = \case
   SubscriptTrg x t indices -> do
-    unifyIdent x t
+    formularizeIdent x t
     let go t = \case
                   [] -> return t
                   (e : es) -> do
-                    unifyExpr' e IntTy
+                    formularizeExpr' e IntTy
                     t' <- genType
-                    unifyType t (ListTy t')
+                    formularizeType t (ListTy t')
                     go t' es
     go t indices
   NameTrg x t -> do
-    unifyIdent x t
+    formularizeIdent x t
     return t
   TupleTrg xts -> do
-    mapM_ (uncurry unifyIdent) xts
+    mapM_ (uncurry formularizeIdent) xts
     return $ TupleTy (map snd xts)
 
-unifyExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
-unifyExpr = \case
+formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
+formularizeExpr = \case
     BoolOp e1 _ e2 -> do
-      unifyExpr' e1 BoolTy
-      unifyExpr' e2 BoolTy
+      formularizeExpr' e1 BoolTy
+      formularizeExpr' e2 BoolTy
       return BoolTy
     BinOp e1 _ e2 -> do
-      unifyExpr' e1 IntTy
-      unifyExpr' e2 IntTy
+      formularizeExpr' e1 IntTy
+      formularizeExpr' e2 IntTy
       return IntTy
     UnaryOp op e -> do
       let t' = if op == Not then BoolTy else IntTy
-      unifyExpr' e t'
+      formularizeExpr' e t'
       return t'
     Lambda args body -> do
-      mapM_ (uncurry unifyIdent) args
+      mapM_ (uncurry formularizeIdent) args
       ret <- genType
-      unifyExpr body
+      formularizeExpr body
       return $ CallableTy (map snd args) ret
     IfExp e1 e2 e3 -> do
-      t1 <- unifyExpr e1
-      t2 <- unifyExpr e2
-      t3 <- unifyExpr e3
-      unifyType t1 BoolTy
-      unifyType t2 t3
+      t1 <- formularizeExpr e1
+      t2 <- formularizeExpr e2
+      t3 <- formularizeExpr e3
+      formularizeType t1 BoolTy
+      formularizeType t2 t3
       return t2
     ListComp e comp -> do
       let Comprehension x iter pred = comp
-      te <- unifyExpr e
-      tx <- unifyTarget x
-      titer <- unifyExpr iter
-      unifyType (ListTy tx) titer
+      te <- formularizeExpr e
+      tx <- formularizeTarget x
+      titer <- formularizeExpr iter
+      formularizeType (ListTy tx) titer
       case pred of
         Nothing -> return ()
         Just pred -> do
-          tpred <- unifyExpr pred
-          unifyType tpred BoolTy
+          tpred <- formularizeExpr pred
+          formularizeType tpred BoolTy
       return $ ListTy te
     Compare e1 _ e2 -> do
-      t1 <- unifyExpr e1
-      t2 <- unifyExpr e2
-      unifyType t1 t2
+      t1 <- formularizeExpr e1
+      t2 <- formularizeExpr e2
+      formularizeType t1 t2
       return BoolTy
     Call f args -> do
-      ts <- mapM unifyExpr args
+      ts <- mapM formularizeExpr args
       ret <- genType
-      unifyExpr' f (CallableTy ts ret)
+      formularizeExpr' f (CallableTy ts ret)
       return ret
     Constant const ->
       return $ case const of
@@ -118,143 +129,217 @@ unifyExpr = \case
         ConstBool _ -> BoolTy
     Subscript e1 e2 -> do
       t <- genType
-      unifyExpr' e1 (ListTy t)
-      unifyExpr' e2 IntTy
+      formularizeExpr' e1 (ListTy t)
+      formularizeExpr' e2 IntTy
       return t
     Name x -> do
       t <- genType
-      unifyIdent x t
+      formularizeIdent x t
       return t
     List t es -> do
       forM_ es $ \e -> do
-        unifyExpr' e t
+        formularizeExpr' e t
       return $ ListTy t
-    Tuple es -> TupleTy <$> (mapM unifyExpr) es
+    Tuple es -> TupleTy <$> mapM formularizeExpr es
     SubscriptSlice e from to step -> do
       t' <- genType
-      unifyExpr' e (ListTy t')
-      let unify = \case
+      formularizeExpr' e (ListTy t')
+      let formularize = \case
             Nothing -> return ()
-            Just e -> unifyExpr' e IntTy
-      unify from
-      unify to
-      unify step
+            Just e -> formularizeExpr' e IntTy
+      formularize from
+      formularize to
+      formularize step
       return t'
 
-unifyExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> Type -> m ()
-unifyExpr' e t = do
-  t' <- unifyExpr e
-  unifyType t t'
+formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> Type -> m ()
+formularizeExpr' e t = do
+  t' <- formularizeExpr e
+  formularizeType t t'
 
-unifyStatement :: (MonadWriter Eqns m, MonadAlpha m) => Type -> Statement -> m ()
-unifyStatement ret = \case
+formularizeStatement :: (MonadWriter Eqns m, MonadAlpha m) => Type -> Statement -> m ()
+formularizeStatement ret = \case
   Return e -> do
-    t <- unifyExpr e
-    unifyType t ret
+    t <- formularizeExpr e
+    formularizeType t ret
   AugAssign x _ e -> do
-    t1 <- unifyTarget x
-    t2 <- unifyExpr e
-    unifyType t1 IntTy
-    unifyType t2 IntTy
+    t1 <- formularizeTarget x
+    t2 <- formularizeExpr e
+    formularizeType t1 IntTy
+    formularizeType t2 IntTy
   AnnAssign x e -> do
-    t1 <- unifyTarget x
-    t2 <- unifyExpr e
-    unifyType t1 t2
+    t1 <- formularizeTarget x
+    t2 <- formularizeExpr e
+    formularizeType t1 t2
   For x e body -> do
-    t1 <- unifyTarget x
-    t2 <- unifyExpr e
-    unifyType (ListTy t1) t2
-    mapM_ (unifyStatement ret) body
+    t1 <- formularizeTarget x
+    t2 <- formularizeExpr e
+    formularizeType (ListTy t1) t2
+    mapM_ (formularizeStatement ret) body
   If e body1 body2 -> do
-    t <- unifyExpr e
-    unifyType t BoolTy
-    mapM_ (unifyStatement ret) body1
-    mapM_ (unifyStatement ret) body2
+    t <- formularizeExpr e
+    formularizeType t BoolTy
+    mapM_ (formularizeStatement ret) body1
+    mapM_ (formularizeStatement ret) body2
   Assert e -> do
-    t <- unifyExpr e
-    unifyType t BoolTy
+    t <- formularizeExpr e
+    formularizeType t BoolTy
 
-unifyToplevelStatement :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelStatement -> m ()
-unifyToplevelStatement = \case
+formularizeToplevelStatement :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelStatement -> m ()
+formularizeToplevelStatement = \case
   ToplevelAnnAssign x t e -> do
-    unifyIdent x t
-    unifyExpr' e t
+    formularizeIdent x t
+    formularizeExpr' e t
   ToplevelFunctionDef f args ret body -> do
-    mapM_ (uncurry unifyIdent) args
-    unifyIdent f (CallableTy (map snd args) ret)
-    mapM_ (unifyStatement ret) body
+    mapM_ (uncurry formularizeIdent) args
+    formularizeIdent f (CallableTy (map snd args) ret)
+    mapM_ (formularizeStatement ret) body
   ToplevelAssert e -> do
-    t <- unifyExpr e
-    unifyType t BoolTy
+    t <- formularizeExpr e
+    formularizeType t BoolTy
 
-unifyProgram :: (MonadWriter Eqns m, MonadAlpha m) => Program -> m ()
-unifyProgram prog = mapM_ unifyToplevelStatement prog
-
--- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
-newtype Subst = Subst (M.Map Ident Type)
+formularizeProgram :: MonadAlpha m => Program -> m [Equation]
+formularizeProgram prog = getDual <$> execWriterT (mapM_ formularizeToplevelStatement prog)
 
 -- | `Env` is type environments. It's a mapping from variables to their types.
-newtype Env = Env (M.Map Ident Type)
+newtype Env = Env { unEnv :: M.Map Ident Type }
 
-solveEquations :: MonadError Error m => Eqns -> m (Subst, Env)
-solveEquations = undefined
+sortEquations :: [Equation] -> ([(Type, Type)], [(Ident, Type)])
+sortEquations = go [] [] where
+  go eqns' assertions [] = (eqns', assertions)
+  go eqns' assertions (eqn : eqns) = case eqn of
+    TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
+    TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
--- subst :: MonadEquationWriter m => Type -> m Type
--- subst = \case
---   VarTy x -> do
---     f <- get
---     return $ case M.lookup x f of
---       Nothing -> VarTy x
---       Just t -> t
---   IntTy -> return IntTy
---   BoolTy -> return BoolTy
---   ListTy t -> ListTy <$> subst t
---   TupleTy ts -> TupleTy <$> mapM susbt ts
---   CallableTy ts ret -> CallableTy <$> mapM subst ts <*> subst ret
+makeGamma :: [(Ident, Type)] -> (Env, [(Type, Type)])
+makeGamma = go M.empty [] where
+  go gamma eqns [] = (Env gamma, eqns)
+  go gamma eqns ((x, t) : assertions) = case M.lookup x gamma of
+    Nothing -> go (M.insert x t gamma) eqns assertions
+    Just t' -> go gamma ((t, t') : eqns) assertions
 
+-- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
+newtype Subst = Subst { unSubst :: M.Map Ident Type }
 
--- freeTyVars :: Type -> [Ident]
--- freeTyVars = \case
---   VarTy x -> [x]
---   IntTy -> []
---   BoolTy -> []
---   ListTy t -> freeTyVars t
---   TupleTy ts -> mapM freeTyVars ts
---   CallableTy ts ret -> mapM freeTyVars (ret : ts)
--- 
--- unifyTyVar :: (MonadEquationWriter m, MonadError Error m) => Ident -> Type -> m ()
--- unifyTyVar x t =
---   if x `elem` freeTyVars t
---     then throwTypeError $ "looped type equation " ++ show x ++ " = " show t
---     else do
---       modify' (M.insert x t)  -- This doesn't introduce the loop.
--- 
--- unifyType :: (MonadEquationWriter m, MonadError Error m) => Type -> Type -> m Type
--- unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t2) $ go t1 t2 where
---   go :: (MonadEquationWriter m, MonadError Error m) => Type -> Type -> m Type
---   go t1 t2 = do
---     t1 <- subst t1
---     t2 <- subst t2
---     case (t1, t2) of
---       _ | t1 == t2 -> do
---         return t1
---       (VarTy x1, _) -> do
---         unifyTyVar x1 t2
---         return $ VarTy x1
---       (_, VarTy x2) -> do
---         unifyTyVar x2 t1
---         return $ VarTy x2
---       (ListTy t1, ListTy t2) -> do
---         t <- go t1 t2
---         return $ ListTy t
---       (TupleTy ts1, TupleTy ts2) -> do
---         ts <- mapM go ts1 ts2
---         return $ TupleTy ts
---       (CallableTy args1 ret1, CallableTy args2 ret2) -> do
---         args <- mapM go args1 args2
---         ret <- go ret1 ret2
---         return $ CallableTy args ret
---       _ -> throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+subst :: Subst -> Type -> Type
+subst sigma = \case
+  VarTy x ->
+    case M.lookup x (unSubst sigma) of
+      Nothing -> VarTy x
+      Just t -> subst sigma t
+  IntTy -> IntTy
+  BoolTy -> BoolTy
+  ListTy t -> ListTy (subst sigma t)
+  TupleTy ts -> TupleTy (map (subst sigma) ts)
+  CallableTy ts ret -> CallableTy (map (subst sigma) ts) (subst sigma ret)
+
+freeTyVars :: Type -> [Ident]
+freeTyVars = \case
+  VarTy x -> [x]
+  IntTy -> []
+  BoolTy -> []
+  ListTy t -> freeTyVars t
+  TupleTy ts -> concat $ mapM freeTyVars ts
+  CallableTy ts ret -> concat $ mapM freeTyVars (ret : ts)
+
+unifyTyVar :: (MonadState Subst m, MonadError Error m) => Ident -> Type -> m ()
+unifyTyVar x t =
+  if x `elem` freeTyVars t
+    then throwTypeError $ "looped type equation " ++ show x ++ " = " ++ show t
+    else do
+      modify' (Subst . M.insert x t . unSubst)  -- This doesn't introduce the loop.
+
+unifyType :: (MonadState Subst m, MonadError Error m) => Type -> Type -> m ()
+unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t2) $ do
+  sigma <- get
+  t1 <- return $ subst sigma t1  -- shadowing
+  t2 <- return $ subst sigma t2  -- shadowing
+  case (t1, t2) of
+    _ | t1 == t2 -> return ()
+    (VarTy x1, _) -> do
+      unifyTyVar x1 t2
+    (_, VarTy x2) -> do
+      unifyTyVar x2 t1
+    (ListTy t1, ListTy t2) -> do
+      unifyType t1 t2
+    (TupleTy ts1, TupleTy ts2) -> do
+      if length ts1 == length ts2
+        then mapM_ (uncurry unifyType) (zip ts1 ts2)
+        else throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+    (CallableTy args1 ret1, CallableTy args2 ret2) -> do
+      if length args1 == length args2
+        then mapM_ (uncurry unifyType) (zip args1 args2)
+        else throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+      unifyType ret1 ret2
+    _ -> throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+
+solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
+solveEquations eqns = wrapError' "failed to solve type equations" $ do
+  execStateT (mapM_ (uncurry unifyType) eqns) (Subst M.empty)
+
+substGamma :: Subst -> Env -> Env
+substGamma sigma gamma = Env (M.map (subst sigma) (unEnv gamma))
+
+-- | `substUnit` replaces all undetermined type variables with the unit type.
+substUnit :: Type -> Type
+substUnit = \case
+  VarTy _ -> TupleTy []
+  IntTy -> IntTy
+  BoolTy -> BoolTy
+  ListTy t -> ListTy (substUnit t)
+  TupleTy ts -> TupleTy (map substUnit ts)
+  CallableTy ts ret -> CallableTy (map substUnit ts) (substUnit ret)
+
+-- | `substUnitGamma` replaces all undetermined type variables with the unit type.
+substUnitGamma :: Env -> Env
+substUnitGamma gamma = Env (M.map substUnit (unEnv gamma))
+
+-- | `subst'` replaces all undetermined type variables with the unit type.
+subst' :: Subst -> Type -> Type
+subst' sigma = substUnit . subst sigma
+
+substTarget :: Subst -> Env -> Target -> Target
+substTarget sigma gamma = \case
+  SubscriptTrg x t indices -> SubscriptTrg x (subst' sigma t) (map (substExpr sigma gamma) indices)
+  NameTrg x t -> NameTrg x (subst' sigma t)
+  TupleTrg xts -> TupleTrg (map (second (subst' sigma)) xts)
+
+substExpr :: Subst -> Env -> Expr -> Expr
+substExpr sigma gamma = go where
+  go = \case
+    BoolOp e1 op e2 -> BoolOp (go e1) op (go e2)
+    BinOp e1 op e2 -> BinOp (go e1) op (go e2)
+    UnaryOp op e -> UnaryOp op (go e)
+    Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
+    IfExp e1 e2 e3 -> IfExp (go e1) (go e2) (go e3)
+    ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma gamma x) (go iter) (fmap go pred))
+    Compare e1 op e2 -> Compare (go e1) op (go e2)
+    Call f args -> Call (go f) (map go args)
+    Constant const -> Constant const
+    Subscript e1 e2 -> Subscript (go e1) (go e2)
+    Name x -> Name x
+    List t es -> List (subst' sigma t) (map go es)
+    Tuple es -> Tuple (map go es)
+    SubscriptSlice e from to step -> SubscriptSlice (go e) (fmap go from) (fmap go to) (fmap go step)
+
+substStatement :: Subst -> Env -> Statement -> Statement
+substStatement sigma gamma = \case
+  Return e -> Return (substExpr sigma gamma e)
+  AugAssign x op e -> AugAssign (substTarget sigma gamma x) op (substExpr sigma gamma e)
+  AnnAssign x e -> AnnAssign (substTarget sigma gamma x) (substExpr sigma gamma e)
+  For x iter body -> For (substTarget sigma gamma x) (substExpr sigma gamma iter) (map (substStatement sigma gamma) body)
+  If pred body1 body2 -> If (substExpr sigma gamma pred) (map (substStatement sigma gamma) body1) (map (substStatement sigma gamma) body2)
+  Assert e -> Assert (substExpr sigma gamma e)
+
+substToplevelStatement :: Subst -> Env -> ToplevelStatement -> ToplevelStatement
+substToplevelStatement sigma gamma = \case
+  ToplevelAnnAssign x t e -> ToplevelAnnAssign x (subst' sigma t) (substExpr sigma gamma e)
+  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f (map (second (subst' sigma)) args) (subst' sigma ret)(map (substStatement sigma gamma) body)
+  ToplevelAssert e -> ToplevelAssert (substExpr sigma gamma e)
+
+substProgram :: Subst -> Env -> Program -> Program
+substProgram sigma gamma prog = map (substToplevelStatement sigma gamma) prog
+
 
 -- | `run` infers types of given programs.
 --
@@ -267,5 +352,11 @@ solveEquations = undefined
 --
 -- In its implementation, this function works like a Hindley-Milner type inference.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run = do
-  undefined
+run prog = do
+  eqns <- formularizeProgram prog
+  let (eqns', assertions) = sortEquations eqns
+  let (gamma, eqns'') = makeGamma assertions
+  sigma <- solveEquations (eqns' ++ eqns'')
+  let gamma' = substGamma sigma gamma
+  let gamma'' = substUnitGamma gamma'
+  return $ substProgram sigma gamma'' prog
