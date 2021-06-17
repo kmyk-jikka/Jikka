@@ -6,7 +6,7 @@ import qualified Data.Set as S
 import Jikka.RestrictedPython.Language.Expr
 
 builtinFunctions :: S.Set Ident
-builtinFunctions = S.union standardBuiltinFunctions additioanlBuiltinFunctions
+builtinFunctions = S.union standardBuiltinFunctions additionalBuiltinFunctions
 
 standardBuiltinFunctions :: S.Set Ident
 standardBuiltinFunctions =
@@ -82,8 +82,8 @@ standardBuiltinFunctions =
       "round"
     ]
 
-additioanlBuiltinFunctions :: S.Set Ident
-additioanlBuiltinFunctions =
+additionalBuiltinFunctions :: S.Set Ident
+additionalBuiltinFunctions =
   S.fromList
     [ "argmax",
       "argmin",
@@ -97,5 +97,6 @@ additioanlBuiltinFunctions =
       "inv",
       "lcm",
       "multichoose",
+      "permute",
       "product"
     ]

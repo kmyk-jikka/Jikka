@@ -2,24 +2,51 @@
 
 module Jikka.RestrictedPython.EvaluateSpec (spec) where
 
+import qualified Data.Map.Strict as M
 import Jikka.RestrictedPython.Evaluate
 import Jikka.RestrictedPython.Language.Expr
+import qualified Jikka.RestrictedPython.Language.Stdlib as Stdlib
 import Test.Hspec
 
 spec :: Spec
-spec = describe "run" $ do
-  it "works with recursion" $ do
-    let prog =
-          [ ToplevelFunctionDef
-              "fact"
-              [("n", IntTy)]
-              IntTy
-              [ If
-                  (Compare (Name "n") Eq' (Constant (ConstInt 0)))
-                  [Return (Constant (ConstInt 1))]
-                  [Return (BinOp (Name "n") Mult (Call (Name "fact") [BinOp (Name "n") Sub (Constant (ConstInt 1))]))]
-              ]
-          ]
-    let e = Call (Name "fact") [Constant (ConstInt 10)]
-    let expected = IntVal 3628800
-    run prog e `shouldBe` Right expected
+spec = do
+  describe "standardBuiltinFunctions" $ do
+    it "matches Jikka.RestrictedPython.Language.Stdlib.standardBuiltinFunctions" $ do
+      M.keysSet standardBuiltinFunctions `shouldBe` Stdlib.standardBuiltinFunctions
+  describe "additionalBuiltinFunctions" $ do
+    it "matches Jikka.RestrictedPython.Language.Stdlib.additionalBuiltinFunctions" $ do
+      M.keysSet additionalBuiltinFunctions `shouldBe` Stdlib.additionalBuiltinFunctions
+  describe "run" $ do
+    it "works with recursion" $ do
+      let prog =
+            [ ToplevelFunctionDef
+                "fact"
+                [("n", IntTy)]
+                IntTy
+                [ If
+                    (Compare (Name "n") Eq' (Constant (ConstInt 0)))
+                    [Return (Constant (ConstInt 1))]
+                    [Return (BinOp (Name "n") Mult (Call (Name "fact") [BinOp (Name "n") Sub (Constant (ConstInt 1))]))]
+                ]
+            ]
+      let e = Call (Name "fact") [Constant (ConstInt 10)]
+      let expected = IntVal 3628800
+      run prog e `shouldBe` Right expected
+    it "works with for-loop and assignment" $ do
+      let prog =
+            [ ToplevelFunctionDef
+                "solve"
+                [("n", IntTy)]
+                IntTy
+                [ AnnAssign (NameTrg "a") (ListTy IntTy) (Call (Name "list") [Call (Name "range") [Name "n"]]),
+                  For
+                    (TupleTrg [NameTrg "i", NameTrg "a_i"])
+                    (Call (Name "enumerate") [Name "a"])
+                    [ AugAssign (SubscriptTrg (NameTrg "a") (Name "i")) Mult (Name "a_i")
+                    ],
+                  Return (Call (Name "sum") [Name "a"])
+                ]
+            ]
+      let e = Call (Name "solve") [Constant (ConstInt 100)]
+      let expected = IntVal 328350
+      run prog e `shouldBe` Right expected

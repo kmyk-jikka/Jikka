@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Module      : Jikka.RestrictedPython.Evaluate
@@ -16,13 +17,17 @@ module Jikka.RestrictedPython.Evaluate
     evalStatement,
     evalStatements,
     execToplevelStatement,
+    standardBuiltinFunctions,
+    additionalBuiltinFunctions,
   )
 where
 
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Data.Bits
+import Data.List (maximumBy, minimumBy, sortBy)
 import qualified Data.Map.Strict as M
+import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
@@ -37,6 +42,7 @@ import Jikka.RestrictedPython.Language.Expr
 --         \vert & \mathbf{cons}(v, v) \\
 --         \vert & (v, v, \dots, v) \\
 --         \vert & \lambda _ \mu x x \dots x. e \\
+--         \vert & \mathrm{builtin} \\
 --     \end{array}
 -- \]
 data Value
@@ -45,12 +51,16 @@ data Value
   | ListVal (V.Vector Value)
   | TupleVal [Value]
   | ClosureVal Local [Ident] [Statement]
+  | BuiltinVal Builtin
   deriving (Eq, Ord, Show, Read)
 
 newtype Global = Global
   { unGlobal :: M.Map Ident Value
   }
   deriving (Eq, Ord, Show, Read)
+
+initialGlobal :: Global
+initialGlobal = Global $ M.map BuiltinVal (M.union standardBuiltinFunctions additionalBuiltinFunctions)
 
 newtype Local = Local
   { unLocal :: M.Map Ident Value
@@ -198,6 +208,19 @@ evalBinOp v1 op v2 = do
 --     }
 -- \]
 --
+-- \[
+--     \cfrac{
+--         e \mid \mu \Downarrow b
+--         \qquad e_0 \mid \mu \Downarrow v_0
+--         \qquad e_1 \mid \mu \Downarrow v_1
+--         \qquad \dots
+--         \qquad e _ {n - 1} \mid \mu \Downarrow v _ {n - 1}
+--     }{
+--         e(e_0, e_1, \dots, e _ {n - 1}) \mid \mu \Downarrow b(e_0, e_1, \dots, e _ {n - 1})
+--     }
+--     \qquad{(b ~\text{is a builtin function})}
+-- \]
+--
 -- === Rules for \(\operatorname{constant}\)
 --
 -- === Rules for \(e \lbrack e \rbrack\)
@@ -262,22 +285,7 @@ evalExpr = \case
     v1 <- evalExpr e1
     v2 <- evalExpr e2
     return $ BoolVal (v1 == v2)
-  Call f actualArgs -> do
-    f <- evalExpr f
-    actualArgs <- mapM evalExpr actualArgs
-    case f of
-      ClosureVal local formalArgs body -> do
-        when (length formalArgs /= length actualArgs) $ do
-          throwRuntimeError "wrong number of arguments"
-        savedLocal <- get
-        put local
-        mapM_ (uncurry assign) (zip formalArgs actualArgs)
-        v <- evalStatements body
-        put savedLocal
-        case v of
-          Just v -> return v
-          Nothing -> throwRuntimeError "it reaches the end of function without return"
-      _ -> throwRuntimeError "type error"
+  Call f args -> evalCall f args
   Constant const ->
     return $ case const of
       ConstNone -> TupleVal []
@@ -318,6 +326,29 @@ evalExpr = \case
           (Just (IntVal from), Just (IntVal to), Nothing) -> return $ V.drop (fromInteger from) (V.take (fromInteger to) v)
           (_, _, _) -> throwRuntimeError "type error"
       _ -> throwRuntimeError "type error"
+
+evalCall :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr -> [Expr] -> m Value
+evalCall f args = do
+  f <- evalExpr f
+  args <- mapM evalExpr args
+  evalCall' f args
+
+evalCall' :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Value -> [Value] -> m Value
+evalCall' f actualArgs = case f of
+  BuiltinVal b -> do
+    evalBuiltin b actualArgs
+  ClosureVal local formalArgs body -> do
+    when (length formalArgs /= length actualArgs) $ do
+      throwRuntimeError "wrong number of arguments"
+    savedLocal <- get
+    put local
+    mapM_ (uncurry assign) (zip formalArgs actualArgs)
+    v <- evalStatements body
+    put savedLocal
+    case v of
+      Just v -> return v
+      Nothing -> throwRuntimeError "it reaches the end of function without return"
+  _ -> throwRuntimeError "type error"
 
 -- | `evalStatement` evaluates statements of our restricted Python-like language.
 -- When a statement is evaluated, it returns a value \(v\), doesn't return anything \(\mathbf{stop}\), or fails \(\mathbf{err}\).
@@ -506,5 +537,229 @@ run' global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
 
 run :: MonadError Error m => Program -> Expr -> m Value
 run prog e = do
-  global <- execStateT (mapM_ execToplevelStatement prog) (Global M.empty)
+  global <- execStateT (mapM_ execToplevelStatement prog) initialGlobal
   run' global e
+
+data Builtin
+  = BuiltinUnsupported
+  | BuiltinAbs
+  | BuiltinAll
+  | BuiltinMin
+  | BuiltinAny
+  | BuiltinDivMod
+  | BuiltinSorted
+  | BuiltinEnumerate
+  | BuiltinBool
+  | BuiltinInt
+  | BuiltinSum
+  | BuiltinZip
+  | BuiltinFilter
+  | BuiltinTuple
+  | BuiltinLen
+  | BuiltinList
+  | BuiltinRange
+  | BuiltinMap
+  | BuiltinReversed
+  | BuiltinMax
+  | BuiltinArgMax
+  | BuiltinArgMin
+  | BuiltinCeilDiv
+  | BuiltinCeilMod
+  | BuiltinChoose
+  | BuiltinFact
+  | BuiltinFloorDiv
+  | BuiltinFloorMod
+  | BuiltinGcd
+  | BuiltinInv
+  | BuiltinLcm
+  | BuiltinMultiChoose
+  | BuiltinPermute
+  | BuiltinProduct
+  deriving (Eq, Ord, Show, Read)
+
+standardBuiltinFunctions :: M.Map Ident Builtin
+standardBuiltinFunctions =
+  M.fromList
+    [ ("abs", BuiltinAbs),
+      ("delattr", BuiltinUnsupported),
+      ("hash", BuiltinUnsupported),
+      ("memoryview", BuiltinUnsupported),
+      ("set", BuiltinUnsupported),
+      ("all", BuiltinAll),
+      ("dict", BuiltinUnsupported),
+      ("help", BuiltinUnsupported),
+      ("min", BuiltinMin),
+      ("setattr", BuiltinUnsupported),
+      ("any", BuiltinAny),
+      ("dir", BuiltinUnsupported),
+      ("hex", BuiltinUnsupported),
+      ("next", BuiltinUnsupported),
+      ("slice", BuiltinUnsupported),
+      ("ascii", BuiltinUnsupported),
+      ("divmod", BuiltinDivMod),
+      ("id", BuiltinUnsupported),
+      ("object", BuiltinUnsupported),
+      ("sorted", BuiltinSorted),
+      ("bin", BuiltinUnsupported),
+      ("enumerate", BuiltinEnumerate),
+      ("input", BuiltinUnsupported),
+      ("oct", BuiltinUnsupported),
+      ("staticmethod", BuiltinUnsupported),
+      ("bool", BuiltinBool),
+      ("eval", BuiltinUnsupported),
+      ("int", BuiltinInt),
+      ("open", BuiltinUnsupported),
+      ("str", BuiltinUnsupported),
+      ("breakpoint", BuiltinUnsupported),
+      ("exec", BuiltinUnsupported),
+      ("isinstance", BuiltinUnsupported),
+      ("ord", BuiltinUnsupported),
+      ("sum", BuiltinSum),
+      ("bytearray", BuiltinUnsupported),
+      ("filter", BuiltinFilter),
+      ("issubclass", BuiltinUnsupported),
+      ("pow", BuiltinUnsupported),
+      ("super", BuiltinUnsupported),
+      ("bytes", BuiltinUnsupported),
+      ("float", BuiltinUnsupported),
+      ("iter", BuiltinUnsupported),
+      ("print", BuiltinUnsupported),
+      ("tuple", BuiltinUnsupported),
+      ("callable", BuiltinUnsupported),
+      ("format", BuiltinUnsupported),
+      ("len", BuiltinLen),
+      ("property", BuiltinUnsupported),
+      ("type", BuiltinUnsupported),
+      ("chr", BuiltinUnsupported),
+      ("frozenset", BuiltinUnsupported),
+      ("list", BuiltinList),
+      ("range", BuiltinRange),
+      ("vars", BuiltinUnsupported),
+      ("classmethod", BuiltinUnsupported),
+      ("getattr", BuiltinUnsupported),
+      ("locals", BuiltinUnsupported),
+      ("repr", BuiltinUnsupported),
+      ("zip", BuiltinZip),
+      ("compile", BuiltinUnsupported),
+      ("globals", BuiltinUnsupported),
+      ("map", BuiltinMap),
+      ("reversed", BuiltinReversed),
+      ("__import__", BuiltinUnsupported),
+      ("complex", BuiltinUnsupported),
+      ("hasattr", BuiltinUnsupported),
+      ("max", BuiltinMax),
+      ("round", BuiltinUnsupported)
+    ]
+
+additionalBuiltinFunctions :: M.Map Ident Builtin
+additionalBuiltinFunctions =
+  M.fromList
+    [ ("argmax", BuiltinArgMax),
+      ("argmin", BuiltinArgMin),
+      ("ceildiv", BuiltinCeilDiv),
+      ("ceilmod", BuiltinCeilMod),
+      ("choose", BuiltinChoose),
+      ("fact", BuiltinFact),
+      ("floordiv", BuiltinFloorDiv),
+      ("floormod", BuiltinFloorMod),
+      ("gcd", BuiltinGcd),
+      ("inv", BuiltinInv),
+      ("lcm", BuiltinLcm),
+      ("multichoose", BuiltinMultiChoose),
+      ("permute", BuiltinPermute),
+      ("product", BuiltinProduct)
+    ]
+
+toIntList :: MonadError Error m => V.Vector Value -> m (V.Vector Integer)
+toIntList xs = mapM go xs
+  where
+    go (IntVal x) = return x
+    go _ = throwRuntimeError "type error"
+
+toBoolList :: MonadError Error m => V.Vector Value -> m (V.Vector Bool)
+toBoolList xs = mapM go xs
+  where
+    go (BoolVal x) = return x
+    go _ = throwRuntimeError "type error"
+
+compareValues :: Value -> Value -> Maybe Ordering
+compareValues a b = case (a, b) of
+  (IntVal a, IntVal b) -> Just $ compare a b
+  (BoolVal a, BoolVal b) -> Just $ compare a b
+  (ListVal a, ListVal b) -> case mconcat (V.toList (V.zipWith compareValues a b)) of
+    Nothing -> Nothing
+    Just EQ -> Just $ compare (V.length a) (V.length b)
+    Just o -> Just o
+  (TupleVal a, TupleVal b) ->
+    if length a /= length b
+      then Nothing
+      else mconcat (zipWith compareValues a b)
+  (_, _) -> Nothing
+
+compareValues' :: Value -> Value -> Ordering
+compareValues' a b = fromMaybe EQ (compareValues a b)
+
+evalBuiltin :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Builtin -> [Value] -> m Value
+evalBuiltin b args = case (b, args) of
+  (BuiltinAbs, [IntVal n]) -> return $ IntVal (abs n)
+  (BuiltinAll, [ListVal xs]) -> BoolVal . minimum <$> toBoolList xs
+  (BuiltinMin, [ListVal xs]) -> return $ V.minimumBy compareValues' xs
+  (BuiltinMin, xs@(_ : _ : _)) -> return $ minimumBy compareValues' xs
+  (BuiltinAny, [ListVal xs]) -> BoolVal . maximum <$> toBoolList xs
+  (BuiltinDivMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
+  (BuiltinDivMod, [IntVal a, IntVal b]) -> return $ TupleVal [IntVal (a `div` b), IntVal (a `mod` b)]
+  (BuiltinSorted, [ListVal xs]) ->
+    return $ ListVal (V.fromList (sortBy compareValues' (V.toList xs)))
+  (BuiltinEnumerate, [ListVal xs]) ->
+    return $ ListVal (V.fromList (zipWith (\i x -> TupleVal [IntVal i, x]) [0 ..] (V.toList xs)))
+  (BuiltinBool, [IntVal n]) -> return $ BoolVal (n /= 0)
+  (BuiltinBool, [BoolVal p]) -> return $ BoolVal p
+  (BuiltinBool, [ListVal xs]) -> return $ BoolVal (not (V.null xs))
+  (BuiltinBool, [TupleVal xs]) -> return $ BoolVal (not (null xs))
+  (BuiltinInt, [IntVal n]) -> return $ IntVal n
+  (BuiltinInt, [BoolVal p]) -> return $ IntVal (if p then 1 else 0)
+  (BuiltinSum, [ListVal xs]) -> IntVal . sum <$> toIntList xs
+  (BuiltinZip, [ListVal xs1, ListVal xs2]) -> return $ ListVal (V.zipWith (\x1 x2 -> TupleVal [x1, x2]) xs1 xs2)
+  (BuiltinZip, [ListVal xs1, ListVal xs2, ListVal xs3]) -> return $ ListVal (V.zipWith3 (\x1 x2 x3 -> TupleVal [x1, x2, x3]) xs1 xs2 xs3)
+  (BuiltinFilter, [f, ListVal xs]) -> do
+    let go x = do
+          pred <- evalCall' f [x]
+          case pred of
+            BoolVal True -> return $ Just x
+            BoolVal False -> return Nothing
+            _ -> throwRuntimeError "type error"
+    ListVal <$> V.mapMaybeM go xs
+  (BuiltinLen, [ListVal xs]) -> return $ IntVal (fromIntegral (V.length xs))
+  (BuiltinList, [ListVal xs]) -> return $ ListVal xs
+  (BuiltinRange, [IntVal to]) -> return $ ListVal (V.fromList (map IntVal [0 .. to - 1]))
+  (BuiltinRange, [IntVal from, IntVal to]) -> return $ ListVal (V.fromList (map IntVal [from .. to - 1]))
+  (BuiltinRange, [IntVal from, IntVal to, IntVal step]) -> return $ ListVal (V.fromList (map IntVal [from, from + step .. to - 1]))
+  (BuiltinMap, [f, ListVal xs]) -> do
+    let go x = evalCall' f [x]
+    ListVal <$> V.mapM go xs
+  (BuiltinMap, [f, ListVal xs1, ListVal xs2]) -> do
+    let go x1 x2 = evalCall' f [x1, x2]
+    ListVal <$> V.zipWithM go xs1 xs2
+  (BuiltinReversed, [ListVal xs]) -> return $ ListVal (V.reverse xs)
+  (BuiltinMax, [ListVal xs]) -> return $ V.maximumBy compareValues' xs
+  (BuiltinMax, xs@(_ : _ : _)) -> return $ maximumBy compareValues' xs
+  (BuiltinArgMax, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinArgMin, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinCeilDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
+  (BuiltinCeilDiv, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `div` b)
+  (BuiltinCeilMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
+  (BuiltinCeilMod, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `mod` b)
+  (BuiltinChoose, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinFact, [IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinFloorDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
+  (BuiltinFloorDiv, [IntVal a, IntVal b]) -> return $ IntVal (a `div` b)
+  (BuiltinFloorMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
+  (BuiltinFloorMod, [IntVal a, IntVal b]) -> return $ IntVal (a `mod` b)
+  (BuiltinGcd, [IntVal a, IntVal b]) -> return $ IntVal (gcd a b)
+  (BuiltinInv, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinLcm, [IntVal a, IntVal b]) -> return $ IntVal (lcm a b)
+  (BuiltinMultiChoose, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinPermute, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinProduct, [ListVal xs]) -> IntVal . product <$> toIntList xs
+  (BuiltinUnsupported, _) -> throwRuntimeError "unsupported builtin function"
+  _ -> throwRuntimeError "type error on builtin function call"
