@@ -18,10 +18,9 @@ data Flag
   | Version
   deriving (Eq, Ord, Show, Read)
 
-newtype Options
-  = Options
-      { verbose :: Bool
-      }
+newtype Options = Options
+  { verbose :: Bool
+  }
 
 defaultOptions :: Options
 defaultOptions =

@@ -126,8 +126,7 @@ data ToplevelStatement
   | FunDef Type VarName [(Type, VarName)] [Statement]
   deriving (Eq, Ord, Show, Read)
 
-newtype Program
-  = Program
-      { decls :: [ToplevelStatement]
-      }
+newtype Program = Program
+  { decls :: [ToplevelStatement]
+  }
   deriving (Eq, Ord, Show, Read)

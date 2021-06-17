@@ -51,7 +51,6 @@ reduceNegate = \case
   -- `Minus` is already removed.
   Mult' (Negate' e1) e2 -> go $ Negate' (Mult' e1 e2)
   Mult' e1 (Negate' e2) -> go $ Negate' (Mult' e1 e2)
-  Mult' e1 (Negate' e2) -> go $ Negate' (Mult' e1 e2)
   -- `Abs` is already removed.
   Min' (Negate' e1) (Negate' e2) -> go $ Negate' (Max' e1 e2)
   Max' (Negate' e1) (Negate' e2) -> go $ Negate' (Min' e1 e2)
@@ -65,7 +64,6 @@ reduceNot = \case
   Or' (Not' e1) (Not' e2) -> go $ Not' (And' e1 e2)
   -- `Implies` is already removed.
   Mult' (Negate' e1) e2 -> go $ Negate' (Mult' e1 e2)
-  Mult' e1 (Negate' e2) -> go $ Negate' (Mult' e1 e2)
   Mult' e1 (Negate' e2) -> go $ Negate' (Mult' e1 e2)
   If' t (Not' e1) e2 e3 -> go $ If' t e1 e3 e2
   e -> e

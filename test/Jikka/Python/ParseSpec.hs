@@ -16,7 +16,7 @@ at :: a -> (Int, Int, Int) -> WithLoc a
 at a (y, x, width) = WithLoc (Loc y x width) a
 
 run' :: [String] -> Either Error Program
-run' lines = run "test.py" (pack . concat $ map (++ "\n") lines)
+run' lines = run "test.py" (pack $ unlines lines)
 
 spec :: Spec
 spec = describe "run" $ do

@@ -159,10 +159,10 @@ data Operator
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp
-  -- | on int
-  = Invert
-  -- | on bool
-  | Not
+  = -- | on int
+    Invert
+  | -- | on bool
+    Not
   | UAdd
   | USub
   deriving (Eq, Ord, Show, Read)
@@ -181,34 +181,31 @@ data CmpOp
   deriving (Eq, Ord, Show, Read)
 
 -- | @Comprehension target iter ifs is_async@
-data Comprehension
-  = Comprehension
-      { compTarget :: Target',
-        compIter :: Expr',
-        compIfs :: Maybe Expr'
-      }
+data Comprehension = Comprehension
+  { compTarget :: Target',
+    compIter :: Expr',
+    compIfs :: Maybe Expr'
+  }
   deriving (Eq, Ord, Show, Read)
 
-data ExceptHandler
-  = ExceptHandler
-      { exchType :: Maybe Type',
-        exchName :: Maybe Ident',
-        exchBody :: [Statement']
-      }
+data ExceptHandler = ExceptHandler
+  { exchType :: Maybe Type',
+    exchName :: Maybe Ident',
+    exchBody :: [Statement']
+  }
   deriving (Eq, Ord, Show, Read)
 
 type ExceptHandler' = WithLoc ExceptHandler
 
-data Arguments
-  = Arguments
-      { argsPosonlyargs :: [Arg],
-        argsArgs :: [Arg],
-        argsVarargs :: Maybe Arg,
-        argsKwonlyargs :: [Arg],
-        argsKwDefaults :: [Expr'],
-        argsKwarg :: Maybe Arg,
-        argsDefaults :: [Expr']
-      }
+data Arguments = Arguments
+  { argsPosonlyargs :: [Arg],
+    argsArgs :: [Arg],
+    argsVarargs :: Maybe Arg,
+    argsKwonlyargs :: [Arg],
+    argsKwDefaults :: [Expr'],
+    argsKwarg :: Maybe Arg,
+    argsDefaults :: [Expr']
+  }
   deriving (Eq, Ord, Show, Read)
 
 emptyArguments :: Arguments

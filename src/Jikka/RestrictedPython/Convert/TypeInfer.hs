@@ -11,12 +11,12 @@
 -- Portability : portable
 module Jikka.RestrictedPython.Convert.TypeInfer
   ( run,
-    Equation(..),
+    Equation (..),
     formularizeProgram,
-    Env(..),
+    Env (..),
     sortEquations,
     makeGamma,
-    Subst(..),
+    Subst (..),
     subst,
     solveEquations,
     substGamma,
@@ -60,12 +60,12 @@ formularizeTarget = \case
   SubscriptTrg x t indices -> do
     formularizeIdent x t
     let go t = \case
-                  [] -> return t
-                  (e : es) -> do
-                    formularizeExpr' e IntTy
-                    t' <- genType
-                    formularizeType t (ListTy t')
-                    go t' es
+          [] -> return t
+          (e : es) -> do
+            formularizeExpr' e IntTy
+            t' <- genType
+            formularizeType t (ListTy t')
+            go t' es
     go t indices
   NameTrg x t -> do
     formularizeIdent x t
@@ -76,81 +76,81 @@ formularizeTarget = \case
 
 formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
 formularizeExpr = \case
-    BoolOp e1 _ e2 -> do
-      formularizeExpr' e1 BoolTy
-      formularizeExpr' e2 BoolTy
-      return BoolTy
-    BinOp e1 _ e2 -> do
-      formularizeExpr' e1 IntTy
-      formularizeExpr' e2 IntTy
-      return IntTy
-    UnaryOp op e -> do
-      let t' = if op == Not then BoolTy else IntTy
-      formularizeExpr' e t'
-      return t'
-    Lambda args body -> do
-      mapM_ (uncurry formularizeIdent) args
-      ret <- genType
-      formularizeExpr body
-      return $ CallableTy (map snd args) ret
-    IfExp e1 e2 e3 -> do
-      t1 <- formularizeExpr e1
-      t2 <- formularizeExpr e2
-      t3 <- formularizeExpr e3
-      formularizeType t1 BoolTy
-      formularizeType t2 t3
-      return t2
-    ListComp e comp -> do
-      let Comprehension x iter pred = comp
-      te <- formularizeExpr e
-      tx <- formularizeTarget x
-      titer <- formularizeExpr iter
-      formularizeType (ListTy tx) titer
-      case pred of
-        Nothing -> return ()
-        Just pred -> do
-          tpred <- formularizeExpr pred
-          formularizeType tpred BoolTy
-      return $ ListTy te
-    Compare e1 _ e2 -> do
-      t1 <- formularizeExpr e1
-      t2 <- formularizeExpr e2
-      formularizeType t1 t2
-      return BoolTy
-    Call f args -> do
-      ts <- mapM formularizeExpr args
-      ret <- genType
-      formularizeExpr' f (CallableTy ts ret)
-      return ret
-    Constant const ->
-      return $ case const of
-        ConstNone -> TupleTy []
-        ConstInt _ -> IntTy
-        ConstBool _ -> BoolTy
-    Subscript e1 e2 -> do
-      t <- genType
-      formularizeExpr' e1 (ListTy t)
-      formularizeExpr' e2 IntTy
-      return t
-    Name x -> do
-      t <- genType
-      formularizeIdent x t
-      return t
-    List t es -> do
-      forM_ es $ \e -> do
-        formularizeExpr' e t
-      return $ ListTy t
-    Tuple es -> TupleTy <$> mapM formularizeExpr es
-    SubscriptSlice e from to step -> do
-      t' <- genType
-      formularizeExpr' e (ListTy t')
-      let formularize = \case
-            Nothing -> return ()
-            Just e -> formularizeExpr' e IntTy
-      formularize from
-      formularize to
-      formularize step
-      return t'
+  BoolOp e1 _ e2 -> do
+    formularizeExpr' e1 BoolTy
+    formularizeExpr' e2 BoolTy
+    return BoolTy
+  BinOp e1 _ e2 -> do
+    formularizeExpr' e1 IntTy
+    formularizeExpr' e2 IntTy
+    return IntTy
+  UnaryOp op e -> do
+    let t' = if op == Not then BoolTy else IntTy
+    formularizeExpr' e t'
+    return t'
+  Lambda args body -> do
+    mapM_ (uncurry formularizeIdent) args
+    ret <- genType
+    formularizeExpr body
+    return $ CallableTy (map snd args) ret
+  IfExp e1 e2 e3 -> do
+    t1 <- formularizeExpr e1
+    t2 <- formularizeExpr e2
+    t3 <- formularizeExpr e3
+    formularizeType t1 BoolTy
+    formularizeType t2 t3
+    return t2
+  ListComp e comp -> do
+    let Comprehension x iter pred = comp
+    te <- formularizeExpr e
+    tx <- formularizeTarget x
+    titer <- formularizeExpr iter
+    formularizeType (ListTy tx) titer
+    case pred of
+      Nothing -> return ()
+      Just pred -> do
+        tpred <- formularizeExpr pred
+        formularizeType tpred BoolTy
+    return $ ListTy te
+  Compare e1 _ e2 -> do
+    t1 <- formularizeExpr e1
+    t2 <- formularizeExpr e2
+    formularizeType t1 t2
+    return BoolTy
+  Call f args -> do
+    ts <- mapM formularizeExpr args
+    ret <- genType
+    formularizeExpr' f (CallableTy ts ret)
+    return ret
+  Constant const ->
+    return $ case const of
+      ConstNone -> TupleTy []
+      ConstInt _ -> IntTy
+      ConstBool _ -> BoolTy
+  Subscript e1 e2 -> do
+    t <- genType
+    formularizeExpr' e1 (ListTy t)
+    formularizeExpr' e2 IntTy
+    return t
+  Name x -> do
+    t <- genType
+    formularizeIdent x t
+    return t
+  List t es -> do
+    forM_ es $ \e -> do
+      formularizeExpr' e t
+    return $ ListTy t
+  Tuple es -> TupleTy <$> mapM formularizeExpr es
+  SubscriptSlice e from to step -> do
+    t' <- genType
+    formularizeExpr' e (ListTy t')
+    let formularize = \case
+          Nothing -> return ()
+          Just e -> formularizeExpr' e IntTy
+    formularize from
+    formularize to
+    formularize step
+    return t'
 
 formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> Type -> m ()
 formularizeExpr' e t = do
@@ -202,24 +202,26 @@ formularizeProgram :: MonadAlpha m => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (mapM_ formularizeToplevelStatement prog)
 
 -- | `Env` is type environments. It's a mapping from variables to their types.
-newtype Env = Env { unEnv :: M.Map Ident Type }
+newtype Env = Env {unEnv :: M.Map Ident Type}
 
 sortEquations :: [Equation] -> ([(Type, Type)], [(Ident, Type)])
-sortEquations = go [] [] where
-  go eqns' assertions [] = (eqns', assertions)
-  go eqns' assertions (eqn : eqns) = case eqn of
-    TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
-    TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
+sortEquations = go [] []
+  where
+    go eqns' assertions [] = (eqns', assertions)
+    go eqns' assertions (eqn : eqns) = case eqn of
+      TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
+      TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
 makeGamma :: [(Ident, Type)] -> (Env, [(Type, Type)])
-makeGamma = go M.empty [] where
-  go gamma eqns [] = (Env gamma, eqns)
-  go gamma eqns ((x, t) : assertions) = case M.lookup x gamma of
-    Nothing -> go (M.insert x t gamma) eqns assertions
-    Just t' -> go gamma ((t, t') : eqns) assertions
+makeGamma = go M.empty []
+  where
+    go gamma eqns [] = (Env gamma, eqns)
+    go gamma eqns ((x, t) : assertions) = case M.lookup x gamma of
+      Nothing -> go (M.insert x t gamma) eqns assertions
+      Just t' -> go gamma ((t, t') : eqns) assertions
 
 -- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
-newtype Subst = Subst { unSubst :: M.Map Ident Type }
+newtype Subst = Subst {unSubst :: M.Map Ident Type}
 
 subst :: Subst -> Type -> Type
 subst sigma = \case
@@ -247,13 +249,13 @@ unifyTyVar x t =
   if x `elem` freeTyVars t
     then throwTypeError $ "looped type equation " ++ show x ++ " = " ++ show t
     else do
-      modify' (Subst . M.insert x t . unSubst)  -- This doesn't introduce the loop.
+      modify' (Subst . M.insert x t . unSubst) -- This doesn't introduce the loop.
 
 unifyType :: (MonadState Subst m, MonadError Error m) => Type -> Type -> m ()
 unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t2) $ do
   sigma <- get
-  t1 <- return $ subst sigma t1  -- shadowing
-  t2 <- return $ subst sigma t2  -- shadowing
+  t1 <- return $ subst sigma t1 -- shadowing
+  t2 <- return $ subst sigma t2 -- shadowing
   case (t1, t2) of
     _ | t1 == t2 -> return ()
     (VarTy x1, _) -> do
@@ -305,22 +307,23 @@ substTarget sigma gamma = \case
   TupleTrg xts -> TupleTrg (map (second (subst' sigma)) xts)
 
 substExpr :: Subst -> Env -> Expr -> Expr
-substExpr sigma gamma = go where
-  go = \case
-    BoolOp e1 op e2 -> BoolOp (go e1) op (go e2)
-    BinOp e1 op e2 -> BinOp (go e1) op (go e2)
-    UnaryOp op e -> UnaryOp op (go e)
-    Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
-    IfExp e1 e2 e3 -> IfExp (go e1) (go e2) (go e3)
-    ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma gamma x) (go iter) (fmap go pred))
-    Compare e1 op e2 -> Compare (go e1) op (go e2)
-    Call f args -> Call (go f) (map go args)
-    Constant const -> Constant const
-    Subscript e1 e2 -> Subscript (go e1) (go e2)
-    Name x -> Name x
-    List t es -> List (subst' sigma t) (map go es)
-    Tuple es -> Tuple (map go es)
-    SubscriptSlice e from to step -> SubscriptSlice (go e) (fmap go from) (fmap go to) (fmap go step)
+substExpr sigma gamma = go
+  where
+    go = \case
+      BoolOp e1 op e2 -> BoolOp (go e1) op (go e2)
+      BinOp e1 op e2 -> BinOp (go e1) op (go e2)
+      UnaryOp op e -> UnaryOp op (go e)
+      Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
+      IfExp e1 e2 e3 -> IfExp (go e1) (go e2) (go e3)
+      ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma gamma x) (go iter) (fmap go pred))
+      Compare e1 op e2 -> Compare (go e1) op (go e2)
+      Call f args -> Call (go f) (map go args)
+      Constant const -> Constant const
+      Subscript e1 e2 -> Subscript (go e1) (go e2)
+      Name x -> Name x
+      List t es -> List (subst' sigma t) (map go es)
+      Tuple es -> Tuple (map go es)
+      SubscriptSlice e from to step -> SubscriptSlice (go e) (fmap go from) (fmap go to) (fmap go step)
 
 substStatement :: Subst -> Env -> Statement -> Statement
 substStatement sigma gamma = \case
@@ -334,12 +337,11 @@ substStatement sigma gamma = \case
 substToplevelStatement :: Subst -> Env -> ToplevelStatement -> ToplevelStatement
 substToplevelStatement sigma gamma = \case
   ToplevelAnnAssign x t e -> ToplevelAnnAssign x (subst' sigma t) (substExpr sigma gamma e)
-  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f (map (second (subst' sigma)) args) (subst' sigma ret)(map (substStatement sigma gamma) body)
+  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f (map (second (subst' sigma)) args) (subst' sigma ret) (map (substStatement sigma gamma) body)
   ToplevelAssert e -> ToplevelAssert (substExpr sigma gamma e)
 
 substProgram :: Subst -> Env -> Program -> Program
 substProgram sigma gamma prog = map (substToplevelStatement sigma gamma) prog
-
 
 -- | `run` infers types of given programs.
 --
