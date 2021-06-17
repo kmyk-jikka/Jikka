@@ -67,53 +67,55 @@ lookupLocal x = do
     Just v -> return v
     Nothing -> throwRuntimeError "undefined variable"
 
+assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Expr -> Value -> m ()
+assignSubscriptedTarget f index v = do
+  let go f indices = case f of
+        SubscriptTrg f index -> go f (index : indices)
+        NameTrg x -> return (x, indices)
+        TupleTrg _ -> throwRuntimeError "cannot subscript a tuple target"
+  (x, indices) <- go f [index]
+  f <- lookupLocal x
+  indices <- mapM evalExpr indices
+  let go f index = case (f, index) of
+        (_, []) -> return v
+        (ListVal f, IntVal index : indices) -> do
+          when (index < 0 || fromIntegral (V.length f) <= index) $ do
+            throwRuntimeError "list index out of range"
+          v' <- go (f V.! fromInteger index) indices
+          return $ ListVal (f V.// [(fromInteger index, v')])
+        (_, _) -> throwRuntimeError "type error"
+  f <- go f indices
+  assign x f
+
 assignTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Value -> m ()
 assignTarget trg v = do
   case trg of
-    SubscriptTrg x _ indices -> do
-      f <- lookupLocal x
-      indices <- mapM evalExpr indices
-      let getIntVal = \case
-            IntVal v -> return v
-            _ -> throwRuntimeError "type error"
-      indices <- mapM getIntVal indices
-      let go _ [] = return v
-          go (ListVal f) (index : indices) = do
-            when (index < 0 || fromIntegral (V.length f) <= index) $ do
-              throwRuntimeError "list index out of range"
-            v' <- go (f V.! fromInteger index) indices
-            return $ ListVal (f V.// [(fromInteger index, v')])
-          go _ _ = throwRuntimeError "type error"
-      v <- go f indices
+    SubscriptTrg f index -> do
+      assignSubscriptedTarget f index v
+    NameTrg x -> do
       assign x v
-    NameTrg x _ -> do
-      assign x v
-    TupleTrg xts -> do
+    TupleTrg xs -> do
       case v of
         TupleVal vs -> do
-          when (length xts /= length vs) $ do
+          when (length xs /= length vs) $ do
             throwRuntimeError "the lengths of tuple are different"
-          forM_ (zip xts vs) $ \((x, _), v) -> do
-            assign x v
+          forM_ (zip xs vs) $ \(x, v) -> do
+            assignTarget x v
         _ -> throwRuntimeError "cannot unpack non-tuple value"
 
 evalTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> m Value
 evalTarget = \case
-  SubscriptTrg x _ indices -> do
-    f <- lookupLocal x
-    let go f [] = return f
-        go (ListVal f) (index : indices) = do
-          index <- evalExpr index
-          case index of
-            IntVal index -> do
-              when (index < 0 || fromIntegral (V.length f) <= index) $ do
-                throwRuntimeError "list index out of range"
-              go (f V.! fromInteger index) indices
-            _ -> throwRuntimeError "type error"
-        go _ _ = throwRuntimeError "type error"
-    go f indices
-  NameTrg x _ -> lookupLocal x
-  TupleTrg xts -> TupleVal <$> mapM (lookupLocal . fst) xts
+  SubscriptTrg f index -> do
+    f <- evalTarget f
+    index <- evalExpr index
+    case (f, index) of
+      (ListVal f, IntVal index) -> do
+        when (index < 0 || fromIntegral (V.length f) <= index) $ do
+          throwRuntimeError "list index out of range"
+        return $ f V.! fromInteger index
+      (_, _) -> throwRuntimeError "type error"
+  NameTrg x -> lookupLocal x
+  TupleTrg xs -> TupleVal <$> mapM evalTarget xs
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value
 evalBinOp v1 op v2 = do
@@ -433,7 +435,7 @@ evalStatement = \case
     v <- evalBinOp v1 op v2
     assignTarget x v
     return Nothing
-  AnnAssign x e -> do
+  AnnAssign x _ e -> do
     v <- evalExpr e
     assignTarget x v
     return Nothing

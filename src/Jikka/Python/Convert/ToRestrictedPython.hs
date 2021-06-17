@@ -57,15 +57,6 @@ runConstant = \case
   X.ConstBool p -> return $ Y.ConstBool p
   e -> throwSemanticError ("unsupported constant: " ++ show e)
 
-runTargetSubscript :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m (Y.Ident, [Y.Expr])
-runTargetSubscript e = case value e of
-  X.Name x -> return (runIdent x, [])
-  X.Subscript e1 e2 -> do
-    (x, indices) <- runTargetSubscript e1
-    e2 <- runExpr e2
-    return (x, indices ++ [e2])
-  _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
-
 runTargetName :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Ident
 runTargetName e = case value e of
   X.Name x -> return $ runIdent x
@@ -73,23 +64,10 @@ runTargetName e = case value e of
 
 runTarget :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Target
 runTarget e = case value e of
-  X.Subscript _ _ -> do
-    t <- genType
-    (x, indices) <- runTargetSubscript e
-    return $ Y.SubscriptTrg x t indices
-  X.Name _ -> Y.NameTrg <$> runTargetName e <*> genType
-  X.Tuple es -> do
-    xs <- forM es $ \e -> do
-      x <- runTargetName e
-      t <- genType
-      return (x, t)
-    return $ Y.TupleTrg xs
+  X.Subscript f index -> Y.SubscriptTrg <$> runTarget f <*> runExpr index
+  X.Name _ -> Y.NameTrg <$> runTargetName e
+  X.Tuple es -> Y.TupleTrg <$> mapM runTarget es
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
-
-runTargetWithAnnotation :: (MonadAlpha m, MonadError Error m) => X.Expr' -> X.Type' -> m Y.Target
-runTargetWithAnnotation e t = case value e of
-  X.Name _ -> Y.NameTrg <$> runTargetName e <*> runType t
-  _ -> throwSemanticErrorAt (loc e) ("The target of an annotated assignment should be a variable: " ++ show e)
 
 runTargetIdent :: MonadError Error m => X.Expr' -> m Y.Ident
 runTargetIdent e = case value e of
@@ -169,8 +147,9 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
     [] -> return []
     [x] -> do
       x <- runTarget x
+      t <- genType
       e <- runExpr e
-      return [Y.AnnAssign x e]
+      return [Y.AnnAssign x t e]
     _ -> throwSemanticError "assign statement with multiple targets is not allowed in def statement"
   X.AugAssign x op e -> do
     x <- runTarget x
@@ -179,9 +158,10 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.AnnAssign x t e -> case e of
     Nothing -> throwSemanticError "annotated assignment statement without value is not allowed in def statement"
     Just e -> do
-      x <- runTargetWithAnnotation x t
+      x <- runTargetIdent x
+      t <- runType t
       e <- runExpr e
-      return [Y.AnnAssign x e]
+      return [Y.AnnAssign (Y.NameTrg x) t e]
   X.For x e body orelse -> do
     x <- runTarget x
     e <- runExpr e

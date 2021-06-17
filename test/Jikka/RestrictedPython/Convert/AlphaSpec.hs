@@ -22,7 +22,7 @@ spec = describe "run" $ do
               "solve"
               [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y" IntTy) (Name "x")
+              [ AnnAssign (NameTrg "y") IntTy (Name "x")
               ]
           ]
     let expected =
@@ -30,7 +30,7 @@ spec = describe "run" $ do
               "solve$0"
               [("x$1", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$2" IntTy) (Name "x$1")
+              [ AnnAssign (NameTrg "y$2") IntTy (Name "x$1")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -40,13 +40,13 @@ spec = describe "run" $ do
               "foo"
               [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y" IntTy) (Name "x")
+              [ AnnAssign (NameTrg "y") IntTy (Name "x")
               ],
             ToplevelFunctionDef
               "bar"
               [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y" IntTy) (Name "x")
+              [ AnnAssign (NameTrg "y") IntTy (Name "x")
               ]
           ]
     let expected =
@@ -54,13 +54,13 @@ spec = describe "run" $ do
               "foo$0"
               [("x$1", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$2" IntTy) (Name "x$1")
+              [ AnnAssign (NameTrg "y$2") IntTy (Name "x$1")
               ],
             ToplevelFunctionDef
               "bar$3"
               [("x$4", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$5" IntTy) (Name "x$4")
+              [ AnnAssign (NameTrg "y$5") IntTy (Name "x$4")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -71,14 +71,14 @@ spec = describe "run" $ do
               []
               IntTy
               [ For
-                  (NameTrg "i" IntTy)
+                  (NameTrg "i")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x" IntTy) (Name "i")
+                  [ AnnAssign (NameTrg "x") IntTy (Name "i")
                   ],
                 For
-                  (NameTrg "i" IntTy)
+                  (NameTrg "i")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x" IntTy) (Name "i")
+                  [ AnnAssign (NameTrg "x") IntTy (Name "i")
                   ]
               ]
           ]
@@ -88,14 +88,14 @@ spec = describe "run" $ do
               []
               IntTy
               [ For
-                  (NameTrg "i$1" IntTy)
+                  (NameTrg "i$1")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$2" IntTy) (Name "i$1")
+                  [ AnnAssign (NameTrg "x$2") IntTy (Name "i$1")
                   ],
                 For
-                  (NameTrg "i$3" IntTy)
+                  (NameTrg "i$3")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$4" IntTy) (Name "i$3")
+                  [ AnnAssign (NameTrg "x$4") IntTy (Name "i$3")
                   ]
               ]
           ]
@@ -108,7 +108,7 @@ spec = describe "run" $ do
               ( ListComp
                   (Constant (ConstInt 0))
                   ( Comprehension
-                      (NameTrg "_" IntTy)
+                      (NameTrg "_")
                       (Call (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )
@@ -121,7 +121,7 @@ spec = describe "run" $ do
               ( ListComp
                   (Constant (ConstInt 0))
                   ( Comprehension
-                      (NameTrg "$1" IntTy)
+                      (NameTrg "$1")
                       (Call (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )

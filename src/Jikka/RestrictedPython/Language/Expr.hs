@@ -64,19 +64,18 @@ data Constant
   deriving (Eq, Ord, Show, Read)
 
 -- | `Target` represents the lvalue of our restricted Python-like language.
--- All variables in `Target` are annotated by their types.
 --
 -- \[
 --     \begin{array}{rl}
---         y ::= & x _ \tau \lbrack e \rbrack \lbrack e \rbrack \dots \lbrack e \rbrack \\
---         \vert & x _ \tau \\
---         \vert & (x _ \tau, x _ \tau, \dots,  x _ \tau) \\
+--         y ::= & y \lbrack e \rbrack \\
+--         \vert & x \\
+--         \vert & (y, y, \dots, y) \\
 --     \end{array}
 -- \]
 data Target
-  = SubscriptTrg Ident Type [Expr]
-  | NameTrg Ident Type
-  | TupleTrg [(Ident, Type)]
+  = SubscriptTrg Target Expr
+  | NameTrg Ident
+  | TupleTrg [Target]
   deriving (Eq, Ord, Show, Read)
 
 data Comprehension = Comprehension Target Expr (Maybe Expr)
@@ -125,7 +124,7 @@ data Expr
 --     \begin{array}{rl}
 --         \mathrm{stmt} ::= & \mathbf{return}~ e \\
 --         \vert & y \operatorname{binop} = e \\
---         \vert & y := e \\
+--         \vert & y _ \tau := e \\
 --         \vert & \mathbf{for}~ y ~\mathbf{in}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt} \\
 --         \vert & \mathbf{if}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt};\quad \mathbf{else}\colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt} \\
 --         \vert & \mathbf{assert}~ e \\
@@ -134,7 +133,7 @@ data Expr
 data Statement
   = Return Expr
   | AugAssign Target Operator Expr
-  | AnnAssign Target Expr
+  | AnnAssign Target Type Expr
   | For Target Expr [Statement]
   | If Expr [Statement] [Statement]
   | Assert Expr

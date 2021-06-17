@@ -35,20 +35,21 @@ lookup' x env = case lookup x env of
 
 runTarget :: (MonadAlpha m, MonadError Error m) => Env -> Target -> m (Target, Env)
 runTarget env = \case
-  SubscriptTrg x t indices -> do
-    x <- lookup' x env
-    indices <- mapM (runExpr env) indices
-    return (SubscriptTrg x t indices, env)
-  NameTrg x t -> do
+  SubscriptTrg f index -> do
+    (f, env) <- runTarget env f
+    index <- runExpr env index
+    return (SubscriptTrg f index, env)
+  NameTrg x -> do
     y <- rename x
-    return (NameTrg y t, push x y env)
+    return (NameTrg y, push x y env)
   TupleTrg xs -> do
-    xs <- forM xs $ \(x, t) -> do
-      y <- rename x
-      return (x, y, t)
-    let xs' = map (\(_, y, t) -> (y, t)) xs
-    let env' = map (\(x, y, _) -> (x, y)) xs
-    return (TupleTrg xs', env')
+    let go env [] = return ([], env)
+        go env (x : xs) = do
+          (y, env) <- runTarget env x
+          (ys, env) <- go env xs
+          return (y : ys, env)
+    (ys, env) <- go env xs
+    return (TupleTrg ys, env)
 
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> Expr -> m Expr
 runExpr env = \case
@@ -100,10 +101,10 @@ runStatement env = \case
     e <- runExpr env e
     (x, env) <- runTarget env x
     return (AugAssign x op e, env)
-  AnnAssign x e -> do
+  AnnAssign x t e -> do
     e <- runExpr env e
     (x, env) <- runTarget env x
-    return (AnnAssign x e, env)
+    return (AnnAssign x t e, env)
   For x e body -> do
     (y, env) <- runTarget env x
     e <- runExpr env e

@@ -57,22 +57,19 @@ formularizeIdent x t = tell $ Dual [TypeAssertion x t]
 
 formularizeTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target -> m Type
 formularizeTarget = \case
-  SubscriptTrg x t indices -> do
-    formularizeIdent x t
-    let go t = \case
-          [] -> return t
-          (e : es) -> do
-            formularizeExpr' e IntTy
-            t' <- genType
-            formularizeType t (ListTy t')
-            go t' es
-    go t indices
-  NameTrg x t -> do
+  SubscriptTrg f index -> do
+    t <- genType
+    tf <- formularizeTarget f
+    formularizeType tf (ListTy t)
+    tindex <- formularizeExpr index
+    formularizeType tindex IntTy
+    return t
+  NameTrg x -> do
+    t <- genType
     formularizeIdent x t
     return t
-  TupleTrg xts -> do
-    mapM_ (uncurry formularizeIdent) xts
-    return $ TupleTy (map snd xts)
+  TupleTrg xs -> do
+    TupleTy <$> mapM formularizeTarget xs
 
 formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
 formularizeExpr = \case
@@ -167,10 +164,11 @@ formularizeStatement ret = \case
     t2 <- formularizeExpr e
     formularizeType t1 IntTy
     formularizeType t2 IntTy
-  AnnAssign x e -> do
+  AnnAssign x t e -> do
     t1 <- formularizeTarget x
     t2 <- formularizeExpr e
-    formularizeType t1 t2
+    formularizeType t1 t
+    formularizeType t2 t
   For x e body -> do
     t1 <- formularizeTarget x
     t2 <- formularizeExpr e
@@ -302,9 +300,9 @@ subst' sigma = substUnit . subst sigma
 
 substTarget :: Subst -> Env -> Target -> Target
 substTarget sigma gamma = \case
-  SubscriptTrg x t indices -> SubscriptTrg x (subst' sigma t) (map (substExpr sigma gamma) indices)
-  NameTrg x t -> NameTrg x (subst' sigma t)
-  TupleTrg xts -> TupleTrg (map (second (subst' sigma)) xts)
+  SubscriptTrg f index -> SubscriptTrg (substTarget sigma gamma f) (substExpr sigma gamma index)
+  NameTrg x -> NameTrg x
+  TupleTrg xs -> TupleTrg (map (substTarget sigma gamma) xs)
 
 substExpr :: Subst -> Env -> Expr -> Expr
 substExpr sigma gamma = go
@@ -329,7 +327,7 @@ substStatement :: Subst -> Env -> Statement -> Statement
 substStatement sigma gamma = \case
   Return e -> Return (substExpr sigma gamma e)
   AugAssign x op e -> AugAssign (substTarget sigma gamma x) op (substExpr sigma gamma e)
-  AnnAssign x e -> AnnAssign (substTarget sigma gamma x) (substExpr sigma gamma e)
+  AnnAssign x t e -> AnnAssign (substTarget sigma gamma x) (subst' sigma t) (substExpr sigma gamma e)
   For x iter body -> For (substTarget sigma gamma x) (substExpr sigma gamma iter) (map (substStatement sigma gamma) body)
   If pred body1 body2 -> If (substExpr sigma gamma pred) (map (substStatement sigma gamma) body1) (map (substStatement sigma gamma) body2)
   Assert e -> Assert (substExpr sigma gamma e)

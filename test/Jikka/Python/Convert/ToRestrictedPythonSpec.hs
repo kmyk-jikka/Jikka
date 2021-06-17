@@ -37,7 +37,7 @@ spec = describe "run" $ do
               "solve"
               [("x", Y.VarTy "$0")]
               Y.IntTy
-              [ Y.AnnAssign (Y.NameTrg "y" (Y.VarTy "$1")) (Y.Name "x")
+              [ Y.AnnAssign (Y.NameTrg "y") (Y.VarTy "$1") (Y.Name "x")
               ]
           ]
     run' parsed `shouldBe` Right expected

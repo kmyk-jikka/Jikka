@@ -92,12 +92,12 @@ formatComprehension (Comprehension x iter ifs) =
 
 formatTarget :: Target -> String
 formatTarget = \case
-  SubscriptTrg x _ indices -> unIdent x ++ concatMap (\e -> "[" ++ formatExpr e ++ "]") indices
-  NameTrg x _ -> unIdent x
-  TupleTrg xts -> case xts of
+  SubscriptTrg x e -> formatTarget x ++ "[" ++ formatExpr e ++ "]"
+  NameTrg x -> unIdent x
+  TupleTrg xs -> case xs of
     [] -> "()"
-    [(x, _)] -> unIdent x ++ ","
-    _ -> intercalate ", " (map (unIdent . fst) xts)
+    [x] -> "(" ++ formatTarget x ++ ",)"
+    _ -> intercalate ", " (map formatTarget xs)
 
 formatExpr :: Expr -> String
 formatExpr = \case
@@ -131,7 +131,7 @@ formatStatement :: Statement -> [String]
 formatStatement = \case
   Return e -> ["return " ++ formatExpr e]
   AugAssign x op e -> [formatTarget x ++ " " ++ formatOperator op ++ "= " ++ formatExpr e]
-  AnnAssign x e -> [formatTarget x ++ " = " ++ formatExpr e]
+  AnnAssign x t e -> [formatTarget x ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
   For x iter body -> ["for " ++ formatTarget x ++ " in " ++ formatExpr iter ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
   If e body1 body2 -> case body2 of
     [] -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent]
