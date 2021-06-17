@@ -89,6 +89,7 @@ data Comprehension = Comprehension Target Expr (Maybe Expr)
 --         e ::= & e \operatorname{boolop} e \\
 --         \vert & e \operatorname{binop} e \\
 --         \vert & \operatorname{unaryop} e \\
+--         \vert & \lambda x _ \tau x _ \tau \dots x _ \tau. e \\
 --         \vert & \mathbf{if}~ e ~\mathbf{then}~ e ~\mathbf{else}~ e \\
 --         \vert & \lbrack e ~\mathbf{for}~ y ~\mathbf{in}~ e ~(\mathbf{if}~ e)? \rbrack \\
 --         \vert & e \operatorname{cmpop} e \\
