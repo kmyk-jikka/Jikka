@@ -44,7 +44,7 @@ data Value
   | BoolVal Bool
   | ListVal (V.Vector Value)
   | TupleVal [Value]
-  | FunctionVal Local [Ident] [Statement]
+  | ClosureVal Local [Ident] [Statement]
   deriving (Eq, Ord, Show, Read)
 
 newtype Global = Global
@@ -235,7 +235,7 @@ evalExpr = \case
       (_, _) -> throwRuntimeError "type error"
   Lambda args body -> do
     savedLocal <- get
-    return $ FunctionVal savedLocal (map fst args) [Return body]
+    return $ ClosureVal savedLocal (map fst args) [Return body]
   IfExp e1 e2 e3 -> do
     v1 <- evalExpr e1
     case v1 of
@@ -264,7 +264,7 @@ evalExpr = \case
     f <- evalExpr f
     actualArgs <- mapM evalExpr actualArgs
     case f of
-      FunctionVal local formalArgs body -> do
+      ClosureVal local formalArgs body -> do
         when (length formalArgs /= length actualArgs) $ do
           throwRuntimeError "wrong number of arguments"
         savedLocal <- get
@@ -491,7 +491,7 @@ execToplevelStatement = \case
     put $ Global (M.insert x v (unGlobal global))
   ToplevelFunctionDef f args _ body -> do
     global <- get
-    let v = FunctionVal (Local M.empty) (map fst args) body
+    let v = ClosureVal (Local M.empty) (map fst args) body
     put $ Global (M.insert f v (unGlobal global))
   ToplevelAssert e -> do
     global <- get
