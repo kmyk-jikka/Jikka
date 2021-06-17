@@ -37,7 +37,7 @@ unTypeName (TypeName name) = name
 --         \vert & \mathbf{int} \\
 --         \vert & \mathbf{bool} \\
 --         \vert & \mathbf{list}(\tau) \\
---         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1}
+--         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \\
 --         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \to \tau_n
 --     \end{array}
 -- \]
