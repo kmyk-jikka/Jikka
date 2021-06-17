@@ -37,7 +37,7 @@ import Jikka.RestrictedPython.Util
 
 data Equation
   = TypeEquation Type Type
-  | TypeAssertion Ident Type
+  | TypeAssertion VarName Type
   deriving (Eq, Ord, Show, Read)
 
 type Eqns = Dual [Equation]
@@ -45,8 +45,8 @@ type Eqns = Dual [Equation]
 formularizeType :: MonadWriter Eqns m => Type -> Type -> m ()
 formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
 
-formularizeIdent :: MonadWriter Eqns m => Ident -> Type -> m ()
-formularizeIdent x t = tell $ Dual [TypeAssertion x t]
+formularizeVarName :: MonadWriter Eqns m => VarName -> Type -> m ()
+formularizeVarName x t = tell $ Dual [TypeAssertion x t]
 
 formularizeTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target -> m Type
 formularizeTarget = \case
@@ -59,7 +59,7 @@ formularizeTarget = \case
     return t
   NameTrg x -> do
     t <- genType
-    formularizeIdent x t
+    formularizeVarName x t
     return t
   TupleTrg xs -> do
     TupleTy <$> mapM formularizeTarget xs
@@ -79,7 +79,7 @@ formularizeExpr = \case
     formularizeExpr' e t'
     return t'
   Lambda args body -> do
-    mapM_ (uncurry formularizeIdent) args
+    mapM_ (uncurry formularizeVarName) args
     ret <- genType
     formularizeExpr body
     return $ CallableTy (map snd args) ret
@@ -124,7 +124,7 @@ formularizeExpr = \case
     return t
   Name x -> do
     t <- genType
-    formularizeIdent x t
+    formularizeVarName x t
     return t
   List t es -> do
     forM_ es $ \e -> do
@@ -179,11 +179,11 @@ formularizeStatement ret = \case
 formularizeToplevelStatement :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelStatement -> m ()
 formularizeToplevelStatement = \case
   ToplevelAnnAssign x t e -> do
-    formularizeIdent x t
+    formularizeVarName x t
     formularizeExpr' e t
   ToplevelFunctionDef f args ret body -> do
-    mapM_ (uncurry formularizeIdent) args
-    formularizeIdent f (CallableTy (map snd args) ret)
+    mapM_ (uncurry formularizeVarName) args
+    formularizeVarName f (CallableTy (map snd args) ret)
     mapM_ (formularizeStatement ret) body
   ToplevelAssert e -> do
     t <- formularizeExpr e
@@ -193,9 +193,9 @@ formularizeProgram :: MonadAlpha m => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (mapM_ formularizeToplevelStatement prog)
 
 -- | `Env` is type environments. It's a mapping from variables to their types.
-newtype Env = Env {unEnv :: M.Map Ident Type}
+newtype Env = Env {unEnv :: M.Map VarName Type}
 
-sortEquations :: [Equation] -> ([(Type, Type)], [(Ident, Type)])
+sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
 sortEquations = go [] []
   where
     go eqns' assertions [] = (eqns', assertions)
@@ -203,7 +203,7 @@ sortEquations = go [] []
       TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
       TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
-makeGamma :: [(Ident, Type)] -> (Env, [(Type, Type)])
+makeGamma :: [(VarName, Type)] -> (Env, [(Type, Type)])
 makeGamma = go M.empty []
   where
     go gamma eqns [] = (Env gamma, eqns)
@@ -212,7 +212,7 @@ makeGamma = go M.empty []
       Just t' -> go gamma ((t, t') : eqns) assertions
 
 -- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
-newtype Subst = Subst {unSubst :: M.Map Ident Type}
+newtype Subst = Subst {unSubst :: M.Map TypeName Type}
 
 subst :: Subst -> Type -> Type
 subst sigma = \case
@@ -226,7 +226,7 @@ subst sigma = \case
   TupleTy ts -> TupleTy (map (subst sigma) ts)
   CallableTy ts ret -> CallableTy (map (subst sigma) ts) (subst sigma ret)
 
-unifyTyVar :: (MonadState Subst m, MonadError Error m) => Ident -> Type -> m ()
+unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
   if x `elem` freeTyVars t
     then throwTypeError $ "looped type equation " ++ show x ++ " = " ++ show t

@@ -12,26 +12,26 @@ import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Stdlib
 
-type Env = [(Ident, Ident)]
+type Env = [(VarName, VarName)]
 
-rename :: MonadAlpha m => Ident -> m Ident
+rename :: MonadAlpha m => VarName -> m VarName
 rename x = do
   i <- nextCounter
-  let base = if unIdent x == "_" then "" else takeWhile (/= '$') (unIdent x)
-  return $ Ident (base ++ '$' : show i)
+  let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
+  return $ VarName (base ++ '$' : show i)
 
-push :: Ident -> Ident -> Env -> Env
+push :: VarName -> VarName -> Env -> Env
 push x y env
-  | unIdent x == "_" = env
+  | unVarName x == "_" = env
   | otherwise = (x, y) : env
 
-push' :: [(Ident, Ident, a)] -> Env -> Env
+push' :: [(VarName, VarName, a)] -> Env -> Env
 push' xys env = foldl (\env (x, y, _) -> push x y env) env xys
 
-lookup' :: MonadError Error m => Ident -> Env -> m Ident
+lookup' :: MonadError Error m => VarName -> Env -> m VarName
 lookup' x env = case lookup x env of
   Just y -> return y
-  Nothing -> throwSymbolError $ "undefined identifier: " ++ unIdent x
+  Nothing -> throwSymbolError $ "undefined identifier: " ++ unVarName x
 
 runTarget :: (MonadAlpha m, MonadError Error m) => Env -> Target -> m (Target, Env)
 runTarget env = \case

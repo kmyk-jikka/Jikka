@@ -9,8 +9,10 @@
 -- Stability   : experimental
 -- Portability : portable
 module Jikka.RestrictedPython.Language.Expr
-  ( Ident (..),
-    unIdent,
+  ( VarName (..),
+    unVarName,
+    TypeName (..),
+    unTypeName,
     Type (..),
     Constant (..),
     Target (..),
@@ -29,10 +31,15 @@ where
 import Data.String (IsString)
 import Jikka.Python.Language.Expr (BoolOp (..), CmpOp (..), Operator (..), UnaryOp (..))
 
-newtype Ident = Ident String deriving (Eq, Ord, Show, Read, IsString)
+newtype VarName = VarName String deriving (Eq, Ord, Show, Read, IsString)
 
-unIdent :: Ident -> String
-unIdent (Ident x) = x
+unVarName :: VarName -> String
+unVarName (VarName x) = x
+
+newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, IsString)
+
+unTypeName :: TypeName -> String
+unTypeName (TypeName x) = x
 
 -- | `Type` represents the types of our restricted Python-like language.
 --
@@ -49,7 +56,7 @@ unIdent (Ident x) = x
 --
 -- NOTE: \(\mathbf{None}\) is represented as the 0-tuple.
 data Type
-  = VarTy Ident
+  = VarTy TypeName
   | IntTy
   | BoolTy
   | ListTy Type
@@ -74,7 +81,7 @@ data Constant
 -- \]
 data Target
   = SubscriptTrg Target Expr
-  | NameTrg Ident
+  | NameTrg VarName
   | TupleTrg [Target]
   deriving (Eq, Ord, Show, Read)
 
@@ -104,14 +111,14 @@ data Expr
   = BoolOp Expr BoolOp Expr
   | BinOp Expr Operator Expr
   | UnaryOp UnaryOp Expr
-  | Lambda [(Ident, Type)] Expr
+  | Lambda [(VarName, Type)] Expr
   | IfExp Expr Expr Expr
   | ListComp Expr Comprehension
   | Compare Expr CmpOp Expr
   | Call Expr [Expr]
   | Constant Constant
   | Subscript Expr Expr
-  | Name Ident
+  | Name VarName
   | List Type [Expr]
   | Tuple [Expr]
   | SubscriptSlice Expr (Maybe Expr) (Maybe Expr) (Maybe Expr)
@@ -150,8 +157,8 @@ data Statement
 --     \end{array}
 -- \]
 data ToplevelStatement
-  = ToplevelAnnAssign Ident Type Expr
-  | ToplevelFunctionDef Ident [(Ident, Type)] Type [Statement]
+  = ToplevelAnnAssign VarName Type Expr
+  | ToplevelFunctionDef VarName [(VarName, Type)] Type [Statement]
   | ToplevelAssert Expr
   deriving (Eq, Ord, Show, Read)
 

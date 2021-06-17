@@ -8,9 +8,9 @@ import Jikka.RestrictedPython.Language.Expr
 genType :: MonadAlpha m => m Type
 genType = do
   i <- nextCounter
-  return $ VarTy (Ident ('$' : show i))
+  return $ VarTy (TypeName ('$' : show i))
 
-freeTyVars :: Type -> [Ident]
+freeTyVars :: Type -> [TypeName]
 freeTyVars = \case
   VarTy x -> [x]
   IntTy -> []

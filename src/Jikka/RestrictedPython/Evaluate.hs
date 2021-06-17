@@ -50,12 +50,12 @@ data Value
   | BoolVal Bool
   | ListVal (V.Vector Value)
   | TupleVal [Value]
-  | ClosureVal Local [Ident] [Statement]
+  | ClosureVal Local [VarName] [Statement]
   | BuiltinVal Builtin
   deriving (Eq, Ord, Show, Read)
 
 newtype Global = Global
-  { unGlobal :: M.Map Ident Value
+  { unGlobal :: M.Map VarName Value
   }
   deriving (Eq, Ord, Show, Read)
 
@@ -63,14 +63,14 @@ initialGlobal :: Global
 initialGlobal = Global $ M.map BuiltinVal (M.union standardBuiltinFunctions additionalBuiltinFunctions)
 
 newtype Local = Local
-  { unLocal :: M.Map Ident Value
+  { unLocal :: M.Map VarName Value
   }
   deriving (Eq, Ord, Show, Read)
 
-assign :: MonadState Local m => Ident -> Value -> m ()
+assign :: MonadState Local m => VarName -> Value -> m ()
 assign x v = modify' (Local . M.insert x v . unLocal)
 
-lookupLocal :: (MonadState Local m, MonadError Error m) => Ident -> m Value
+lookupLocal :: (MonadState Local m, MonadError Error m) => VarName -> m Value
 lookupLocal x = do
   local <- get
   case M.lookup x (unLocal local) of
@@ -577,7 +577,7 @@ data Builtin
   | BuiltinProduct
   deriving (Eq, Ord, Show, Read)
 
-standardBuiltinFunctions :: M.Map Ident Builtin
+standardBuiltinFunctions :: M.Map VarName Builtin
 standardBuiltinFunctions =
   M.fromList
     [ ("abs", BuiltinAbs),
@@ -651,7 +651,7 @@ standardBuiltinFunctions =
       ("round", BuiltinUnsupported)
     ]
 
-additionalBuiltinFunctions :: M.Map Ident Builtin
+additionalBuiltinFunctions :: M.Map VarName Builtin
 additionalBuiltinFunctions =
   M.fromList
     [ ("argmax", BuiltinArgMax),

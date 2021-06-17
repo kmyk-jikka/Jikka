@@ -5,10 +5,10 @@ module Jikka.RestrictedPython.Language.Stdlib where
 import qualified Data.Set as S
 import Jikka.RestrictedPython.Language.Expr
 
-builtinFunctions :: S.Set Ident
+builtinFunctions :: S.Set VarName
 builtinFunctions = S.union standardBuiltinFunctions additionalBuiltinFunctions
 
-standardBuiltinFunctions :: S.Set Ident
+standardBuiltinFunctions :: S.Set VarName
 standardBuiltinFunctions =
   S.fromList
     [ "abs",
@@ -82,7 +82,7 @@ standardBuiltinFunctions =
       "round"
     ]
 
-additionalBuiltinFunctions :: S.Set Ident
+additionalBuiltinFunctions :: S.Set VarName
 additionalBuiltinFunctions =
   S.fromList
     [ "argmax",

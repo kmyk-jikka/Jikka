@@ -12,24 +12,17 @@ import Jikka.Common.Error
 import Jikka.Common.Location
 import qualified Jikka.Python.Language.Expr as X
 import qualified Jikka.RestrictedPython.Language.Expr as Y
-
-gensym :: MonadAlpha m => m Y.Ident
-gensym = do
-  i <- nextCounter
-  return $ Y.Ident ('$' : show i)
-
-genType :: MonadAlpha m => m Y.Type
-genType = Y.VarTy <$> gensym
+import qualified Jikka.RestrictedPython.Util as Y (genType)
 
 -- ---------------------------------------------------------------------------
 -- convert AST
 
-runIdent :: X.Ident' -> Y.Ident
-runIdent (WithLoc _ (X.Ident x)) = Y.Ident x
+runIdent :: X.Ident' -> Y.VarName
+runIdent (WithLoc _ (X.Ident x)) = Y.VarName x
 
 runType :: (MonadAlpha m, MonadError Error m) => X.Type' -> m Y.Type
 runType t = wrapAt (loc t) $ case value t of
-  X.Constant (X.ConstString _) -> genType
+  X.Constant (X.ConstString _) -> Y.genType
   X.Name (WithLoc _ (X.Ident "None")) -> return $ Y.TupleTy []
   X.Name (WithLoc _ (X.Ident "int")) -> return Y.IntTy
   X.Name (WithLoc _ (X.Ident "bool")) -> return Y.BoolTy
@@ -47,7 +40,7 @@ runType t = wrapAt (loc t) $ case value t of
   _ -> throwSemanticError ("not a type: " ++ show t)
 
 runMaybeType :: (MonadAlpha m, MonadError Error m) => Maybe X.Type' -> m Y.Type
-runMaybeType Nothing = genType
+runMaybeType Nothing = Y.genType
 runMaybeType (Just t) = runType t
 
 runConstant :: MonadError Error m => X.Constant -> m Y.Constant
@@ -57,7 +50,7 @@ runConstant = \case
   X.ConstBool p -> return $ Y.ConstBool p
   e -> throwSemanticError ("unsupported constant: " ++ show e)
 
-runTargetName :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Ident
+runTargetName :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.VarName
 runTargetName e = case value e of
   X.Name x -> return $ runIdent x
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
@@ -69,7 +62,7 @@ runTarget e = case value e of
   X.Tuple es -> Y.TupleTrg <$> mapM runTarget es
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
 
-runTargetIdent :: MonadError Error m => X.Expr' -> m Y.Ident
+runTargetIdent :: MonadError Error m => X.Expr' -> m Y.VarName
 runTargetIdent e = case value e of
   X.Name x -> return $ runIdent x
   _ -> throwSemanticErrorAt (loc e) ("not an simple assignment target: " ++ show e)
@@ -83,7 +76,7 @@ runComprehension = \case
     return $ Y.Comprehension x iter ifs
   comp -> throwSemanticError ("many comprehensions are unsupported: " ++ show comp)
 
-runArguments :: (MonadAlpha m, MonadError Error m) => X.Arguments -> m [(Y.Ident, Y.Type)]
+runArguments :: (MonadAlpha m, MonadError Error m) => X.Arguments -> m [(Y.VarName, Y.Type)]
 runArguments = \case
   X.Arguments
     { X.argsPosonlyargs = [],
@@ -128,7 +121,7 @@ runExpr e = case value e of
     X.Slice from to step -> Y.SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
     _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2
   X.Name x -> return $ Y.Name (runIdent x)
-  X.List es -> Y.List <$> genType <*> mapM runExpr es
+  X.List es -> Y.List <$> Y.genType <*> mapM runExpr es
   X.Tuple es -> Y.Tuple <$> mapM runExpr es
   _ -> throwSemanticErrorAt (loc e) ("unsupported expr: " ++ show e)
 
@@ -147,7 +140,7 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
     [] -> return []
     [x] -> do
       x <- runTarget x
-      t <- genType
+      t <- Y.genType
       e <- runExpr e
       return [Y.AnnAssign x t e]
     _ -> throwSemanticError "assign statement with multiple targets is not allowed in def statement"
@@ -214,7 +207,7 @@ runToplevelStatement stmt = wrapAt (loc stmt) $ case value stmt of
     [] -> return []
     [x] -> do
       x <- runTargetIdent x
-      t <- genType
+      t <- Y.genType
       e <- runExpr e
       return [Y.ToplevelAnnAssign x t e]
     _ -> throwSemanticError "assignment statement with multiple targets is not allowed at toplevel"
