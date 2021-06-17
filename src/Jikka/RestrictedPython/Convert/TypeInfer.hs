@@ -33,6 +33,7 @@ import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Util
 
 data Equation
   = TypeEquation Type Type
@@ -40,14 +41,6 @@ data Equation
   deriving (Eq, Ord, Show, Read)
 
 type Eqns = Dual [Equation]
-
-gensym :: MonadAlpha m => m Ident
-gensym = do
-  i <- nextCounter
-  return $ Ident ('$' : show i)
-
-genType :: MonadAlpha m => m Type
-genType = VarTy <$> gensym
 
 formularizeType :: MonadWriter Eqns m => Type -> Type -> m ()
 formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
@@ -232,15 +225,6 @@ subst sigma = \case
   ListTy t -> ListTy (subst sigma t)
   TupleTy ts -> TupleTy (map (subst sigma) ts)
   CallableTy ts ret -> CallableTy (map (subst sigma) ts) (subst sigma ret)
-
-freeTyVars :: Type -> [Ident]
-freeTyVars = \case
-  VarTy x -> [x]
-  IntTy -> []
-  BoolTy -> []
-  ListTy t -> freeTyVars t
-  TupleTy ts -> concat $ mapM freeTyVars ts
-  CallableTy ts ret -> concat $ mapM freeTyVars (ret : ts)
 
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => Ident -> Type -> m ()
 unifyTyVar x t =
