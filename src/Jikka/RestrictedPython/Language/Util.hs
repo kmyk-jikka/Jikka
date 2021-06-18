@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Jikka.RestrictedPython.Util where
+module Jikka.RestrictedPython.Language.Util where
 
 import Data.List (delete, nub)
 import Jikka.Common.Alpha

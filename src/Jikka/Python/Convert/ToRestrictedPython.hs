@@ -12,7 +12,7 @@ import Jikka.Common.Error
 import Jikka.Common.Location
 import qualified Jikka.Python.Language.Expr as X
 import qualified Jikka.RestrictedPython.Language.Expr as Y
-import qualified Jikka.RestrictedPython.Util as Y (genType)
+import qualified Jikka.RestrictedPython.Language.Util as Y (genType)
 
 -- ---------------------------------------------------------------------------
 -- convert AST

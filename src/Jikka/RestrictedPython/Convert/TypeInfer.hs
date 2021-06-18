@@ -33,7 +33,7 @@ import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
-import Jikka.RestrictedPython.Util
+import Jikka.RestrictedPython.Language.Util
 
 data Equation
   = TypeEquation Type Type
