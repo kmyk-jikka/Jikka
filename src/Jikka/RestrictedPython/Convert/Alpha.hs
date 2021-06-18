@@ -15,19 +15,15 @@ import Jikka.RestrictedPython.Language.Stdlib
 
 type Env = [(VarName, VarName)]
 
-rename :: MonadAlpha m => VarName -> m VarName
+-- | `rename` renames given variables and record them to the `Env`.
+rename :: (MonadAlpha m, MonadState Env m) => VarName -> m VarName
 rename x = do
   i <- nextCounter
   let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
-  return $ VarName (base ++ '$' : show i)
-
-push :: MonadState Env m => VarName -> VarName -> m ()
-push x y
-  | unVarName x == "_" = return ()
-  | otherwise = modify' ((x, y) :)
-
-push' :: MonadState Env m => [(VarName, VarName, a)] -> m ()
-push' xys = mapM_ (\(x, y, _) -> push x y) xys
+  let y = VarName (base ++ '$' : show i)
+  when (unVarName x /= "_") $ do
+    modify' ((x, y) :)
+  return y
 
 lookup' :: (MonadState Env m, MonadError Error m) => VarName -> m VarName
 lookup' x = do
@@ -44,7 +40,6 @@ runTarget = \case
     return $ SubscriptTrg f index
   NameTrg x -> do
     y <- rename x
-    push x y
     return $ NameTrg y
   TupleTrg xs -> do
     let go [] = return []
@@ -61,15 +56,13 @@ runExpr = \case
   BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
   UnaryOp op e -> UnaryOp op <$> runExpr e
   Lambda args body -> do
+    savedEnv <- get
     args <- forM args $ \(x, t) -> do
       y <- rename x
-      return (x, y, t)
-    savedEnv <- get
-    push' args
-    let args' = map (\(_, y, t) -> (y, t)) args
+      return (y, t)
     body <- runExpr body
     put savedEnv
-    return $ Lambda args' body
+    return $ Lambda args body
   IfExp e1 e2 e3 -> do
     e1 <- runExpr e1
     e2 <- runExpr e2
@@ -137,21 +130,17 @@ runToplevelStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => 
 runToplevelStatement = \case
   ToplevelAnnAssign x t e -> do
     y <- rename x
-    push x y
     e <- runExpr e
     return $ ToplevelAnnAssign y t e
   ToplevelFunctionDef f args ret body -> do
     g <- rename f
-    push f g
+    savedEnv <- get
     args <- forM args $ \(x, t) -> do
       y <- rename x
-      return (x, y, t)
-    let args' = map (\(_, y, t) -> (y, t)) args
-    savedEnv <- get
-    push' args
+      return (y, t)
     body <- runStatements body
     put savedEnv
-    return $ ToplevelFunctionDef g args' ret body
+    return $ ToplevelFunctionDef g args ret body
   ToplevelAssert e -> do
     e <- runExpr e
     return $ ToplevelAssert e
