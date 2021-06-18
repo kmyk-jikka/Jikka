@@ -79,8 +79,27 @@ hasNoSubscriptionInLoopCounters _ = True -- TODO
 --
 -- > for i in range(100):
 -- >     pass
--- > return i
---
--- NOTE: This is allowd in the standard Python.
+-- > return i  # => 100
 hasNoNameLeakOfLoopCounters :: Program -> Bool
 hasNoNameLeakOfLoopCounters _ = True -- TODO
+
+-- | `hasNoAssignToLoopCounters` checks that there are no assignments to loop counters of for-loops.
+-- For example, the following has the assignment.
+--
+-- > for i in range(100):
+-- >     i += 1
+hasNoAssignToLoopCounters :: Program -> Bool
+hasNoAssignToLoopCounters _ = True -- TODO
+
+-- | `hasNoAssignToLoopIterators` checks that there are no assignments to loop iterators of for-loops.
+-- For example, the following have the assignments.
+--
+-- > a = list(range(10))
+-- > for i in a:
+-- >     a[5] = i
+--
+-- > a = 0
+-- > for i in f(a):
+-- >     a += i
+hasNoAssignToLoopIterators :: Program -> Bool
+hasNoAssignToLoopIterators _ = True -- TODO
