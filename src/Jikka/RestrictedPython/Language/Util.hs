@@ -63,10 +63,24 @@ hasNoSubscriptTrg = \case
   NameTrg _ -> True
   TupleTrg xs -> all hasNoSubscriptTrg xs
 
--- | `hasNoSubscriptTrgInLoop` checks that there are no `SubscriptTrg` in loop counters of for-loops.
+-- | `hasNoSubscriptionInLoopCounters` checks that there are no `SubscriptTrg` in loop counters of for-loops.
+-- For example, the following has subscription.
+--
+-- > for a[0] in range(100):
+-- >     pass
+-- > return a[0]
+--
+-- NOTE: This is allowd in the standard Python.
 hasNoSubscriptionInLoopCounters :: Program -> Bool
 hasNoSubscriptionInLoopCounters _ = True -- TODO
 
--- | `hasNoNameLeakFromForLoops ` checks that there are no leaks of loop counters of for-loops.
+-- | `hasNoNameLeakOfLoopCounters` checks that there are no leaks of loop counters of for-loops.
+-- For example, the following has a leak.
+--
+-- > for i in range(100):
+-- >     pass
+-- > return i
+--
+-- NOTE: This is allowd in the standard Python.
 hasNoNameLeakOfLoopCounters :: Program -> Bool
 hasNoNameLeakOfLoopCounters _ = True -- TODO
