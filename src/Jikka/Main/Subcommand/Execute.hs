@@ -14,7 +14,7 @@ import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 
 run :: FilePath -> ExceptT Error IO ()
-run path = evalAlphaT 0 $ do
+run path = flip evalAlphaT 0 $ do
   prog <- liftIO $ T.readFile path
   prog <- liftEither $ FromPython.run path prog
   prog <- ToRestrictedPython.run prog

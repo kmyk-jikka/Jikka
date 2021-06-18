@@ -14,7 +14,7 @@ import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
 
 run :: FilePath -> Text -> Either Error Text
-run path input = evalAlphaT 0 $ do
+run path input = flip evalAlphaT 0 $ do
   prog <- FromPython.run path input
   prog <- ToRestrictedPython.run prog
   prog <- Alpha.run prog

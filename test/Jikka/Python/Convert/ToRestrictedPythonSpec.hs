@@ -17,7 +17,7 @@ at :: a -> Int -> WithLoc a
 at a x = WithLoc (Loc 0 x (-1)) a
 
 run' :: X.Program -> Either Error Y.Program
-run' = evalAlphaT 0 . run
+run' = flip evalAlphaT 0 . run
 
 spec :: Spec
 spec = describe "run" $ do

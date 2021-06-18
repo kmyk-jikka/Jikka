@@ -14,7 +14,7 @@ import qualified Jikka.Core.Language.Expr as X
 import Test.Hspec
 
 run' :: X.Program -> Either Error Y.Program
-run' = evalAlphaT 0 . run
+run' = flip evalAlphaT 0 . run
 
 spec :: Spec
 spec = describe "run" $ do

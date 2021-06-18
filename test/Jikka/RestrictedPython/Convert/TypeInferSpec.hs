@@ -10,7 +10,7 @@ import Jikka.RestrictedPython.Language.Expr
 import Test.Hspec
 
 run' :: Program -> Either Error Program
-run' = evalAlphaT 0 . run
+run' = flip evalAlphaT 0 . run
 
 spec :: Spec
 spec = do

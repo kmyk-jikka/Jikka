@@ -25,7 +25,7 @@ put title message = do
   liftIO $ putStrLn (indent message)
 
 run :: FilePath -> ExceptT Error IO ()
-run path = evalAlphaT 0 $ do
+run path = flip evalAlphaT 0 $ do
   put "path" $ show path
   prog <- liftIO $ T.readFile path
   put "input" $ unpack prog
