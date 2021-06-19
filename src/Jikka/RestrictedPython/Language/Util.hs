@@ -62,6 +62,15 @@ targetVars = nub . go
       NameTrg x -> [x]
       TupleTrg xs -> concatMap go xs
 
+doesAlwaysReturn :: Statement -> Bool
+doesAlwaysReturn = \case
+  Return _ -> True
+  AugAssign _ _ _ -> False
+  AnnAssign _ _ _ -> False
+  For _ _ _ -> False
+  If _ body1 body2 -> any doesAlwaysReturn body1 && any doesAlwaysReturn body2
+  Assert _ -> False
+
 mapStatementStatementM :: Monad m => (Statement -> m [Statement]) -> Statement -> m [Statement]
 mapStatementStatementM f = \case
   Return e -> f $ Return e
@@ -113,6 +122,33 @@ listStatements = reverse . getDual . execWriter . mapStatementM go
     go stmt = do
       tell $ Dual [stmt]
       return [stmt]
+
+mapStatementsToplevelStatementM :: Monad m => ([Statement] -> m [Statement]) -> ToplevelStatement -> m ToplevelStatement
+mapStatementsToplevelStatementM go = \case
+  ToplevelAnnAssign x t e -> return $ ToplevelAnnAssign x t e
+  ToplevelFunctionDef f args ret body -> do
+    let go' = \case
+          Return e -> return [Return e]
+          AugAssign x op e -> return [AugAssign x op e]
+          AnnAssign x t e -> return [AnnAssign x t e]
+          For x iter body -> do
+            body <- go body
+            return [For x iter body]
+          If e body1 body2 -> do
+            body1 <- go body1
+            body2 <- go body2
+            return [If e body1 body2]
+          Assert e -> return [Assert e]
+    body <- concat <$> mapM (mapStatementStatementM go') body
+    body <- go body
+    return $ ToplevelFunctionDef f args ret body
+  ToplevelAssert e -> return $ ToplevelAssert e
+
+mapStatementsM :: Monad m => ([Statement] -> m [Statement]) -> Program -> m Program
+mapStatementsM f = mapM (mapStatementsToplevelStatementM f)
+
+mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
+mapStatements f = runIdentity . mapStatementsM (return . f)
 
 hasNoSubscriptTrg :: Target -> Bool
 hasNoSubscriptTrg = \case
