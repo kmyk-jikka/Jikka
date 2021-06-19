@@ -1,5 +1,7 @@
 # Jikka
 
+[![test](https://github.com/kmyk/Jikka/actions/workflows/test.yml/badge.svg)](https://github.com/kmyk/Jikka/actions/workflows/test.yml)
+
 Jikka is an automated solver for problems of competitive programming.
 
 In competitive programming, there are some problems which are solvable only with "repeating formula transformations", "pasting snippets of famous data structures", etc.
@@ -17,7 +19,7 @@ Jikka はそのような問題を自動で解きます。
 $ stack run convert PYTHON_FILE
 ```
 
-[Stack](https://www.haskellstack.org/) is required.
+[Stack](https://www.haskellstack.org/) is required. If you are using Ubuntu, you can install Stack with `$ sudo apt install haskell-stack`.
 
 
 ## Documents
@@ -32,6 +34,7 @@ for developpers:
 -   [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
 -   [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
 -   [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
+-   [Haddock](https://kmyk.github.io/Jikka/)
 
 
 ## Examples (`v3.1.0`)
