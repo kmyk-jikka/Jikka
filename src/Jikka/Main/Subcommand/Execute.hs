@@ -9,6 +9,7 @@ import Jikka.Common.Error
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
 import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha
+import qualified Jikka.RestrictedPython.Convert.RemoveUnbalancedIf as RemoveUnbalancedIf
 import qualified Jikka.RestrictedPython.Convert.RemoveUnreachable as RemoveUnreachable
 import qualified Jikka.RestrictedPython.Convert.SplitLoops as SplitLoops
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
@@ -24,6 +25,7 @@ run path = flip evalAlphaT 0 $ do
   prog <- Alpha.run prog
   prog <- TypeInfer.run prog
   prog <- SplitLoops.run prog
+  prog <- return $ RemoveUnbalancedIf.run prog
   global <- Evaluate.makeGlobal prog
   entrypoint <- Value.makeEntryPointIO "solve" global
   value <- Evaluate.runWithGlobal global entrypoint
