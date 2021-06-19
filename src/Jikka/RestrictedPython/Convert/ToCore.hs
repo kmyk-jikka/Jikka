@@ -18,7 +18,7 @@ import qualified Jikka.RestrictedPython.Language.Lint as X
 -- * `X.doesntHaveAssignmentToLoopCounters`
 -- * `X.doesntHaveAssignmentToLoopIterators`
 -- * `X.doesntHaveReturnInLoops`
--- * `X.doesntHaveMixedAssignment`
+-- * `X.doesntHaveNonTrivialSubscriptedAssignmentInForLoops`
 run :: MonadError Error m => X.Program -> m Y.Program
 run prog = do
   X.ensureDoesntHaveSubscriptionInLoopCounters prog
@@ -26,5 +26,5 @@ run prog = do
   X.ensureDoesntHaveAssignmentToLoopCounters prog
   X.ensureDoesntHaveAssignmentToLoopIterators prog
   X.ensureDoesntHaveReturnInLoops prog
-  X.ensureDoesntHaveMixedAssignment prog
+  X.ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops prog
   undefined

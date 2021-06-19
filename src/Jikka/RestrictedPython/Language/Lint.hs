@@ -145,3 +145,84 @@ doesntHaveMixedAssignment = not . hasMixedAssignment
 
 ensureDoesntHaveMixedAssignment :: MonadError Error m => Program -> m ()
 ensureDoesntHaveMixedAssignment = makeEnsureProgram doesntHaveMixedAssignment "there must not be mixed assignments"
+
+-- | `hasNonTrivialSubscriptedAssignmentInForLoops` checks that there are assignments with non-trivial subscriptions in for-loops.
+-- A trivial subscription is a sequence of subscriptions to a variable with constant indices and at most one trivial loop-counter indices for each loops.
+-- A constant index is an expr which has a constant value in the loop.
+-- A trivial loop-counter index is the loop counter from "range(n)", "range(n, m)" or "enumerate(a)" with optional post-addition with a int literal.
+--
+-- For example, the followings have such assignments.
+--
+-- > x = 0
+-- > for i in range(10):
+-- >     x += 1
+-- >     a[x] += 1
+--
+-- > for i in range(10):
+-- >     j = i
+-- >     a[j] += 1
+--
+-- > for i in range(10):
+-- >     a[2 * i] += 1
+--
+-- > for i in range(10):
+-- >     a[1 + i] += 1
+--
+-- > c = 1
+-- > for i in range(10):
+-- >     a[i + c] += 1
+--
+-- > for i in range(10):
+-- >     a[i][i] += 1
+--
+-- > for i in [1, 2, 3]:
+-- >     a[i] += 1
+--
+-- > b = range(10)
+-- > for i in b:
+-- >     a[i] += 1
+--
+-- > for i in range(0, 10, 2):
+-- >     a[i] += 1
+--
+-- > for i, b_i in enumerate(b):
+-- >     a[b_i] += i
+--
+-- For example, the followings don't have such assignments.
+--
+-- > c = 0
+-- > for i in range(10):
+-- >     a[c] += 1
+--
+-- > for i in range(10):
+-- >     a[i] += 1
+--
+-- > for i in range(10):
+-- >     a[i + 1] += 1
+--
+-- > for i in range(10):
+-- >     for j in range(10):
+-- >         a[i + 1][j] += 1
+--
+-- > for i in range(1, 10):
+-- >     a[i] += 1
+--
+-- > for i, b_i in enumerate(b):
+-- >     a[i] += b_i
+hasNonTrivialSubscriptedAssignmentInForLoops :: Program -> Bool
+hasNonTrivialSubscriptedAssignmentInForLoops prog = any check (listStatements prog)
+  where
+    check = \case
+      AugAssign x _ _ -> go x
+      AnnAssign x _ _ -> go x
+      _ -> False
+    go = \case
+      SubscriptTrg _ _ -> False -- TODO
+      NameTrg _ -> False
+      TupleTrg xs -> any go xs
+
+doesntHaveNonTrivialSubscriptedAssignmentInForLoops :: Program -> Bool
+doesntHaveNonTrivialSubscriptedAssignmentInForLoops = not . hasMixedAssignment
+
+ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops :: MonadError Error m => Program -> m ()
+ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops = makeEnsureProgram doesntHaveNonTrivialSubscriptedAssignmentInForLoops "there must not be assignments with non-trivial subscriptions in for-loops"
