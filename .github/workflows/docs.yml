@@ -14,11 +14,16 @@ jobs:
       with:
         enable-stack: true
 
+    - uses: actions/cache@v2
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}
+
     - name: Build dependencies
-      run: stack build --only-dependencies
+      run: stack --system-ghc build --only-dependencies
 
     - name: Run Haddock
-      run: stack haddock --haddock-arguments --odir=public
+      run: stack --system-ghc haddock --haddock-arguments --odir=public
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3

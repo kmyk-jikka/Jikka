@@ -14,11 +14,16 @@ jobs:
       with:
         enable-stack: true
 
+    - uses: actions/cache@v2
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}
+
     - name: Build dependencies
-      run: stack build --test --only-dependencies
+      run: stack --system-ghc build --test --only-dependencies
 
     - name: Run Ormolu
-      run: stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
+      run: stack --system-ghc exec ormolu -- --mode=check $(find src app test -name \*.hs)
 
     - name: Run HLint
-      run: stack exec hlint -- src app test
+      run: stack --system-ghc exec hlint -- src app test

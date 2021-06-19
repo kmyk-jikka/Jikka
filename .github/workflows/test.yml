@@ -14,14 +14,19 @@ jobs:
       with:
         enable-stack: true
 
+    - uses: actions/cache@v2
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}
+
     - name: Build dependencies
-      run: stack build --test --only-dependencies
+      run: stack --system-ghc build --test --only-dependencies
 
     - name: Build
-      run: stack build
+      run: stack --system-ghc build
 
     - name: Run unit tests
-      run: stack test
+      run: stack --system-ghc test
 
     - name: Run integrated tests
       run: bash examples/test.sh
