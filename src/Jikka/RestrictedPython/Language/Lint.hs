@@ -79,7 +79,7 @@ doesntHaveAssignmentToLoopCounters = not . hasAssignmentToLoopCounters
 ensureDoesntHaveAssignmentToLoopCounters :: MonadError Error m => Program -> m ()
 ensureDoesntHaveAssignmentToLoopCounters = makeEnsureProgram doesntHaveAssignmentToLoopCounters "there must not be assignments to loop counters"
 
--- | `hasAssignToLoopIterators` checks that there are assignments to loop iterators of for-loops.
+-- | `hasAssignmentToLoopIterators` checks that there are assignments to loop iterators of for-loops.
 -- For example, the followings have the assignments.
 --
 -- > a = list(range(10))
@@ -89,8 +89,8 @@ ensureDoesntHaveAssignmentToLoopCounters = makeEnsureProgram doesntHaveAssignmen
 -- > a = 0
 -- > for i in f(a):
 -- >     a += i
-hasAssignToLoopIterators :: Program -> Bool
-hasAssignToLoopIterators prog = any check (listStatements prog)
+hasAssignmentToLoopIterators :: Program -> Bool
+hasAssignmentToLoopIterators prog = any check (listStatements prog)
   where
     check = \case
       For _ iter body ->
@@ -100,7 +100,7 @@ hasAssignToLoopIterators prog = any check (listStatements prog)
       _ -> False
 
 doesntHaveAssignmentToLoopIterators :: Program -> Bool
-doesntHaveAssignmentToLoopIterators = not . hasAssignToLoopIterators
+doesntHaveAssignmentToLoopIterators = not . hasAssignmentToLoopIterators
 
 ensureDoesntHaveAssignmentToLoopIterators :: MonadError Error m => Program -> m ()
 ensureDoesntHaveAssignmentToLoopIterators = makeEnsureProgram doesntHaveAssignmentToLoopIterators "there must not be assignments changing loop iterators"
