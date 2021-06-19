@@ -1,5 +1,7 @@
 # Changelog for Jikka
 
+## 2021-06-19: v5.0.2.0
+
 ## 2020-12-03: v5.0.1.0
 
 `v5.0.1.0` is the first version of the third prototype.
