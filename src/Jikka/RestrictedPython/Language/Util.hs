@@ -6,6 +6,10 @@ module Jikka.RestrictedPython.Language.Util
     genType,
     genVarName,
 
+    -- * constants
+    constIntExp,
+    constBoolExp,
+
     -- * free variables
     freeTyVars,
     freeVars,
@@ -62,6 +66,12 @@ genVarName x = do
   i <- nextCounter
   let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
   return $ VarName (base ++ '$' : show i)
+
+constIntExp :: Integer -> Expr
+constIntExp = Constant . ConstInt
+
+constBoolExp :: Bool -> Expr
+constBoolExp = Constant . ConstBool
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go

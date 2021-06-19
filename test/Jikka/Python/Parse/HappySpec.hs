@@ -8,6 +8,7 @@ where
 import Jikka.Common.Error (Error)
 import Jikka.Common.Location
 import Jikka.Python.Language.Expr
+import Jikka.Python.Language.Util
 import Jikka.Python.Parse.Happy
 import qualified Jikka.Python.Parse.Token as L
 import Test.Hspec
@@ -26,7 +27,7 @@ spec = describe "run" $ do
             [L.Indent, L.Return, L.Int 42, L.Newline],
             [L.Dedent]
           ]
-    let parsed = [FunctionDef ("solve" `at` (1, 2)) emptyArguments [Return (Just (Constant (ConstInt 42) `at` (2, 3))) `at` (2, 2)] [] (Just $ Name ("int" `at` (1, 6)) `at` (1, 6)) `at` (1, 1)]
+    let parsed = [FunctionDef ("solve" `at` (1, 2)) emptyArguments [Return (Just (constIntExp 42 `at` (2, 3))) `at` (2, 2)] [] (Just $ Name ("int" `at` (1, 6)) `at` (1, 6)) `at` (1, 1)]
     run' input `shouldBe` Right parsed
   it "works on a small fun def" $ do
     let input =
@@ -39,10 +40,10 @@ spec = describe "run" $ do
             [L.Dedent]
           ]
     let parsed =
-          [FunctionDef ("solve" `at` (1, 2)) (emptyArguments {argsArgs = [("p" `at` (1, 4), Nothing)]}) [If (Name ("p" `at` (2, 3)) `at` (2, 3)) [Return (Just (Constant (ConstInt 0) `at` (3, 3))) `at` (3, 2)] [Return (Just (Constant (ConstInt 1) `at` (5, 3))) `at` (5, 2)] `at` (2, 2)] [] Nothing `at` (1, 1)]
+          [FunctionDef ("solve" `at` (1, 2)) (emptyArguments {argsArgs = [("p" `at` (1, 4), Nothing)]}) [If (Name ("p" `at` (2, 3)) `at` (2, 3)) [Return (Just (constIntExp 0 `at` (3, 3))) `at` (3, 2)] [Return (Just (constIntExp 1 `at` (5, 3))) `at` (5, 2)] `at` (2, 2)] [] Nothing `at` (1, 1)]
     run' input `shouldBe` Right parsed
   it "works on a simple constant def" $ do
     let input = [[L.Ident "MOD", L.Colon, L.Ident "int", L.Equal, L.Int 1000000007, L.Newline]]
     let parsed =
-          [AnnAssign (Name ("MOD" `at` (1, 1)) `at` (1, 1)) (Name ("int" `at` (1, 3)) `at` (1, 3)) (Just (Constant (ConstInt 1000000007) `at` (1, 5))) `at` (1, 1)]
+          [AnnAssign (Name ("MOD" `at` (1, 1)) `at` (1, 1)) (Name ("int" `at` (1, 3)) `at` (1, 3)) (Just (constIntExp 1000000007 `at` (1, 5))) `at` (1, 1)]
     run' input `shouldBe` Right parsed

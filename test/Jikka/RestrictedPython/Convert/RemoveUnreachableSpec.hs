@@ -7,6 +7,7 @@ where
 
 import Jikka.RestrictedPython.Convert.RemoveUnreachable (run)
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Util
 import Test.Hspec
 
 spec :: Spec
@@ -17,16 +18,16 @@ spec = describe "run" $ do
               "solve"
               []
               IntTy
-              [ AnnAssign (NameTrg "a") IntTy (Constant (ConstInt 0)),
+              [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
                 If
-                  (Constant (ConstBool True))
-                  [ AnnAssign (NameTrg "b") IntTy (Constant (ConstInt 0)),
+                  (constBoolExp True)
+                  [ AnnAssign (NameTrg "b") IntTy (constIntExp 0),
                     Return (Name "a"),
                     AugAssign (NameTrg "b") Add (Name "1")
                   ]
-                  [ Return (Constant (ConstInt 1))
+                  [ Return (constIntExp 1)
                   ],
-                AugAssign (NameTrg "a") Add (Constant (ConstInt 1))
+                AugAssign (NameTrg "a") Add (constIntExp 1)
               ]
           ]
     let expected =
@@ -34,13 +35,13 @@ spec = describe "run" $ do
               "solve"
               []
               IntTy
-              [ AnnAssign (NameTrg "a") IntTy (Constant (ConstInt 0)),
+              [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
                 If
-                  (Constant (ConstBool True))
-                  [ AnnAssign (NameTrg "b") IntTy (Constant (ConstInt 0)),
+                  (constBoolExp True)
+                  [ AnnAssign (NameTrg "b") IntTy (constIntExp 0),
                     Return (Name "a")
                   ]
-                  [ Return (Constant (ConstInt 1))
+                  [ Return (constIntExp 1)
                   ]
               ]
           ]
