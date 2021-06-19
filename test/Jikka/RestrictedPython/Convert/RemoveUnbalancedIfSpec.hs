@@ -14,33 +14,25 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let prog =
-          [ ToplevelFunctionDef
-              "solve"
-              []
-              IntTy
-              [ If
-                  (constBoolExp True)
-                  [ Return (constIntExp 0)
-                  ]
-                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
-                  ],
-                AnnAssign (NameTrg "b") IntTy (constIntExp 1),
-                Return (constIntExp 2)
-              ]
-          ]
+          toplevelMainDef
+            [ If
+                (constBoolExp True)
+                [ Return (constIntExp 0)
+                ]
+                [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                ],
+              AnnAssign (NameTrg "b") IntTy (constIntExp 1),
+              Return (constIntExp 2)
+            ]
     let expected =
-          [ ToplevelFunctionDef
-              "solve"
-              []
-              IntTy
-              [ If
-                  (constBoolExp True)
-                  [ Return (constIntExp 0)
-                  ]
-                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "b") IntTy (constIntExp 1),
-                    Return (constIntExp 2)
-                  ]
-              ]
-          ]
+          toplevelMainDef
+            [ If
+                (constBoolExp True)
+                [ Return (constIntExp 0)
+                ]
+                [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
+                  AnnAssign (NameTrg "b") IntTy (constIntExp 1),
+                  Return (constIntExp 2)
+                ]
+            ]
     run prog `shouldBe` expected

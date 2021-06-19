@@ -43,6 +43,9 @@ module Jikka.RestrictedPython.Language.Util
     hasSubscriptTrg,
     hasBareNameTrg,
 
+    -- * programs
+    toplevelMainDef,
+
     -- * IO
     readValueIO,
   )
@@ -292,6 +295,9 @@ hasBareNameTrg = \case
   SubscriptTrg _ _ -> False
   NameTrg _ -> True
   TupleTrg xs -> any hasSubscriptTrg xs
+
+toplevelMainDef :: [Statement] -> Program
+toplevelMainDef body = [ToplevelFunctionDef (VarName "main") [] IntTy body]
 
 readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
 readValueIO = \case
