@@ -1,0 +1,713 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_FRZyFNkfYJQ71wMJctMFR0"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Serializer.Core</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.Serializer.Core.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Jikka.Serializer.Core.html#run%27"><span class="hs-identifier">run'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">intercalate</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">pack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html"><span class="hs-identifier">Jikka.Language.Common.Name</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html"><span class="hs-identifier">Jikka.Language.Core.Expr</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Serializer.AutoIndent.html"><span class="hs-identifier">Jikka.Serializer.AutoIndent</span></a></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-type">paren</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-16"></span><span id="paren"><span class="annot"><span class="annottext">paren :: String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var hs-var">paren</span></a></span></span><span> </span><span id="local-6989586621679164133"><span class="annot"><span class="annottext">s :: String
+</span><a href="#local-6989586621679164133"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164133"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;)&quot;</span></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-type">formatType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-19"></span><span id="formatType"><span class="annot"><span class="annottext">formatType :: Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var hs-var">formatType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#IntTy"><span class="hs-identifier hs-type">IntTy</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;int&quot;</span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BoolTy"><span class="hs-identifier hs-type">BoolTy</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;bool&quot;</span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ListTy"><span class="hs-identifier hs-type">ListTy</span></a></span><span> </span><span id="local-6989586621679164128"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164128"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164128"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; list&quot;</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#FunTy"><span class="hs-identifier hs-type">FunTy</span></a></span><span> </span><span id="local-6989586621679164126"><span class="annot"><span class="annottext">ts :: [Type]
+</span><a href="#local-6989586621679164126"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679164125"><span class="annot"><span class="annottext">ret :: Type
+</span><a href="#local-6989586621679164125"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="hs-string">&quot; * &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Type -&gt; String) -&gt; [Type] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679164126"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; -&gt; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164125"><span class="hs-identifier hs-var">ret</span></a></span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">data</span><span> </span><span id="Builtin%27"><span class="annot"><a href="Jikka.Serializer.Core.html#Builtin%27"><span class="hs-identifier hs-var">Builtin'</span></a></span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Fun"><span class="annot"><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="PrefixOp"><span class="annot"><a href="Jikka.Serializer.Core.html#PrefixOp"><span class="hs-identifier hs-var">PrefixOp</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="InfixOp"><span class="annot"><a href="Jikka.Serializer.Core.html#InfixOp"><span class="hs-identifier hs-var">InfixOp</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="At%27"><span class="annot"><a href="Jikka.Serializer.Core.html#At%27"><span class="hs-identifier hs-var">At'</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="If%27"><span class="annot"><a href="Jikka.Serializer.Core.html#If%27"><span class="hs-identifier hs-var">If'</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679164116"><span id="local-6989586621679164118"><span class="annot"><span class="annottext">Builtin' -&gt; Builtin' -&gt; Bool
+(Builtin' -&gt; Builtin' -&gt; Bool)
+-&gt; (Builtin' -&gt; Builtin' -&gt; Bool) -&gt; Eq Builtin'
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Builtin' -&gt; Builtin' -&gt; Bool
+$c/= :: Builtin' -&gt; Builtin' -&gt; Bool
+== :: Builtin' -&gt; Builtin' -&gt; Bool
+$c== :: Builtin' -&gt; Builtin' -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164100"><span id="local-6989586621679164102"><span id="local-6989586621679164104"><span id="local-6989586621679164106"><span id="local-6989586621679164108"><span id="local-6989586621679164110"><span id="local-6989586621679164112"><span class="annot"><span class="annottext">Eq Builtin'
+Eq Builtin' =&gt;
+(Builtin' -&gt; Builtin' -&gt; Ordering)
+-&gt; (Builtin' -&gt; Builtin' -&gt; Bool)
+-&gt; (Builtin' -&gt; Builtin' -&gt; Bool)
+-&gt; (Builtin' -&gt; Builtin' -&gt; Bool)
+-&gt; (Builtin' -&gt; Builtin' -&gt; Bool)
+-&gt; (Builtin' -&gt; Builtin' -&gt; Builtin')
+-&gt; (Builtin' -&gt; Builtin' -&gt; Builtin')
+-&gt; Ord Builtin'
+Builtin' -&gt; Builtin' -&gt; Bool
+Builtin' -&gt; Builtin' -&gt; Ordering
+Builtin' -&gt; Builtin' -&gt; Builtin'
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Builtin' -&gt; Builtin' -&gt; Builtin'
+$cmin :: Builtin' -&gt; Builtin' -&gt; Builtin'
+max :: Builtin' -&gt; Builtin' -&gt; Builtin'
+$cmax :: Builtin' -&gt; Builtin' -&gt; Builtin'
+&gt;= :: Builtin' -&gt; Builtin' -&gt; Bool
+$c&gt;= :: Builtin' -&gt; Builtin' -&gt; Bool
+&gt; :: Builtin' -&gt; Builtin' -&gt; Bool
+$c&gt; :: Builtin' -&gt; Builtin' -&gt; Bool
+&lt;= :: Builtin' -&gt; Builtin' -&gt; Bool
+$c&lt;= :: Builtin' -&gt; Builtin' -&gt; Bool
+&lt; :: Builtin' -&gt; Builtin' -&gt; Bool
+$c&lt; :: Builtin' -&gt; Builtin' -&gt; Bool
+compare :: Builtin' -&gt; Builtin' -&gt; Ordering
+$ccompare :: Builtin' -&gt; Builtin' -&gt; Ordering
+$cp1Ord :: Eq Builtin'
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164093"><span id="local-6989586621679164095"><span id="local-6989586621679164097"><span class="annot"><span class="annottext">Int -&gt; Builtin' -&gt; String -&gt; String
+[Builtin'] -&gt; String -&gt; String
+Builtin' -&gt; String
+(Int -&gt; Builtin' -&gt; String -&gt; String)
+-&gt; (Builtin' -&gt; String)
+-&gt; ([Builtin'] -&gt; String -&gt; String)
+-&gt; Show Builtin'
+forall a.
+(Int -&gt; a -&gt; String -&gt; String)
+-&gt; (a -&gt; String) -&gt; ([a] -&gt; String -&gt; String) -&gt; Show a
+showList :: [Builtin'] -&gt; String -&gt; String
+$cshowList :: [Builtin'] -&gt; String -&gt; String
+show :: Builtin' -&gt; String
+$cshow :: Builtin' -&gt; String
+showsPrec :: Int -&gt; Builtin' -&gt; String -&gt; String
+$cshowsPrec :: Int -&gt; Builtin' -&gt; String -&gt; String
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164084"><span id="local-6989586621679164086"><span id="local-6989586621679164088"><span id="local-6989586621679164090"><span class="annot"><span class="annottext">ReadPrec [Builtin']
+ReadPrec Builtin'
+Int -&gt; ReadS Builtin'
+ReadS [Builtin']
+(Int -&gt; ReadS Builtin')
+-&gt; ReadS [Builtin']
+-&gt; ReadPrec Builtin'
+-&gt; ReadPrec [Builtin']
+-&gt; Read Builtin'
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Builtin']
+$creadListPrec :: ReadPrec [Builtin']
+readPrec :: ReadPrec Builtin'
+$creadPrec :: ReadPrec Builtin'
+readList :: ReadS [Builtin']
+$creadList :: ReadS [Builtin']
+readsPrec :: Int -&gt; ReadS Builtin'
+$creadsPrec :: Int -&gt; ReadS Builtin'
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-type">fun</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Serializer.Core.html#Builtin%27"><span class="hs-identifier hs-type">Builtin'</span></a></span><span>
+</span><span id="line-34"></span><span id="fun"><span class="annot"><span class="annottext">fun :: String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var hs-var">fun</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-type">infixOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Serializer.Core.html#Builtin%27"><span class="hs-identifier hs-type">Builtin'</span></a></span><span>
+</span><span id="line-37"></span><span id="infixOp"><span class="annot"><span class="annottext">infixOp :: String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var hs-var">infixOp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#InfixOp"><span class="hs-identifier hs-var">InfixOp</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Jikka.Serializer.Core.html#analyzeBuiltin"><span class="hs-identifier hs-type">analyzeBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Serializer.Core.html#Builtin%27"><span class="hs-identifier hs-type">Builtin'</span></a></span><span>
+</span><span id="line-40"></span><span id="analyzeBuiltin"><span class="annot"><span class="annottext">analyzeBuiltin :: Builtin -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#analyzeBuiltin"><span class="hs-identifier hs-var hs-var">analyzeBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-comment">-- arithmetical functions</span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Negate"><span class="hs-identifier hs-type">Negate</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#PrefixOp"><span class="hs-identifier hs-var">PrefixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;negate&quot;</span></span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Plus"><span class="hs-identifier hs-type">Plus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;+&quot;</span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Minus"><span class="hs-identifier hs-type">Minus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;-&quot;</span></span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Mult"><span class="hs-identifier hs-type">Mult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;*&quot;</span></span><span>
+</span><span id="line-46"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#FloorDiv"><span class="hs-identifier hs-type">FloorDiv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;/&quot;</span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#FloorMod"><span class="hs-identifier hs-type">FloorMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;%&quot;</span></span><span>
+</span><span id="line-48"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#CeilDiv"><span class="hs-identifier hs-type">CeilDiv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;ceildiv&quot;</span></span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#CeilMod"><span class="hs-identifier hs-type">CeilMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;ceilmod&quot;</span></span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Pow"><span class="hs-identifier hs-type">Pow</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;**&quot;</span></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-comment">-- induction functions</span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#NatInd"><span class="hs-identifier hs-type">NatInd</span></a></span><span> </span><span id="local-6989586621679164069"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164069"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164069"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;ind&quot;</span></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-comment">-- advanced arithmetical functions</span><span>
+</span><span id="line-54"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Abs"><span class="hs-identifier hs-type">Abs</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;abs&quot;</span></span><span>
+</span><span id="line-55"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Gcd"><span class="hs-identifier hs-type">Gcd</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;gcd&quot;</span></span><span>
+</span><span id="line-56"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Lcm"><span class="hs-identifier hs-type">Lcm</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;lcm&quot;</span></span><span>
+</span><span id="line-57"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Min"><span class="hs-identifier hs-type">Min</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;min&quot;</span></span><span>
+</span><span id="line-58"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Max"><span class="hs-identifier hs-type">Max</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;max&quot;</span></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-comment">-- logical functions</span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#PrefixOp"><span class="hs-identifier hs-var">PrefixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;not&quot;</span></span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#And"><span class="hs-identifier hs-type">And</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;and&quot;</span></span><span>
+</span><span id="line-62"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Or"><span class="hs-identifier hs-type">Or</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;or&quot;</span></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Implies"><span class="hs-identifier hs-type">Implies</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;implies&quot;</span></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#If"><span class="hs-identifier hs-type">If</span></a></span><span> </span><span id="local-6989586621679164058"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164058"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#If%27"><span class="hs-identifier hs-var">If'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164058"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-comment">-- bitwise functions</span><span>
+</span><span id="line-66"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BitNot"><span class="hs-identifier hs-type">BitNot</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#PrefixOp"><span class="hs-identifier hs-var">PrefixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;~&quot;</span></span><span>
+</span><span id="line-67"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BitAnd"><span class="hs-identifier hs-type">BitAnd</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&amp;&quot;</span></span><span>
+</span><span id="line-68"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BitOr"><span class="hs-identifier hs-type">BitOr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;|&quot;</span></span><span>
+</span><span id="line-69"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BitXor"><span class="hs-identifier hs-type">BitXor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;^&quot;</span></span><span>
+</span><span id="line-70"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BitLeftShift"><span class="hs-identifier hs-type">BitLeftShift</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&lt;&lt;&quot;</span></span><span>
+</span><span id="line-71"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#BitRightShift"><span class="hs-identifier hs-type">BitRightShift</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&gt;&gt;&quot;</span></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-comment">-- modular functions</span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Inv"><span class="hs-identifier hs-type">Inv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;inv&quot;</span></span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#PowMod"><span class="hs-identifier hs-type">PowMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;powmod&quot;</span></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-comment">-- list functions</span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Len"><span class="hs-identifier hs-type">Len</span></a></span><span> </span><span id="local-6989586621679164048"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164048"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164048"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;len&quot;</span></span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Tabulate"><span class="hs-identifier hs-type">Tabulate</span></a></span><span> </span><span id="local-6989586621679164046"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164046"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164046"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;tabulate&quot;</span></span><span>
+</span><span id="line-78"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Map"><span class="hs-identifier hs-type">Map</span></a></span><span> </span><span id="local-6989586621679164044"><span class="annot"><span class="annottext">t1 :: Type
+</span><a href="#local-6989586621679164044"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621679164043"><span class="annot"><span class="annottext">t2 :: Type
+</span><a href="#local-6989586621679164043"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164044"><span class="hs-identifier hs-var">t1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164043"><span class="hs-identifier hs-var">t2</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;map&quot;</span></span><span>
+</span><span id="line-79"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#At"><span class="hs-identifier hs-type">At</span></a></span><span> </span><span id="local-6989586621679164041"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164041"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#At%27"><span class="hs-identifier hs-var">At'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164041"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Sum"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;sum&quot;</span></span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Product"><span class="hs-identifier hs-type">Product</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;product&quot;</span></span><span>
+</span><span id="line-82"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Min1"><span class="hs-identifier hs-type">Min1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;min1&quot;</span></span><span>
+</span><span id="line-83"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Max1"><span class="hs-identifier hs-type">Max1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;max1&quot;</span></span><span>
+</span><span id="line-84"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ArgMin"><span class="hs-identifier hs-type">ArgMin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;argmin&quot;</span></span><span>
+</span><span id="line-85"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ArgMax"><span class="hs-identifier hs-type">ArgMax</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;argmax&quot;</span></span><span>
+</span><span id="line-86"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#All"><span class="hs-identifier hs-type">All</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;all&quot;</span></span><span>
+</span><span id="line-87"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Any"><span class="hs-identifier hs-type">Any</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;any&quot;</span></span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Sorted"><span class="hs-identifier hs-type">Sorted</span></a></span><span> </span><span id="local-6989586621679164031"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164031"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164031"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;sort&quot;</span></span><span>
+</span><span id="line-89"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#List"><span class="hs-identifier hs-type">List</span></a></span><span> </span><span id="local-6989586621679164029"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164029"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164029"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;list&quot;</span></span><span>
+</span><span id="line-90"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Reversed"><span class="hs-identifier hs-type">Reversed</span></a></span><span> </span><span id="local-6989586621679164027"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164027"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-var">Fun</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164027"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;reverse&quot;</span></span><span>
+</span><span id="line-91"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Range1"><span class="hs-identifier hs-type">Range1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;range1&quot;</span></span><span>
+</span><span id="line-92"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Range2"><span class="hs-identifier hs-type">Range2</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;range2&quot;</span></span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Range3"><span class="hs-identifier hs-type">Range3</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;range3&quot;</span></span><span>
+</span><span id="line-94"></span><span>  </span><span class="hs-comment">-- arithmetical relations</span><span>
+</span><span id="line-95"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#LessThan"><span class="hs-identifier hs-type">LessThan</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&lt;&quot;</span></span><span>
+</span><span id="line-96"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#LessEqual"><span class="hs-identifier hs-type">LessEqual</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&lt;=&quot;</span></span><span>
+</span><span id="line-97"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#GreaterThan"><span class="hs-identifier hs-type">GreaterThan</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&gt;&quot;</span></span><span>
+</span><span id="line-98"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#GreaterEqual"><span class="hs-identifier hs-type">GreaterEqual</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#infixOp"><span class="hs-identifier hs-var">infixOp</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;&gt;=&quot;</span></span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-comment">-- equality relations (polymorphic)</span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Equal"><span class="hs-identifier hs-type">Equal</span></a></span><span> </span><span id="local-6989586621679164018"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164018"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#InfixOp"><span class="hs-identifier hs-var">InfixOp</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164018"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;==&quot;</span></span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#NotEqual"><span class="hs-identifier hs-type">NotEqual</span></a></span><span> </span><span id="local-6989586621679164016"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679164016"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#InfixOp"><span class="hs-identifier hs-var">InfixOp</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679164016"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="hs-string">&quot;!=&quot;</span></span><span>
+</span><span id="line-102"></span><span>  </span><span class="hs-comment">-- combinational functions</span><span>
+</span><span id="line-103"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Fact"><span class="hs-identifier hs-type">Fact</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;fact&quot;</span></span><span>
+</span><span id="line-104"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Choose"><span class="hs-identifier hs-type">Choose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;choose&quot;</span></span><span>
+</span><span id="line-105"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Permute"><span class="hs-identifier hs-type">Permute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;permute&quot;</span></span><span>
+</span><span id="line-106"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#MultiChoose"><span class="hs-identifier hs-type">MultiChoose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#fun"><span class="hs-identifier hs-var">fun</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;multichoose&quot;</span></span><span>
+</span><span id="line-107"></span><span>
+</span><span id="line-108"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatTemplate"><span class="hs-identifier hs-type">formatTemplate</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-109"></span><span id="formatTemplate"><span class="annot"><span class="annottext">formatTemplate :: [Type] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatTemplate"><span class="hs-identifier hs-var hs-var">formatTemplate</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-110"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-111"></span><span>  </span><span id="local-6989586621679164010"><span class="annot"><span class="annottext">ts :: [Type]
+</span><a href="#local-6989586621679164010"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;&lt;&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Type -&gt; String) -&gt; [Type] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679164010"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;&gt;&quot;</span></span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatFunCall"><span class="hs-identifier hs-type">formatFunCall</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-114"></span><span id="formatFunCall"><span class="annot"><span class="annottext">formatFunCall :: String -&gt; [Type] -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFunCall"><span class="hs-identifier hs-var hs-var">formatFunCall</span></a></span></span><span> </span><span id="local-6989586621679164008"><span class="annot"><span class="annottext">f :: String
+</span><a href="#local-6989586621679164008"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621679164007"><span class="annot"><span class="annottext">args :: [Expr]
+</span><a href="#local-6989586621679164007"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164008"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; String) -&gt; [Expr] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679164007"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;)&quot;</span></span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatBuiltinIsolated"><span class="hs-identifier hs-type">formatBuiltinIsolated</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Serializer.Core.html#Builtin%27"><span class="hs-identifier hs-type">Builtin'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-117"></span><span id="formatBuiltinIsolated"><span class="annot"><span class="annottext">formatBuiltinIsolated :: Builtin' -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatBuiltinIsolated"><span class="hs-identifier hs-var hs-var">formatBuiltinIsolated</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-118"></span><span>  </span><span class="annot"><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-type">Fun</span></a></span><span> </span><span id="local-6989586621679164004"><span class="annot"><span class="annottext">ts :: [Type]
+</span><a href="#local-6989586621679164004"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679164003"><span class="annot"><span class="annottext">name :: String
+</span><a href="#local-6989586621679164003"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164003"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatTemplate"><span class="hs-identifier hs-var">formatTemplate</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679164004"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><span id="line-119"></span><span>  </span><span class="annot"><a href="Jikka.Serializer.Core.html#PrefixOp"><span class="hs-identifier hs-type">PrefixOp</span></a></span><span> </span><span id="local-6989586621679164002"><span class="annot"><span class="annottext">op :: String
+</span><a href="#local-6989586621679164002"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164002"><span class="hs-identifier hs-var">op</span></a></span><span>
+</span><span id="line-120"></span><span>  </span><span class="annot"><a href="Jikka.Serializer.Core.html#InfixOp"><span class="hs-identifier hs-type">InfixOp</span></a></span><span> </span><span id="local-6989586621679164001"><span class="annot"><span class="annottext">ts :: [Type]
+</span><a href="#local-6989586621679164001"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679164000"><span class="annot"><span class="annottext">op :: String
+</span><a href="#local-6989586621679164000"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164000"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatTemplate"><span class="hs-identifier hs-var">formatTemplate</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679164001"><span class="hs-identifier hs-var">ts</span></a></span><span>
+</span><span id="line-121"></span><span>  </span><span class="annot"><a href="Jikka.Serializer.Core.html#At%27"><span class="hs-identifier hs-type">At'</span></a></span><span> </span><span id="local-6989586621679163999"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679163999"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;at&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatTemplate"><span class="hs-identifier hs-var">formatTemplate</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679163999"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-122"></span><span>  </span><span class="annot"><a href="Jikka.Serializer.Core.html#If%27"><span class="hs-identifier hs-type">If'</span></a></span><span> </span><span id="local-6989586621679163998"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679163998"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;if-then-else&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatTemplate"><span class="hs-identifier hs-var">formatTemplate</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679163998"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-123"></span><span>
+</span><span id="line-124"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatBuiltin"><span class="hs-identifier hs-type">formatBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Serializer.Core.html#Builtin%27"><span class="hs-identifier hs-type">Builtin'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-125"></span><span id="formatBuiltin"><span class="annot"><span class="annottext">formatBuiltin :: Builtin' -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatBuiltin"><span class="hs-identifier hs-var hs-var">formatBuiltin</span></a></span></span><span> </span><span id="local-6989586621679163996"><span class="annot"><span class="annottext">builtin :: Builtin'
+</span><a href="#local-6989586621679163996"><span class="hs-identifier hs-var">builtin</span></a></span></span><span> </span><span id="local-6989586621679163995"><span class="annot"><span class="annottext">args :: [Expr]
+</span><a href="#local-6989586621679163995"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builtin'
+</span><a href="#local-6989586621679163996"><span class="hs-identifier hs-var">builtin</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679163995"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-126"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Serializer.Core.html#Fun"><span class="hs-identifier hs-type">Fun</span></a></span><span> </span><span id="local-6989586621679163994"><span class="annot"><span class="annottext">ts :: [Type]
+</span><a href="#local-6989586621679163994"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679163993"><span class="annot"><span class="annottext">name :: String
+</span><a href="#local-6989586621679163993"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; [Type] -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFunCall"><span class="hs-identifier hs-var">formatFunCall</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679163993"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679163994"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679163995"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-127"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Serializer.Core.html#PrefixOp"><span class="hs-identifier hs-type">PrefixOp</span></a></span><span> </span><span id="local-6989586621679163992"><span class="annot"><span class="annottext">op :: String
+</span><a href="#local-6989586621679163992"><span class="hs-identifier hs-var">op</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679163991"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679163991"><span class="hs-identifier hs-var">e1</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679163992"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163991"><span class="hs-identifier hs-var">e1</span></a></span><span>
+</span><span id="line-128"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Serializer.Core.html#InfixOp"><span class="hs-identifier hs-type">InfixOp</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621679163990"><span class="annot"><span class="annottext">op :: String
+</span><a href="#local-6989586621679163990"><span class="hs-identifier hs-var">op</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679163989"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679163989"><span class="hs-identifier hs-var">e1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679163988"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679163988"><span class="hs-identifier hs-var">e2</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163989"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679163990"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163988"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-129"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Serializer.Core.html#At%27"><span class="hs-identifier hs-type">At'</span></a></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679163987"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679163987"><span class="hs-identifier hs-var">e1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679163986"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679163986"><span class="hs-identifier hs-var">e2</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163987"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;)[&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163986"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;]&quot;</span></span><span>
+</span><span id="line-130"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Serializer.Core.html#If%27"><span class="hs-identifier hs-type">If'</span></a></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679163985"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679163985"><span class="hs-identifier hs-var">e1</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679163984"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679163984"><span class="hs-identifier hs-var">e2</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679163983"><span class="annot"><span class="annottext">e3 :: Expr
+</span><a href="#local-6989586621679163983"><span class="hs-identifier hs-var">e3</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;if&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163985"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; then &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163984"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; else &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163983"><span class="hs-identifier hs-var">e3</span></a></span><span>
+</span><span id="line-131"></span><span>  </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; [Type] -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFunCall"><span class="hs-identifier hs-var">formatFunCall</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builtin' -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatBuiltinIsolated"><span class="hs-identifier hs-var">formatBuiltinIsolated</span></a></span><span> </span><span class="annot"><span class="annottext">Builtin'
+</span><a href="#local-6989586621679163996"><span class="hs-identifier hs-var">builtin</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679163995"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatLiteral"><span class="hs-identifier hs-type">formatLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-134"></span><span id="formatLiteral"><span class="annot"><span class="annottext">formatLiteral :: Literal -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatLiteral"><span class="hs-identifier hs-var hs-var">formatLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-135"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#LitBuiltin"><span class="hs-identifier hs-type">LitBuiltin</span></a></span><span> </span><span id="local-6989586621679163980"><span class="annot"><span class="annottext">builtin :: Builtin
+</span><a href="#local-6989586621679163980"><span class="hs-identifier hs-var">builtin</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin' -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatBuiltinIsolated"><span class="hs-identifier hs-var">formatBuiltinIsolated</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builtin -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#analyzeBuiltin"><span class="hs-identifier hs-var">analyzeBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679163980"><span class="hs-identifier hs-var">builtin</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-136"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#LitInt"><span class="hs-identifier hs-type">LitInt</span></a></span><span> </span><span id="local-6989586621679163978"><span class="annot"><span class="annottext">n :: Integer
+</span><a href="#local-6989586621679163978"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679163978"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-137"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#LitBool"><span class="hs-identifier hs-type">LitBool</span></a></span><span> </span><span id="local-6989586621679163975"><span class="annot"><span class="annottext">p :: Bool
+</span><a href="#local-6989586621679163975"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679163975"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-138"></span><span>
+</span><span id="line-139"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatFormalArgs"><span class="hs-identifier hs-type">formatFormalArgs</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-140"></span><span id="formatFormalArgs"><span class="annot"><span class="annottext">formatFormalArgs :: [(VarName, Type)] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFormalArgs"><span class="hs-identifier hs-var hs-var">formatFormalArgs</span></a></span></span><span> </span><span id="local-6989586621679163973"><span class="annot"><span class="annottext">args :: [(VarName, Type)]
+</span><a href="#local-6989586621679163973"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+</span><span class="hs-identifier hs-var">unwords</span></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String) -&gt; [String] -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">((VarName, Type) -&gt; String) -&gt; [(VarName, Type)] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679163971"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679163971"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679163970"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679163970"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679163971"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679163970"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679163973"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-141"></span><span>
+</span><span id="line-142"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-type">formatExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-143"></span><span id="formatExpr"><span class="annot"><span class="annottext">formatExpr :: Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var hs-var">formatExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-144"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679163967"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679163967"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679163967"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-145"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span id="local-6989586621679163965"><span class="annot"><span class="annottext">lit :: Literal
+</span><a href="#local-6989586621679163965"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatLiteral"><span class="hs-identifier hs-var">formatLiteral</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679163965"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><span id="line-146"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621679163963"><span class="annot"><span class="annottext">f :: Expr
+</span><a href="#local-6989586621679163963"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679163962"><span class="annot"><span class="annottext">args :: [Expr]
+</span><a href="#local-6989586621679163962"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163963"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-147"></span><span>    </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679163961"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679163961"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; [Type] -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFunCall"><span class="hs-identifier hs-var">formatFunCall</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679163961"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679163962"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-148"></span><span>    </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#LitBuiltin"><span class="hs-identifier hs-type">LitBuiltin</span></a></span><span> </span><span id="local-6989586621679163960"><span class="annot"><span class="annottext">builtin :: Builtin
+</span><a href="#local-6989586621679163960"><span class="hs-identifier hs-var">builtin</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin' -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatBuiltin"><span class="hs-identifier hs-var">formatBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builtin -&gt; Builtin'
+</span><a href="Jikka.Serializer.Core.html#analyzeBuiltin"><span class="hs-identifier hs-var">analyzeBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679163960"><span class="hs-identifier hs-var">builtin</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679163962"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-149"></span><span>    </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; [Type] -&gt; [Expr] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFunCall"><span class="hs-identifier hs-var">formatFunCall</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163963"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679163962"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-150"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679163958"><span class="annot"><span class="annottext">args :: [(VarName, Type)]
+</span><a href="#local-6989586621679163958"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679163957"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679163957"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+</span><a href="Jikka.Serializer.Core.html#paren"><span class="hs-identifier hs-var">paren</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; String) -&gt; String -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;fun &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFormalArgs"><span class="hs-identifier hs-var">formatFormalArgs</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679163958"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; -&gt;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.Serializer.AutoIndent.html#indent"><span class="hs-identifier hs-var">indent</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163957"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.Serializer.AutoIndent.html#dedent"><span class="hs-identifier hs-var">dedent</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-151"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621679163953"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679163953"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679163952"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679163952"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679163951"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679163951"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679163950"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679163950"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;let &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679163953"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679163952"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; =\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.Serializer.AutoIndent.html#indent"><span class="hs-identifier hs-var">indent</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163951"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.Serializer.AutoIndent.html#dedent"><span class="hs-identifier hs-var">dedent</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;\nin &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163950"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-152"></span><span>
+</span><span id="line-153"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatRecKind"><span class="hs-identifier hs-type">formatRecKind</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#RecKind"><span class="hs-identifier hs-type">RecKind</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-154"></span><span id="formatRecKind"><span class="annot"><span class="annottext">formatRecKind :: RecKind -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatRecKind"><span class="hs-identifier hs-var hs-var">formatRecKind</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-155"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#NonRec"><span class="hs-identifier hs-type">NonRec</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;let &quot;</span></span><span>
+</span><span id="line-156"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Rec"><span class="hs-identifier hs-type">Rec</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-string">&quot;let rec &quot;</span></span><span>
+</span><span id="line-157"></span><span>
+</span><span id="line-158"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatToplevelExpr"><span class="hs-identifier hs-type">formatToplevelExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
+</span><span id="line-159"></span><span id="formatToplevelExpr"><span class="annot"><span class="annottext">formatToplevelExpr :: ToplevelExpr -&gt; [String]
+</span><a href="Jikka.Serializer.Core.html#formatToplevelExpr"><span class="hs-identifier hs-var hs-var">formatToplevelExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-160"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ResultExpr"><span class="hs-identifier hs-type">ResultExpr</span></a></span><span> </span><span id="local-6989586621679163944"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679163944"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163944"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-161"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ToplevelLet"><span class="hs-identifier hs-type">ToplevelLet</span></a></span><span> </span><span id="local-6989586621679163942"><span class="annot"><span class="annottext">rec :: RecKind
+</span><a href="#local-6989586621679163942"><span class="hs-identifier hs-var">rec</span></a></span></span><span> </span><span id="local-6989586621679163941"><span class="annot"><span class="annottext">f :: VarName
+</span><a href="#local-6989586621679163941"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679163940"><span class="annot"><span class="annottext">args :: [(VarName, Type)]
+</span><a href="#local-6989586621679163940"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679163939"><span class="annot"><span class="annottext">ret :: Type
+</span><a href="#local-6989586621679163939"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span id="local-6989586621679163938"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679163938"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679163937"><span class="annot"><span class="annottext">cont :: ToplevelExpr
+</span><a href="#local-6989586621679163937"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-162"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">RecKind -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatRecKind"><span class="hs-identifier hs-var">formatRecKind</span></a></span><span> </span><span class="annot"><span class="annottext">RecKind
+</span><a href="#local-6989586621679163942"><span class="hs-identifier hs-var">rec</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679163941"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatFormalArgs"><span class="hs-identifier hs-var">formatFormalArgs</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679163940"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679163939"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; =&quot;</span></span><span class="hs-special">,</span><span>
+</span><span id="line-163"></span><span>      </span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.Serializer.AutoIndent.html#indent"><span class="hs-identifier hs-var">indent</span></a></span><span>
+</span><span id="line-164"></span><span>    </span><span class="hs-special">]</span><span>
+</span><span id="line-165"></span><span>      </span><span class="annot"><span class="annottext">[String] -&gt; [String] -&gt; [String]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String]
+</span><span class="hs-identifier hs-var">lines</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#formatExpr"><span class="hs-identifier hs-var">formatExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679163938"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-166"></span><span>      </span><span class="annot"><span class="annottext">[String] -&gt; [String] -&gt; [String]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.Serializer.AutoIndent.html#dedent"><span class="hs-identifier hs-var">dedent</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-167"></span><span>      </span><span class="annot"><span class="annottext">[String] -&gt; [String] -&gt; [String]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;in&quot;</span></span><span class="hs-special">]</span><span>
+</span><span id="line-168"></span><span>      </span><span class="annot"><span class="annottext">[String] -&gt; [String] -&gt; [String]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; [String]
+</span><a href="Jikka.Serializer.Core.html#formatToplevelExpr"><span class="hs-identifier hs-var">formatToplevelExpr</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679163937"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span class="annot"><a href="Jikka.Serializer.Core.html#formatProgram"><span class="hs-identifier hs-type">formatProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span>
+</span><span id="line-171"></span><span id="formatProgram"><span class="annot"><span class="annottext">formatProgram :: ToplevelExpr -&gt; [String]
+</span><a href="Jikka.Serializer.Core.html#formatProgram"><span class="hs-identifier hs-var hs-var">formatProgram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; [String]
+</span><a href="Jikka.Serializer.Core.html#formatToplevelExpr"><span class="hs-identifier hs-var">formatToplevelExpr</span></a></span><span>
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="annot"><a href="Jikka.Serializer.Core.html#run%27"><span class="hs-identifier hs-type">run'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-174"></span><span id="run%27"><span class="annot"><span class="annottext">run' :: ToplevelExpr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#run%27"><span class="hs-identifier hs-var hs-var">run'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; String
+</span><span class="hs-identifier hs-var">unlines</span></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; String)
+-&gt; (ToplevelExpr -&gt; [String]) -&gt; ToplevelExpr -&gt; String
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [String] -&gt; [String]
+</span><a href="Jikka.Serializer.AutoIndent.html#makeIndentFromMarkers"><span class="hs-identifier hs-var">makeIndentFromMarkers</span></a></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="annottext">([String] -&gt; [String])
+-&gt; (ToplevelExpr -&gt; [String]) -&gt; ToplevelExpr -&gt; [String]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; [String]
+</span><a href="Jikka.Serializer.Core.html#formatProgram"><span class="hs-identifier hs-var">formatProgram</span></a></span><span>
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span class="annot"><a href="Jikka.Serializer.Core.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-177"></span><span id="run"><span class="annot"><span class="annottext">run :: ToplevelExpr -&gt; Either String Text
+</span><a href="Jikka.Serializer.Core.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Either String Text
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; Either String Text)
+-&gt; (ToplevelExpr -&gt; Text) -&gt; ToplevelExpr -&gt; Either String Text
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">pack</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Text)
+-&gt; (ToplevelExpr -&gt; String) -&gt; ToplevelExpr -&gt; Text
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; String
+</span><a href="Jikka.Serializer.Core.html#run%27"><span class="hs-identifier hs-var">run'</span></a></span><span>
+</span><span id="line-178"></span></pre></body></html>

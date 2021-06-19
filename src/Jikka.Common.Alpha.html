@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE FlexibleInstances #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : Jikka.Common.Alpha</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : provides a monad to run alpha-conversion.</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2020</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-12"></span><span class="hs-comment">--</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- `Jikka.Common.Alpha` provides a monad to run alpha-conversion. This monad has only a feature to make unique numbers.</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Common.Alpha</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.State.Strict</span></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679148203"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MonadAlpha"><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-var">MonadAlpha</span></a></span></span><span> </span><span id="local-6989586621679148203"><span class="annot"><a href="#local-6989586621679148203"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-19"></span><span>  </span><span id="nextCounter"><span class="annot"><a href="Jikka.Common.Alpha.html#nextCounter"><span class="hs-identifier hs-type">nextCounter</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679148203"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">type</span><span> </span><span id="Alpha"><span class="annot"><a href="Jikka.Common.Alpha.html#Alpha"><span class="hs-identifier hs-var">Alpha</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span id="local-6989586621679148175"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679148175"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">StateT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="#local-6989586621679148175"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>  </span><span id="local-6989586621679148171"><span class="annot"><span class="annottext">nextCounter :: StateT Int m Int
+</span><a href="#local-6989586621679148171"><span class="hs-identifier hs-var hs-var hs-var hs-var">nextCounter</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Int -&gt; (Int, Int)) -&gt; StateT Int m Int
+forall s (m :: * -&gt; *) a. MonadState s m =&gt; (s -&gt; (a, s)) -&gt; m a
+</span><span class="hs-identifier hs-var">state</span></span><span> </span><span class="annot"><span class="annottext">((Int -&gt; (Int, Int)) -&gt; StateT Int m Int)
+-&gt; (Int -&gt; (Int, Int)) -&gt; StateT Int m Int
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679148169"><span class="annot"><span class="annottext">i :: Int
+</span><a href="#local-6989586621679148169"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148169"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148169"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span id="local-6989586621679148179"><span class="annot"><a href="Jikka.Common.Alpha.html#runAlpha"><span class="hs-identifier hs-type">runAlpha</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html#Alpha"><span class="hs-identifier hs-type">Alpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148179"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679148179"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-27"></span><span id="runAlpha"><span class="annot"><span class="annottext">runAlpha :: Int -&gt; Alpha a -&gt; Either String (a, Int)
+</span><a href="Jikka.Common.Alpha.html#runAlpha"><span class="hs-identifier hs-var hs-var">runAlpha</span></a></span></span><span> </span><span id="local-6989586621679148166"><span class="annot"><span class="annottext">i :: Int
+</span><a href="#local-6989586621679148166"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679148165"><span class="annot"><span class="annottext">a :: Alpha a
+</span><a href="#local-6989586621679148165"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Alpha a -&gt; Int -&gt; Either String (a, Int)
+forall s (m :: * -&gt; *) a. StateT s m a -&gt; s -&gt; m (a, s)
+</span><span class="hs-identifier hs-var hs-var">runStateT</span></span><span> </span><span class="annot"><span class="annottext">Alpha a
+</span><a href="#local-6989586621679148165"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148166"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span id="local-6989586621679148177"><span class="annot"><a href="Jikka.Common.Alpha.html#evalAlpha"><span class="hs-identifier hs-type">evalAlpha</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html#Alpha"><span class="hs-identifier hs-type">Alpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148177"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679148177"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-30"></span><span id="evalAlpha"><span class="annot"><span class="annottext">evalAlpha :: Int -&gt; Alpha a -&gt; Either String a
+</span><a href="Jikka.Common.Alpha.html#evalAlpha"><span class="hs-identifier hs-var hs-var">evalAlpha</span></a></span></span><span> </span><span id="local-6989586621679148162"><span class="annot"><span class="annottext">i :: Int
+</span><a href="#local-6989586621679148162"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((a, Int) -&gt; a) -&gt; Either String (a, Int) -&gt; Either String a
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">(a, Int) -&gt; a
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">(Either String (a, Int) -&gt; Either String a)
+-&gt; (Alpha a -&gt; Either String (a, Int))
+-&gt; Alpha a
+-&gt; Either String a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Alpha a -&gt; Either String (a, Int)
+forall a. Int -&gt; Alpha a -&gt; Either String (a, Int)
+</span><a href="Jikka.Common.Alpha.html#runAlpha"><span class="hs-identifier hs-var">runAlpha</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679148162"><span class="hs-identifier hs-var">i</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span id="local-6989586621679148160"><span class="annot"><a href="Jikka.Common.Alpha.html#evalAlpha%27"><span class="hs-identifier hs-type">evalAlpha'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html#Alpha"><span class="hs-identifier hs-type">Alpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148160"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="#local-6989586621679148160"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-33"></span><span id="evalAlpha%27"><span class="annot"><span class="annottext">evalAlpha' :: Alpha a -&gt; Either String a
+</span><a href="Jikka.Common.Alpha.html#evalAlpha%27"><span class="hs-identifier hs-var hs-var">evalAlpha'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Alpha a -&gt; Either String a
+forall a. Int -&gt; Alpha a -&gt; Either String a
+</span><a href="Jikka.Common.Alpha.html#evalAlpha"><span class="hs-identifier hs-var">evalAlpha</span></a></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-34"></span></pre></body></html>

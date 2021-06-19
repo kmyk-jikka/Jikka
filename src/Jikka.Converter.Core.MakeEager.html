@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- Module      : Jikka.Converter.Core.MakeEager</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Description : convert exprs for eager evaluation.</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2020</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-11"></span><span class="hs-comment">--</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- `Jikka.Language.Core.MakeEager` wraps some exprs with lambda redundant things from AST.</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Specifically, this converts @if p then a else b@ to @(if p then (lambda x. a) else (lambda x. b)) 0@.</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Converter.Core.MakeEager</span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.Converter.Core.MakeEager.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html"><span class="hs-identifier">Jikka.Language.Core.Expr</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Lint.html"><span class="hs-identifier">Jikka.Language.Core.Lint</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Core.Lint.html#typecheckProgram%27"><span class="hs-identifier">typecheckProgram'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-type">makeEagerExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-23"></span><span id="makeEagerExpr"><span class="annot"><span class="annottext">makeEagerExpr :: Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var hs-var">makeEagerExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-24"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679151330"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679151330"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679151330"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-25"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span id="local-6989586621679151328"><span class="annot"><span class="annottext">lit :: Literal
+</span><a href="#local-6989586621679151328"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679151328"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621679151326"><span class="annot"><span class="annottext">f :: Expr
+</span><a href="#local-6989586621679151326"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679151325"><span class="annot"><span class="annottext">args :: [Expr]
+</span><a href="#local-6989586621679151325"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151326"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679151325"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#If"><span class="hs-identifier hs-type">If</span></a></span><span> </span><span id="local-6989586621679151322"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679151322"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679151321"><span class="annot"><span class="annottext">p :: Expr
+</span><a href="#local-6989586621679151321"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151320"><span class="annot"><span class="annottext">a :: Expr
+</span><a href="#local-6989586621679151320"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679151319"><span class="annot"><span class="annottext">b :: Expr
+</span><a href="#local-6989586621679151319"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-var">App</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builtin -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#AppBuiltin"><span class="hs-identifier hs-var">AppBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#If"><span class="hs-identifier hs-var">If</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Type] -&gt; Type -&gt; Type
+</span><a href="Jikka.Language.Core.Expr.html#FunTy"><span class="hs-identifier hs-var">FunTy</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679151322"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151321"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151320"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151319"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679151315"><span class="annot"><span class="annottext">f :: Expr
+</span><a href="#local-6989586621679151315"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-var">App</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151315"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; [Expr] -&gt; [Expr]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679151325"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679151314"><span class="annot"><span class="annottext">args :: [(VarName, Type)]
+</span><a href="#local-6989586621679151314"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679151313"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679151313"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679151314"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151313"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621679151311"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679151311"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679151310"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679151310"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679151309"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679151309"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679151308"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679151308"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Let"><span class="hs-identifier hs-var">Let</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679151311"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679151310"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151309"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151308"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Jikka.Converter.Core.MakeEager.html#makeEagerToplevelExpr"><span class="hs-identifier hs-type">makeEagerToplevelExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span>
+</span><span id="line-33"></span><span id="makeEagerToplevelExpr"><span class="annot"><span class="annottext">makeEagerToplevelExpr :: ToplevelExpr -&gt; ToplevelExpr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerToplevelExpr"><span class="hs-identifier hs-var hs-var">makeEagerToplevelExpr</span></a></span></span><span> </span><span id="local-6989586621679151306"><span class="annot"><span class="annottext">e :: ToplevelExpr
+</span><a href="#local-6989586621679151306"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679151306"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ResultExpr"><span class="hs-identifier hs-type">ResultExpr</span></a></span><span> </span><span id="local-6989586621679151304"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679151304"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ToplevelExpr
+</span><a href="Jikka.Language.Core.Expr.html#ResultExpr"><span class="hs-identifier hs-var">ResultExpr</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; ToplevelExpr) -&gt; Expr -&gt; ToplevelExpr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151304"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ToplevelLet"><span class="hs-identifier hs-type">ToplevelLet</span></a></span><span> </span><span id="local-6989586621679151302"><span class="annot"><span class="annottext">rec :: RecKind
+</span><a href="#local-6989586621679151302"><span class="hs-identifier hs-var">rec</span></a></span></span><span> </span><span id="local-6989586621679151301"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679151301"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679151300"><span class="annot"><span class="annottext">args :: [(VarName, Type)]
+</span><a href="#local-6989586621679151300"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679151299"><span class="annot"><span class="annottext">ret :: Type
+</span><a href="#local-6989586621679151299"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span id="local-6989586621679151298"><span class="annot"><span class="annottext">body :: Expr
+</span><a href="#local-6989586621679151298"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span id="local-6989586621679151297"><span class="annot"><span class="annottext">cont :: ToplevelExpr
+</span><a href="#local-6989586621679151297"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">RecKind
+-&gt; VarName
+-&gt; [(VarName, Type)]
+-&gt; Type
+-&gt; Expr
+-&gt; ToplevelExpr
+-&gt; ToplevelExpr
+</span><a href="Jikka.Language.Core.Expr.html#ToplevelLet"><span class="hs-identifier hs-var">ToplevelLet</span></a></span><span> </span><span class="annot"><span class="annottext">RecKind
+</span><a href="#local-6989586621679151302"><span class="hs-identifier hs-var">rec</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679151301"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679151300"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679151299"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerExpr"><span class="hs-identifier hs-var">makeEagerExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679151298"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ToplevelExpr -&gt; ToplevelExpr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerToplevelExpr"><span class="hs-identifier hs-var">makeEagerToplevelExpr</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679151297"><span class="hs-identifier hs-var">cont</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Jikka.Converter.Core.MakeEager.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
+</span><span id="line-38"></span><span id="run"><span class="annot"><span class="annottext">run :: ToplevelExpr -&gt; Either String ToplevelExpr
+</span><a href="Jikka.Converter.Core.MakeEager.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; Either String ToplevelExpr
+forall (m :: * -&gt; *).
+MonadError String m =&gt;
+ToplevelExpr -&gt; m ToplevelExpr
+</span><a href="Jikka.Language.Core.Lint.html#typecheckProgram%27"><span class="hs-identifier hs-var">typecheckProgram'</span></a></span><span> </span><span class="annot"><span class="annottext">(ToplevelExpr -&gt; Either String ToplevelExpr)
+-&gt; (ToplevelExpr -&gt; ToplevelExpr)
+-&gt; ToplevelExpr
+-&gt; Either String ToplevelExpr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; ToplevelExpr
+</span><a href="Jikka.Converter.Core.MakeEager.html#makeEagerToplevelExpr"><span class="hs-identifier hs-var">makeEagerToplevelExpr</span></a></span><span>
+</span><span id="line-39"></span></pre></body></html>

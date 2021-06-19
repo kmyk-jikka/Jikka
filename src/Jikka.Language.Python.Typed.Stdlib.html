@@ -1,0 +1,1103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_FSN2urghT1LJgndWKD85RT"><span id="%24con2tag_44LAQTI2HZPLRMoxHQiMiC"><span id="%24con2tag_5SNzBJOaHluCv9VVbjtUyt"><span id="%24con2tag_Hl5fII3uoHCFieUgXKeQgF"><span id="%24con2tag_I2UFfqP963I2BYUC4XaJVG"><span id="%24con2tag_FR0sU0m33wo4QY6hxg4Hiv"></span></span></span></span></span></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Language.Python.Typed.Stdlib</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html"><span class="hs-identifier">Jikka.Language.Common.Name</span></a></span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Church-style types</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">data</span><span> </span><span id="ChurchType"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-var">ChurchType</span></a></span></span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="TyInt"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-var">TyInt</span></a></span></span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyBool"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyBool"><span class="hs-identifier hs-var">TyBool</span></a></span></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyList"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyList"><span class="hs-identifier hs-var">TyList</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyIterator"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyIterator"><span class="hs-identifier hs-var">TyIterator</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyVar"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyVar"><span class="hs-identifier hs-var">TyVar</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161339"><span id="local-6989586621679161341"><span class="annot"><span class="annottext">ChurchType -&gt; ChurchType -&gt; Bool
+(ChurchType -&gt; ChurchType -&gt; Bool)
+-&gt; (ChurchType -&gt; ChurchType -&gt; Bool) -&gt; Eq ChurchType
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ChurchType -&gt; ChurchType -&gt; Bool
+$c/= :: ChurchType -&gt; ChurchType -&gt; Bool
+== :: ChurchType -&gt; ChurchType -&gt; Bool
+$c== :: ChurchType -&gt; ChurchType -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161323"><span id="local-6989586621679161325"><span id="local-6989586621679161327"><span id="local-6989586621679161329"><span id="local-6989586621679161331"><span id="local-6989586621679161333"><span id="local-6989586621679161335"><span class="annot"><span class="annottext">Eq ChurchType
+Eq ChurchType =&gt;
+(ChurchType -&gt; ChurchType -&gt; Ordering)
+-&gt; (ChurchType -&gt; ChurchType -&gt; Bool)
+-&gt; (ChurchType -&gt; ChurchType -&gt; Bool)
+-&gt; (ChurchType -&gt; ChurchType -&gt; Bool)
+-&gt; (ChurchType -&gt; ChurchType -&gt; Bool)
+-&gt; (ChurchType -&gt; ChurchType -&gt; ChurchType)
+-&gt; (ChurchType -&gt; ChurchType -&gt; ChurchType)
+-&gt; Ord ChurchType
+ChurchType -&gt; ChurchType -&gt; Bool
+ChurchType -&gt; ChurchType -&gt; Ordering
+ChurchType -&gt; ChurchType -&gt; ChurchType
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: ChurchType -&gt; ChurchType -&gt; ChurchType
+$cmin :: ChurchType -&gt; ChurchType -&gt; ChurchType
+max :: ChurchType -&gt; ChurchType -&gt; ChurchType
+$cmax :: ChurchType -&gt; ChurchType -&gt; ChurchType
+&gt;= :: ChurchType -&gt; ChurchType -&gt; Bool
+$c&gt;= :: ChurchType -&gt; ChurchType -&gt; Bool
+&gt; :: ChurchType -&gt; ChurchType -&gt; Bool
+$c&gt; :: ChurchType -&gt; ChurchType -&gt; Bool
+&lt;= :: ChurchType -&gt; ChurchType -&gt; Bool
+$c&lt;= :: ChurchType -&gt; ChurchType -&gt; Bool
+&lt; :: ChurchType -&gt; ChurchType -&gt; Bool
+$c&lt; :: ChurchType -&gt; ChurchType -&gt; Bool
+compare :: ChurchType -&gt; ChurchType -&gt; Ordering
+$ccompare :: ChurchType -&gt; ChurchType -&gt; Ordering
+$cp1Ord :: Eq ChurchType
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161316"><span id="local-6989586621679161318"><span id="local-6989586621679161320"><span class="annot"><span class="annottext">Int -&gt; ChurchType -&gt; ShowS
+[ChurchType] -&gt; ShowS
+ChurchType -&gt; String
+(Int -&gt; ChurchType -&gt; ShowS)
+-&gt; (ChurchType -&gt; String)
+-&gt; ([ChurchType] -&gt; ShowS)
+-&gt; Show ChurchType
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ChurchType] -&gt; ShowS
+$cshowList :: [ChurchType] -&gt; ShowS
+show :: ChurchType -&gt; String
+$cshow :: ChurchType -&gt; String
+showsPrec :: Int -&gt; ChurchType -&gt; ShowS
+$cshowsPrec :: Int -&gt; ChurchType -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161307"><span id="local-6989586621679161309"><span id="local-6989586621679161311"><span id="local-6989586621679161313"><span class="annot"><span class="annottext">ReadPrec [ChurchType]
+ReadPrec ChurchType
+Int -&gt; ReadS ChurchType
+ReadS [ChurchType]
+(Int -&gt; ReadS ChurchType)
+-&gt; ReadS [ChurchType]
+-&gt; ReadPrec ChurchType
+-&gt; ReadPrec [ChurchType]
+-&gt; Read ChurchType
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [ChurchType]
+$creadListPrec :: ReadPrec [ChurchType]
+readPrec :: ReadPrec ChurchType
+$creadPrec :: ReadPrec ChurchType
+readList :: ReadS [ChurchType]
+$creadList :: ReadS [ChurchType]
+readsPrec :: Int -&gt; ReadS ChurchType
+$creadsPrec :: Int -&gt; ReadS ChurchType
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-comment">-- Curry-style types</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">data</span><span> </span><span id="CurryType"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-var">CurryType</span></a></span></span><span> </span><span id="local-6989586621679161387"><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ATyInt"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyBool"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyList"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyNat"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span></span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyInterval"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInterval"><span class="hs-identifier hs-var">ATyInterval</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyIterator"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyArray"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyArray"><span class="hs-identifier hs-var">ATyArray</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679161387"><span class="hs-identifier hs-type">expr</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ATyVar"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyVar"><span class="hs-identifier hs-var">ATyVar</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#TypeName"><span class="hs-identifier hs-type">TypeName</span></a></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161294"><span id="local-6989586621679161296"><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr -&gt; Bool
+(CurryType expr -&gt; CurryType expr -&gt; Bool)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; Bool)
+-&gt; Eq (CurryType expr)
+forall expr. Eq expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: CurryType expr -&gt; CurryType expr -&gt; Bool
+$c/= :: forall expr. Eq expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+== :: CurryType expr -&gt; CurryType expr -&gt; Bool
+$c== :: forall expr. Eq expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161279"><span id="local-6989586621679161281"><span id="local-6989586621679161283"><span id="local-6989586621679161285"><span id="local-6989586621679161287"><span id="local-6989586621679161289"><span id="local-6989586621679161291"><span class="annot"><span class="annottext">Eq (CurryType expr)
+Eq (CurryType expr) =&gt;
+(CurryType expr -&gt; CurryType expr -&gt; Ordering)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; Bool)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; Bool)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; Bool)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; Bool)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; CurryType expr)
+-&gt; (CurryType expr -&gt; CurryType expr -&gt; CurryType expr)
+-&gt; Ord (CurryType expr)
+CurryType expr -&gt; CurryType expr -&gt; Bool
+CurryType expr -&gt; CurryType expr -&gt; Ordering
+CurryType expr -&gt; CurryType expr -&gt; CurryType expr
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall expr. Ord expr =&gt; Eq (CurryType expr)
+forall expr. Ord expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+forall expr.
+Ord expr =&gt;
+CurryType expr -&gt; CurryType expr -&gt; Ordering
+forall expr.
+Ord expr =&gt;
+CurryType expr -&gt; CurryType expr -&gt; CurryType expr
+min :: CurryType expr -&gt; CurryType expr -&gt; CurryType expr
+$cmin :: forall expr.
+Ord expr =&gt;
+CurryType expr -&gt; CurryType expr -&gt; CurryType expr
+max :: CurryType expr -&gt; CurryType expr -&gt; CurryType expr
+$cmax :: forall expr.
+Ord expr =&gt;
+CurryType expr -&gt; CurryType expr -&gt; CurryType expr
+&gt;= :: CurryType expr -&gt; CurryType expr -&gt; Bool
+$c&gt;= :: forall expr. Ord expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+&gt; :: CurryType expr -&gt; CurryType expr -&gt; Bool
+$c&gt; :: forall expr. Ord expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+&lt;= :: CurryType expr -&gt; CurryType expr -&gt; Bool
+$c&lt;= :: forall expr. Ord expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+&lt; :: CurryType expr -&gt; CurryType expr -&gt; Bool
+$c&lt; :: forall expr. Ord expr =&gt; CurryType expr -&gt; CurryType expr -&gt; Bool
+compare :: CurryType expr -&gt; CurryType expr -&gt; Ordering
+$ccompare :: forall expr.
+Ord expr =&gt;
+CurryType expr -&gt; CurryType expr -&gt; Ordering
+$cp1Ord :: forall expr. Ord expr =&gt; Eq (CurryType expr)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161273"><span id="local-6989586621679161275"><span id="local-6989586621679161277"><span class="annot"><span class="annottext">Int -&gt; CurryType expr -&gt; ShowS
+[CurryType expr] -&gt; ShowS
+CurryType expr -&gt; String
+(Int -&gt; CurryType expr -&gt; ShowS)
+-&gt; (CurryType expr -&gt; String)
+-&gt; ([CurryType expr] -&gt; ShowS)
+-&gt; Show (CurryType expr)
+forall expr. Show expr =&gt; Int -&gt; CurryType expr -&gt; ShowS
+forall expr. Show expr =&gt; [CurryType expr] -&gt; ShowS
+forall expr. Show expr =&gt; CurryType expr -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [CurryType expr] -&gt; ShowS
+$cshowList :: forall expr. Show expr =&gt; [CurryType expr] -&gt; ShowS
+show :: CurryType expr -&gt; String
+$cshow :: forall expr. Show expr =&gt; CurryType expr -&gt; String
+showsPrec :: Int -&gt; CurryType expr -&gt; ShowS
+$cshowsPrec :: forall expr. Show expr =&gt; Int -&gt; CurryType expr -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161265"><span id="local-6989586621679161267"><span id="local-6989586621679161269"><span id="local-6989586621679161271"><span class="annot"><span class="annottext">ReadPrec [CurryType expr]
+ReadPrec (CurryType expr)
+Int -&gt; ReadS (CurryType expr)
+ReadS [CurryType expr]
+(Int -&gt; ReadS (CurryType expr))
+-&gt; ReadS [CurryType expr]
+-&gt; ReadPrec (CurryType expr)
+-&gt; ReadPrec [CurryType expr]
+-&gt; Read (CurryType expr)
+forall expr. Read expr =&gt; ReadPrec [CurryType expr]
+forall expr. Read expr =&gt; ReadPrec (CurryType expr)
+forall expr. Read expr =&gt; Int -&gt; ReadS (CurryType expr)
+forall expr. Read expr =&gt; ReadS [CurryType expr]
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [CurryType expr]
+$creadListPrec :: forall expr. Read expr =&gt; ReadPrec [CurryType expr]
+readPrec :: ReadPrec (CurryType expr)
+$creadPrec :: forall expr. Read expr =&gt; ReadPrec (CurryType expr)
+readList :: ReadS [CurryType expr]
+$creadList :: forall expr. Read expr =&gt; ReadS [CurryType expr]
+readsPrec :: Int -&gt; ReadS (CurryType expr)
+$creadsPrec :: forall expr. Read expr =&gt; Int -&gt; ReadS (CurryType expr)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span id="local-6989586621679161390"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-type">toChurchType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161390"><span class="hs-identifier hs-type">expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span></span><span>
+</span><span id="line-27"></span><span id="toChurchType"><span class="annot"><span class="annottext">toChurchType :: CurryType expr -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-var hs-var">toChurchType</span></a></span></span><span> </span><span id="local-6989586621679161263"><span class="annot"><span class="annottext">t :: CurryType expr
+</span><a href="#local-6989586621679161263"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+</span><a href="#local-6989586621679161263"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-type">ATyInt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-var">TyInt</span></a></span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-type">ATyBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyBool"><span class="hs-identifier hs-var">TyBool</span></a></span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-type">ATyList</span></a></span><span> </span><span id="local-6989586621679161262"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161262"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyList"><span class="hs-identifier hs-var">TyList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; ChurchType
+forall expr. CurryType expr -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-var">toChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+</span><a href="#local-6989586621679161262"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-type">ATyNat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-var">TyInt</span></a></span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInterval"><span class="hs-identifier hs-type">ATyInterval</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-var">TyInt</span></a></span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-type">ATyIterator</span></a></span><span> </span><span id="local-6989586621679161261"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161261"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyIterator"><span class="hs-identifier hs-var">TyIterator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; ChurchType
+forall expr. CurryType expr -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-var">toChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+</span><a href="#local-6989586621679161261"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyArray"><span class="hs-identifier hs-type">ATyArray</span></a></span><span> </span><span id="local-6989586621679161260"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161260"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyList"><span class="hs-identifier hs-var">TyList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; ChurchType
+forall expr. CurryType expr -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-var">toChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+</span><a href="#local-6989586621679161260"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyVar"><span class="hs-identifier hs-type">ATyVar</span></a></span><span> </span><span id="local-6989586621679161259"><span class="annot"><span class="annottext">name :: TypeName
+</span><a href="#local-6989586621679161259"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyVar"><span class="hs-identifier hs-var">TyVar</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621679161259"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span id="local-6989586621679161386"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-type">toCurryType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161386"><span class="hs-identifier hs-type">expr</span></a></span></span><span>
+</span><span id="line-38"></span><span id="toCurryType"><span class="annot"><span class="annottext">toCurryType :: ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var hs-var">toCurryType</span></a></span></span><span> </span><span id="local-6989586621679161257"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161257"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161257"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-type">TyInt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyBool"><span class="hs-identifier hs-type">TyBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyList"><span class="hs-identifier hs-type">TyList</span></a></span><span> </span><span id="local-6989586621679161256"><span class="annot"><span class="annottext">t' :: ChurchType
+</span><a href="#local-6989586621679161256"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161256"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyIterator"><span class="hs-identifier hs-type">TyIterator</span></a></span><span> </span><span id="local-6989586621679161255"><span class="annot"><span class="annottext">t' :: ChurchType
+</span><a href="#local-6989586621679161255"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161255"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyVar"><span class="hs-identifier hs-type">TyVar</span></a></span><span> </span><span id="local-6989586621679161254"><span class="annot"><span class="annottext">name :: TypeName
+</span><a href="#local-6989586621679161254"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TypeName -&gt; CurryType expr
+forall expr. TypeName -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyVar"><span class="hs-identifier hs-var">ATyVar</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621679161254"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- 0-ary functions</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">data</span><span> </span><span id="Literal"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Literal"><span class="hs-identifier hs-var">Literal</span></a></span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="LitInt"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LitInt"><span class="hs-identifier hs-var">LitInt</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="LitBool"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LitBool"><span class="hs-identifier hs-var">LitBool</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161248"><span id="local-6989586621679161250"><span class="annot"><span class="annottext">Literal -&gt; Literal -&gt; Bool
+(Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool) -&gt; Eq Literal
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Literal -&gt; Literal -&gt; Bool
+$c/= :: Literal -&gt; Literal -&gt; Bool
+== :: Literal -&gt; Literal -&gt; Bool
+$c== :: Literal -&gt; Literal -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161233"><span id="local-6989586621679161235"><span id="local-6989586621679161237"><span id="local-6989586621679161239"><span id="local-6989586621679161241"><span id="local-6989586621679161243"><span id="local-6989586621679161245"><span class="annot"><span class="annottext">Eq Literal
+Eq Literal =&gt;
+(Literal -&gt; Literal -&gt; Ordering)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Literal)
+-&gt; (Literal -&gt; Literal -&gt; Literal)
+-&gt; Ord Literal
+Literal -&gt; Literal -&gt; Bool
+Literal -&gt; Literal -&gt; Ordering
+Literal -&gt; Literal -&gt; Literal
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Literal -&gt; Literal -&gt; Literal
+$cmin :: Literal -&gt; Literal -&gt; Literal
+max :: Literal -&gt; Literal -&gt; Literal
+$cmax :: Literal -&gt; Literal -&gt; Literal
+&gt;= :: Literal -&gt; Literal -&gt; Bool
+$c&gt;= :: Literal -&gt; Literal -&gt; Bool
+&gt; :: Literal -&gt; Literal -&gt; Bool
+$c&gt; :: Literal -&gt; Literal -&gt; Bool
+&lt;= :: Literal -&gt; Literal -&gt; Bool
+$c&lt;= :: Literal -&gt; Literal -&gt; Bool
+&lt; :: Literal -&gt; Literal -&gt; Bool
+$c&lt; :: Literal -&gt; Literal -&gt; Bool
+compare :: Literal -&gt; Literal -&gt; Ordering
+$ccompare :: Literal -&gt; Literal -&gt; Ordering
+$cp1Ord :: Eq Literal
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161227"><span id="local-6989586621679161229"><span id="local-6989586621679161231"><span class="annot"><span class="annottext">Int -&gt; Literal -&gt; ShowS
+[Literal] -&gt; ShowS
+Literal -&gt; String
+(Int -&gt; Literal -&gt; ShowS)
+-&gt; (Literal -&gt; String) -&gt; ([Literal] -&gt; ShowS) -&gt; Show Literal
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Literal] -&gt; ShowS
+$cshowList :: [Literal] -&gt; ShowS
+show :: Literal -&gt; String
+$cshow :: Literal -&gt; String
+showsPrec :: Int -&gt; Literal -&gt; ShowS
+$cshowsPrec :: Int -&gt; Literal -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161219"><span id="local-6989586621679161221"><span id="local-6989586621679161223"><span id="local-6989586621679161225"><span class="annot"><span class="annottext">ReadPrec [Literal]
+ReadPrec Literal
+Int -&gt; ReadS Literal
+ReadS [Literal]
+(Int -&gt; ReadS Literal)
+-&gt; ReadS [Literal]
+-&gt; ReadPrec Literal
+-&gt; ReadPrec [Literal]
+-&gt; Read Literal
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Literal]
+$creadListPrec :: ReadPrec [Literal]
+readPrec :: ReadPrec Literal
+$creadPrec :: ReadPrec Literal
+readList :: ReadS [Literal]
+$creadList :: ReadS [Literal]
+readsPrec :: Int -&gt; ReadS Literal
+$creadsPrec :: Int -&gt; ReadS Literal
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- 1-ary functions</span><span>
+</span><span id="line-52"></span><span class="hs-keyword">data</span><span> </span><span id="UnaryOp"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#UnaryOp"><span class="hs-identifier hs-var">UnaryOp</span></a></span></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- arithmetical functions</span><span>
+</span><span id="line-54"></span><span>    </span><span id="Negate"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Negate"><span class="hs-identifier hs-var">Negate</span></a></span></span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Abs"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Abs"><span class="hs-identifier hs-var">Abs</span></a></span></span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- combinational functions</span><span>
+</span><span id="line-57"></span><span>    </span><span id="Fact"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Fact"><span class="hs-identifier hs-var">Fact</span></a></span></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- logical functions</span><span>
+</span><span id="line-59"></span><span>    </span><span id="Not"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Not"><span class="hs-identifier hs-var">Not</span></a></span></span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- bitwise functions</span><span>
+</span><span id="line-61"></span><span>    </span><span id="BitNot"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitNot"><span class="hs-identifier hs-var">BitNot</span></a></span></span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- list functions</span><span>
+</span><span id="line-63"></span><span>    </span><span id="Len"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Len"><span class="hs-identifier hs-var">Len</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Sum"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Sum"><span class="hs-identifier hs-var">Sum</span></a></span></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Product"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Product"><span class="hs-identifier hs-var">Product</span></a></span></span><span>
+</span><span id="line-66"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Min1"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Min1"><span class="hs-identifier hs-var">Min1</span></a></span></span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Max1"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Max1"><span class="hs-identifier hs-var">Max1</span></a></span></span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgMin"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ArgMin"><span class="hs-identifier hs-var">ArgMin</span></a></span></span><span>
+</span><span id="line-69"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ArgMax"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ArgMax"><span class="hs-identifier hs-var">ArgMax</span></a></span></span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="All"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#All"><span class="hs-identifier hs-var">All</span></a></span></span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Any"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Any"><span class="hs-identifier hs-var">Any</span></a></span></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Sorted"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Sorted"><span class="hs-identifier hs-var">Sorted</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="List"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#List"><span class="hs-identifier hs-var">List</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-74"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Reversed"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Reversed"><span class="hs-identifier hs-var">Reversed</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Range1"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range1"><span class="hs-identifier hs-var">Range1</span></a></span></span><span>
+</span><span id="line-76"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161197"><span id="local-6989586621679161199"><span class="annot"><span class="annottext">UnaryOp -&gt; UnaryOp -&gt; Bool
+(UnaryOp -&gt; UnaryOp -&gt; Bool)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; Bool) -&gt; Eq UnaryOp
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: UnaryOp -&gt; UnaryOp -&gt; Bool
+$c/= :: UnaryOp -&gt; UnaryOp -&gt; Bool
+== :: UnaryOp -&gt; UnaryOp -&gt; Bool
+$c== :: UnaryOp -&gt; UnaryOp -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161182"><span id="local-6989586621679161184"><span id="local-6989586621679161186"><span id="local-6989586621679161188"><span id="local-6989586621679161190"><span id="local-6989586621679161192"><span id="local-6989586621679161194"><span class="annot"><span class="annottext">Eq UnaryOp
+Eq UnaryOp =&gt;
+(UnaryOp -&gt; UnaryOp -&gt; Ordering)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; Bool)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; Bool)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; Bool)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; Bool)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; UnaryOp)
+-&gt; (UnaryOp -&gt; UnaryOp -&gt; UnaryOp)
+-&gt; Ord UnaryOp
+UnaryOp -&gt; UnaryOp -&gt; Bool
+UnaryOp -&gt; UnaryOp -&gt; Ordering
+UnaryOp -&gt; UnaryOp -&gt; UnaryOp
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: UnaryOp -&gt; UnaryOp -&gt; UnaryOp
+$cmin :: UnaryOp -&gt; UnaryOp -&gt; UnaryOp
+max :: UnaryOp -&gt; UnaryOp -&gt; UnaryOp
+$cmax :: UnaryOp -&gt; UnaryOp -&gt; UnaryOp
+&gt;= :: UnaryOp -&gt; UnaryOp -&gt; Bool
+$c&gt;= :: UnaryOp -&gt; UnaryOp -&gt; Bool
+&gt; :: UnaryOp -&gt; UnaryOp -&gt; Bool
+$c&gt; :: UnaryOp -&gt; UnaryOp -&gt; Bool
+&lt;= :: UnaryOp -&gt; UnaryOp -&gt; Bool
+$c&lt;= :: UnaryOp -&gt; UnaryOp -&gt; Bool
+&lt; :: UnaryOp -&gt; UnaryOp -&gt; Bool
+$c&lt; :: UnaryOp -&gt; UnaryOp -&gt; Bool
+compare :: UnaryOp -&gt; UnaryOp -&gt; Ordering
+$ccompare :: UnaryOp -&gt; UnaryOp -&gt; Ordering
+$cp1Ord :: Eq UnaryOp
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161176"><span id="local-6989586621679161178"><span id="local-6989586621679161180"><span class="annot"><span class="annottext">Int -&gt; UnaryOp -&gt; ShowS
+[UnaryOp] -&gt; ShowS
+UnaryOp -&gt; String
+(Int -&gt; UnaryOp -&gt; ShowS)
+-&gt; (UnaryOp -&gt; String) -&gt; ([UnaryOp] -&gt; ShowS) -&gt; Show UnaryOp
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [UnaryOp] -&gt; ShowS
+$cshowList :: [UnaryOp] -&gt; ShowS
+show :: UnaryOp -&gt; String
+$cshow :: UnaryOp -&gt; String
+showsPrec :: Int -&gt; UnaryOp -&gt; ShowS
+$cshowsPrec :: Int -&gt; UnaryOp -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161168"><span id="local-6989586621679161170"><span id="local-6989586621679161172"><span id="local-6989586621679161174"><span class="annot"><span class="annottext">ReadPrec [UnaryOp]
+ReadPrec UnaryOp
+Int -&gt; ReadS UnaryOp
+ReadS [UnaryOp]
+(Int -&gt; ReadS UnaryOp)
+-&gt; ReadS [UnaryOp]
+-&gt; ReadPrec UnaryOp
+-&gt; ReadPrec [UnaryOp]
+-&gt; Read UnaryOp
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [UnaryOp]
+$creadListPrec :: ReadPrec [UnaryOp]
+readPrec :: ReadPrec UnaryOp
+$creadPrec :: ReadPrec UnaryOp
+readList :: ReadS [UnaryOp]
+$creadList :: ReadS [UnaryOp]
+readsPrec :: Int -&gt; ReadS UnaryOp
+$creadsPrec :: Int -&gt; ReadS UnaryOp
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- 2-ary functions (including 2-ary relations)</span><span>
+</span><span id="line-79"></span><span class="hs-keyword">data</span><span> </span><span id="BinaryOp"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BinaryOp"><span class="hs-identifier hs-var">BinaryOp</span></a></span></span><span>
+</span><span id="line-80"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- arithmetical functions</span><span>
+</span><span id="line-81"></span><span>    </span><span id="Plus"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Plus"><span class="hs-identifier hs-var">Plus</span></a></span></span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Minus"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Minus"><span class="hs-identifier hs-var">Minus</span></a></span></span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Mult"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Mult"><span class="hs-identifier hs-var">Mult</span></a></span></span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FloorDiv"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#FloorDiv"><span class="hs-identifier hs-var">FloorDiv</span></a></span></span><span>
+</span><span id="line-85"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FloorMod"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#FloorMod"><span class="hs-identifier hs-var">FloorMod</span></a></span></span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CeilDiv"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CeilDiv"><span class="hs-identifier hs-var">CeilDiv</span></a></span></span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CeilMod"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CeilMod"><span class="hs-identifier hs-var">CeilMod</span></a></span></span><span>
+</span><span id="line-88"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Pow"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Pow"><span class="hs-identifier hs-var">Pow</span></a></span></span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Gcd"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Gcd"><span class="hs-identifier hs-var">Gcd</span></a></span></span><span>
+</span><span id="line-90"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Lcm"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Lcm"><span class="hs-identifier hs-var">Lcm</span></a></span></span><span>
+</span><span id="line-91"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Min"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Min"><span class="hs-identifier hs-var">Min</span></a></span></span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Max"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Max"><span class="hs-identifier hs-var">Max</span></a></span></span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- modular functions</span><span>
+</span><span id="line-94"></span><span>    </span><span id="Inv"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Inv"><span class="hs-identifier hs-var">Inv</span></a></span></span><span>
+</span><span id="line-95"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- combinational functions</span><span>
+</span><span id="line-96"></span><span>    </span><span id="Choose"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Choose"><span class="hs-identifier hs-var">Choose</span></a></span></span><span>
+</span><span id="line-97"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Permute"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Permute"><span class="hs-identifier hs-var">Permute</span></a></span></span><span>
+</span><span id="line-98"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="MultiChoose"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#MultiChoose"><span class="hs-identifier hs-var">MultiChoose</span></a></span></span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- logical functions</span><span>
+</span><span id="line-100"></span><span>    </span><span id="And"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#And"><span class="hs-identifier hs-var">And</span></a></span></span><span>
+</span><span id="line-101"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Or"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Or"><span class="hs-identifier hs-var">Or</span></a></span></span><span>
+</span><span id="line-102"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Implies"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Implies"><span class="hs-identifier hs-var">Implies</span></a></span></span><span>
+</span><span id="line-103"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- bitwise functions</span><span>
+</span><span id="line-104"></span><span>    </span><span id="BitAnd"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitAnd"><span class="hs-identifier hs-var">BitAnd</span></a></span></span><span>
+</span><span id="line-105"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BitOr"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitOr"><span class="hs-identifier hs-var">BitOr</span></a></span></span><span>
+</span><span id="line-106"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BitXor"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitXor"><span class="hs-identifier hs-var">BitXor</span></a></span></span><span>
+</span><span id="line-107"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BitLeftShift"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitLeftShift"><span class="hs-identifier hs-var">BitLeftShift</span></a></span></span><span>
+</span><span id="line-108"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BitRightShift"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitRightShift"><span class="hs-identifier hs-var">BitRightShift</span></a></span></span><span>
+</span><span id="line-109"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- list functions</span><span>
+</span><span id="line-110"></span><span>    </span><span id="Range2"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range2"><span class="hs-identifier hs-var">Range2</span></a></span></span><span>
+</span><span id="line-111"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- arithmetical relations</span><span>
+</span><span id="line-112"></span><span>    </span><span id="LessThan"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LessThan"><span class="hs-identifier hs-var">LessThan</span></a></span></span><span>
+</span><span id="line-113"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="LessEqual"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LessEqual"><span class="hs-identifier hs-var">LessEqual</span></a></span></span><span>
+</span><span id="line-114"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="GreaterThan"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#GreaterThan"><span class="hs-identifier hs-var">GreaterThan</span></a></span></span><span>
+</span><span id="line-115"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="GreaterEqual"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#GreaterEqual"><span class="hs-identifier hs-var">GreaterEqual</span></a></span></span><span>
+</span><span id="line-116"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- equality relations (polymorphic)</span><span>
+</span><span id="line-117"></span><span>    </span><span id="Equal"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Equal"><span class="hs-identifier hs-var">Equal</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="NotEqual"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#NotEqual"><span class="hs-identifier hs-var">NotEqual</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-119"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161133"><span id="local-6989586621679161135"><span class="annot"><span class="annottext">BinaryOp -&gt; BinaryOp -&gt; Bool
+(BinaryOp -&gt; BinaryOp -&gt; Bool)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; Bool) -&gt; Eq BinaryOp
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: BinaryOp -&gt; BinaryOp -&gt; Bool
+$c/= :: BinaryOp -&gt; BinaryOp -&gt; Bool
+== :: BinaryOp -&gt; BinaryOp -&gt; Bool
+$c== :: BinaryOp -&gt; BinaryOp -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161118"><span id="local-6989586621679161120"><span id="local-6989586621679161122"><span id="local-6989586621679161124"><span id="local-6989586621679161126"><span id="local-6989586621679161128"><span id="local-6989586621679161130"><span class="annot"><span class="annottext">Eq BinaryOp
+Eq BinaryOp =&gt;
+(BinaryOp -&gt; BinaryOp -&gt; Ordering)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; Bool)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; Bool)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; Bool)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; Bool)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; BinaryOp)
+-&gt; (BinaryOp -&gt; BinaryOp -&gt; BinaryOp)
+-&gt; Ord BinaryOp
+BinaryOp -&gt; BinaryOp -&gt; Bool
+BinaryOp -&gt; BinaryOp -&gt; Ordering
+BinaryOp -&gt; BinaryOp -&gt; BinaryOp
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: BinaryOp -&gt; BinaryOp -&gt; BinaryOp
+$cmin :: BinaryOp -&gt; BinaryOp -&gt; BinaryOp
+max :: BinaryOp -&gt; BinaryOp -&gt; BinaryOp
+$cmax :: BinaryOp -&gt; BinaryOp -&gt; BinaryOp
+&gt;= :: BinaryOp -&gt; BinaryOp -&gt; Bool
+$c&gt;= :: BinaryOp -&gt; BinaryOp -&gt; Bool
+&gt; :: BinaryOp -&gt; BinaryOp -&gt; Bool
+$c&gt; :: BinaryOp -&gt; BinaryOp -&gt; Bool
+&lt;= :: BinaryOp -&gt; BinaryOp -&gt; Bool
+$c&lt;= :: BinaryOp -&gt; BinaryOp -&gt; Bool
+&lt; :: BinaryOp -&gt; BinaryOp -&gt; Bool
+$c&lt; :: BinaryOp -&gt; BinaryOp -&gt; Bool
+compare :: BinaryOp -&gt; BinaryOp -&gt; Ordering
+$ccompare :: BinaryOp -&gt; BinaryOp -&gt; Ordering
+$cp1Ord :: Eq BinaryOp
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161112"><span id="local-6989586621679161114"><span id="local-6989586621679161116"><span class="annot"><span class="annottext">Int -&gt; BinaryOp -&gt; ShowS
+[BinaryOp] -&gt; ShowS
+BinaryOp -&gt; String
+(Int -&gt; BinaryOp -&gt; ShowS)
+-&gt; (BinaryOp -&gt; String) -&gt; ([BinaryOp] -&gt; ShowS) -&gt; Show BinaryOp
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [BinaryOp] -&gt; ShowS
+$cshowList :: [BinaryOp] -&gt; ShowS
+show :: BinaryOp -&gt; String
+$cshow :: BinaryOp -&gt; String
+showsPrec :: Int -&gt; BinaryOp -&gt; ShowS
+$cshowsPrec :: Int -&gt; BinaryOp -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161104"><span id="local-6989586621679161106"><span id="local-6989586621679161108"><span id="local-6989586621679161110"><span class="annot"><span class="annottext">ReadPrec [BinaryOp]
+ReadPrec BinaryOp
+Int -&gt; ReadS BinaryOp
+ReadS [BinaryOp]
+(Int -&gt; ReadS BinaryOp)
+-&gt; ReadS [BinaryOp]
+-&gt; ReadPrec BinaryOp
+-&gt; ReadPrec [BinaryOp]
+-&gt; Read BinaryOp
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [BinaryOp]
+$creadListPrec :: ReadPrec [BinaryOp]
+readPrec :: ReadPrec BinaryOp
+$creadPrec :: ReadPrec BinaryOp
+readList :: ReadS [BinaryOp]
+$creadList :: ReadS [BinaryOp]
+readsPrec :: Int -&gt; ReadS BinaryOp
+$creadsPrec :: Int -&gt; ReadS BinaryOp
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-120"></span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- 3-ary functions</span><span>
+</span><span id="line-122"></span><span class="hs-keyword">data</span><span> </span><span id="TernaryOp"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TernaryOp"><span class="hs-identifier hs-var">TernaryOp</span></a></span></span><span>
+</span><span id="line-123"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- conditional functions (polymorphic)</span><span>
+</span><span id="line-124"></span><span>    </span><span id="Cond"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Cond"><span class="hs-identifier hs-var">Cond</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">ChurchType</span></a></span><span>
+</span><span id="line-125"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- modular functions</span><span>
+</span><span id="line-126"></span><span>    </span><span id="PowMod"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#PowMod"><span class="hs-identifier hs-var">PowMod</span></a></span></span><span>
+</span><span id="line-127"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- list functions</span><span>
+</span><span id="line-128"></span><span>    </span><span id="Range3"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range3"><span class="hs-identifier hs-var">Range3</span></a></span></span><span>
+</span><span id="line-129"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679161097"><span id="local-6989586621679161099"><span class="annot"><span class="annottext">TernaryOp -&gt; TernaryOp -&gt; Bool
+(TernaryOp -&gt; TernaryOp -&gt; Bool)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; Bool) -&gt; Eq TernaryOp
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TernaryOp -&gt; TernaryOp -&gt; Bool
+$c/= :: TernaryOp -&gt; TernaryOp -&gt; Bool
+== :: TernaryOp -&gt; TernaryOp -&gt; Bool
+$c== :: TernaryOp -&gt; TernaryOp -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161082"><span id="local-6989586621679161084"><span id="local-6989586621679161086"><span id="local-6989586621679161088"><span id="local-6989586621679161090"><span id="local-6989586621679161092"><span id="local-6989586621679161094"><span class="annot"><span class="annottext">Eq TernaryOp
+Eq TernaryOp =&gt;
+(TernaryOp -&gt; TernaryOp -&gt; Ordering)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; Bool)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; Bool)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; Bool)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; Bool)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; TernaryOp)
+-&gt; (TernaryOp -&gt; TernaryOp -&gt; TernaryOp)
+-&gt; Ord TernaryOp
+TernaryOp -&gt; TernaryOp -&gt; Bool
+TernaryOp -&gt; TernaryOp -&gt; Ordering
+TernaryOp -&gt; TernaryOp -&gt; TernaryOp
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: TernaryOp -&gt; TernaryOp -&gt; TernaryOp
+$cmin :: TernaryOp -&gt; TernaryOp -&gt; TernaryOp
+max :: TernaryOp -&gt; TernaryOp -&gt; TernaryOp
+$cmax :: TernaryOp -&gt; TernaryOp -&gt; TernaryOp
+&gt;= :: TernaryOp -&gt; TernaryOp -&gt; Bool
+$c&gt;= :: TernaryOp -&gt; TernaryOp -&gt; Bool
+&gt; :: TernaryOp -&gt; TernaryOp -&gt; Bool
+$c&gt; :: TernaryOp -&gt; TernaryOp -&gt; Bool
+&lt;= :: TernaryOp -&gt; TernaryOp -&gt; Bool
+$c&lt;= :: TernaryOp -&gt; TernaryOp -&gt; Bool
+&lt; :: TernaryOp -&gt; TernaryOp -&gt; Bool
+$c&lt; :: TernaryOp -&gt; TernaryOp -&gt; Bool
+compare :: TernaryOp -&gt; TernaryOp -&gt; Ordering
+$ccompare :: TernaryOp -&gt; TernaryOp -&gt; Ordering
+$cp1Ord :: Eq TernaryOp
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161076"><span id="local-6989586621679161078"><span id="local-6989586621679161080"><span class="annot"><span class="annottext">Int -&gt; TernaryOp -&gt; ShowS
+[TernaryOp] -&gt; ShowS
+TernaryOp -&gt; String
+(Int -&gt; TernaryOp -&gt; ShowS)
+-&gt; (TernaryOp -&gt; String)
+-&gt; ([TernaryOp] -&gt; ShowS)
+-&gt; Show TernaryOp
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TernaryOp] -&gt; ShowS
+$cshowList :: [TernaryOp] -&gt; ShowS
+show :: TernaryOp -&gt; String
+$cshow :: TernaryOp -&gt; String
+showsPrec :: Int -&gt; TernaryOp -&gt; ShowS
+$cshowsPrec :: Int -&gt; TernaryOp -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679161068"><span id="local-6989586621679161070"><span id="local-6989586621679161072"><span id="local-6989586621679161074"><span class="annot"><span class="annottext">ReadPrec [TernaryOp]
+ReadPrec TernaryOp
+Int -&gt; ReadS TernaryOp
+ReadS [TernaryOp]
+(Int -&gt; ReadS TernaryOp)
+-&gt; ReadS [TernaryOp]
+-&gt; ReadPrec TernaryOp
+-&gt; ReadPrec [TernaryOp]
+-&gt; Read TernaryOp
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [TernaryOp]
+$creadListPrec :: ReadPrec [TernaryOp]
+readPrec :: ReadPrec TernaryOp
+$creadPrec :: ReadPrec TernaryOp
+readList :: ReadS [TernaryOp]
+$creadList :: ReadS [TernaryOp]
+readsPrec :: Int -&gt; ReadS TernaryOp
+$creadsPrec :: Int -&gt; ReadS TernaryOp
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span id="local-6989586621679161067"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#literalType"><span class="hs-identifier hs-type">literalType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161067"><span class="hs-identifier hs-type">expr</span></a></span></span><span>
+</span><span id="line-132"></span><span id="literalType"><span class="annot"><span class="annottext">literalType :: Literal -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#literalType"><span class="hs-identifier hs-var hs-var">literalType</span></a></span></span><span> </span><span id="local-6989586621679161065"><span class="annot"><span class="annottext">lit :: Literal
+</span><a href="#local-6989586621679161065"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679161065"><span class="hs-identifier hs-var">lit</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-133"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LitInt"><span class="hs-identifier hs-type">LitInt</span></a></span><span> </span><span id="local-6989586621679161064"><span class="annot"><span class="annottext">n :: Integer
+</span><a href="#local-6989586621679161064"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679161064"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span>
+</span><span id="line-134"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LitBool"><span class="hs-identifier hs-type">LitBool</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span>
+</span><span id="line-135"></span><span>
+</span><span id="line-136"></span><span id="local-6989586621679161063"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#unaryOpType"><span class="hs-identifier hs-type">unaryOpType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#UnaryOp"><span class="hs-identifier hs-type">UnaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161063"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161063"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-137"></span><span id="unaryOpType"><span class="annot"><span class="annottext">unaryOpType :: UnaryOp -&gt; (CurryType expr, CurryType expr)
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#unaryOpType"><span class="hs-identifier hs-var hs-var">unaryOpType</span></a></span></span><span> </span><span id="local-6989586621679161061"><span class="annot"><span class="annottext">op :: UnaryOp
+</span><a href="#local-6989586621679161061"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-138"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161060"><span class="annot"><span class="annottext">ii :: (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161060"><span class="hs-identifier hs-var hs-var">ii</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>      </span><span id="local-6989586621679161059"><span class="annot"><span class="annottext">nn :: (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161059"><span class="hs-identifier hs-var hs-var">nn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>      </span><span id="local-6989586621679161058"><span class="annot"><span class="annottext">bb :: (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161058"><span class="hs-identifier hs-var hs-var">bb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-141"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679161061"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-142"></span><span>        </span><span class="hs-comment">-- arithmetical functions</span><span>
+</span><span id="line-143"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Negate"><span class="hs-identifier hs-type">Negate</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr)
+forall expr expr. (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161060"><span class="hs-identifier hs-var">ii</span></a></span><span>
+</span><span id="line-144"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Fact"><span class="hs-identifier hs-type">Fact</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr)
+forall expr expr. (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161059"><span class="hs-identifier hs-var">nn</span></a></span><span>
+</span><span id="line-145"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Abs"><span class="hs-identifier hs-type">Abs</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>        </span><span class="hs-comment">-- logical functions</span><span>
+</span><span id="line-147"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Not"><span class="hs-identifier hs-type">Not</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr)
+forall expr expr. (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161058"><span class="hs-identifier hs-var">bb</span></a></span><span>
+</span><span id="line-148"></span><span>        </span><span class="hs-comment">-- bitwise functions</span><span>
+</span><span id="line-149"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitNot"><span class="hs-identifier hs-type">BitNot</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr)
+forall expr expr. (CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161060"><span class="hs-identifier hs-var">ii</span></a></span><span>
+</span><span id="line-150"></span><span>        </span><span class="hs-comment">-- list functions</span><span>
+</span><span id="line-151"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Len"><span class="hs-identifier hs-type">Len</span></a></span><span> </span><span id="local-6989586621679161057"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161057"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161056"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161056"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161057"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161056"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-152"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Sum"><span class="hs-identifier hs-type">Sum</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-153"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Product"><span class="hs-identifier hs-type">Product</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-154"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Min1"><span class="hs-identifier hs-type">Min1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-155"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Max1"><span class="hs-identifier hs-type">Max1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-156"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ArgMin"><span class="hs-identifier hs-type">ArgMin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-157"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ArgMax"><span class="hs-identifier hs-type">ArgMax</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-158"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#All"><span class="hs-identifier hs-type">All</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-159"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Any"><span class="hs-identifier hs-type">Any</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Sorted"><span class="hs-identifier hs-type">Sorted</span></a></span><span> </span><span id="local-6989586621679161055"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161055"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161054"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161054"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161055"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161054"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161054"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-161"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#List"><span class="hs-identifier hs-type">List</span></a></span><span> </span><span id="local-6989586621679161053"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161053"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161052"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161053"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161052"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-162"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Reversed"><span class="hs-identifier hs-type">Reversed</span></a></span><span> </span><span id="local-6989586621679161051"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161051"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161050"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161051"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyList"><span class="hs-identifier hs-var">ATyList</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161050"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-163"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range1"><span class="hs-identifier hs-type">Range1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-164"></span><span>
+</span><span id="line-165"></span><span id="local-6989586621679161049"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#binaryOpType"><span class="hs-identifier hs-type">binaryOpType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BinaryOp"><span class="hs-identifier hs-type">BinaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161049"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161049"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161049"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-166"></span><span id="binaryOpType"><span class="annot"><span class="annottext">binaryOpType :: BinaryOp -&gt; (CurryType expr, CurryType expr, CurryType expr)
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#binaryOpType"><span class="hs-identifier hs-var hs-var">binaryOpType</span></a></span></span><span> </span><span id="local-6989586621679161047"><span class="annot"><span class="annottext">op :: BinaryOp
+</span><a href="#local-6989586621679161047"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-167"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161046"><span class="annot"><span class="annottext">iii :: (CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var hs-var">iii</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-168"></span><span>      </span><span id="local-6989586621679161045"><span class="annot"><span class="annottext">bbb :: (CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161045"><span class="hs-identifier hs-var hs-var">bbb</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-169"></span><span>      </span><span id="local-6989586621679161044"><span class="annot"><span class="annottext">inn :: (CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161044"><span class="hs-identifier hs-var hs-var">inn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-170"></span><span>      </span><span id="local-6989586621679161043"><span class="annot"><span class="annottext">iib :: (CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161043"><span class="hs-identifier hs-var hs-var">iib</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-171"></span><span>      </span><span id="local-6989586621679161042"><span class="annot"><span class="annottext">nnn :: (CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161042"><span class="hs-identifier hs-var hs-var">nnn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-172"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679161047"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-173"></span><span>        </span><span class="hs-comment">-- arithmetical functions</span><span>
+</span><span id="line-174"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Plus"><span class="hs-identifier hs-type">Plus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-175"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Minus"><span class="hs-identifier hs-type">Minus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-176"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Mult"><span class="hs-identifier hs-type">Mult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-177"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#FloorDiv"><span class="hs-identifier hs-type">FloorDiv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-178"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#FloorMod"><span class="hs-identifier hs-type">FloorMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-179"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CeilDiv"><span class="hs-identifier hs-type">CeilDiv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-180"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CeilMod"><span class="hs-identifier hs-type">CeilMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-181"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Pow"><span class="hs-identifier hs-type">Pow</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-182"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Gcd"><span class="hs-identifier hs-type">Gcd</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-183"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Lcm"><span class="hs-identifier hs-type">Lcm</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-184"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Min"><span class="hs-identifier hs-type">Min</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-185"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Max"><span class="hs-identifier hs-type">Max</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-186"></span><span>        </span><span class="hs-comment">-- modular functions</span><span>
+</span><span id="line-187"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Inv"><span class="hs-identifier hs-type">Inv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161044"><span class="hs-identifier hs-var">inn</span></a></span><span>
+</span><span id="line-188"></span><span>        </span><span class="hs-comment">-- combinational functions</span><span>
+</span><span id="line-189"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Choose"><span class="hs-identifier hs-type">Choose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161042"><span class="hs-identifier hs-var">nnn</span></a></span><span>
+</span><span id="line-190"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Permute"><span class="hs-identifier hs-type">Permute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161042"><span class="hs-identifier hs-var">nnn</span></a></span><span>
+</span><span id="line-191"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#MultiChoose"><span class="hs-identifier hs-type">MultiChoose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161042"><span class="hs-identifier hs-var">nnn</span></a></span><span>
+</span><span id="line-192"></span><span>        </span><span class="hs-comment">-- logical functions</span><span>
+</span><span id="line-193"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#And"><span class="hs-identifier hs-type">And</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161045"><span class="hs-identifier hs-var">bbb</span></a></span><span>
+</span><span id="line-194"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Or"><span class="hs-identifier hs-type">Or</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161045"><span class="hs-identifier hs-var">bbb</span></a></span><span>
+</span><span id="line-195"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Implies"><span class="hs-identifier hs-type">Implies</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161045"><span class="hs-identifier hs-var">bbb</span></a></span><span>
+</span><span id="line-196"></span><span>        </span><span class="hs-comment">-- bitwise functions</span><span>
+</span><span id="line-197"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitAnd"><span class="hs-identifier hs-type">BitAnd</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-198"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitOr"><span class="hs-identifier hs-type">BitOr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-199"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitXor"><span class="hs-identifier hs-type">BitXor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-200"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitLeftShift"><span class="hs-identifier hs-type">BitLeftShift</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-201"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitRightShift"><span class="hs-identifier hs-type">BitRightShift</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161046"><span class="hs-identifier hs-var">iii</span></a></span><span>
+</span><span id="line-202"></span><span>        </span><span class="hs-comment">-- list functions</span><span>
+</span><span id="line-203"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range2"><span class="hs-identifier hs-type">Range2</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-204"></span><span>        </span><span class="hs-comment">-- arithmetical relations</span><span>
+</span><span id="line-205"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LessThan"><span class="hs-identifier hs-type">LessThan</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161043"><span class="hs-identifier hs-var">iib</span></a></span><span>
+</span><span id="line-206"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LessEqual"><span class="hs-identifier hs-type">LessEqual</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161043"><span class="hs-identifier hs-var">iib</span></a></span><span>
+</span><span id="line-207"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#GreaterThan"><span class="hs-identifier hs-type">GreaterThan</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161043"><span class="hs-identifier hs-var">iib</span></a></span><span>
+</span><span id="line-208"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#GreaterEqual"><span class="hs-identifier hs-type">GreaterEqual</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(CurryType expr, CurryType expr, CurryType expr)
+forall expr expr expr.
+(CurryType expr, CurryType expr, CurryType expr)
+</span><a href="#local-6989586621679161043"><span class="hs-identifier hs-var">iib</span></a></span><span>
+</span><span id="line-209"></span><span>        </span><span class="hs-comment">-- equality relations (polymorphic)</span><span>
+</span><span id="line-210"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Equal"><span class="hs-identifier hs-type">Equal</span></a></span><span> </span><span id="local-6989586621679161041"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161041"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161040"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161040"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161041"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161040"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161040"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-211"></span><span>        </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#NotEqual"><span class="hs-identifier hs-type">NotEqual</span></a></span><span> </span><span id="local-6989586621679161039"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161039"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161038"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161038"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161039"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161038"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161038"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-212"></span><span>
+</span><span id="line-213"></span><span id="local-6989586621679161037"><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ternaryOpType"><span class="hs-identifier hs-type">ternaryOpType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TernaryOp"><span class="hs-identifier hs-type">TernaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161037"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161037"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161037"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CurryType"><span class="hs-identifier hs-type">CurryType</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679161037"><span class="hs-identifier hs-type">expr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-214"></span><span id="ternaryOpType"><span class="annot"><span class="annottext">ternaryOpType :: TernaryOp
+-&gt; (CurryType expr, CurryType expr, CurryType expr, CurryType expr)
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ternaryOpType"><span class="hs-identifier hs-var hs-var">ternaryOpType</span></a></span></span><span> </span><span id="local-6989586621679161035"><span class="annot"><span class="annottext">op :: TernaryOp
+</span><a href="#local-6989586621679161035"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TernaryOp
+</span><a href="#local-6989586621679161035"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-215"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Cond"><span class="hs-identifier hs-type">Cond</span></a></span><span> </span><span id="local-6989586621679161034"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679161034"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679161033"><span class="annot"><span class="annottext">t' :: CurryType expr
+</span><a href="#local-6989586621679161033"><span class="hs-identifier hs-var hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; CurryType expr
+forall expr. ChurchType -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toCurryType"><span class="hs-identifier hs-var">toCurryType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679161034"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyBool"><span class="hs-identifier hs-var">ATyBool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161033"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161033"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="#local-6989586621679161033"><span class="hs-identifier hs-var">t'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-216"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#PowMod"><span class="hs-identifier hs-type">PowMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyNat"><span class="hs-identifier hs-var">ATyNat</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-217"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range3"><span class="hs-identifier hs-type">Range3</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">CurryType expr -&gt; CurryType expr
+forall expr. CurryType expr -&gt; CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyIterator"><span class="hs-identifier hs-var">ATyIterator</span></a></span><span> </span><span class="annot"><span class="annottext">CurryType expr
+forall expr. CurryType expr
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#ATyInt"><span class="hs-identifier hs-var">ATyInt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-218"></span></pre></body></html>

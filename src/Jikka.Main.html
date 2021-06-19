@@ -1,0 +1,365 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_6CKyErAhOQ40yMWowjTaFF"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Main</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Except</span></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text.IO</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Version</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">showVersion</span></span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Subcommand.Convert.html"><span class="hs-identifier">Jikka.Subcommand.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Convert</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Subcommand.Debug.html"><span class="hs-identifier">Jikka.Subcommand.Debug</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Debug</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Subcommand.Execute.html"><span class="hs-identifier">Jikka.Subcommand.Execute</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Execute</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Paths_Jikka.html"><span class="hs-identifier">Paths_Jikka</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Paths_Jikka.html#version"><span class="hs-identifier">version</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Console.GetOpt</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Exit</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ExitCode</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">hPutStr</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">hPutStrLn</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">stderr</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">data</span><span> </span><span id="Flag"><span class="annot"><a href="Jikka.Main.html#Flag"><span class="hs-identifier hs-var">Flag</span></a></span></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Help"><span class="annot"><a href="Jikka.Main.html#Help"><span class="hs-identifier hs-var">Help</span></a></span></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Verbose"><span class="annot"><a href="Jikka.Main.html#Verbose"><span class="hs-identifier hs-var">Verbose</span></a></span></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Version"><span class="annot"><a href="Jikka.Main.html#Version"><span class="hs-identifier hs-var">Version</span></a></span></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679164710"><span id="local-6989586621679164712"><span class="annot"><span class="annottext">Flag -&gt; Flag -&gt; Bool
+(Flag -&gt; Flag -&gt; Bool) -&gt; (Flag -&gt; Flag -&gt; Bool) -&gt; Eq Flag
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Flag -&gt; Flag -&gt; Bool
+$c/= :: Flag -&gt; Flag -&gt; Bool
+== :: Flag -&gt; Flag -&gt; Bool
+$c== :: Flag -&gt; Flag -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164694"><span id="local-6989586621679164696"><span id="local-6989586621679164698"><span id="local-6989586621679164700"><span id="local-6989586621679164702"><span id="local-6989586621679164704"><span id="local-6989586621679164706"><span class="annot"><span class="annottext">Eq Flag
+Eq Flag =&gt;
+(Flag -&gt; Flag -&gt; Ordering)
+-&gt; (Flag -&gt; Flag -&gt; Bool)
+-&gt; (Flag -&gt; Flag -&gt; Bool)
+-&gt; (Flag -&gt; Flag -&gt; Bool)
+-&gt; (Flag -&gt; Flag -&gt; Bool)
+-&gt; (Flag -&gt; Flag -&gt; Flag)
+-&gt; (Flag -&gt; Flag -&gt; Flag)
+-&gt; Ord Flag
+Flag -&gt; Flag -&gt; Bool
+Flag -&gt; Flag -&gt; Ordering
+Flag -&gt; Flag -&gt; Flag
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Flag -&gt; Flag -&gt; Flag
+$cmin :: Flag -&gt; Flag -&gt; Flag
+max :: Flag -&gt; Flag -&gt; Flag
+$cmax :: Flag -&gt; Flag -&gt; Flag
+&gt;= :: Flag -&gt; Flag -&gt; Bool
+$c&gt;= :: Flag -&gt; Flag -&gt; Bool
+&gt; :: Flag -&gt; Flag -&gt; Bool
+$c&gt; :: Flag -&gt; Flag -&gt; Bool
+&lt;= :: Flag -&gt; Flag -&gt; Bool
+$c&lt;= :: Flag -&gt; Flag -&gt; Bool
+&lt; :: Flag -&gt; Flag -&gt; Bool
+$c&lt; :: Flag -&gt; Flag -&gt; Bool
+compare :: Flag -&gt; Flag -&gt; Ordering
+$ccompare :: Flag -&gt; Flag -&gt; Ordering
+$cp1Ord :: Eq Flag
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164687"><span id="local-6989586621679164689"><span id="local-6989586621679164691"><span class="annot"><span class="annottext">Int -&gt; Flag -&gt; ShowS
+[Flag] -&gt; ShowS
+Flag -&gt; String
+(Int -&gt; Flag -&gt; ShowS)
+-&gt; (Flag -&gt; String) -&gt; ([Flag] -&gt; ShowS) -&gt; Show Flag
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Flag] -&gt; ShowS
+$cshowList :: [Flag] -&gt; ShowS
+show :: Flag -&gt; String
+$cshow :: Flag -&gt; String
+showsPrec :: Int -&gt; Flag -&gt; ShowS
+$cshowsPrec :: Int -&gt; Flag -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164678"><span id="local-6989586621679164680"><span id="local-6989586621679164682"><span id="local-6989586621679164684"><span class="annot"><span class="annottext">ReadPrec [Flag]
+ReadPrec Flag
+Int -&gt; ReadS Flag
+ReadS [Flag]
+(Int -&gt; ReadS Flag)
+-&gt; ReadS [Flag] -&gt; ReadPrec Flag -&gt; ReadPrec [Flag] -&gt; Read Flag
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Flag]
+$creadListPrec :: ReadPrec [Flag]
+readPrec :: ReadPrec Flag
+$creadPrec :: ReadPrec Flag
+readList :: ReadS [Flag]
+$creadList :: ReadS [Flag]
+readsPrec :: Int -&gt; ReadS Flag
+$creadsPrec :: Int -&gt; ReadS Flag
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">newtype</span><span> </span><span id="Options"><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Options"><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-var">Options</span></a></span></span><span>
+</span><span id="line-22"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="verbose"><span class="annot"><span class="annottext">Options -&gt; Bool
+</span><a href="Jikka.Main.html#verbose"><span class="hs-identifier hs-var hs-var">verbose</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-23"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><a href="Jikka.Main.html#defaultOptions"><span class="hs-identifier hs-type">defaultOptions</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
+</span><span id="line-26"></span><span id="defaultOptions"><span class="annot"><span class="annottext">defaultOptions :: Options
+</span><a href="Jikka.Main.html#defaultOptions"><span class="hs-identifier hs-var hs-var">defaultOptions</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-27"></span><span>  </span><span class="annot"><span class="annottext">Options :: Bool -&gt; Options
+</span><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-type hs-type">Options</span></a></span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="annottext">verbose :: Bool
+</span><a href="Jikka.Main.html#verbose"><span class="hs-identifier hs-var">verbose</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-special">}</span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span class="annot"><a href="Jikka.Main.html#header"><span class="hs-identifier hs-type">header</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-32"></span><span id="header"><span class="annot"><span class="annottext">header :: ShowS
+</span><a href="Jikka.Main.html#header"><span class="hs-identifier hs-var hs-var">header</span></a></span></span><span> </span><span id="local-6989586621679164671"><span class="annot"><span class="annottext">progName :: String
+</span><a href="#local-6989586621679164671"><span class="hs-identifier hs-var">progName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;Usage: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164671"><span class="hs-identifier hs-var">progName</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; [convert | debug | exec] FILE&quot;</span></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Jikka.Main.html#options"><span class="hs-identifier hs-type">options</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">OptDescr</span></span><span> </span><span class="annot"><a href="Jikka.Main.html#Flag"><span class="hs-identifier hs-type">Flag</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-35"></span><span id="options"><span class="annot"><span class="annottext">options :: [OptDescr Flag]
+</span><a href="Jikka.Main.html#options"><span class="hs-identifier hs-var hs-var">options</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; ArgDescr Flag -&gt; String -&gt; OptDescr Flag
+forall a. String -&gt; [String] -&gt; ArgDescr a -&gt; String -&gt; OptDescr a
+</span><span class="hs-identifier hs-var">Option</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-char">'h'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-char">'?'</span></span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;help&quot;</span></span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Flag -&gt; ArgDescr Flag
+forall a. a -&gt; ArgDescr a
+</span><span class="hs-identifier hs-var">NoArg</span></span><span> </span><span class="annot"><span class="annottext">Flag
+</span><a href="Jikka.Main.html#Help"><span class="hs-identifier hs-var">Help</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; ArgDescr Flag -&gt; String -&gt; OptDescr Flag
+forall a. String -&gt; [String] -&gt; ArgDescr a -&gt; String -&gt; OptDescr a
+</span><span class="hs-identifier hs-var">Option</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-char">'v'</span></span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;verbose&quot;</span></span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Flag -&gt; ArgDescr Flag
+forall a. a -&gt; ArgDescr a
+</span><span class="hs-identifier hs-var">NoArg</span></span><span> </span><span class="annot"><span class="annottext">Flag
+</span><a href="Jikka.Main.html#Verbose"><span class="hs-identifier hs-var">Verbose</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-string">&quot;&quot;</span></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; ArgDescr Flag -&gt; String -&gt; OptDescr Flag
+forall a. String -&gt; [String] -&gt; ArgDescr a -&gt; String -&gt; OptDescr a
+</span><span class="hs-identifier hs-var">Option</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-string">&quot;version&quot;</span></span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Flag -&gt; ArgDescr Flag
+forall a. a -&gt; ArgDescr a
+</span><span class="hs-identifier hs-var">NoArg</span></span><span> </span><span class="annot"><span class="annottext">Flag
+</span><a href="Jikka.Main.html#Version"><span class="hs-identifier hs-var">Version</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-special">]</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span class="annot"><a href="Jikka.Main.html#main"><span class="hs-identifier hs-type">main</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExitCode</span></span><span>
+</span><span id="line-42"></span><span id="main"><span class="annot"><span class="annottext">main :: String -&gt; [String] -&gt; IO ExitCode
+</span><a href="Jikka.Main.html#main"><span class="hs-identifier hs-var hs-var">main</span></a></span></span><span> </span><span id="local-6989586621679164666"><span class="annot"><span class="annottext">name :: String
+</span><a href="#local-6989586621679164666"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679164665"><span class="annot"><span class="annottext">args :: [String]
+</span><a href="#local-6989586621679164665"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679164664"><span class="annot"><span class="annottext">usage :: String
+</span><a href="#local-6989586621679164664"><span class="hs-identifier hs-var hs-var">usage</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; [OptDescr Flag] -&gt; String
+forall a. String -&gt; [OptDescr a] -&gt; String
+</span><span class="hs-identifier hs-var">usageInfo</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ShowS
+</span><a href="Jikka.Main.html#header"><span class="hs-identifier hs-var">header</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164666"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[OptDescr Flag]
+</span><a href="Jikka.Main.html#options"><span class="hs-identifier hs-var">options</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">ArgOrder Flag
+-&gt; [OptDescr Flag] -&gt; [String] -&gt; ([Flag], [String], [String])
+forall a.
+ArgOrder a -&gt; [OptDescr a] -&gt; [String] -&gt; ([a], [String], [String])
+</span><span class="hs-identifier hs-var">getOpt</span></span><span> </span><span class="annot"><span class="annottext">ArgOrder Flag
+forall a. ArgOrder a
+</span><span class="hs-identifier hs-var">Permute</span></span><span> </span><span class="annot"><span class="annottext">[OptDescr Flag]
+</span><a href="Jikka.Main.html#options"><span class="hs-identifier hs-var">options</span></a></span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679164665"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679164660"><span class="annot"><span class="annottext">parsed :: [Flag]
+</span><a href="#local-6989586621679164660"><span class="hs-identifier hs-var">parsed</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Flag
+</span><a href="Jikka.Main.html#Help"><span class="hs-identifier hs-var">Help</span></a></span><span> </span><span class="annot"><span class="annottext">Flag -&gt; [Flag] -&gt; Bool
+forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="annot"><span class="annottext">[Flag]
+</span><a href="#local-6989586621679164660"><span class="hs-identifier hs-var">parsed</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-46"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span class="hs-identifier hs-var">putStr</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164664"><span class="hs-identifier hs-var">usage</span></a></span><span>
+</span><span id="line-47"></span><span>      </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier hs-var">ExitSuccess</span></span><span>
+</span><span id="line-48"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679164656"><span class="annot"><span class="annottext">parsed :: [Flag]
+</span><a href="#local-6989586621679164656"><span class="hs-identifier hs-var">parsed</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Flag
+</span><a href="Jikka.Main.html#Version"><span class="hs-identifier hs-var">Version</span></a></span><span> </span><span class="annot"><span class="annottext">Flag -&gt; [Flag] -&gt; Bool
+forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="annot"><span class="annottext">[Flag]
+</span><a href="#local-6989586621679164656"><span class="hs-identifier hs-var">parsed</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-49"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span class="hs-identifier hs-var">putStrLn</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; IO ()) -&gt; String -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Version -&gt; String
+</span><span class="hs-identifier hs-var">showVersion</span></span><span> </span><span class="annot"><span class="annottext">Version
+</span><a href="Paths_Jikka.html#version"><span class="hs-identifier hs-var">version</span></a></span><span>
+</span><span id="line-50"></span><span>      </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier hs-var">ExitSuccess</span></span><span>
+</span><span id="line-51"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679164654"><span class="annot"><span class="annottext">parsed :: [Flag]
+</span><a href="#local-6989586621679164654"><span class="hs-identifier hs-var">parsed</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679164653"><span class="annot"><span class="annottext">subcmd :: String
+</span><a href="#local-6989586621679164653"><span class="hs-identifier hs-var">subcmd</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164652"><span class="annot"><span class="annottext">path :: String
+</span><a href="#local-6989586621679164652"><span class="hs-identifier hs-var">path</span></a></span></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String -&gt; [Flag] -&gt; Either String Options
+</span><a href="Jikka.Main.html#parseFlags"><span class="hs-identifier hs-var">parseFlags</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164666"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[Flag]
+</span><a href="#local-6989586621679164654"><span class="hs-identifier hs-var">parsed</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-52"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679164650"><span class="annot"><span class="annottext">error :: String
+</span><a href="#local-6989586621679164650"><span class="hs-identifier hs-var">error</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-53"></span><span>        </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
+</span><span class="hs-identifier hs-var">hPutStrLn</span></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><span class="hs-identifier hs-var">stderr</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164650"><span class="hs-identifier hs-var">error</span></a></span><span>
+</span><span id="line-54"></span><span>        </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ExitCode -&gt; IO ExitCode) -&gt; ExitCode -&gt; IO ExitCode
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><span class="hs-identifier hs-var">ExitFailure</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-55"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span id="local-6989586621679164648"><span class="annot"><span class="annottext">opts :: Options
+</span><a href="#local-6989586621679164648"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-56"></span><span>        </span><span id="local-6989586621679164647"><span class="annot"><span class="annottext">Either String ()
+</span><a href="#local-6989586621679164647"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ExceptT String IO () -&gt; IO (Either String ())
+forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
+</span><span class="hs-identifier hs-var">runExceptT</span></span><span> </span><span class="annot"><span class="annottext">(ExceptT String IO () -&gt; IO (Either String ()))
+-&gt; ExceptT String IO () -&gt; IO (Either String ())
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Options -&gt; String -&gt; ExceptT String IO ()
+</span><a href="Jikka.Main.html#runSubcommand"><span class="hs-identifier hs-var">runSubcommand</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164653"><span class="hs-identifier hs-var">subcmd</span></a></span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679164648"><span class="hs-identifier hs-var">opts</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164652"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-57"></span><span>        </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either String ()
+</span><a href="#local-6989586621679164647"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-58"></span><span>          </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679164644"><span class="annot"><span class="annottext">error :: String
+</span><a href="#local-6989586621679164644"><span class="hs-identifier hs-var">error</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>            </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
+</span><span class="hs-identifier hs-var">hPutStrLn</span></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><span class="hs-identifier hs-var">stderr</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164644"><span class="hs-identifier hs-var">error</span></a></span><span>
+</span><span id="line-60"></span><span>            </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ExitCode -&gt; IO ExitCode) -&gt; ExitCode -&gt; IO ExitCode
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><span class="hs-identifier hs-var">ExitFailure</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-61"></span><span>          </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-62"></span><span>            </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ExitCode
+</span><span class="hs-identifier hs-var">ExitSuccess</span></span><span>
+</span><span id="line-63"></span><span>    </span><span class="hs-special">(</span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">,</span><span> </span><span id="local-6989586621679164643"><span class="annot"><span class="annottext">errors :: [String]
+</span><a href="#local-6989586621679164643"><span class="hs-identifier hs-var">errors</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679164643"><span class="hs-identifier hs-var">errors</span></a></span><span> </span><span class="annot"><span class="annottext">[String] -&gt; [String] -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-64"></span><span>      </span><span class="annot"><span class="annottext">(String -&gt; IO ()) -&gt; [String] -&gt; IO ()
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Foldable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m ()
+</span><span class="hs-identifier hs-var">mapM_</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679164640"><span class="annot"><span class="annottext">error :: String
+</span><a href="#local-6989586621679164640"><span class="hs-identifier hs-var">error</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
+</span><span class="hs-identifier hs-var">hPutStr</span></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><span class="hs-identifier hs-var">stderr</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; IO ()) -&gt; String -&gt; IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164666"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164640"><span class="hs-identifier hs-var">error</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[String]
+</span><a href="#local-6989586621679164643"><span class="hs-identifier hs-var">errors</span></a></span><span>
+</span><span id="line-65"></span><span>      </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ExitCode -&gt; IO ExitCode) -&gt; ExitCode -&gt; IO ExitCode
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><span class="hs-identifier hs-var">ExitFailure</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-67"></span><span>      </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
+</span><span class="hs-identifier hs-var">hPutStr</span></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><span class="hs-identifier hs-var">stderr</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164664"><span class="hs-identifier hs-var">usage</span></a></span><span>
+</span><span id="line-68"></span><span>      </span><span class="annot"><span class="annottext">ExitCode -&gt; IO ExitCode
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ExitCode -&gt; IO ExitCode) -&gt; ExitCode -&gt; IO ExitCode
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; ExitCode
+</span><span class="hs-identifier hs-var">ExitFailure</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span class="annot"><a href="Jikka.Main.html#parseFlags"><span class="hs-identifier hs-type">parseFlags</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Main.html#Flag"><span class="hs-identifier hs-type">Flag</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
+</span><span id="line-71"></span><span id="parseFlags"><span class="annot"><span class="annottext">parseFlags :: String -&gt; [Flag] -&gt; Either String Options
+</span><a href="Jikka.Main.html#parseFlags"><span class="hs-identifier hs-var hs-var">parseFlags</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options -&gt; [Flag] -&gt; Either String Options
+</span><a href="#local-6989586621679164639"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="Jikka.Main.html#defaultOptions"><span class="hs-identifier hs-var">defaultOptions</span></a></span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-73"></span><span>    </span><span class="annot"><a href="#local-6989586621679164639"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Main.html#Flag"><span class="hs-identifier hs-type">Flag</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span>
+</span><span id="line-74"></span><span>    </span><span id="local-6989586621679164639"><span class="annot"><span class="annottext">go :: Options -&gt; [Flag] -&gt; Either String Options
+</span><a href="#local-6989586621679164639"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679164638"><span class="annot"><span class="annottext">opts :: Options
+</span><a href="#local-6989586621679164638"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Options -&gt; Either String Options
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679164638"><span class="hs-identifier hs-var">opts</span></a></span><span>
+</span><span id="line-75"></span><span>    </span><span class="annot"><a href="#local-6989586621679164639"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679164637"><span class="annot"><span class="annottext">opts :: Options
+</span><a href="#local-6989586621679164637"><span class="hs-identifier hs-var">opts</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679164636"><span class="annot"><span class="annottext">flag :: Flag
+</span><a href="#local-6989586621679164636"><span class="hs-identifier hs-var">flag</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679164635"><span class="annot"><span class="annottext">flags :: [Flag]
+</span><a href="#local-6989586621679164635"><span class="hs-identifier hs-var">flags</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Flag
+</span><a href="#local-6989586621679164636"><span class="hs-identifier hs-var">flag</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><a href="Jikka.Main.html#Help"><span class="hs-identifier hs-type">Help</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Options
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="hs-string">&quot;parseFlags is not called when --help is specified&quot;</span></span><span>
+</span><span id="line-77"></span><span>      </span><span class="annot"><a href="Jikka.Main.html#Version"><span class="hs-identifier hs-type">Version</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Options
+forall a. HasCallStack =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">error</span></span><span> </span><span class="annot"><span class="hs-string">&quot;parseFlags is not called when --version is specified&quot;</span></span><span>
+</span><span id="line-78"></span><span>      </span><span class="annot"><a href="Jikka.Main.html#Verbose"><span class="hs-identifier hs-type">Verbose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Options -&gt; [Flag] -&gt; Either String Options
+</span><a href="#local-6989586621679164639"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Options
+</span><a href="#local-6989586621679164637"><span class="hs-identifier hs-var">opts</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">verbose :: Bool
+</span><a href="Jikka.Main.html#verbose"><span class="hs-identifier hs-var">verbose</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Flag]
+</span><a href="#local-6989586621679164635"><span class="hs-identifier hs-var">flags</span></a></span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="annot"><a href="Jikka.Main.html#runSubcommand"><span class="hs-identifier hs-type">runSubcommand</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Main.html#Options"><span class="hs-identifier hs-type">Options</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span id="runSubcommand"><span class="annot"><span class="annottext">runSubcommand :: String -&gt; Options -&gt; String -&gt; ExceptT String IO ()
+</span><a href="Jikka.Main.html#runSubcommand"><span class="hs-identifier hs-var hs-var">runSubcommand</span></a></span></span><span> </span><span id="local-6989586621679164632"><span class="annot"><span class="annottext">subcmd :: String
+</span><a href="#local-6989586621679164632"><span class="hs-identifier hs-var">subcmd</span></a></span></span><span> </span><span class="hs-identifier">_</span><span> </span><span id="local-6989586621679164631"><span class="annot"><span class="annottext">path :: String
+</span><a href="#local-6989586621679164631"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164632"><span class="hs-identifier hs-var">subcmd</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-string">&quot;convert&quot;</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-83"></span><span>    </span><span id="local-6989586621679164630"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679164630"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Text -&gt; ExceptT String IO Text
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO Text -&gt; ExceptT String IO Text)
+-&gt; IO Text -&gt; ExceptT String IO Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; IO Text
+</span><span class="hs-identifier hs-var">T.readFile</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164631"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-84"></span><span>    </span><span id="local-6989586621679164627"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679164627"><span class="hs-identifier hs-var">output</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either String Text -&gt; ExceptT String IO Text
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; Either e a -&gt; m a
+</span><span class="hs-identifier hs-var">liftEither</span></span><span> </span><span class="annot"><span class="annottext">(Either String Text -&gt; ExceptT String IO Text)
+-&gt; Either String Text -&gt; ExceptT String IO Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text -&gt; Either String Text
+</span><a href="Jikka.Subcommand.Convert.html#run"><span class="hs-identifier hs-var">Convert.run</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164631"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679164630"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-85"></span><span>    </span><span class="annot"><span class="annottext">IO () -&gt; ExceptT String IO ()
+forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
+</span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; ExceptT String IO ()) -&gt; IO () -&gt; ExceptT String IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; IO ()
+</span><span class="hs-identifier hs-var">T.putStr</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679164627"><span class="hs-identifier hs-var">output</span></a></span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-string">&quot;debug&quot;</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ExceptT String IO ()
+</span><a href="Jikka.Subcommand.Debug.html#run"><span class="hs-identifier hs-var">Debug.run</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164631"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-string">&quot;execute&quot;</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ExceptT String IO ()
+</span><a href="Jikka.Subcommand.Execute.html#run"><span class="hs-identifier hs-var">Execute.run</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164631"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-88"></span><span>  </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; ExceptT String IO ()
+forall e (m :: * -&gt; *) a. MonadError e m =&gt; e -&gt; m a
+</span><span class="hs-identifier hs-var">throwError</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; ExceptT String IO ()) -&gt; String -&gt; ExceptT String IO ()
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;undefined subcommand: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">ShowS
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679164632"><span class="hs-identifier hs-var">subcmd</span></a></span><span>
+</span><span id="line-89"></span></pre></body></html>

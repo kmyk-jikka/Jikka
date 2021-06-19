@@ -1,0 +1,982 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Converter.Python.ToCore</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Except</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Foldable</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">foldlM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">sort</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">isNothing</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html"><span class="hs-identifier">Jikka.Language.Common.Name</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html"><span class="hs-identifier">Jikka.Language.Core.Expr</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Y</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Lint.html"><span class="hs-identifier">Jikka.Language.Core.Lint</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Y</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Core.Lint.html#typecheckProgram%27"><span class="hs-identifier">typecheckProgram'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html"><span class="hs-identifier">Jikka.Language.Python.Typed.Expr</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html"><span class="hs-identifier">Jikka.Language.Python.Typed.Stdlib</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">X</span></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-type">convertChurchType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ChurchType"><span class="hs-identifier hs-type">X.ChurchType</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Y.Type</span></a></span><span>
+</span><span id="line-19"></span><span id="convertChurchType"><span class="annot"><span class="annottext">convertChurchType :: ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var hs-var">convertChurchType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-type">X.TyInt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="Jikka.Language.Core.Expr.html#IntTy"><span class="hs-identifier hs-var">Y.IntTy</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyBool"><span class="hs-identifier hs-type">X.TyBool</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="Jikka.Language.Core.Expr.html#BoolTy"><span class="hs-identifier hs-var">Y.BoolTy</span></a></span><span>
+</span><span id="line-22"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyList"><span class="hs-identifier hs-type">X.TyList</span></a></span><span> </span><span id="local-6989586621679162877"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162877"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="Jikka.Language.Core.Expr.html#ListTy"><span class="hs-identifier hs-var">Y.ListTy</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; Either String Type -&gt; Either String Type
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162877"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-23"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyIterator"><span class="hs-identifier hs-type">X.TyIterator</span></a></span><span> </span><span id="local-6989586621679162873"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162873"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="Jikka.Language.Core.Expr.html#ListTy"><span class="hs-identifier hs-var">Y.ListTy</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Type) -&gt; Either String Type -&gt; Either String Type
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162873"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-24"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TyVar"><span class="hs-identifier hs-type">X.TyVar</span></a></span><span> </span><span id="local-6989586621679162871"><span class="annot"><span class="annottext">a :: TypeName
+</span><a href="#local-6989586621679162871"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Type
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String Type) -&gt; String -&gt; Either String Type
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: type variable found: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TypeName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unTypeName"><span class="hs-identifier hs-var">unTypeName</span></a></span><span> </span><span class="annot"><span class="annottext">TypeName
+</span><a href="#local-6989586621679162871"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-type">convertType</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Type"><span class="hs-identifier hs-type">X.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Y.Type</span></a></span><span>
+</span><span id="line-27"></span><span id="convertType"><span class="annot"><span class="annottext">convertType :: Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var hs-var">convertType</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">(ChurchType -&gt; Either String Type)
+-&gt; (Type -&gt; ChurchType) -&gt; Type -&gt; Either String Type
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; ChurchType
+forall expr. CurryType expr -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-var">X.toChurchType</span></a></span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertLiteral"><span class="hs-identifier hs-type">convertLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Literal"><span class="hs-identifier hs-type">X.Literal</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Literal"><span class="hs-identifier hs-type">Y.Literal</span></a></span><span>
+</span><span id="line-30"></span><span id="convertLiteral"><span class="annot"><span class="annottext">convertLiteral :: Literal -&gt; Literal
+</span><a href="Jikka.Converter.Python.ToCore.html#convertLiteral"><span class="hs-identifier hs-var hs-var">convertLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LitInt"><span class="hs-identifier hs-type">X.LitInt</span></a></span><span> </span><span id="local-6989586621679162863"><span class="annot"><span class="annottext">n :: Integer
+</span><a href="#local-6989586621679162863"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Literal
+</span><a href="Jikka.Language.Core.Expr.html#LitInt"><span class="hs-identifier hs-var">Y.LitInt</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679162863"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LitBool"><span class="hs-identifier hs-type">X.LitBool</span></a></span><span> </span><span id="local-6989586621679162860"><span class="annot"><span class="annottext">p :: Bool
+</span><a href="#local-6989586621679162860"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Literal
+</span><a href="Jikka.Language.Core.Expr.html#LitBool"><span class="hs-identifier hs-var">Y.LitBool</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679162860"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertUnaryOp"><span class="hs-identifier hs-type">convertUnaryOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#UnaryOp"><span class="hs-identifier hs-type">X.UnaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-35"></span><span id="convertUnaryOp"><span class="annot"><span class="annottext">convertUnaryOp :: UnaryOp -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertUnaryOp"><span class="hs-identifier hs-var hs-var">convertUnaryOp</span></a></span></span><span> </span><span id="local-6989586621679162857"><span class="annot"><span class="annottext">op :: UnaryOp
+</span><a href="#local-6989586621679162857"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-var">Y.Lit</span></a></span><span> </span><span class="annot"><span class="annottext">(Literal -&gt; Expr) -&gt; (Builtin -&gt; Literal) -&gt; Builtin -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Literal
+</span><a href="Jikka.Language.Core.Expr.html#LitBuiltin"><span class="hs-identifier hs-var">Y.LitBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">(Builtin -&gt; Expr) -&gt; Either String Builtin -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">UnaryOp -&gt; Either String Builtin
+</span><a href="Jikka.Converter.Python.ToCore.html#convertUnaryOp%27"><span class="hs-identifier hs-var">convertUnaryOp'</span></a></span><span> </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679162857"><span class="hs-identifier hs-var">op</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertUnaryOp%27"><span class="hs-identifier hs-type">convertUnaryOp'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#UnaryOp"><span class="hs-identifier hs-type">X.UnaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Builtin"><span class="hs-identifier hs-type">Y.Builtin</span></a></span><span>
+</span><span id="line-38"></span><span id="convertUnaryOp%27"><span class="annot"><span class="annottext">convertUnaryOp' :: UnaryOp -&gt; Either String Builtin
+</span><a href="Jikka.Converter.Python.ToCore.html#convertUnaryOp%27"><span class="hs-identifier hs-var hs-var">convertUnaryOp'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Negate"><span class="hs-identifier hs-type">X.Negate</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Negate"><span class="hs-identifier hs-var">Y.Negate</span></a></span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Abs"><span class="hs-identifier hs-type">X.Abs</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Abs"><span class="hs-identifier hs-var">Y.Abs</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Fact"><span class="hs-identifier hs-type">X.Fact</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Fact"><span class="hs-identifier hs-var">Y.Fact</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Not"><span class="hs-identifier hs-type">X.Not</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Not"><span class="hs-identifier hs-var">Y.Not</span></a></span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitNot"><span class="hs-identifier hs-type">X.BitNot</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#BitNot"><span class="hs-identifier hs-var">Y.BitNot</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Len"><span class="hs-identifier hs-type">X.Len</span></a></span><span> </span><span id="local-6989586621679162842"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162842"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Len"><span class="hs-identifier hs-var">Y.Len</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162842"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Sum"><span class="hs-identifier hs-type">X.Sum</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Sum"><span class="hs-identifier hs-var">Y.Sum</span></a></span><span>
+</span><span id="line-46"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Product"><span class="hs-identifier hs-type">X.Product</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Product"><span class="hs-identifier hs-var">Y.Product</span></a></span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Min1"><span class="hs-identifier hs-type">X.Min1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Min1"><span class="hs-identifier hs-var">Y.Min1</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Max1"><span class="hs-identifier hs-type">X.Max1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Max1"><span class="hs-identifier hs-var">Y.Max1</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ArgMin"><span class="hs-identifier hs-type">X.ArgMin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#ArgMin"><span class="hs-identifier hs-var">Y.ArgMin</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#ArgMax"><span class="hs-identifier hs-type">X.ArgMax</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#ArgMax"><span class="hs-identifier hs-var">Y.ArgMax</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#All"><span class="hs-identifier hs-type">X.All</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#All"><span class="hs-identifier hs-var">Y.All</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Any"><span class="hs-identifier hs-type">X.Any</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Any"><span class="hs-identifier hs-var">Y.Any</span></a></span><span>
+</span><span id="line-53"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Sorted"><span class="hs-identifier hs-type">X.Sorted</span></a></span><span> </span><span id="local-6989586621679162823"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162823"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Sorted"><span class="hs-identifier hs-var">Y.Sorted</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162823"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-54"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#List"><span class="hs-identifier hs-type">X.List</span></a></span><span> </span><span id="local-6989586621679162820"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162820"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#List"><span class="hs-identifier hs-var">Y.List</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162820"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-55"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Reversed"><span class="hs-identifier hs-type">X.Reversed</span></a></span><span> </span><span id="local-6989586621679162817"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162817"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Reversed"><span class="hs-identifier hs-var">Y.Reversed</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162817"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range1"><span class="hs-identifier hs-type">X.Range1</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Range1"><span class="hs-identifier hs-var">Y.Range1</span></a></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertBinaryOp"><span class="hs-identifier hs-type">convertBinaryOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BinaryOp"><span class="hs-identifier hs-type">X.BinaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-59"></span><span id="convertBinaryOp"><span class="annot"><span class="annottext">convertBinaryOp :: BinaryOp -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertBinaryOp"><span class="hs-identifier hs-var hs-var">convertBinaryOp</span></a></span></span><span> </span><span id="local-6989586621679162812"><span class="annot"><span class="annottext">op :: BinaryOp
+</span><a href="#local-6989586621679162812"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-var">Y.Lit</span></a></span><span> </span><span class="annot"><span class="annottext">(Literal -&gt; Expr) -&gt; (Builtin -&gt; Literal) -&gt; Builtin -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Literal
+</span><a href="Jikka.Language.Core.Expr.html#LitBuiltin"><span class="hs-identifier hs-var">Y.LitBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">(Builtin -&gt; Expr) -&gt; Either String Builtin -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">BinaryOp -&gt; Either String Builtin
+</span><a href="Jikka.Converter.Python.ToCore.html#convertBinaryOp%27"><span class="hs-identifier hs-var">convertBinaryOp'</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679162812"><span class="hs-identifier hs-var">op</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertBinaryOp%27"><span class="hs-identifier hs-type">convertBinaryOp'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BinaryOp"><span class="hs-identifier hs-type">X.BinaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Builtin"><span class="hs-identifier hs-type">Y.Builtin</span></a></span><span>
+</span><span id="line-62"></span><span id="convertBinaryOp%27"><span class="annot"><span class="annottext">convertBinaryOp' :: BinaryOp -&gt; Either String Builtin
+</span><a href="Jikka.Converter.Python.ToCore.html#convertBinaryOp%27"><span class="hs-identifier hs-var hs-var">convertBinaryOp'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Plus"><span class="hs-identifier hs-type">X.Plus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Plus"><span class="hs-identifier hs-var">Y.Plus</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Minus"><span class="hs-identifier hs-type">X.Minus</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Minus"><span class="hs-identifier hs-var">Y.Minus</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Mult"><span class="hs-identifier hs-type">X.Mult</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Mult"><span class="hs-identifier hs-var">Y.Mult</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#FloorDiv"><span class="hs-identifier hs-type">X.FloorDiv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#FloorDiv"><span class="hs-identifier hs-var">Y.FloorDiv</span></a></span><span>
+</span><span id="line-67"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#FloorMod"><span class="hs-identifier hs-type">X.FloorMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#FloorMod"><span class="hs-identifier hs-var">Y.FloorMod</span></a></span><span>
+</span><span id="line-68"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CeilDiv"><span class="hs-identifier hs-type">X.CeilDiv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#CeilDiv"><span class="hs-identifier hs-var">Y.CeilDiv</span></a></span><span>
+</span><span id="line-69"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#CeilMod"><span class="hs-identifier hs-type">X.CeilMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#CeilMod"><span class="hs-identifier hs-var">Y.CeilMod</span></a></span><span>
+</span><span id="line-70"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Pow"><span class="hs-identifier hs-type">X.Pow</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Pow"><span class="hs-identifier hs-var">Y.Pow</span></a></span><span>
+</span><span id="line-71"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Gcd"><span class="hs-identifier hs-type">X.Gcd</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Gcd"><span class="hs-identifier hs-var">Y.Gcd</span></a></span><span>
+</span><span id="line-72"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Lcm"><span class="hs-identifier hs-type">X.Lcm</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Lcm"><span class="hs-identifier hs-var">Y.Lcm</span></a></span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Min"><span class="hs-identifier hs-type">X.Min</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Min"><span class="hs-identifier hs-var">Y.Min</span></a></span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Max"><span class="hs-identifier hs-type">X.Max</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Max"><span class="hs-identifier hs-var">Y.Max</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Inv"><span class="hs-identifier hs-type">X.Inv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Inv"><span class="hs-identifier hs-var">Y.Inv</span></a></span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Choose"><span class="hs-identifier hs-type">X.Choose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Choose"><span class="hs-identifier hs-var">Y.Choose</span></a></span><span>
+</span><span id="line-77"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Permute"><span class="hs-identifier hs-type">X.Permute</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Permute"><span class="hs-identifier hs-var">Y.Permute</span></a></span><span>
+</span><span id="line-78"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#MultiChoose"><span class="hs-identifier hs-type">X.MultiChoose</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#MultiChoose"><span class="hs-identifier hs-var">Y.MultiChoose</span></a></span><span>
+</span><span id="line-79"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#And"><span class="hs-identifier hs-type">X.And</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#And"><span class="hs-identifier hs-var">Y.And</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Or"><span class="hs-identifier hs-type">X.Or</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Or"><span class="hs-identifier hs-var">Y.Or</span></a></span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Implies"><span class="hs-identifier hs-type">X.Implies</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Implies"><span class="hs-identifier hs-var">Y.Implies</span></a></span><span>
+</span><span id="line-82"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitAnd"><span class="hs-identifier hs-type">X.BitAnd</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#BitAnd"><span class="hs-identifier hs-var">Y.BitAnd</span></a></span><span>
+</span><span id="line-83"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitOr"><span class="hs-identifier hs-type">X.BitOr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#BitOr"><span class="hs-identifier hs-var">Y.BitOr</span></a></span><span>
+</span><span id="line-84"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitXor"><span class="hs-identifier hs-type">X.BitXor</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#BitXor"><span class="hs-identifier hs-var">Y.BitXor</span></a></span><span>
+</span><span id="line-85"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitLeftShift"><span class="hs-identifier hs-type">X.BitLeftShift</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#BitLeftShift"><span class="hs-identifier hs-var">Y.BitLeftShift</span></a></span><span>
+</span><span id="line-86"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#BitRightShift"><span class="hs-identifier hs-type">X.BitRightShift</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#BitRightShift"><span class="hs-identifier hs-var">Y.BitRightShift</span></a></span><span>
+</span><span id="line-87"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range2"><span class="hs-identifier hs-type">X.Range2</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Range2"><span class="hs-identifier hs-var">Y.Range2</span></a></span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LessThan"><span class="hs-identifier hs-type">X.LessThan</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#LessThan"><span class="hs-identifier hs-var">Y.LessThan</span></a></span><span>
+</span><span id="line-89"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#LessEqual"><span class="hs-identifier hs-type">X.LessEqual</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#LessEqual"><span class="hs-identifier hs-var">Y.LessEqual</span></a></span><span>
+</span><span id="line-90"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#GreaterThan"><span class="hs-identifier hs-type">X.GreaterThan</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#GreaterThan"><span class="hs-identifier hs-var">Y.GreaterThan</span></a></span><span>
+</span><span id="line-91"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#GreaterEqual"><span class="hs-identifier hs-type">X.GreaterEqual</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#GreaterEqual"><span class="hs-identifier hs-var">Y.GreaterEqual</span></a></span><span>
+</span><span id="line-92"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Equal"><span class="hs-identifier hs-type">X.Equal</span></a></span><span> </span><span id="local-6989586621679162751"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162751"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Equal"><span class="hs-identifier hs-var">Y.Equal</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162751"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#NotEqual"><span class="hs-identifier hs-type">X.NotEqual</span></a></span><span> </span><span id="local-6989586621679162748"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162748"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#NotEqual"><span class="hs-identifier hs-var">Y.NotEqual</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162748"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-94"></span><span>
+</span><span id="line-95"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertTernaryOp"><span class="hs-identifier hs-type">convertTernaryOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TernaryOp"><span class="hs-identifier hs-type">X.TernaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-96"></span><span id="convertTernaryOp"><span class="annot"><span class="annottext">convertTernaryOp :: TernaryOp -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertTernaryOp"><span class="hs-identifier hs-var hs-var">convertTernaryOp</span></a></span></span><span> </span><span id="local-6989586621679162745"><span class="annot"><span class="annottext">op :: TernaryOp
+</span><a href="#local-6989586621679162745"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-var">Y.Lit</span></a></span><span> </span><span class="annot"><span class="annottext">(Literal -&gt; Expr) -&gt; (Builtin -&gt; Literal) -&gt; Builtin -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Literal
+</span><a href="Jikka.Language.Core.Expr.html#LitBuiltin"><span class="hs-identifier hs-var">Y.LitBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">(Builtin -&gt; Expr) -&gt; Either String Builtin -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">TernaryOp -&gt; Either String Builtin
+</span><a href="Jikka.Converter.Python.ToCore.html#convertTernaryOp%27"><span class="hs-identifier hs-var">convertTernaryOp'</span></a></span><span> </span><span class="annot"><span class="annottext">TernaryOp
+</span><a href="#local-6989586621679162745"><span class="hs-identifier hs-var">op</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertTernaryOp%27"><span class="hs-identifier hs-type">convertTernaryOp'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#TernaryOp"><span class="hs-identifier hs-type">X.TernaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Builtin"><span class="hs-identifier hs-type">Y.Builtin</span></a></span><span>
+</span><span id="line-99"></span><span id="convertTernaryOp%27"><span class="annot"><span class="annottext">convertTernaryOp' :: TernaryOp -&gt; Either String Builtin
+</span><a href="Jikka.Converter.Python.ToCore.html#convertTernaryOp%27"><span class="hs-identifier hs-var hs-var">convertTernaryOp'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Cond"><span class="hs-identifier hs-type">X.Cond</span></a></span><span> </span><span id="local-6989586621679162742"><span class="annot"><span class="annottext">t :: ChurchType
+</span><a href="#local-6989586621679162742"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#If"><span class="hs-identifier hs-var">Y.If</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Builtin) -&gt; Either String Type -&gt; Either String Builtin
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertChurchType"><span class="hs-identifier hs-var">convertChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="#local-6989586621679162742"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#PowMod"><span class="hs-identifier hs-type">X.PowMod</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#PowMod"><span class="hs-identifier hs-var">Y.PowMod</span></a></span><span>
+</span><span id="line-102"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range3"><span class="hs-identifier hs-type">X.Range3</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Either String Builtin
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Range3"><span class="hs-identifier hs-var">Y.Range3</span></a></span><span>
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertComprehension"><span class="hs-identifier hs-type">convertComprehension</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Comprehension"><span class="hs-identifier hs-type">X.Comprehension</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-105"></span><span id="convertComprehension"><span class="annot"><span class="annottext">convertComprehension :: Comprehension -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertComprehension"><span class="hs-identifier hs-var hs-var">convertComprehension</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Comprehension"><span class="hs-identifier hs-type">X.Comprehension</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: unsupproted form of comprehension&quot;</span></span><span>
+</span><span id="line-106"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertComprehension"><span class="hs-identifier hs-var">convertComprehension</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Comprehension"><span class="hs-identifier hs-type">X.Comprehension</span></a></span><span> </span><span id="local-6989586621679162734"><span class="annot"><span class="annottext">t1 :: Type
+</span><a href="#local-6989586621679162734"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span id="local-6989586621679162733"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679162733"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679162732"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162732"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679162731"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162731"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679162730"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679162730"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-107"></span><span>  </span><span id="local-6989586621679162729"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162729"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162734"><span class="hs-identifier hs-var">t1</span></a></span><span>
+</span><span id="line-108"></span><span>  </span><span id="local-6989586621679162728"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162728"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162733"><span class="hs-identifier hs-var">e1</span></a></span><span>
+</span><span id="line-109"></span><span>  </span><span id="local-6989586621679162726"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162726"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162731"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-110"></span><span>  </span><span id="local-6989586621679162725"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162725"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162730"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-111"></span><span>  </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; Expr -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#AppBuiltin"><span class="hs-identifier hs-var">Y.AppBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Map"><span class="hs-identifier hs-var">Y.Map</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162726"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162729"><span class="hs-identifier hs-var">t1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lam1"><span class="hs-identifier hs-var">Y.Lam1</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162732"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162726"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162728"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162725"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-112"></span><span>
+</span><span id="line-113"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-type">convertExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Expr"><span class="hs-identifier hs-type">X.Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-114"></span><span id="convertExpr"><span class="annot"><span class="annottext">convertExpr :: Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var hs-var">convertExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-115"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Var"><span class="hs-identifier hs-type">X.Var</span></a></span><span> </span><span id="local-6989586621679162720"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162720"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; Expr -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-var">Y.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162720"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-116"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Lit"><span class="hs-identifier hs-type">X.Lit</span></a></span><span> </span><span id="local-6989586621679162717"><span class="annot"><span class="annottext">lit :: Literal
+</span><a href="#local-6989586621679162717"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; Expr -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lit"><span class="hs-identifier hs-var">Y.Lit</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Literal -&gt; Literal
+</span><a href="Jikka.Converter.Python.ToCore.html#convertLiteral"><span class="hs-identifier hs-var">convertLiteral</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679162717"><span class="hs-identifier hs-var">lit</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-117"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#UnOp"><span class="hs-identifier hs-type">X.UnOp</span></a></span><span> </span><span id="local-6989586621679162715"><span class="annot"><span class="annottext">op :: UnaryOp
+</span><a href="#local-6989586621679162715"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679162714"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679162714"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-var">Y.App</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; [Expr] -&gt; Expr)
+-&gt; Either String Expr -&gt; Either String ([Expr] -&gt; Expr)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">UnaryOp -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertUnaryOp"><span class="hs-identifier hs-var">convertUnaryOp</span></a></span><span> </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679162715"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Either String ([Expr] -&gt; Expr)
+-&gt; Either String [Expr] -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; [Expr] -&gt; Either String [Expr]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162714"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-118"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#BinOp"><span class="hs-identifier hs-type">X.BinOp</span></a></span><span> </span><span id="local-6989586621679162710"><span class="annot"><span class="annottext">op :: BinaryOp
+</span><a href="#local-6989586621679162710"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679162709"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679162709"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679162708"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679162708"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-var">Y.App</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; [Expr] -&gt; Expr)
+-&gt; Either String Expr -&gt; Either String ([Expr] -&gt; Expr)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">BinaryOp -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertBinaryOp"><span class="hs-identifier hs-var">convertBinaryOp</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679162710"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Either String ([Expr] -&gt; Expr)
+-&gt; Either String [Expr] -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; [Expr] -&gt; Either String [Expr]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162709"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162708"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-119"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#TerOp"><span class="hs-identifier hs-type">X.TerOp</span></a></span><span> </span><span id="local-6989586621679162706"><span class="annot"><span class="annottext">op :: TernaryOp
+</span><a href="#local-6989586621679162706"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679162705"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679162705"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679162704"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679162704"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679162703"><span class="annot"><span class="annottext">e3 :: Expr
+</span><a href="#local-6989586621679162703"><span class="hs-identifier hs-var">e3</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-var">Y.App</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; [Expr] -&gt; Expr)
+-&gt; Either String Expr -&gt; Either String ([Expr] -&gt; Expr)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">TernaryOp -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertTernaryOp"><span class="hs-identifier hs-var">convertTernaryOp</span></a></span><span> </span><span class="annot"><span class="annottext">TernaryOp
+</span><a href="#local-6989586621679162706"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Either String ([Expr] -&gt; Expr)
+-&gt; Either String [Expr] -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; [Expr] -&gt; Either String [Expr]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162705"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162704"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162703"><span class="hs-identifier hs-var">e3</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-120"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Sub"><span class="hs-identifier hs-type">X.Sub</span></a></span><span> </span><span id="local-6989586621679162701"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162701"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679162700"><span class="annot"><span class="annottext">e1 :: Expr
+</span><a href="#local-6989586621679162700"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679162699"><span class="annot"><span class="annottext">e2 :: Expr
+</span><a href="#local-6989586621679162699"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-121"></span><span>    </span><span id="local-6989586621679162698"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162698"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162701"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-122"></span><span>    </span><span id="local-6989586621679162697"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162697"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162700"><span class="hs-identifier hs-var">e1</span></a></span><span>
+</span><span id="line-123"></span><span>    </span><span id="local-6989586621679162696"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162696"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162699"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; Expr -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#AppBuiltin"><span class="hs-identifier hs-var">Y.AppBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#At"><span class="hs-identifier hs-var">Y.At</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162698"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162697"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162696"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-125"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#ListExt"><span class="hs-identifier hs-type">X.ListExt</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: list literals are not supported&quot;</span></span><span>
+</span><span id="line-126"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#ListComp"><span class="hs-identifier hs-type">X.ListComp</span></a></span><span> </span><span id="local-6989586621679162692"><span class="annot"><span class="annottext">comp :: Comprehension
+</span><a href="#local-6989586621679162692"><span class="hs-identifier hs-var">comp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Comprehension -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertComprehension"><span class="hs-identifier hs-var">convertComprehension</span></a></span><span> </span><span class="annot"><span class="annottext">Comprehension
+</span><a href="#local-6989586621679162692"><span class="hs-identifier hs-var">comp</span></a></span><span>
+</span><span id="line-127"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#IterComp"><span class="hs-identifier hs-type">X.IterComp</span></a></span><span> </span><span id="local-6989586621679162690"><span class="annot"><span class="annottext">comp :: Comprehension
+</span><a href="#local-6989586621679162690"><span class="hs-identifier hs-var">comp</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Comprehension -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertComprehension"><span class="hs-identifier hs-var">convertComprehension</span></a></span><span> </span><span class="annot"><span class="annottext">Comprehension
+</span><a href="#local-6989586621679162690"><span class="hs-identifier hs-var">comp</span></a></span><span>
+</span><span id="line-128"></span><span>  </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Call"><span class="hs-identifier hs-type">X.Call</span></a></span><span> </span><span id="local-6989586621679162688"><span class="annot"><span class="annottext">f :: FunName
+</span><a href="#local-6989586621679162688"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679162687"><span class="annot"><span class="annottext">args :: [Expr]
+</span><a href="#local-6989586621679162687"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#App"><span class="hs-identifier hs-var">Y.App</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-var">Y.Var</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; VarName
+</span><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FunName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unFunName"><span class="hs-identifier hs-var">unFunName</span></a></span><span> </span><span class="annot"><span class="annottext">FunName
+</span><a href="#local-6989586621679162688"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Expr] -&gt; Expr) -&gt; Either String [Expr] -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; [Expr] -&gt; Either String [Expr]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162687"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertDeclareFor"><span class="hs-identifier hs-type">convertDeclareFor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Y.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Sentence"><span class="hs-identifier hs-type">X.Sentence</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-131"></span><span id="convertDeclareFor"><span class="annot"><span class="annottext">convertDeclareFor :: VarName
+-&gt; Type
+-&gt; [Expr]
+-&gt; [(VarName, Expr)]
+-&gt; Sentence
+-&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertDeclareFor"><span class="hs-identifier hs-var hs-var">convertDeclareFor</span></a></span></span><span> </span><span id="local-6989586621679162683"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162683"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679162682"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162682"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679162681"><span class="annot"><span class="annottext">shape :: [Expr]
+</span><a href="#local-6989586621679162681"><span class="hs-identifier hs-var">shape</span></a></span></span><span> </span><span id="local-6989586621679162680"><span class="annot"><span class="annottext">cnts :: [(VarName, Expr)]
+</span><a href="#local-6989586621679162680"><span class="hs-identifier hs-var">cnts</span></a></span></span><span> </span><span id="local-6989586621679162679"><span class="annot"><span class="annottext">body :: Sentence
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162682"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162681"><span class="hs-identifier hs-var">shape</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Sentence
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-132"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679162678"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162678"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Assign"><span class="hs-identifier hs-type">X.Assign</span></a></span><span> </span><span id="local-6989586621679162676"><span class="annot"><span class="annottext">x' :: VarName
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var">x'</span></a></span></span><span> </span><span id="local-6989586621679162675"><span class="annot"><span class="annottext">indices :: [Expr]
+</span><a href="#local-6989586621679162675"><span class="hs-identifier hs-var">indices</span></a></span></span><span> </span><span id="local-6989586621679162674"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162674"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162683"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162676"><span class="hs-identifier hs-var">x'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; [Expr]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((VarName, Expr) -&gt; Expr) -&gt; [(VarName, Expr)] -&gt; [Expr]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Language.Python.Typed.Expr.html#Var"><span class="hs-identifier hs-var">X.Var</span></a></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Expr)
+-&gt; ((VarName, Expr) -&gt; VarName) -&gt; (VarName, Expr) -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(VarName, Expr) -&gt; VarName
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Expr)]
+</span><a href="#local-6989586621679162680"><span class="hs-identifier hs-var">cnts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; [Expr] -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; [Expr]
+forall a. Ord a =&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">sort</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162675"><span class="hs-identifier hs-var">indices</span></a></span><span>
+</span><span id="line-134"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-135"></span><span>        </span><span id="local-6989586621679162672"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162672"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162674"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-136"></span><span>        </span><span id="local-6989586621679162671"><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679162671"><span class="hs-identifier hs-var">indices</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Expr]
+-&gt; (Expr -&gt; Either String VarName) -&gt; Either String [VarName]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+t a -&gt; (a -&gt; m b) -&gt; m (t b)
+</span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162675"><span class="hs-identifier hs-var">indices</span></a></span><span> </span><span class="annot"><span class="annottext">((Expr -&gt; Either String VarName) -&gt; Either String [VarName])
+-&gt; (Expr -&gt; Either String VarName) -&gt; Either String [VarName]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-137"></span><span>          </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Var"><span class="hs-identifier hs-type">X.Var</span></a></span><span> </span><span id="local-6989586621679162669"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162669"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Either String VarName
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162669"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-138"></span><span>          </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String VarName
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: index is not variable&quot;</span></span><span>
+</span><span id="line-139"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679162668"><span class="annot"><span class="annottext">go :: (Expr, Type) -&gt; VarName -&gt; Either String (Expr, Type)
+</span><a href="#local-6989586621679162668"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679162667"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162667"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679162666"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162666"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679162665"><span class="annot"><span class="annottext">i :: VarName
+</span><a href="#local-6989586621679162665"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; [(VarName, Expr)] -&gt; Maybe Expr
+forall a b. Eq a =&gt; a -&gt; [(a, b)] -&gt; Maybe b
+</span><span class="hs-identifier hs-var">lookup</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162665"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Expr)]
+</span><a href="#local-6989586621679162680"><span class="hs-identifier hs-var">cnts</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-140"></span><span>              </span><span class="annot"><span class="hs-identifier hs-type">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String (Expr, Type)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: variable not found&quot;</span></span><span>
+</span><span id="line-141"></span><span>              </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679162663"><span class="annot"><span class="annottext">size :: Expr
+</span><a href="#local-6989586621679162663"><span class="hs-identifier hs-var">size</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Expr, Type) -&gt; Either String (Expr, Type)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Builtin -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#AppBuiltin"><span class="hs-identifier hs-var">Y.AppBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#Tabulate"><span class="hs-identifier hs-var">Y.Tabulate</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162666"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162663"><span class="hs-identifier hs-var">size</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Lam1"><span class="hs-identifier hs-var">Y.Lam1</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162665"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="Jikka.Language.Core.Expr.html#IntTy"><span class="hs-identifier hs-var">Y.IntTy</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162667"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="Jikka.Language.Core.Expr.html#ListTy"><span class="hs-identifier hs-var">Y.ListTy</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162666"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-142"></span><span>        </span><span class="hs-special">(</span><span id="local-6989586621679162661"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162661"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((Expr, Type) -&gt; VarName -&gt; Either String (Expr, Type))
+-&gt; (Expr, Type) -&gt; [VarName] -&gt; Either String (Expr, Type)
+forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
+(Foldable t, Monad m) =&gt;
+(b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
+</span><span class="hs-identifier hs-var">foldlM</span></span><span> </span><span class="annot"><span class="annottext">(Expr, Type) -&gt; VarName -&gt; Either String (Expr, Type)
+</span><a href="#local-6989586621679162668"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162672"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162678"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679162671"><span class="hs-identifier hs-var">indices</span></a></span><span>
+</span><span id="line-143"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162661"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-144"></span><span>      </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: unsupported form of declare/for-loop found&quot;</span></span><span>
+</span><span id="line-145"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ListTy"><span class="hs-identifier hs-type">Y.ListTy</span></a></span><span> </span><span id="local-6989586621679162660"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162660"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-identifier">_</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162659"><span class="annot"><span class="annottext">shape :: [Expr]
+</span><a href="#local-6989586621679162659"><span class="hs-identifier hs-var">shape</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#For"><span class="hs-identifier hs-type">X.For</span></a></span><span> </span><span id="local-6989586621679162657"><span class="annot"><span class="annottext">cnt :: VarName
+</span><a href="#local-6989586621679162657"><span class="hs-identifier hs-var">cnt</span></a></span></span><span> </span><span id="local-6989586621679162656"><span class="annot"><span class="annottext">t' :: Type
+</span><a href="#local-6989586621679162656"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#UnOp"><span class="hs-identifier hs-type">X.UnOp</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Stdlib.html#Range1"><span class="hs-identifier hs-type">X.Range1</span></a></span><span> </span><span id="local-6989586621679162655"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162655"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679162654"><span class="annot"><span class="annottext">body :: Sentence
+</span><a href="#local-6989586621679162654"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Type -&gt; ChurchType
+forall expr. CurryType expr -&gt; ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#toChurchType"><span class="hs-identifier hs-var">X.toChurchType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162656"><span class="hs-identifier hs-var">t'</span></a></span><span> </span><span class="annot"><span class="annottext">ChurchType -&gt; ChurchType -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">ChurchType
+</span><a href="Jikka.Language.Python.Typed.Stdlib.html#TyInt"><span class="hs-identifier hs-var">X.TyInt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-147"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Maybe Expr -&gt; Bool
+forall a. Maybe a -&gt; Bool
+</span><span class="hs-identifier hs-var">isNothing</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; [(VarName, Expr)] -&gt; Maybe Expr
+forall a b. Eq a =&gt; a -&gt; [(a, b)] -&gt; Maybe b
+</span><span class="hs-identifier hs-var">lookup</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162657"><span class="hs-identifier hs-var">cnt</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Expr)]
+</span><a href="#local-6989586621679162680"><span class="hs-identifier hs-var">cnts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-148"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-149"></span><span>          </span><span id="local-6989586621679162653"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162653"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162655"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-150"></span><span>          </span><span class="annot"><span class="annottext">VarName
+-&gt; Type
+-&gt; [Expr]
+-&gt; [(VarName, Expr)]
+-&gt; Sentence
+-&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertDeclareFor"><span class="hs-identifier hs-var">convertDeclareFor</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162683"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162660"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162659"><span class="hs-identifier hs-var">shape</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162657"><span class="hs-identifier hs-var">cnt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162653"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(VarName, Expr) -&gt; [(VarName, Expr)] -&gt; [(VarName, Expr)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Expr)]
+</span><a href="#local-6989586621679162680"><span class="hs-identifier hs-var">cnts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Sentence
+</span><a href="#local-6989586621679162654"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-151"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: name conflict at declare/for-loop&quot;</span></span><span>
+</span><span id="line-152"></span><span>  </span><span class="hs-identifier">_</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Either String Expr) -&gt; String -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: invalid form of declare/for-loop found: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">(Type, [Expr], Sentence) -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162682"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162681"><span class="hs-identifier hs-var">shape</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Sentence
+</span><a href="#local-6989586621679162679"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-153"></span><span>
+</span><span id="line-154"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-type">convertSentences</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Type"><span class="hs-identifier hs-type">Y.Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Sentence"><span class="hs-identifier hs-type">X.Sentence</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Expr"><span class="hs-identifier hs-type">Y.Expr</span></a></span><span>
+</span><span id="line-155"></span><span id="convertSentences"><span class="annot"><span class="annottext">convertSentences :: Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var hs-var">convertSentences</span></a></span></span><span> </span><span id="local-6989586621679162651"><span class="annot"><span class="annottext">ret :: Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-156"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: empty body&quot;</span></span><span>
+</span><span id="line-157"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#If"><span class="hs-identifier hs-type">X.If</span></a></span><span> </span><span id="local-6989586621679162649"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162649"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679162648"><span class="annot"><span class="annottext">body1 :: [Sentence]
+</span><a href="#local-6989586621679162648"><span class="hs-identifier hs-var">body1</span></a></span></span><span> </span><span id="local-6989586621679162647"><span class="annot"><span class="annottext">body2 :: [Sentence]
+</span><a href="#local-6989586621679162647"><span class="hs-identifier hs-var">body2</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162646"><span class="annot"><span class="annottext">cont :: [Sentence]
+</span><a href="#local-6989586621679162646"><span class="hs-identifier hs-var">cont</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-158"></span><span>    </span><span id="local-6989586621679162645"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162645"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162649"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-159"></span><span>    </span><span id="local-6989586621679162644"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162644"><span class="hs-identifier hs-var">body1</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var">convertSentences</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162648"><span class="hs-identifier hs-var">body1</span></a></span><span> </span><span class="annot"><span class="annottext">[Sentence] -&gt; [Sentence] -&gt; [Sentence]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162646"><span class="hs-identifier hs-var">cont</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>    </span><span id="local-6989586621679162643"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162643"><span class="hs-identifier hs-var">body2</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var">convertSentences</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162647"><span class="hs-identifier hs-var">body2</span></a></span><span> </span><span class="annot"><span class="annottext">[Sentence] -&gt; [Sentence] -&gt; [Sentence]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162646"><span class="hs-identifier hs-var">cont</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-161"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; Expr -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#AppBuiltin"><span class="hs-identifier hs-var">Y.AppBuiltin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Builtin
+</span><a href="Jikka.Language.Core.Expr.html#If"><span class="hs-identifier hs-var">Y.If</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162645"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162644"><span class="hs-identifier hs-var">body1</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162643"><span class="hs-identifier hs-var">body2</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-162"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#For"><span class="hs-identifier hs-type">X.For</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: unsupported form of for-loop found&quot;</span></span><span>
+</span><span id="line-163"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Declare"><span class="hs-identifier hs-type">X.Declare</span></a></span><span> </span><span id="local-6989586621679162641"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162641"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679162640"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162640"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679162639"><span class="annot"><span class="annottext">shape :: [Expr]
+</span><a href="#local-6989586621679162639"><span class="hs-identifier hs-var">shape</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162638"><span class="annot"><span class="annottext">sentence :: Sentence
+</span><a href="#local-6989586621679162638"><span class="hs-identifier hs-var">sentence</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162637"><span class="annot"><span class="annottext">cont :: [Sentence]
+</span><a href="#local-6989586621679162637"><span class="hs-identifier hs-var">cont</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-164"></span><span>    </span><span id="local-6989586621679162636"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162636"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162640"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-165"></span><span>    </span><span id="local-6989586621679162635"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162635"><span class="hs-identifier hs-var">shape</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; [Expr] -&gt; Either String [Expr]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162639"><span class="hs-identifier hs-var">shape</span></a></span><span>
+</span><span id="line-166"></span><span>    </span><span id="local-6989586621679162634"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162634"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">VarName
+-&gt; Type
+-&gt; [Expr]
+-&gt; [(VarName, Expr)]
+-&gt; Sentence
+-&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertDeclareFor"><span class="hs-identifier hs-var">convertDeclareFor</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162641"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162636"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679162635"><span class="hs-identifier hs-var">shape</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Sentence
+</span><a href="#local-6989586621679162638"><span class="hs-identifier hs-var">sentence</span></a></span><span>
+</span><span id="line-167"></span><span>    </span><span id="local-6989586621679162633"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162633"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var">convertSentences</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162637"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-168"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Either String Expr) -&gt; Expr -&gt; Either String Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Let"><span class="hs-identifier hs-var">Y.Let</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162641"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162636"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162634"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162633"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-169"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Declare"><span class="hs-identifier hs-type">X.Declare</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: unsupported form of declare found&quot;</span></span><span>
+</span><span id="line-170"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Assign"><span class="hs-identifier hs-type">X.Assign</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Internal Error: unsupported form of assignment found&quot;</span></span><span>
+</span><span id="line-171"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Define"><span class="hs-identifier hs-type">X.Define</span></a></span><span> </span><span id="local-6989586621679162630"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162630"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679162629"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162629"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679162628"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162628"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162627"><span class="annot"><span class="annottext">cont :: [Sentence]
+</span><a href="#local-6989586621679162627"><span class="hs-identifier hs-var">cont</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Let"><span class="hs-identifier hs-var">Y.Let</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162630"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; Expr -&gt; Expr -&gt; Expr)
+-&gt; Either String Type -&gt; Either String (Expr -&gt; Expr -&gt; Expr)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162629"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Either String (Expr -&gt; Expr -&gt; Expr)
+-&gt; Either String Expr -&gt; Either String (Expr -&gt; Expr)
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162628"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Either String (Expr -&gt; Expr)
+-&gt; Either String Expr -&gt; Either String Expr
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var">convertSentences</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162627"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-172"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Assert"><span class="hs-identifier hs-type">X.Assert</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162625"><span class="annot"><span class="annottext">cont :: [Sentence]
+</span><a href="#local-6989586621679162625"><span class="hs-identifier hs-var">cont</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var">convertSentences</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162651"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162625"><span class="hs-identifier hs-var">cont</span></a></span><span> </span><span class="hs-comment">-- ignore assert</span><span>
+</span><span id="line-173"></span><span>  </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Return"><span class="hs-identifier hs-type">X.Return</span></a></span><span> </span><span id="local-6989586621679162623"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162623"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162623"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-174"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Return"><span class="hs-identifier hs-type">X.Return</span></a></span><span> </span><span class="hs-identifier">_</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="hs-identifier">_</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String Expr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Syntax Error: dead code after return&quot;</span></span><span>
+</span><span id="line-175"></span><span>
+</span><span id="line-176"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#convertToplevelDecls"><span class="hs-identifier hs-type">convertToplevelDecls</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#ToplevelDecl"><span class="hs-identifier hs-type">X.ToplevelDecl</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">Y.ToplevelExpr</span></a></span><span>
+</span><span id="line-177"></span><span id="convertToplevelDecls"><span class="annot"><span class="annottext">convertToplevelDecls :: Maybe VarName -&gt; [ToplevelDecl] -&gt; Either String ToplevelExpr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertToplevelDecls"><span class="hs-identifier hs-var hs-var">convertToplevelDecls</span></a></span></span><span> </span><span id="local-6989586621679162621"><span class="annot"><span class="annottext">last :: Maybe VarName
+</span><a href="#local-6989586621679162621"><span class="hs-identifier hs-var">last</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-178"></span><span>  </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe VarName
+</span><a href="#local-6989586621679162621"><span class="hs-identifier hs-var">last</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-179"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String ToplevelExpr
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="hs-string">&quot;Syntax Error: empty program&quot;</span></span><span>
+</span><span id="line-180"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679162620"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162620"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; Either String ToplevelExpr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ToplevelExpr -&gt; Either String ToplevelExpr)
+-&gt; ToplevelExpr -&gt; Either String ToplevelExpr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ToplevelExpr
+</span><a href="Jikka.Language.Core.Expr.html#ResultExpr"><span class="hs-identifier hs-var">Y.ResultExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Language.Core.Expr.html#Var"><span class="hs-identifier hs-var">Y.Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162620"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-181"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#ConstDef"><span class="hs-identifier hs-type">X.ConstDef</span></a></span><span> </span><span id="local-6989586621679162617"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162617"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679162616"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162616"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679162615"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679162615"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162614"><span class="annot"><span class="annottext">cont :: [ToplevelDecl]
+</span><a href="#local-6989586621679162614"><span class="hs-identifier hs-var">cont</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-182"></span><span>    </span><span id="local-6989586621679162613"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162613"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162616"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-183"></span><span>    </span><span id="local-6989586621679162612"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162612"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertExpr"><span class="hs-identifier hs-var">convertExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162615"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-184"></span><span>    </span><span id="local-6989586621679162611"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679162611"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe VarName -&gt; [ToplevelDecl] -&gt; Either String ToplevelExpr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertToplevelDecls"><span class="hs-identifier hs-var">convertToplevelDecls</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Maybe VarName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162617"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[ToplevelDecl]
+</span><a href="#local-6989586621679162614"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-185"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; Either String ToplevelExpr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ToplevelExpr -&gt; Either String ToplevelExpr)
+-&gt; ToplevelExpr -&gt; Either String ToplevelExpr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">RecKind
+-&gt; VarName
+-&gt; [(VarName, Type)]
+-&gt; Type
+-&gt; Expr
+-&gt; ToplevelExpr
+-&gt; ToplevelExpr
+</span><a href="Jikka.Language.Core.Expr.html#ToplevelLet"><span class="hs-identifier hs-var">Y.ToplevelLet</span></a></span><span> </span><span class="annot"><span class="annottext">RecKind
+</span><a href="Jikka.Language.Core.Expr.html#NonRec"><span class="hs-identifier hs-var">Y.NonRec</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162617"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162613"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162612"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679162611"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-186"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#FunDef"><span class="hs-identifier hs-type">X.FunDef</span></a></span><span> </span><span id="local-6989586621679162607"><span class="annot"><span class="annottext">f :: FunName
+</span><a href="#local-6989586621679162607"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679162606"><span class="annot"><span class="annottext">args :: [(VarName, Type)]
+</span><a href="#local-6989586621679162606"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679162605"><span class="annot"><span class="annottext">ret :: Type
+</span><a href="#local-6989586621679162605"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span id="local-6989586621679162604"><span class="annot"><span class="annottext">body :: [Sentence]
+</span><a href="#local-6989586621679162604"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679162603"><span class="annot"><span class="annottext">cont :: [ToplevelDecl]
+</span><a href="#local-6989586621679162603"><span class="hs-identifier hs-var">cont</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679162602"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162602"><span class="hs-identifier hs-var hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; VarName
+</span><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-var">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FunName -&gt; String
+</span><a href="Jikka.Language.Common.Name.html#unFunName"><span class="hs-identifier hs-var">unFunName</span></a></span><span> </span><span class="annot"><span class="annottext">FunName
+</span><a href="#local-6989586621679162607"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-188"></span><span>    </span><span id="local-6989586621679162601"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679162601"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+-&gt; ((VarName, Type) -&gt; Either String (VarName, Type))
+-&gt; Either String [(VarName, Type)]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+t a -&gt; (a -&gt; m b) -&gt; m (t b)
+</span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679162606"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">(((VarName, Type) -&gt; Either String (VarName, Type))
+ -&gt; Either String [(VarName, Type)])
+-&gt; ((VarName, Type) -&gt; Either String (VarName, Type))
+-&gt; Either String [(VarName, Type)]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679162600"><span class="annot"><span class="annottext">x :: VarName
+</span><a href="#local-6989586621679162600"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679162599"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679162599"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-189"></span><span>      </span><span id="local-6989586621679162598"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162598"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162599"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-190"></span><span>      </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; Either String (VarName, Type)
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162600"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162598"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-191"></span><span>    </span><span id="local-6989586621679162597"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162597"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; Either String Type
+</span><a href="Jikka.Converter.Python.ToCore.html#convertType"><span class="hs-identifier hs-var">convertType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162605"><span class="hs-identifier hs-var">ret</span></a></span><span>
+</span><span id="line-192"></span><span>    </span><span id="local-6989586621679162596"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162596"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Sentence] -&gt; Either String Expr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertSentences"><span class="hs-identifier hs-var">convertSentences</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162597"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="annot"><span class="annottext">[Sentence]
+</span><a href="#local-6989586621679162604"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-193"></span><span>    </span><span id="local-6989586621679162595"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679162595"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe VarName -&gt; [ToplevelDecl] -&gt; Either String ToplevelExpr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertToplevelDecls"><span class="hs-identifier hs-var">convertToplevelDecls</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Maybe VarName
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162602"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[ToplevelDecl]
+</span><a href="#local-6989586621679162603"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-194"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; Either String ToplevelExpr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ToplevelExpr -&gt; Either String ToplevelExpr)
+-&gt; ToplevelExpr -&gt; Either String ToplevelExpr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">RecKind
+-&gt; VarName
+-&gt; [(VarName, Type)]
+-&gt; Type
+-&gt; Expr
+-&gt; ToplevelExpr
+-&gt; ToplevelExpr
+</span><a href="Jikka.Language.Core.Expr.html#ToplevelLet"><span class="hs-identifier hs-var">Y.ToplevelLet</span></a></span><span> </span><span class="annot"><span class="annottext">RecKind
+</span><a href="Jikka.Language.Core.Expr.html#Rec"><span class="hs-identifier hs-var">Y.Rec</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679162602"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679162601"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679162597"><span class="hs-identifier hs-var">ret</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679162596"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679162595"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-195"></span><span>
+</span><span id="line-196"></span><span class="annot"><a href="Jikka.Converter.Python.ToCore.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Typed.Expr.html#Program"><span class="hs-identifier hs-type">X.Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.Language.Core.Expr.html#Program"><span class="hs-identifier hs-type">Y.Program</span></a></span><span>
+</span><span id="line-197"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; Either String ToplevelExpr
+</span><a href="Jikka.Converter.Python.ToCore.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679162592"><span class="annot"><span class="annottext">prog :: Program
+</span><a href="#local-6989586621679162592"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-198"></span><span>  </span><span id="local-6989586621679162591"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679162591"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe VarName -&gt; [ToplevelDecl] -&gt; Either String ToplevelExpr
+</span><a href="Jikka.Converter.Python.ToCore.html#convertToplevelDecls"><span class="hs-identifier hs-var">convertToplevelDecls</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe VarName
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [ToplevelDecl]
+</span><a href="Jikka.Language.Python.Typed.Expr.html#decls"><span class="hs-identifier hs-var hs-var">X.decls</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679162592"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-199"></span><span>  </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; Either String ToplevelExpr
+forall (m :: * -&gt; *).
+MonadError String m =&gt;
+ToplevelExpr -&gt; m ToplevelExpr
+</span><a href="Jikka.Language.Core.Lint.html#typecheckProgram%27"><span class="hs-identifier hs-var">Y.typecheckProgram'</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621679162591"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-200"></span></pre></body></html>

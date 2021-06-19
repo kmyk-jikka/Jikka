@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE DeriveFunctor #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Language.Common.Pos</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">data</span><span> </span><span id="Pos"><span class="annot"><a href="Jikka.Language.Common.Pos.html#Pos"><span class="hs-identifier hs-var">Pos</span></a></span></span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Pos"><span class="annot"><a href="Jikka.Language.Common.Pos.html#Pos"><span class="hs-identifier hs-var">Pos</span></a></span></span><span>
+</span><span id="line-7"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="line"><span class="annot"><span class="annottext">Pos -&gt; Int
+</span><a href="Jikka.Language.Common.Pos.html#line"><span class="hs-identifier hs-var hs-var">line</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span>
+</span><span id="line-8"></span><span>        </span><span id="column"><span class="annot"><span class="annottext">Pos -&gt; Int
+</span><a href="Jikka.Language.Common.Pos.html#column"><span class="hs-identifier hs-var hs-var">column</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-9"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679149020"><span id="local-6989586621679149022"><span class="annot"><span class="annottext">Pos -&gt; Pos -&gt; Bool
+(Pos -&gt; Pos -&gt; Bool) -&gt; (Pos -&gt; Pos -&gt; Bool) -&gt; Eq Pos
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Pos -&gt; Pos -&gt; Bool
+$c/= :: Pos -&gt; Pos -&gt; Bool
+== :: Pos -&gt; Pos -&gt; Bool
+$c== :: Pos -&gt; Pos -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679149004"><span id="local-6989586621679149006"><span id="local-6989586621679149008"><span id="local-6989586621679149010"><span id="local-6989586621679149012"><span id="local-6989586621679149014"><span id="local-6989586621679149016"><span class="annot"><span class="annottext">Eq Pos
+Eq Pos =&gt;
+(Pos -&gt; Pos -&gt; Ordering)
+-&gt; (Pos -&gt; Pos -&gt; Bool)
+-&gt; (Pos -&gt; Pos -&gt; Bool)
+-&gt; (Pos -&gt; Pos -&gt; Bool)
+-&gt; (Pos -&gt; Pos -&gt; Bool)
+-&gt; (Pos -&gt; Pos -&gt; Pos)
+-&gt; (Pos -&gt; Pos -&gt; Pos)
+-&gt; Ord Pos
+Pos -&gt; Pos -&gt; Bool
+Pos -&gt; Pos -&gt; Ordering
+Pos -&gt; Pos -&gt; Pos
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Pos -&gt; Pos -&gt; Pos
+$cmin :: Pos -&gt; Pos -&gt; Pos
+max :: Pos -&gt; Pos -&gt; Pos
+$cmax :: Pos -&gt; Pos -&gt; Pos
+&gt;= :: Pos -&gt; Pos -&gt; Bool
+$c&gt;= :: Pos -&gt; Pos -&gt; Bool
+&gt; :: Pos -&gt; Pos -&gt; Bool
+$c&gt; :: Pos -&gt; Pos -&gt; Bool
+&lt;= :: Pos -&gt; Pos -&gt; Bool
+$c&lt;= :: Pos -&gt; Pos -&gt; Bool
+&lt; :: Pos -&gt; Pos -&gt; Bool
+$c&lt; :: Pos -&gt; Pos -&gt; Bool
+compare :: Pos -&gt; Pos -&gt; Ordering
+$ccompare :: Pos -&gt; Pos -&gt; Ordering
+$cp1Ord :: Eq Pos
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148997"><span id="local-6989586621679148999"><span id="local-6989586621679149001"><span class="annot"><span class="annottext">Int -&gt; Pos -&gt; ShowS
+[Pos] -&gt; ShowS
+Pos -&gt; String
+(Int -&gt; Pos -&gt; ShowS)
+-&gt; (Pos -&gt; String) -&gt; ([Pos] -&gt; ShowS) -&gt; Show Pos
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Pos] -&gt; ShowS
+$cshowList :: [Pos] -&gt; ShowS
+show :: Pos -&gt; String
+$cshow :: Pos -&gt; String
+showsPrec :: Int -&gt; Pos -&gt; ShowS
+$cshowsPrec :: Int -&gt; Pos -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148988"><span id="local-6989586621679148990"><span id="local-6989586621679148992"><span id="local-6989586621679148994"><span class="annot"><span class="annottext">ReadPrec [Pos]
+ReadPrec Pos
+Int -&gt; ReadS Pos
+ReadS [Pos]
+(Int -&gt; ReadS Pos)
+-&gt; ReadS [Pos] -&gt; ReadPrec Pos -&gt; ReadPrec [Pos] -&gt; Read Pos
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Pos]
+$creadListPrec :: ReadPrec [Pos]
+readPrec :: ReadPrec Pos
+$creadPrec :: ReadPrec Pos
+readList :: ReadS [Pos]
+$creadList :: ReadS [Pos]
+readsPrec :: Int -&gt; ReadS Pos
+$creadsPrec :: Int -&gt; ReadS Pos
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="WithPos"><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-var">WithPos</span></a></span></span><span> </span><span id="local-6989586621679148986"><span class="annot"><a href="#local-6989586621679148986"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="WithPos"><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-var">WithPos</span></a></span></span><span>
+</span><span id="line-14"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="pos"><span class="annot"><span class="annottext">WithPos a -&gt; Pos
+</span><a href="Jikka.Language.Common.Pos.html#pos"><span class="hs-identifier hs-var hs-var">pos</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Jikka.Language.Common.Pos.html#Pos"><span class="hs-identifier hs-type">Pos</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>        </span><span id="value"><span class="annot"><span class="annottext">WithPos a -&gt; a
+</span><a href="Jikka.Language.Common.Pos.html#value"><span class="hs-identifier hs-var hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679148986"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-16"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679148979"><span id="local-6989586621679148981"><span class="annot"><span class="annottext">WithPos a -&gt; WithPos a -&gt; Bool
+(WithPos a -&gt; WithPos a -&gt; Bool)
+-&gt; (WithPos a -&gt; WithPos a -&gt; Bool) -&gt; Eq (WithPos a)
+forall a. Eq a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: WithPos a -&gt; WithPos a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+== :: WithPos a -&gt; WithPos a -&gt; Bool
+$c== :: forall a. Eq a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148964"><span id="local-6989586621679148966"><span id="local-6989586621679148968"><span id="local-6989586621679148970"><span id="local-6989586621679148972"><span id="local-6989586621679148974"><span id="local-6989586621679148976"><span class="annot"><span class="annottext">Eq (WithPos a)
+Eq (WithPos a) =&gt;
+(WithPos a -&gt; WithPos a -&gt; Ordering)
+-&gt; (WithPos a -&gt; WithPos a -&gt; Bool)
+-&gt; (WithPos a -&gt; WithPos a -&gt; Bool)
+-&gt; (WithPos a -&gt; WithPos a -&gt; Bool)
+-&gt; (WithPos a -&gt; WithPos a -&gt; Bool)
+-&gt; (WithPos a -&gt; WithPos a -&gt; WithPos a)
+-&gt; (WithPos a -&gt; WithPos a -&gt; WithPos a)
+-&gt; Ord (WithPos a)
+WithPos a -&gt; WithPos a -&gt; Bool
+WithPos a -&gt; WithPos a -&gt; Ordering
+WithPos a -&gt; WithPos a -&gt; WithPos a
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (WithPos a)
+forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Ordering
+forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; WithPos a
+min :: WithPos a -&gt; WithPos a -&gt; WithPos a
+$cmin :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; WithPos a
+max :: WithPos a -&gt; WithPos a -&gt; WithPos a
+$cmax :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; WithPos a
+&gt;= :: WithPos a -&gt; WithPos a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+&gt; :: WithPos a -&gt; WithPos a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+&lt;= :: WithPos a -&gt; WithPos a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+&lt; :: WithPos a -&gt; WithPos a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Bool
+compare :: WithPos a -&gt; WithPos a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; WithPos a -&gt; WithPos a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (WithPos a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148958"><span id="local-6989586621679148960"><span id="local-6989586621679148962"><span class="annot"><span class="annottext">Int -&gt; WithPos a -&gt; ShowS
+[WithPos a] -&gt; ShowS
+WithPos a -&gt; String
+(Int -&gt; WithPos a -&gt; ShowS)
+-&gt; (WithPos a -&gt; String)
+-&gt; ([WithPos a] -&gt; ShowS)
+-&gt; Show (WithPos a)
+forall a. Show a =&gt; Int -&gt; WithPos a -&gt; ShowS
+forall a. Show a =&gt; [WithPos a] -&gt; ShowS
+forall a. Show a =&gt; WithPos a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [WithPos a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [WithPos a] -&gt; ShowS
+show :: WithPos a -&gt; String
+$cshow :: forall a. Show a =&gt; WithPos a -&gt; String
+showsPrec :: Int -&gt; WithPos a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; WithPos a -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148950"><span id="local-6989586621679148952"><span id="local-6989586621679148954"><span id="local-6989586621679148956"><span class="annot"><span class="annottext">ReadPrec [WithPos a]
+ReadPrec (WithPos a)
+Int -&gt; ReadS (WithPos a)
+ReadS [WithPos a]
+(Int -&gt; ReadS (WithPos a))
+-&gt; ReadS [WithPos a]
+-&gt; ReadPrec (WithPos a)
+-&gt; ReadPrec [WithPos a]
+-&gt; Read (WithPos a)
+forall a. Read a =&gt; ReadPrec [WithPos a]
+forall a. Read a =&gt; ReadPrec (WithPos a)
+forall a. Read a =&gt; Int -&gt; ReadS (WithPos a)
+forall a. Read a =&gt; ReadS [WithPos a]
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [WithPos a]
+$creadListPrec :: forall a. Read a =&gt; ReadPrec [WithPos a]
+readPrec :: ReadPrec (WithPos a)
+$creadPrec :: forall a. Read a =&gt; ReadPrec (WithPos a)
+readList :: ReadS [WithPos a]
+$creadList :: forall a. Read a =&gt; ReadS [WithPos a]
+readsPrec :: Int -&gt; ReadS (WithPos a)
+$creadsPrec :: forall a. Read a =&gt; Int -&gt; ReadS (WithPos a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679148946"><span id="local-6989586621679148948"><span class="annot"><span class="annottext">a -&gt; WithPos b -&gt; WithPos a
+(a -&gt; b) -&gt; WithPos a -&gt; WithPos b
+(forall a b. (a -&gt; b) -&gt; WithPos a -&gt; WithPos b)
+-&gt; (forall a b. a -&gt; WithPos b -&gt; WithPos a) -&gt; Functor WithPos
+forall a b. a -&gt; WithPos b -&gt; WithPos a
+forall a b. (a -&gt; b) -&gt; WithPos a -&gt; WithPos b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; WithPos b -&gt; WithPos a
+$c&lt;$ :: forall a b. a -&gt; WithPos b -&gt; WithPos a
+fmap :: (a -&gt; b) -&gt; WithPos a -&gt; WithPos b
+$cfmap :: forall a b. (a -&gt; b) -&gt; WithPos a -&gt; WithPos b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span id="local-6989586621679148943"><span id="local-6989586621679148944"><span class="annot"><a href="Jikka.Language.Common.Pos.html#withPos"><span class="hs-identifier hs-type">withPos</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-type">WithPos</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148944"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679148943"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-type">WithPos</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679148943"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-20"></span><span id="withPos"><span class="annot"><span class="annottext">withPos :: WithPos a -&gt; b -&gt; WithPos b
+</span><a href="Jikka.Language.Common.Pos.html#withPos"><span class="hs-identifier hs-var hs-var">withPos</span></a></span></span><span> </span><span id="local-6989586621679148941"><span class="annot"><span class="annottext">pos :: WithPos a
+</span><a href="#local-6989586621679148941"><span class="hs-identifier hs-var">pos</span></a></span></span><span> </span><span id="local-6989586621679148940"><span class="annot"><span class="annottext">value :: b
+</span><a href="#local-6989586621679148940"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">WithPos a
+</span><a href="#local-6989586621679148941"><span class="hs-identifier hs-var">pos</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">value :: b
+</span><a href="Jikka.Language.Common.Pos.html#value"><span class="hs-identifier hs-var">value</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679148940"><span class="hs-identifier hs-var">value</span></a></span><span class="hs-special">}</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Jikka.Language.Common.Pos.html#prettyPos"><span class="hs-identifier hs-type">prettyPos</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#Pos"><span class="hs-identifier hs-type">Pos</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-23"></span><span id="prettyPos"><span class="annot"><span class="annottext">prettyPos :: Pos -&gt; String
+</span><a href="Jikka.Language.Common.Pos.html#prettyPos"><span class="hs-identifier hs-var hs-var">prettyPos</span></a></span></span><span> </span><span id="local-6989586621679148938"><span class="annot"><span class="annottext">pos :: Pos
+</span><a href="#local-6989586621679148938"><span class="hs-identifier hs-var">pos</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;line &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pos -&gt; Int
+</span><a href="Jikka.Language.Common.Pos.html#line"><span class="hs-identifier hs-var hs-var">line</span></a></span><span> </span><span class="annot"><span class="annottext">Pos
+</span><a href="#local-6989586621679148938"><span class="hs-identifier hs-var">pos</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="hs-string">&quot; column &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pos -&gt; Int
+</span><a href="Jikka.Language.Common.Pos.html#column"><span class="hs-identifier hs-var hs-var">column</span></a></span><span> </span><span class="annot"><span class="annottext">Pos
+</span><a href="#local-6989586621679148938"><span class="hs-identifier hs-var">pos</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-24"></span></pre></body></html>

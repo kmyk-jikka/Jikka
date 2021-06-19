@@ -1,0 +1,700 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_BKFj9wZg4fB9TNu2eOGtFd"><span id="%24con2tag_jv73GbPdgMKweid9jdbcU"><span id="%24con2tag_17hJYuXs7Lh2QGD0wDLKS5"><span id="%24con2tag_DUYZUn06b1vAaszf0X6Q7p"><span id="%24con2tag_LFKj9PcyvDV0BXLWnfSquF"><span id="%24con2tag_BtxYAllDNsIHWv245y7aJY"></span></span></span></span></span></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Language.Python.Parsed.Expr</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html"><span class="hs-identifier">Jikka.Language.Common.Name</span></a></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html"><span class="hs-identifier">Jikka.Language.Common.Pos</span></a></span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">type</span><span> </span><span id="Type%27"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-var">Type'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-type">WithPos</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">type</span><span> </span><span id="Expr%27"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-var">Expr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-type">WithPos</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">type</span><span> </span><span id="Sentence%27"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence%27"><span class="hs-identifier hs-var">Sentence'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-type">WithPos</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence"><span class="hs-identifier hs-type">Sentence</span></a></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">type</span><span> </span><span id="ToplevelDecl%27"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ToplevelDecl%27"><span class="hs-identifier hs-var">ToplevelDecl'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><a href="Jikka.Language.Common.Pos.html#WithPos"><span class="hs-identifier hs-type">WithPos</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ToplevelDecl"><span class="hs-identifier hs-type">ToplevelDecl</span></a></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">data</span><span> </span><span id="Type"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type"><span class="hs-identifier hs-var">Type</span></a></span></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="TyInt"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyInt"><span class="hs-identifier hs-var">TyInt</span></a></span></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyNat"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyNat"><span class="hs-identifier hs-var">TyNat</span></a></span></span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyInterval"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyInterval"><span class="hs-identifier hs-var">TyInterval</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyBool"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyBool"><span class="hs-identifier hs-var">TyBool</span></a></span></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyList"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyList"><span class="hs-identifier hs-var">TyList</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyIterator"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyIterator"><span class="hs-identifier hs-var">TyIterator</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="TyArray"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#TyArray"><span class="hs-identifier hs-var">TyArray</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679153075"><span id="local-6989586621679153077"><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Bool
+(Type -&gt; Type -&gt; Bool) -&gt; (Type -&gt; Type -&gt; Bool) -&gt; Eq Type
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Type -&gt; Type -&gt; Bool
+$c/= :: Type -&gt; Type -&gt; Bool
+== :: Type -&gt; Type -&gt; Bool
+$c== :: Type -&gt; Type -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679153059"><span id="local-6989586621679153061"><span id="local-6989586621679153063"><span id="local-6989586621679153065"><span id="local-6989586621679153067"><span id="local-6989586621679153069"><span id="local-6989586621679153071"><span class="annot"><span class="annottext">Eq Type
+Eq Type =&gt;
+(Type -&gt; Type -&gt; Ordering)
+-&gt; (Type -&gt; Type -&gt; Bool)
+-&gt; (Type -&gt; Type -&gt; Bool)
+-&gt; (Type -&gt; Type -&gt; Bool)
+-&gt; (Type -&gt; Type -&gt; Bool)
+-&gt; (Type -&gt; Type -&gt; Type)
+-&gt; (Type -&gt; Type -&gt; Type)
+-&gt; Ord Type
+Type -&gt; Type -&gt; Bool
+Type -&gt; Type -&gt; Ordering
+Type -&gt; Type -&gt; Type
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Type -&gt; Type -&gt; Type
+$cmin :: Type -&gt; Type -&gt; Type
+max :: Type -&gt; Type -&gt; Type
+$cmax :: Type -&gt; Type -&gt; Type
+&gt;= :: Type -&gt; Type -&gt; Bool
+$c&gt;= :: Type -&gt; Type -&gt; Bool
+&gt; :: Type -&gt; Type -&gt; Bool
+$c&gt; :: Type -&gt; Type -&gt; Bool
+&lt;= :: Type -&gt; Type -&gt; Bool
+$c&lt;= :: Type -&gt; Type -&gt; Bool
+&lt; :: Type -&gt; Type -&gt; Bool
+$c&lt; :: Type -&gt; Type -&gt; Bool
+compare :: Type -&gt; Type -&gt; Ordering
+$ccompare :: Type -&gt; Type -&gt; Ordering
+$cp1Ord :: Eq Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679153052"><span id="local-6989586621679153054"><span id="local-6989586621679153056"><span class="annot"><span class="annottext">Int -&gt; Type -&gt; ShowS
+[Type] -&gt; ShowS
+Type -&gt; String
+(Int -&gt; Type -&gt; ShowS)
+-&gt; (Type -&gt; String) -&gt; ([Type] -&gt; ShowS) -&gt; Show Type
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Type] -&gt; ShowS
+$cshowList :: [Type] -&gt; ShowS
+show :: Type -&gt; String
+$cshow :: Type -&gt; String
+showsPrec :: Int -&gt; Type -&gt; ShowS
+$cshowsPrec :: Int -&gt; Type -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679153043"><span id="local-6989586621679153045"><span id="local-6989586621679153047"><span id="local-6989586621679153049"><span class="annot"><span class="annottext">ReadPrec [Type]
+ReadPrec Type
+Int -&gt; ReadS Type
+ReadS [Type]
+(Int -&gt; ReadS Type)
+-&gt; ReadS [Type] -&gt; ReadPrec Type -&gt; ReadPrec [Type] -&gt; Read Type
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Type]
+$creadListPrec :: ReadPrec [Type]
+readPrec :: ReadPrec Type
+$creadPrec :: ReadPrec Type
+readList :: ReadS [Type]
+$creadList :: ReadS [Type]
+readsPrec :: Int -&gt; ReadS Type
+$creadsPrec :: Int -&gt; ReadS Type
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">data</span><span> </span><span id="Literal"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Literal"><span class="hs-identifier hs-var">Literal</span></a></span></span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="LitInt"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#LitInt"><span class="hs-identifier hs-var">LitInt</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="LitBool"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#LitBool"><span class="hs-identifier hs-var">LitBool</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679153036"><span id="local-6989586621679153038"><span class="annot"><span class="annottext">Literal -&gt; Literal -&gt; Bool
+(Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool) -&gt; Eq Literal
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Literal -&gt; Literal -&gt; Bool
+$c/= :: Literal -&gt; Literal -&gt; Bool
+== :: Literal -&gt; Literal -&gt; Bool
+$c== :: Literal -&gt; Literal -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679153021"><span id="local-6989586621679153023"><span id="local-6989586621679153025"><span id="local-6989586621679153027"><span id="local-6989586621679153029"><span id="local-6989586621679153031"><span id="local-6989586621679153033"><span class="annot"><span class="annottext">Eq Literal
+Eq Literal =&gt;
+(Literal -&gt; Literal -&gt; Ordering)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Bool)
+-&gt; (Literal -&gt; Literal -&gt; Literal)
+-&gt; (Literal -&gt; Literal -&gt; Literal)
+-&gt; Ord Literal
+Literal -&gt; Literal -&gt; Bool
+Literal -&gt; Literal -&gt; Ordering
+Literal -&gt; Literal -&gt; Literal
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Literal -&gt; Literal -&gt; Literal
+$cmin :: Literal -&gt; Literal -&gt; Literal
+max :: Literal -&gt; Literal -&gt; Literal
+$cmax :: Literal -&gt; Literal -&gt; Literal
+&gt;= :: Literal -&gt; Literal -&gt; Bool
+$c&gt;= :: Literal -&gt; Literal -&gt; Bool
+&gt; :: Literal -&gt; Literal -&gt; Bool
+$c&gt; :: Literal -&gt; Literal -&gt; Bool
+&lt;= :: Literal -&gt; Literal -&gt; Bool
+$c&lt;= :: Literal -&gt; Literal -&gt; Bool
+&lt; :: Literal -&gt; Literal -&gt; Bool
+$c&lt; :: Literal -&gt; Literal -&gt; Bool
+compare :: Literal -&gt; Literal -&gt; Ordering
+$ccompare :: Literal -&gt; Literal -&gt; Ordering
+$cp1Ord :: Eq Literal
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679153015"><span id="local-6989586621679153017"><span id="local-6989586621679153019"><span class="annot"><span class="annottext">Int -&gt; Literal -&gt; ShowS
+[Literal] -&gt; ShowS
+Literal -&gt; String
+(Int -&gt; Literal -&gt; ShowS)
+-&gt; (Literal -&gt; String) -&gt; ([Literal] -&gt; ShowS) -&gt; Show Literal
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Literal] -&gt; ShowS
+$cshowList :: [Literal] -&gt; ShowS
+show :: Literal -&gt; String
+$cshow :: Literal -&gt; String
+showsPrec :: Int -&gt; Literal -&gt; ShowS
+$cshowsPrec :: Int -&gt; Literal -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679153007"><span id="local-6989586621679153009"><span id="local-6989586621679153011"><span id="local-6989586621679153013"><span class="annot"><span class="annottext">ReadPrec [Literal]
+ReadPrec Literal
+Int -&gt; ReadS Literal
+ReadS [Literal]
+(Int -&gt; ReadS Literal)
+-&gt; ReadS [Literal]
+-&gt; ReadPrec Literal
+-&gt; ReadPrec [Literal]
+-&gt; Read Literal
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Literal]
+$creadListPrec :: ReadPrec [Literal]
+readPrec :: ReadPrec Literal
+$creadPrec :: ReadPrec Literal
+readList :: ReadS [Literal]
+$creadList :: ReadS [Literal]
+readsPrec :: Int -&gt; ReadS Literal
+$creadsPrec :: Int -&gt; ReadS Literal
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">data</span><span> </span><span id="Comprehension"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Comprehension"><span class="hs-identifier hs-var">Comprehension</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Comprehension"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Comprehension"><span class="hs-identifier hs-var">Comprehension</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679153001"><span id="local-6989586621679153003"><span class="annot"><span class="annottext">Comprehension -&gt; Comprehension -&gt; Bool
+(Comprehension -&gt; Comprehension -&gt; Bool)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Bool) -&gt; Eq Comprehension
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Comprehension -&gt; Comprehension -&gt; Bool
+$c/= :: Comprehension -&gt; Comprehension -&gt; Bool
+== :: Comprehension -&gt; Comprehension -&gt; Bool
+$c== :: Comprehension -&gt; Comprehension -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152986"><span id="local-6989586621679152988"><span id="local-6989586621679152990"><span id="local-6989586621679152992"><span id="local-6989586621679152994"><span id="local-6989586621679152996"><span id="local-6989586621679152998"><span class="annot"><span class="annottext">Eq Comprehension
+Eq Comprehension =&gt;
+(Comprehension -&gt; Comprehension -&gt; Ordering)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Bool)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Bool)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Bool)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Bool)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Comprehension)
+-&gt; (Comprehension -&gt; Comprehension -&gt; Comprehension)
+-&gt; Ord Comprehension
+Comprehension -&gt; Comprehension -&gt; Bool
+Comprehension -&gt; Comprehension -&gt; Ordering
+Comprehension -&gt; Comprehension -&gt; Comprehension
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Comprehension -&gt; Comprehension -&gt; Comprehension
+$cmin :: Comprehension -&gt; Comprehension -&gt; Comprehension
+max :: Comprehension -&gt; Comprehension -&gt; Comprehension
+$cmax :: Comprehension -&gt; Comprehension -&gt; Comprehension
+&gt;= :: Comprehension -&gt; Comprehension -&gt; Bool
+$c&gt;= :: Comprehension -&gt; Comprehension -&gt; Bool
+&gt; :: Comprehension -&gt; Comprehension -&gt; Bool
+$c&gt; :: Comprehension -&gt; Comprehension -&gt; Bool
+&lt;= :: Comprehension -&gt; Comprehension -&gt; Bool
+$c&lt;= :: Comprehension -&gt; Comprehension -&gt; Bool
+&lt; :: Comprehension -&gt; Comprehension -&gt; Bool
+$c&lt; :: Comprehension -&gt; Comprehension -&gt; Bool
+compare :: Comprehension -&gt; Comprehension -&gt; Ordering
+$ccompare :: Comprehension -&gt; Comprehension -&gt; Ordering
+$cp1Ord :: Eq Comprehension
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152980"><span id="local-6989586621679152982"><span id="local-6989586621679152984"><span class="annot"><span class="annottext">Int -&gt; Comprehension -&gt; ShowS
+[Comprehension] -&gt; ShowS
+Comprehension -&gt; String
+(Int -&gt; Comprehension -&gt; ShowS)
+-&gt; (Comprehension -&gt; String)
+-&gt; ([Comprehension] -&gt; ShowS)
+-&gt; Show Comprehension
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Comprehension] -&gt; ShowS
+$cshowList :: [Comprehension] -&gt; ShowS
+show :: Comprehension -&gt; String
+$cshow :: Comprehension -&gt; String
+showsPrec :: Int -&gt; Comprehension -&gt; ShowS
+$cshowsPrec :: Int -&gt; Comprehension -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152972"><span id="local-6989586621679152974"><span id="local-6989586621679152976"><span id="local-6989586621679152978"><span class="annot"><span class="annottext">ReadPrec [Comprehension]
+ReadPrec Comprehension
+Int -&gt; ReadS Comprehension
+ReadS [Comprehension]
+(Int -&gt; ReadS Comprehension)
+-&gt; ReadS [Comprehension]
+-&gt; ReadPrec Comprehension
+-&gt; ReadPrec [Comprehension]
+-&gt; Read Comprehension
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Comprehension]
+$creadListPrec :: ReadPrec [Comprehension]
+readPrec :: ReadPrec Comprehension
+$creadPrec :: ReadPrec Comprehension
+readList :: ReadS [Comprehension]
+$creadList :: ReadS [Comprehension]
+readsPrec :: Int -&gt; ReadS Comprehension
+$creadsPrec :: Int -&gt; ReadS Comprehension
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">data</span><span> </span><span id="Expr"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr"><span class="hs-identifier hs-var">Expr</span></a></span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Lit"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Var"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Sub"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sub"><span class="hs-identifier hs-var">Sub</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ListExt"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ListExt"><span class="hs-identifier hs-var">ListExt</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ListComp"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ListComp"><span class="hs-identifier hs-var">ListComp</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Comprehension"><span class="hs-identifier hs-type">Comprehension</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="IterComp"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#IterComp"><span class="hs-identifier hs-var">IterComp</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Comprehension"><span class="hs-identifier hs-type">Comprehension</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Call"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Call"><span class="hs-identifier hs-var">Call</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#FunName"><span class="hs-identifier hs-type">FunName</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Cond"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Cond"><span class="hs-identifier hs-var">Cond</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679152959"><span id="local-6989586621679152961"><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+(Expr -&gt; Expr -&gt; Bool) -&gt; (Expr -&gt; Expr -&gt; Bool) -&gt; Eq Expr
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Expr -&gt; Expr -&gt; Bool
+$c/= :: Expr -&gt; Expr -&gt; Bool
+== :: Expr -&gt; Expr -&gt; Bool
+$c== :: Expr -&gt; Expr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152944"><span id="local-6989586621679152946"><span id="local-6989586621679152948"><span id="local-6989586621679152950"><span id="local-6989586621679152952"><span id="local-6989586621679152954"><span id="local-6989586621679152956"><span class="annot"><span class="annottext">Eq Expr
+Eq Expr =&gt;
+(Expr -&gt; Expr -&gt; Ordering)
+-&gt; (Expr -&gt; Expr -&gt; Bool)
+-&gt; (Expr -&gt; Expr -&gt; Bool)
+-&gt; (Expr -&gt; Expr -&gt; Bool)
+-&gt; (Expr -&gt; Expr -&gt; Bool)
+-&gt; (Expr -&gt; Expr -&gt; Expr)
+-&gt; (Expr -&gt; Expr -&gt; Expr)
+-&gt; Ord Expr
+Expr -&gt; Expr -&gt; Bool
+Expr -&gt; Expr -&gt; Ordering
+Expr -&gt; Expr -&gt; Expr
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Expr -&gt; Expr -&gt; Expr
+$cmin :: Expr -&gt; Expr -&gt; Expr
+max :: Expr -&gt; Expr -&gt; Expr
+$cmax :: Expr -&gt; Expr -&gt; Expr
+&gt;= :: Expr -&gt; Expr -&gt; Bool
+$c&gt;= :: Expr -&gt; Expr -&gt; Bool
+&gt; :: Expr -&gt; Expr -&gt; Bool
+$c&gt; :: Expr -&gt; Expr -&gt; Bool
+&lt;= :: Expr -&gt; Expr -&gt; Bool
+$c&lt;= :: Expr -&gt; Expr -&gt; Bool
+&lt; :: Expr -&gt; Expr -&gt; Bool
+$c&lt; :: Expr -&gt; Expr -&gt; Bool
+compare :: Expr -&gt; Expr -&gt; Ordering
+$ccompare :: Expr -&gt; Expr -&gt; Ordering
+$cp1Ord :: Eq Expr
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152938"><span id="local-6989586621679152940"><span id="local-6989586621679152942"><span class="annot"><span class="annottext">Int -&gt; Expr -&gt; ShowS
+[Expr] -&gt; ShowS
+Expr -&gt; String
+(Int -&gt; Expr -&gt; ShowS)
+-&gt; (Expr -&gt; String) -&gt; ([Expr] -&gt; ShowS) -&gt; Show Expr
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Expr] -&gt; ShowS
+$cshowList :: [Expr] -&gt; ShowS
+show :: Expr -&gt; String
+$cshow :: Expr -&gt; String
+showsPrec :: Int -&gt; Expr -&gt; ShowS
+$cshowsPrec :: Int -&gt; Expr -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152930"><span id="local-6989586621679152932"><span id="local-6989586621679152934"><span id="local-6989586621679152936"><span class="annot"><span class="annottext">ReadPrec [Expr]
+ReadPrec Expr
+Int -&gt; ReadS Expr
+ReadS [Expr]
+(Int -&gt; ReadS Expr)
+-&gt; ReadS [Expr] -&gt; ReadPrec Expr -&gt; ReadPrec [Expr] -&gt; Read Expr
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Expr]
+$creadListPrec :: ReadPrec [Expr]
+readPrec :: ReadPrec Expr
+$creadPrec :: ReadPrec Expr
+readList :: ReadS [Expr]
+$creadList :: ReadS [Expr]
+readsPrec :: Int -&gt; ReadS Expr
+$creadsPrec :: Int -&gt; ReadS Expr
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="hs-keyword">data</span><span> </span><span id="ListShape"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ListShape"><span class="hs-identifier hs-var">ListShape</span></a></span></span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="NoneShape"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#NoneShape"><span class="hs-identifier hs-var">NoneShape</span></a></span></span><span>
+</span><span id="line-45"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ListShape"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ListShape"><span class="hs-identifier hs-var">ListShape</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ListShape"><span class="hs-identifier hs-type">ListShape</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-46"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679152924"><span id="local-6989586621679152926"><span class="annot"><span class="annottext">ListShape -&gt; ListShape -&gt; Bool
+(ListShape -&gt; ListShape -&gt; Bool)
+-&gt; (ListShape -&gt; ListShape -&gt; Bool) -&gt; Eq ListShape
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ListShape -&gt; ListShape -&gt; Bool
+$c/= :: ListShape -&gt; ListShape -&gt; Bool
+== :: ListShape -&gt; ListShape -&gt; Bool
+$c== :: ListShape -&gt; ListShape -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152909"><span id="local-6989586621679152911"><span id="local-6989586621679152913"><span id="local-6989586621679152915"><span id="local-6989586621679152917"><span id="local-6989586621679152919"><span id="local-6989586621679152921"><span class="annot"><span class="annottext">Eq ListShape
+Eq ListShape =&gt;
+(ListShape -&gt; ListShape -&gt; Ordering)
+-&gt; (ListShape -&gt; ListShape -&gt; Bool)
+-&gt; (ListShape -&gt; ListShape -&gt; Bool)
+-&gt; (ListShape -&gt; ListShape -&gt; Bool)
+-&gt; (ListShape -&gt; ListShape -&gt; Bool)
+-&gt; (ListShape -&gt; ListShape -&gt; ListShape)
+-&gt; (ListShape -&gt; ListShape -&gt; ListShape)
+-&gt; Ord ListShape
+ListShape -&gt; ListShape -&gt; Bool
+ListShape -&gt; ListShape -&gt; Ordering
+ListShape -&gt; ListShape -&gt; ListShape
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: ListShape -&gt; ListShape -&gt; ListShape
+$cmin :: ListShape -&gt; ListShape -&gt; ListShape
+max :: ListShape -&gt; ListShape -&gt; ListShape
+$cmax :: ListShape -&gt; ListShape -&gt; ListShape
+&gt;= :: ListShape -&gt; ListShape -&gt; Bool
+$c&gt;= :: ListShape -&gt; ListShape -&gt; Bool
+&gt; :: ListShape -&gt; ListShape -&gt; Bool
+$c&gt; :: ListShape -&gt; ListShape -&gt; Bool
+&lt;= :: ListShape -&gt; ListShape -&gt; Bool
+$c&lt;= :: ListShape -&gt; ListShape -&gt; Bool
+&lt; :: ListShape -&gt; ListShape -&gt; Bool
+$c&lt; :: ListShape -&gt; ListShape -&gt; Bool
+compare :: ListShape -&gt; ListShape -&gt; Ordering
+$ccompare :: ListShape -&gt; ListShape -&gt; Ordering
+$cp1Ord :: Eq ListShape
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152903"><span id="local-6989586621679152905"><span id="local-6989586621679152907"><span class="annot"><span class="annottext">Int -&gt; ListShape -&gt; ShowS
+[ListShape] -&gt; ShowS
+ListShape -&gt; String
+(Int -&gt; ListShape -&gt; ShowS)
+-&gt; (ListShape -&gt; String)
+-&gt; ([ListShape] -&gt; ShowS)
+-&gt; Show ListShape
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ListShape] -&gt; ShowS
+$cshowList :: [ListShape] -&gt; ShowS
+show :: ListShape -&gt; String
+$cshow :: ListShape -&gt; String
+showsPrec :: Int -&gt; ListShape -&gt; ShowS
+$cshowsPrec :: Int -&gt; ListShape -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152895"><span id="local-6989586621679152897"><span id="local-6989586621679152899"><span id="local-6989586621679152901"><span class="annot"><span class="annottext">ReadPrec [ListShape]
+ReadPrec ListShape
+Int -&gt; ReadS ListShape
+ReadS [ListShape]
+(Int -&gt; ReadS ListShape)
+-&gt; ReadS [ListShape]
+-&gt; ReadPrec ListShape
+-&gt; ReadPrec [ListShape]
+-&gt; Read ListShape
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [ListShape]
+$creadListPrec :: ReadPrec [ListShape]
+readPrec :: ReadPrec ListShape
+$creadPrec :: ReadPrec ListShape
+readList :: ReadS [ListShape]
+$creadList :: ReadS [ListShape]
+readsPrec :: Int -&gt; ReadS ListShape
+$creadsPrec :: Int -&gt; ReadS ListShape
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-keyword">data</span><span> </span><span id="Sentence"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence"><span class="hs-identifier hs-var">Sentence</span></a></span></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="If"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#If"><span class="hs-identifier hs-var">If</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence%27"><span class="hs-identifier hs-type">Sentence'</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence%27"><span class="hs-identifier hs-type">Sentence'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="For"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#For"><span class="hs-identifier hs-var">For</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence%27"><span class="hs-identifier hs-type">Sentence'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Define"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Define"><span class="hs-identifier hs-var">Define</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Declare"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Declare"><span class="hs-identifier hs-var">Declare</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ListShape"><span class="hs-identifier hs-type">ListShape</span></a></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Assign"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Assign"><span class="hs-identifier hs-var">Assign</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Assert"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Assert"><span class="hs-identifier hs-var">Assert</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Return"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Return"><span class="hs-identifier hs-var">Return</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679152884"><span id="local-6989586621679152886"><span class="annot"><span class="annottext">Sentence -&gt; Sentence -&gt; Bool
+(Sentence -&gt; Sentence -&gt; Bool)
+-&gt; (Sentence -&gt; Sentence -&gt; Bool) -&gt; Eq Sentence
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Sentence -&gt; Sentence -&gt; Bool
+$c/= :: Sentence -&gt; Sentence -&gt; Bool
+== :: Sentence -&gt; Sentence -&gt; Bool
+$c== :: Sentence -&gt; Sentence -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152869"><span id="local-6989586621679152871"><span id="local-6989586621679152873"><span id="local-6989586621679152875"><span id="local-6989586621679152877"><span id="local-6989586621679152879"><span id="local-6989586621679152881"><span class="annot"><span class="annottext">Eq Sentence
+Eq Sentence =&gt;
+(Sentence -&gt; Sentence -&gt; Ordering)
+-&gt; (Sentence -&gt; Sentence -&gt; Bool)
+-&gt; (Sentence -&gt; Sentence -&gt; Bool)
+-&gt; (Sentence -&gt; Sentence -&gt; Bool)
+-&gt; (Sentence -&gt; Sentence -&gt; Bool)
+-&gt; (Sentence -&gt; Sentence -&gt; Sentence)
+-&gt; (Sentence -&gt; Sentence -&gt; Sentence)
+-&gt; Ord Sentence
+Sentence -&gt; Sentence -&gt; Bool
+Sentence -&gt; Sentence -&gt; Ordering
+Sentence -&gt; Sentence -&gt; Sentence
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Sentence -&gt; Sentence -&gt; Sentence
+$cmin :: Sentence -&gt; Sentence -&gt; Sentence
+max :: Sentence -&gt; Sentence -&gt; Sentence
+$cmax :: Sentence -&gt; Sentence -&gt; Sentence
+&gt;= :: Sentence -&gt; Sentence -&gt; Bool
+$c&gt;= :: Sentence -&gt; Sentence -&gt; Bool
+&gt; :: Sentence -&gt; Sentence -&gt; Bool
+$c&gt; :: Sentence -&gt; Sentence -&gt; Bool
+&lt;= :: Sentence -&gt; Sentence -&gt; Bool
+$c&lt;= :: Sentence -&gt; Sentence -&gt; Bool
+&lt; :: Sentence -&gt; Sentence -&gt; Bool
+$c&lt; :: Sentence -&gt; Sentence -&gt; Bool
+compare :: Sentence -&gt; Sentence -&gt; Ordering
+$ccompare :: Sentence -&gt; Sentence -&gt; Ordering
+$cp1Ord :: Eq Sentence
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152863"><span id="local-6989586621679152865"><span id="local-6989586621679152867"><span class="annot"><span class="annottext">Int -&gt; Sentence -&gt; ShowS
+[Sentence] -&gt; ShowS
+Sentence -&gt; String
+(Int -&gt; Sentence -&gt; ShowS)
+-&gt; (Sentence -&gt; String) -&gt; ([Sentence] -&gt; ShowS) -&gt; Show Sentence
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Sentence] -&gt; ShowS
+$cshowList :: [Sentence] -&gt; ShowS
+show :: Sentence -&gt; String
+$cshow :: Sentence -&gt; String
+showsPrec :: Int -&gt; Sentence -&gt; ShowS
+$cshowsPrec :: Int -&gt; Sentence -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152855"><span id="local-6989586621679152857"><span id="local-6989586621679152859"><span id="local-6989586621679152861"><span class="annot"><span class="annottext">ReadPrec [Sentence]
+ReadPrec Sentence
+Int -&gt; ReadS Sentence
+ReadS [Sentence]
+(Int -&gt; ReadS Sentence)
+-&gt; ReadS [Sentence]
+-&gt; ReadPrec Sentence
+-&gt; ReadPrec [Sentence]
+-&gt; Read Sentence
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Sentence]
+$creadListPrec :: ReadPrec [Sentence]
+readPrec :: ReadPrec Sentence
+$creadPrec :: ReadPrec Sentence
+readList :: ReadS [Sentence]
+$creadList :: ReadS [Sentence]
+readsPrec :: Int -&gt; ReadS Sentence
+$creadsPrec :: Int -&gt; ReadS Sentence
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">data</span><span> </span><span id="ToplevelDecl"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ToplevelDecl"><span class="hs-identifier hs-var">ToplevelDecl</span></a></span></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ConstDef"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ConstDef"><span class="hs-identifier hs-var">ConstDef</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FunDef"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#FunDef"><span class="hs-identifier hs-var">FunDef</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Language.Common.Name.html#FunName"><span class="hs-identifier hs-type">FunName</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Language.Common.Name.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Type%27"><span class="hs-identifier hs-type">Type'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Sentence%27"><span class="hs-identifier hs-type">Sentence'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FromImport"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#FromImport"><span class="hs-identifier hs-var">FromImport</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Common.Name.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679152847"><span id="local-6989586621679152849"><span class="annot"><span class="annottext">ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+(ToplevelDecl -&gt; ToplevelDecl -&gt; Bool)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; Bool) -&gt; Eq ToplevelDecl
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+$c/= :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+== :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+$c== :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152832"><span id="local-6989586621679152834"><span id="local-6989586621679152836"><span id="local-6989586621679152838"><span id="local-6989586621679152840"><span id="local-6989586621679152842"><span id="local-6989586621679152844"><span class="annot"><span class="annottext">Eq ToplevelDecl
+Eq ToplevelDecl =&gt;
+(ToplevelDecl -&gt; ToplevelDecl -&gt; Ordering)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; Bool)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; Bool)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; Bool)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; Bool)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl)
+-&gt; (ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl)
+-&gt; Ord ToplevelDecl
+ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+ToplevelDecl -&gt; ToplevelDecl -&gt; Ordering
+ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl
+$cmin :: ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl
+max :: ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl
+$cmax :: ToplevelDecl -&gt; ToplevelDecl -&gt; ToplevelDecl
+&gt;= :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+$c&gt;= :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+&gt; :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+$c&gt; :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+&lt;= :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+$c&lt;= :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+&lt; :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+$c&lt; :: ToplevelDecl -&gt; ToplevelDecl -&gt; Bool
+compare :: ToplevelDecl -&gt; ToplevelDecl -&gt; Ordering
+$ccompare :: ToplevelDecl -&gt; ToplevelDecl -&gt; Ordering
+$cp1Ord :: Eq ToplevelDecl
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152826"><span id="local-6989586621679152828"><span id="local-6989586621679152830"><span class="annot"><span class="annottext">Int -&gt; ToplevelDecl -&gt; ShowS
+[ToplevelDecl] -&gt; ShowS
+ToplevelDecl -&gt; String
+(Int -&gt; ToplevelDecl -&gt; ShowS)
+-&gt; (ToplevelDecl -&gt; String)
+-&gt; ([ToplevelDecl] -&gt; ShowS)
+-&gt; Show ToplevelDecl
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ToplevelDecl] -&gt; ShowS
+$cshowList :: [ToplevelDecl] -&gt; ShowS
+show :: ToplevelDecl -&gt; String
+$cshow :: ToplevelDecl -&gt; String
+showsPrec :: Int -&gt; ToplevelDecl -&gt; ShowS
+$cshowsPrec :: Int -&gt; ToplevelDecl -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152818"><span id="local-6989586621679152820"><span id="local-6989586621679152822"><span id="local-6989586621679152824"><span class="annot"><span class="annottext">ReadPrec [ToplevelDecl]
+ReadPrec ToplevelDecl
+Int -&gt; ReadS ToplevelDecl
+ReadS [ToplevelDecl]
+(Int -&gt; ReadS ToplevelDecl)
+-&gt; ReadS [ToplevelDecl]
+-&gt; ReadPrec ToplevelDecl
+-&gt; ReadPrec [ToplevelDecl]
+-&gt; Read ToplevelDecl
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [ToplevelDecl]
+$creadListPrec :: ReadPrec [ToplevelDecl]
+readPrec :: ReadPrec ToplevelDecl
+$creadPrec :: ReadPrec ToplevelDecl
+readList :: ReadS [ToplevelDecl]
+$creadList :: ReadS [ToplevelDecl]
+readsPrec :: Int -&gt; ReadS ToplevelDecl
+$creadsPrec :: Int -&gt; ReadS ToplevelDecl
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-keyword">newtype</span><span> </span><span id="Program"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Program"><span class="hs-identifier hs-var">Program</span></a></span></span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Program"><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#Program"><span class="hs-identifier hs-var">Program</span></a></span></span><span>
+</span><span id="line-66"></span><span>      </span><span class="hs-special">{</span><span> </span><span id="decls"><span class="annot"><span class="annottext">Program -&gt; [ToplevelDecl']
+</span><a href="Jikka.Language.Python.Parsed.Expr.html#decls"><span class="hs-identifier hs-var hs-var">decls</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Language.Python.Parsed.Expr.html#ToplevelDecl%27"><span class="hs-identifier hs-type">ToplevelDecl'</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-67"></span><span>      </span><span class="hs-special">}</span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679152812"><span id="local-6989586621679152814"><span class="annot"><span class="annottext">Program -&gt; Program -&gt; Bool
+(Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool) -&gt; Eq Program
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Program -&gt; Program -&gt; Bool
+$c/= :: Program -&gt; Program -&gt; Bool
+== :: Program -&gt; Program -&gt; Bool
+$c== :: Program -&gt; Program -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152797"><span id="local-6989586621679152799"><span id="local-6989586621679152801"><span id="local-6989586621679152803"><span id="local-6989586621679152805"><span id="local-6989586621679152807"><span id="local-6989586621679152809"><span class="annot"><span class="annottext">Eq Program
+Eq Program =&gt;
+(Program -&gt; Program -&gt; Ordering)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Program)
+-&gt; (Program -&gt; Program -&gt; Program)
+-&gt; Ord Program
+Program -&gt; Program -&gt; Bool
+Program -&gt; Program -&gt; Ordering
+Program -&gt; Program -&gt; Program
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Program -&gt; Program -&gt; Program
+$cmin :: Program -&gt; Program -&gt; Program
+max :: Program -&gt; Program -&gt; Program
+$cmax :: Program -&gt; Program -&gt; Program
+&gt;= :: Program -&gt; Program -&gt; Bool
+$c&gt;= :: Program -&gt; Program -&gt; Bool
+&gt; :: Program -&gt; Program -&gt; Bool
+$c&gt; :: Program -&gt; Program -&gt; Bool
+&lt;= :: Program -&gt; Program -&gt; Bool
+$c&lt;= :: Program -&gt; Program -&gt; Bool
+&lt; :: Program -&gt; Program -&gt; Bool
+$c&lt; :: Program -&gt; Program -&gt; Bool
+compare :: Program -&gt; Program -&gt; Ordering
+$ccompare :: Program -&gt; Program -&gt; Ordering
+$cp1Ord :: Eq Program
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152791"><span id="local-6989586621679152793"><span id="local-6989586621679152795"><span class="annot"><span class="annottext">Int -&gt; Program -&gt; ShowS
+[Program] -&gt; ShowS
+Program -&gt; String
+(Int -&gt; Program -&gt; ShowS)
+-&gt; (Program -&gt; String) -&gt; ([Program] -&gt; ShowS) -&gt; Show Program
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Program] -&gt; ShowS
+$cshowList :: [Program] -&gt; ShowS
+show :: Program -&gt; String
+$cshow :: Program -&gt; String
+showsPrec :: Int -&gt; Program -&gt; ShowS
+$cshowsPrec :: Int -&gt; Program -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679152783"><span id="local-6989586621679152785"><span id="local-6989586621679152787"><span id="local-6989586621679152789"><span class="annot"><span class="annottext">ReadPrec [Program]
+ReadPrec Program
+Int -&gt; ReadS Program
+ReadS [Program]
+(Int -&gt; ReadS Program)
+-&gt; ReadS [Program]
+-&gt; ReadPrec Program
+-&gt; ReadPrec [Program]
+-&gt; Read Program
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Program]
+$creadListPrec :: ReadPrec [Program]
+readPrec :: ReadPrec Program
+$creadPrec :: ReadPrec Program
+readList :: ReadS [Program]
+$creadList :: ReadS [Program]
+readsPrec :: Int -&gt; ReadS Program
+$creadsPrec :: Int -&gt; ReadS Program
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span></pre></body></html>
