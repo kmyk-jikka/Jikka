@@ -1,7 +1,5 @@
-from jikka.compat import *
-
-def f(n: nat) -> nat:
+def solve(n: int) -> int:
     if n == 0:
         return 1
     else:
-        return n * f(n - 1)
+        return n * solve(n - 1)

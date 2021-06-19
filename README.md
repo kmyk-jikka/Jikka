@@ -20,6 +20,20 @@ $ stack run convert PYTHON_FILE
 [Stack](https://www.haskellstack.org/) is required.
 
 
+## Documents
+
+for users:
+
+-   [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
+-   [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
+
+for developpers:
+
+-   [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
+-   [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
+-   [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
+
+
 ## Examples (`v3.1.0`)
 
 The below are examples of old the version (at `v3.1.0`). The input was a ML code.

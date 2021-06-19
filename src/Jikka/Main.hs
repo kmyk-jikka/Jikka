@@ -1,11 +1,12 @@
 module Jikka.Main where
 
-import Control.Monad.Except
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
-import qualified Jikka.Subcommand.Convert as Convert
-import qualified Jikka.Subcommand.Debug as Debug
-import qualified Jikka.Subcommand.Execute as Execute
+import Jikka.Common.Error
+import Jikka.Common.Format.Error (prettyError, prettyErrorWithText)
+import qualified Jikka.Main.Subcommand.Convert as Convert
+import qualified Jikka.Main.Subcommand.Debug as Debug
+import qualified Jikka.Main.Subcommand.Execute as Execute
 import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))
@@ -17,10 +18,9 @@ data Flag
   | Version
   deriving (Eq, Ord, Show, Read)
 
-newtype Options
-  = Options
-      { verbose :: Bool
-      }
+newtype Options = Options
+  { verbose :: Bool
+  }
 
 defaultOptions :: Options
 defaultOptions =
@@ -49,35 +49,38 @@ main name args = do
       putStrLn $ showVersion version
       return ExitSuccess
     (parsed, [subcmd, path], []) -> case parseFlags name parsed of
-      Left error -> do
-        hPutStrLn stderr error
+      Left err -> do
+        mapM_ (hPutStrLn stderr) (prettyError err)
         return $ ExitFailure 1
       Right opts -> do
         result <- runExceptT $ runSubcommand subcmd opts path
         case result of
-          Left error -> do
-            hPutStrLn stderr error
+          Left err -> do
+            text <- liftIO $ T.readFile path
+            mapM_ (hPutStrLn stderr) (prettyErrorWithText text err)
             return $ ExitFailure 1
           Right () -> do
             return ExitSuccess
     (_, _, errors) | errors /= [] -> do
-      mapM_ (\error -> hPutStr stderr $ name ++ ": " ++ error) errors
+      forM_ errors $ \msg -> do
+        let err = WithGroup CommandLineError (Error msg)
+        mapM_ (hPutStr stderr) (prettyError err)
       return $ ExitFailure 1
     _ -> do
       hPutStr stderr usage
       return $ ExitFailure 1
 
-parseFlags :: String -> [Flag] -> Either String Options
+parseFlags :: String -> [Flag] -> Either Error Options
 parseFlags _ = go defaultOptions
   where
-    go :: Options -> [Flag] -> Either String Options
+    go :: Options -> [Flag] -> Either Error Options
     go opts [] = Right opts
     go opts (flag : flags) = case flag of
-      Help -> error "parseFlags is not called when --help is specified"
-      Version -> error "parseFlags is not called when --version is specified"
+      Help -> throwCommandLineError "parseFlags is not called when --help is specified"
+      Version -> throwCommandLineError "parseFlags is not called when --version is specified"
       Verbose -> go (opts {verbose = True}) flags
 
-runSubcommand :: String -> Options -> FilePath -> ExceptT String IO ()
+runSubcommand :: String -> Options -> FilePath -> ExceptT Error IO ()
 runSubcommand subcmd _ path = case subcmd of
   "convert" -> do
     input <- liftIO $ T.readFile path
@@ -85,4 +88,4 @@ runSubcommand subcmd _ path = case subcmd of
     liftIO $ T.putStr output
   "debug" -> Debug.run path
   "execute" -> Execute.run path
-  _ -> throwError $ "undefined subcommand: " ++ show subcmd
+  _ -> throwCommandLineError $ "undefined subcommand: " ++ show subcmd
