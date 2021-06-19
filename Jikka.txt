@@ -5,27 +5,12 @@
 -- | Please see the README on GitHub at
 --   <a>https://github.com/kmyk/Jikka</a>
 @package Jikka
-@version 5.0.1.0
-
-
--- | <a>Alpha</a> provides a monad to run alpha-conversion. This monad has
---   only a feature to make unique numbers.
-module Jikka.Common.Alpha
-class Monad m => MonadAlpha m
-nextCounter :: MonadAlpha m => m Int
-type Alpha = StateT Int (Either String)
-runAlpha :: Int -> Alpha a -> Either String (a, Int)
-evalAlpha :: Int -> Alpha a -> Either String a
-evalAlpha' :: Alpha a -> Either String a
-instance GHC.Base.Monad m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT GHC.Types.Int m)
-
-module Jikka.Deserializer.Read
-run :: Read program => FilePath -> Text -> Either String program
+@version 5.1.0.0
 
 
 -- | <a>Expr</a> module has the basic data types for C++ language. The data
 --   types are intended to use for the code generation.
-module Jikka.Language.CPlusPlus.Expr
+module Jikka.CPlusPlus.Language.Expr
 newtype VarName
 VarName :: String -> VarName
 [unVarName] :: VarName -> String
@@ -120,115 +105,333 @@ FunDef :: Type -> VarName -> [(Type, VarName)] -> [Statement] -> ToplevelStateme
 newtype Program
 Program :: [ToplevelStatement] -> Program
 [decls] :: Program -> [ToplevelStatement]
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.Program
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.Program
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.Program
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.Program
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.ToplevelStatement
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.ToplevelStatement
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.ToplevelStatement
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.ToplevelStatement
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.Function
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.Function
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.Function
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.Function
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.Expr
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.Expr
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.Expr
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.Expr
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.LeftExpr
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.LeftExpr
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.LeftExpr
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.LeftExpr
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.AssignExpr
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.AssignExpr
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.AssignExpr
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.AssignExpr
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.Statement
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.Statement
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.Statement
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.Statement
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.AssignOp
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.AssignOp
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.AssignOp
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.AssignOp
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.BinaryOp
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.BinaryOp
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.BinaryOp
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.BinaryOp
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.UnaryOp
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.UnaryOp
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.UnaryOp
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.UnaryOp
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.Literal
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.Literal
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.Literal
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.Literal
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.Type
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.Type
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.Type
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.Type
-instance Data.String.IsString Jikka.Language.CPlusPlus.Expr.FunName
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.FunName
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.FunName
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.FunName
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.FunName
-instance Data.String.IsString Jikka.Language.CPlusPlus.Expr.VarName
-instance GHC.Read.Read Jikka.Language.CPlusPlus.Expr.VarName
-instance GHC.Show.Show Jikka.Language.CPlusPlus.Expr.VarName
-instance GHC.Classes.Ord Jikka.Language.CPlusPlus.Expr.VarName
-instance GHC.Classes.Eq Jikka.Language.CPlusPlus.Expr.VarName
+instance Data.String.IsString Jikka.CPlusPlus.Language.Expr.VarName
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.VarName
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.VarName
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.VarName
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.VarName
+instance Data.String.IsString Jikka.CPlusPlus.Language.Expr.FunName
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.FunName
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.FunName
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.FunName
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.FunName
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Type
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Type
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Type
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Type
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Literal
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Literal
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Literal
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Literal
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.UnaryOp
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.UnaryOp
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.UnaryOp
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.UnaryOp
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.BinaryOp
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.BinaryOp
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.BinaryOp
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.BinaryOp
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.AssignOp
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.AssignOp
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.AssignOp
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.AssignOp
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Expr
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Expr
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Expr
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Expr
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.LeftExpr
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.LeftExpr
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.LeftExpr
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.LeftExpr
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.AssignExpr
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.AssignExpr
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.AssignExpr
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.AssignExpr
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Statement
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Statement
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Statement
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Statement
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.ToplevelStatement
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.ToplevelStatement
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.ToplevelStatement
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.ToplevelStatement
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Program
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Program
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Program
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Program
 
-module Jikka.Language.Common.Name
-type Name = String
-newtype VarName
-VarName :: Name -> VarName
-unVarName :: VarName -> Name
-newtype FunName
-FunName :: Name -> FunName
-unFunName :: FunName -> Name
-newtype TypeName
-TypeName :: Name -> TypeName
-unTypeName :: TypeName -> Name
-instance Data.String.IsString Jikka.Language.Common.Name.TypeName
-instance GHC.Read.Read Jikka.Language.Common.Name.TypeName
-instance GHC.Show.Show Jikka.Language.Common.Name.TypeName
-instance GHC.Classes.Ord Jikka.Language.Common.Name.TypeName
-instance GHC.Classes.Eq Jikka.Language.Common.Name.TypeName
-instance Data.String.IsString Jikka.Language.Common.Name.FunName
-instance GHC.Read.Read Jikka.Language.Common.Name.FunName
-instance GHC.Show.Show Jikka.Language.Common.Name.FunName
-instance GHC.Classes.Ord Jikka.Language.Common.Name.FunName
-instance GHC.Classes.Eq Jikka.Language.Common.Name.FunName
-instance Data.String.IsString Jikka.Language.Common.Name.VarName
-instance GHC.Read.Read Jikka.Language.Common.Name.VarName
-instance GHC.Show.Show Jikka.Language.Common.Name.VarName
-instance GHC.Classes.Ord Jikka.Language.Common.Name.VarName
-instance GHC.Classes.Eq Jikka.Language.Common.Name.VarName
 
-module Jikka.Language.Common.Pos
-data Pos
-Pos :: !Int -> !Int -> Pos
-[line] :: Pos -> !Int
-[column] :: Pos -> !Int
-data WithPos a
-WithPos :: !Pos -> !a -> WithPos a
-[pos] :: WithPos a -> !Pos
-[value] :: WithPos a -> !a
-withPos :: WithPos a -> b -> WithPos b
-prettyPos :: Pos -> String
-instance GHC.Base.Functor Jikka.Language.Common.Pos.WithPos
-instance GHC.Read.Read a => GHC.Read.Read (Jikka.Language.Common.Pos.WithPos a)
-instance GHC.Show.Show a => GHC.Show.Show (Jikka.Language.Common.Pos.WithPos a)
-instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Language.Common.Pos.WithPos a)
-instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Language.Common.Pos.WithPos a)
-instance GHC.Read.Read Jikka.Language.Common.Pos.Pos
-instance GHC.Show.Show Jikka.Language.Common.Pos.Pos
-instance GHC.Classes.Ord Jikka.Language.Common.Pos.Pos
-instance GHC.Classes.Eq Jikka.Language.Common.Pos.Pos
+-- | <a>Alpha</a> provides a monad to run alpha-conversion. This monad has
+--   only a feature to make unique numbers.
+module Jikka.Common.Alpha
+class Monad m => MonadAlpha m
+nextCounter :: MonadAlpha m => m Int
+newtype AlphaT m a
+AlphaT :: (Int -> m (a, Int)) -> AlphaT m a
+[runAlphaT] :: AlphaT m a -> Int -> m (a, Int)
+liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
+evalAlphaT :: Functor m => AlphaT m a -> Int -> m a
+instance GHC.Base.Monad m => Jikka.Common.Alpha.MonadAlpha (Jikka.Common.Alpha.AlphaT m)
+instance GHC.Base.Functor m => GHC.Base.Functor (Jikka.Common.Alpha.AlphaT m)
+instance GHC.Base.Monad m => GHC.Base.Applicative (Jikka.Common.Alpha.AlphaT m)
+instance GHC.Base.Monad m => GHC.Base.Monad (Jikka.Common.Alpha.AlphaT m)
+instance Control.Monad.Fix.MonadFix m => Control.Monad.Fix.MonadFix (Jikka.Common.Alpha.AlphaT m)
+instance Control.Monad.Trans.Class.MonadTrans Jikka.Common.Alpha.AlphaT
+instance Control.Monad.Error.Class.MonadError e m => Control.Monad.Error.Class.MonadError e (Jikka.Common.Alpha.AlphaT m)
+instance Control.Monad.IO.Class.MonadIO m => Control.Monad.IO.Class.MonadIO (Jikka.Common.Alpha.AlphaT m)
+instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Except.ExceptT e m)
+instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Reader.ReaderT r m)
+instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT s m)
+instance (Jikka.Common.Alpha.MonadAlpha m, GHC.Base.Monoid w) => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Writer.Strict.WriterT w m)
 
-module Jikka.Deserializer.ShuntingYard
-run :: forall op expr. (op -> Either String BinOpInfo) -> (WithPos op -> WithPos expr -> WithPos expr -> WithPos expr) -> (WithPos expr, [(WithPos op, WithPos expr)]) -> Either String (WithPos expr)
+module Jikka.Common.Format.AutoIndent
+indent :: String
+dedent :: String
+makeIndentFromMarkers :: Int -> [String] -> [String]
+makeIndentFromBraces :: Int -> [String] -> [String]
+insertIndentDedentFromBraces :: [String] -> [String]
+
+
+-- | <a>Format</a> module converts the AST for C++ to the plain source
+--   code.
+module Jikka.CPlusPlus.Format
+run :: Applicative m => Program -> m Text
+run' :: Program -> String
+instance GHC.Read.Read Jikka.CPlusPlus.Format.Prec
+instance GHC.Show.Show Jikka.CPlusPlus.Format.Prec
+instance GHC.Classes.Ord Jikka.CPlusPlus.Format.Prec
+instance GHC.Classes.Eq Jikka.CPlusPlus.Format.Prec
+instance GHC.Read.Read Jikka.CPlusPlus.Format.Assoc
+instance GHC.Show.Show Jikka.CPlusPlus.Format.Assoc
+instance GHC.Classes.Ord Jikka.CPlusPlus.Format.Assoc
+instance GHC.Classes.Eq Jikka.CPlusPlus.Format.Assoc
+
+module Jikka.Common.Format.Show
+run :: Show program => program -> Either String Text
+
+module Jikka.Common.Graph
+type Graph = Vector [Int]
+makeReversedDigraph :: Graph -> Graph
+makeInducedDigraph :: Graph -> Vector Int -> Graph
+
+-- | <a>decomposeToStronglyConnectedComponents</a> does SCC in &lt;math&gt;
+--   using Kosaraju's algorithm. It takes a digraph &lt;math&gt; as an
+--   adjacent list &lt;math&gt;, and returns an mapping &lt;math&gt; for
+--   the SCC DAG &lt;math&gt;. The indices of vertices of the SCC DAG are
+--   topologically sorted.
+decomposeToStronglyConnectedComponents :: Graph -> Vector Int
+
+-- | <a>topologicalSort</a> does topological sort in &lt;math&gt; using
+--   Tarjan's algorithm. The input is an adjacent list of a DAG.
+topologicalSort :: Graph -> Vector Int
+
+module Jikka.Common.IO
+hTakeWhile :: Handle -> (Char -> Bool) -> IO String
+hGetWord :: Handle -> IO String
+getWord :: IO String
+
+module Jikka.Common.Location
+
+-- | <a>Loc</a> represents a location of something in the users' source
+--   code. <a>line</a> and <a>column</a> is 1-based.
+data Loc
+Loc :: !Int -> !Int -> !Int -> Loc
+[line] :: Loc -> !Int
+[column] :: Loc -> !Int
+[width] :: Loc -> !Int
+data WithLoc a
+WithLoc :: !Loc -> !a -> WithLoc a
+[loc] :: WithLoc a -> !Loc
+[value] :: WithLoc a -> !a
+instance GHC.Read.Read Jikka.Common.Location.Loc
+instance GHC.Show.Show Jikka.Common.Location.Loc
+instance GHC.Classes.Ord Jikka.Common.Location.Loc
+instance GHC.Classes.Eq Jikka.Common.Location.Loc
+instance GHC.Base.Functor Jikka.Common.Location.WithLoc
+instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc a)
+instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc a)
+
+module Jikka.Common.Format.Location
+prettyLoc :: Loc -> String
+prettyLocWithText :: Text -> Loc -> [String]
+
+
+module Jikka.Common.Error
+data Responsibility
+UserMistake :: Responsibility
+ImplementationBug :: Responsibility
+data ErrorGroup
+
+-- | It's impossible to split the given source text into tokens.
+LexicalError :: ErrorGroup
+
+-- | It's impossible to construct AST from tokens.
+SyntaxError :: ErrorGroup
+
+-- | There are undefined variables or functions in AST.
+SymbolError :: ErrorGroup
+
+-- | It's impossible reconstruct types for AST.
+TypeError :: ErrorGroup
+
+-- | other semantic erros
+SemanticError :: ErrorGroup
+
+-- | User's program are not ready to evaluate.
+EvaluationError :: ErrorGroup
+
+-- | User's program failed while running.
+RuntimeError :: ErrorGroup
+
+-- | User's program violates its assertion.
+AssertionError :: ErrorGroup
+
+-- | The given command line arguments are not acceptable.
+CommandLineError :: ErrorGroup
+
+-- | User's program was correctly running but wrong input text is given.
+WrongInputError :: ErrorGroup
+
+-- | It's an bug of implementation.
+InternalError :: ErrorGroup
+data Error
+Error :: String -> Error
+ErrorAppend :: Error -> Error -> Error
+WithGroup :: ErrorGroup -> Error -> Error
+WithWrapped :: String -> Error -> Error
+WithLocation :: Loc -> Error -> Error
+WithResponsibility :: Responsibility -> Error -> Error
+wrapError :: MonadError e m => (e -> e) -> m a -> m a
+wrapError' :: MonadError Error m => String -> m a -> m a
+wrapAt :: MonadError Error m => Loc -> m a -> m a
+maybeToError :: MonadError a m => a -> Maybe b -> m b
+eitherToError :: MonadError a m => Either a b -> m b
+
+-- | <a>catchError</a>` is the inverse of <tt>liftError</tt>.
+catchError' :: MonadError e m => m a -> m (Either e a)
+reportErrors :: MonadError Error m => [Either Error a] -> m [a]
+reportErrors2 :: MonadError Error m => Either Error a -> Either Error b -> m (a, b)
+reportErrors3 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> m (a, b, c)
+reportErrors4 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> Either Error d -> m (a, b, c, d)
+reportErrors5 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> Either Error d -> Either Error e -> m (a, b, c, d, e)
+lexicalError :: String -> Error
+lexicalErrorAt :: Loc -> String -> Error
+syntaxError :: String -> Error
+syntaxErrorAt :: Loc -> String -> Error
+symbolError :: String -> Error
+symbolErrorAt :: Loc -> String -> Error
+typeError :: String -> Error
+semanticError :: String -> Error
+evaluationError :: String -> Error
+runtimeError :: String -> Error
+assertionError :: String -> Error
+commandLineError :: String -> Error
+wrongInputError :: String -> Error
+internalError :: String -> Error
+throwLexicalError :: MonadError Error m => String -> m a
+throwLexicalErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSyntaxError :: MonadError Error m => String -> m a
+throwSyntaxErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSymbolError :: MonadError Error m => String -> m a
+throwSymbolErrorAt :: MonadError Error m => Loc -> String -> m a
+throwTypeError :: MonadError Error m => String -> m a
+throwTypeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSemanticError :: MonadError Error m => String -> m a
+throwSemanticErrorAt :: MonadError Error m => Loc -> String -> m a
+throwEvaluationError :: MonadError Error m => String -> m a
+throwRuntimeError :: MonadError Error m => String -> m a
+throwAssertionError :: MonadError Error m => String -> m a
+throwCommandLineError :: MonadError Error m => String -> m a
+throwWrongInputError :: MonadError Error m => String -> m a
+throwInternalError :: MonadError Error m => String -> m a
+bug :: String -> a
+todo :: String -> a
+instance GHC.Read.Read Jikka.Common.Error.Responsibility
+instance GHC.Show.Show Jikka.Common.Error.Responsibility
+instance GHC.Classes.Ord Jikka.Common.Error.Responsibility
+instance GHC.Classes.Eq Jikka.Common.Error.Responsibility
+instance GHC.Read.Read Jikka.Common.Error.ErrorGroup
+instance GHC.Show.Show Jikka.Common.Error.ErrorGroup
+instance GHC.Classes.Ord Jikka.Common.Error.ErrorGroup
+instance GHC.Classes.Eq Jikka.Common.Error.ErrorGroup
+instance GHC.Read.Read Jikka.Common.Error.Error
+instance GHC.Show.Show Jikka.Common.Error.Error
+instance GHC.Classes.Ord Jikka.Common.Error.Error
+instance GHC.Classes.Eq Jikka.Common.Error.Error
+instance GHC.Base.Semigroup Jikka.Common.Error.Error
+
+module Jikka.Common.Format.Error
+prettyError :: Error -> [String]
+prettyErrorWithText :: Text -> Error -> [String]
+
+module Jikka.Common.Matrix
+
+-- | <a>Matrix</a> is data for matrices. It is guaranteed that internal
+--   arrays are not jagged arrays.
+data Matrix a
+unMatrix :: Matrix a -> Vector (Vector a)
+makeMatrix :: Vector (Vector a) -> Maybe (Matrix a)
+
+-- | <a>matsize</a> computes the size of a matrix.
+matsize :: Matrix a -> (Int, Int)
+
+-- | <a>matsize</a>` computes the size of a matrix. This assumes inputs are
+--   matrices (<a>matcheck</a>).
+matsize' :: Vector (Vector a) -> (Int, Int)
+
+-- | <a>matcheck</a> checks a given vector of vectors is a matrix. That is,
+--   this returns <a>False</a> for jagged arrays.
+matcheck :: Vector (Vector a) -> Bool
+matzero :: Num a => Int -> Matrix a
+matone :: Num a => Int -> Matrix a
+
+-- | <a>matadd</a> calculates the addition &lt;math&gt; of two matrices
+--   &lt;math&gt;. This assumes sizes of inputs match.
+matadd :: Num a => Matrix a -> Matrix a -> Matrix a
+
+-- | <a>matmul</a> calculates the multiplication &lt;math&gt;of two
+--   matrices &lt;math&gt;. This assumes sizes of inputs match.
+matmul :: Num a => Matrix a -> Matrix a -> Matrix a
+
+-- | <a>matap</a> calculates the multiplication &lt;math&gt; of a matrix
+--   &lt;math&gt; and a vector &lt;math&gt;. This assumes sizes of inputs
+--   match.
+matap :: Num a => Matrix a -> Vector a -> Vector a
+matscalar :: Num a => a -> Matrix a -> Matrix a
+
+-- | <a>matpow</a> calculates the power &lt;math&gt; of a matrix
+--   &lt;math&gt; and a natural number &lt;math&gt;. This assumes inputs
+--   are square matrices. This fails for &lt;math&gt;.
+matpow :: Num a => Matrix a -> Integer -> Matrix a
+instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Matrix.Matrix a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Matrix.Matrix a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Matrix.Matrix a)
+
+module Jikka.Common.Parse.JoinLines
+joinLinesWithParens :: forall m a. (MonadError Error m, Show a) => (a -> Bool) -> (a -> Bool) -> (a -> Bool) -> [WithLoc a] -> m [WithLoc a]
+removeEmptyLines :: forall a. (a -> Bool) -> [WithLoc a] -> [WithLoc a]
+
+module Jikka.Common.Parse.OffsideRule
+
+-- | <a>insertIndents</a> inserts <tt>INDENT</tt> and <tt>DEDENT</tt>
+--   tokens with Python's way
+--   (<a>https://docs.python.org/3/reference/lexical_analysis.html#indentation</a>).
+--   The <a>column</a> of <a>Loc</a> must be 1-based. This doen't use
+--   physical <a>line</a> of <a>Loc</a> because logical lines are used for
+--   indentation.
+insertIndents :: forall m a. (MonadError Error m, Show a) => a -> a -> (a -> Bool) -> [WithLoc a] -> m [WithLoc a]
+
+module Jikka.Common.Parse.Read
+run :: Read program => FilePath -> Text -> Either String program
+
+module Jikka.Common.Parse.ShuntingYard
+run :: forall m op expr. MonadError Error m => (op -> m BinOpInfo) -> (WithLoc op -> WithLoc expr -> WithLoc expr -> WithLoc expr) -> (WithLoc expr, [(WithLoc op, WithLoc expr)]) -> m (WithLoc expr)
 type Prec = Int
 data Fixity
 Leftfix :: Fixity
@@ -236,78 +439,27 @@ Rightfix :: Fixity
 Nonfix :: Fixity
 data BinOpInfo
 BinOpInfo :: Fixity -> Prec -> BinOpInfo
-instance GHC.Read.Read Jikka.Deserializer.ShuntingYard.BinOpInfo
-instance GHC.Show.Show Jikka.Deserializer.ShuntingYard.BinOpInfo
-instance GHC.Classes.Ord Jikka.Deserializer.ShuntingYard.BinOpInfo
-instance GHC.Classes.Eq Jikka.Deserializer.ShuntingYard.BinOpInfo
-instance GHC.Read.Read Jikka.Deserializer.ShuntingYard.Fixity
-instance GHC.Show.Show Jikka.Deserializer.ShuntingYard.Fixity
-instance GHC.Enum.Bounded Jikka.Deserializer.ShuntingYard.Fixity
-instance GHC.Enum.Enum Jikka.Deserializer.ShuntingYard.Fixity
-instance GHC.Classes.Ord Jikka.Deserializer.ShuntingYard.Fixity
-instance GHC.Classes.Eq Jikka.Deserializer.ShuntingYard.Fixity
-
-module Jikka.Deserializer.OffsideRule
-insertIndentTokens :: forall a. IndentSetting a -> [WithPos a] -> Either String [WithPos a]
-data IndentSetting a
-IndentSetting :: a -> a -> Int -> Int -> (a -> Bool) -> (a -> Bool) -> Bool -> IndentSetting a
-[indentToken] :: IndentSetting a -> a
-[dedentToken] :: IndentSetting a -> a
-[initialLine] :: IndentSetting a -> Int
-[initialColumn] :: IndentSetting a -> Int
-[isOpenParenToken] :: IndentSetting a -> a -> Bool
-[isCloseParenToken] :: IndentSetting a -> a -> Bool
-[allowNoMatchingDedent] :: IndentSetting a -> Bool
-
-module Jikka.Deserializer.Python.Lexer
-data Token
-None :: Token
-Int :: Integer -> Token
-Bool :: Bool -> Token
-Def :: Token
-If :: Token
-Elif :: Token
-Else :: Token
-For :: Token
-In :: Token
-Assert :: Token
-Return :: Token
-Import :: Token
-From :: Token
-Arrow :: Token
-Colon :: Token
-Comma :: Token
-Dot :: Token
-Equal :: Token
-Underscore :: Token
-OpenBrace :: Token
-OpenBracket :: Token
-OpenParen :: Token
-CloseBrace :: Token
-CloseBracket :: Token
-CloseParen :: Token
-SingleQuote :: Token
-DoubleQuote :: Token
-Ident :: String -> Token
-Op :: String -> Token
-Newline :: Token
-Indent :: Token
-Dedent :: Token
-run :: String -> Either String [WithPos Token]
-instance GHC.Read.Read Jikka.Deserializer.Python.Lexer.Token
-instance GHC.Show.Show Jikka.Deserializer.Python.Lexer.Token
-instance GHC.Classes.Ord Jikka.Deserializer.Python.Lexer.Token
-instance GHC.Classes.Eq Jikka.Deserializer.Python.Lexer.Token
-instance GHC.Show.Show Jikka.Deserializer.Python.Lexer.AlexPosn
-instance GHC.Classes.Eq Jikka.Deserializer.Python.Lexer.AlexPosn
-instance GHC.Base.Functor Jikka.Deserializer.Python.Lexer.Alex
-instance GHC.Base.Applicative Jikka.Deserializer.Python.Lexer.Alex
-instance GHC.Base.Monad Jikka.Deserializer.Python.Lexer.Alex
+instance GHC.Read.Read Jikka.Common.Parse.ShuntingYard.Fixity
+instance GHC.Show.Show Jikka.Common.Parse.ShuntingYard.Fixity
+instance GHC.Enum.Bounded Jikka.Common.Parse.ShuntingYard.Fixity
+instance GHC.Enum.Enum Jikka.Common.Parse.ShuntingYard.Fixity
+instance GHC.Classes.Ord Jikka.Common.Parse.ShuntingYard.Fixity
+instance GHC.Classes.Eq Jikka.Common.Parse.ShuntingYard.Fixity
+instance GHC.Read.Read Jikka.Common.Parse.ShuntingYard.BinOpInfo
+instance GHC.Show.Show Jikka.Common.Parse.ShuntingYard.BinOpInfo
+instance GHC.Classes.Ord Jikka.Common.Parse.ShuntingYard.BinOpInfo
+instance GHC.Classes.Eq Jikka.Common.Parse.ShuntingYard.BinOpInfo
 
 
 -- | <a>Expr</a> module has the basic data types for our core language.
 --   They are similar to the GHC Core language.
-module Jikka.Language.Core.Expr
+module Jikka.Core.Language.Expr
+newtype VarName
+VarName :: String -> VarName
+unVarName :: VarName -> String
+newtype TypeName
+TypeName :: String -> TypeName
+unTypeName :: TypeName -> String
 
 -- | <a>Type</a> represents the types of our core language. This is similar
 --   to the <a>Type</a> of GHC Core. See also
@@ -315,11 +467,13 @@ module Jikka.Language.Core.Expr
 --   
 --   &lt;math&gt;
 data Type
+VarTy :: TypeName -> Type
 IntTy :: Type
 BoolTy :: Type
 ListTy :: Type -> Type
+TupleTy :: [Type] -> Type
 
--- | The functions are not curried.
+-- | The functions are not curried. TODO: currying?
 FunTy :: [Type] -> Type -> Type
 data Builtin
 Negate :: Builtin
@@ -426,37 +580,47 @@ data ToplevelExpr
 ResultExpr :: Expr -> ToplevelExpr
 ToplevelLet :: RecKind -> VarName -> [(VarName, Type)] -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
 type Program = ToplevelExpr
-instance GHC.Read.Read Jikka.Language.Core.Expr.ToplevelExpr
-instance GHC.Show.Show Jikka.Language.Core.Expr.ToplevelExpr
-instance GHC.Classes.Ord Jikka.Language.Core.Expr.ToplevelExpr
-instance GHC.Classes.Eq Jikka.Language.Core.Expr.ToplevelExpr
-instance GHC.Read.Read Jikka.Language.Core.Expr.RecKind
-instance GHC.Show.Show Jikka.Language.Core.Expr.RecKind
-instance GHC.Classes.Ord Jikka.Language.Core.Expr.RecKind
-instance GHC.Classes.Eq Jikka.Language.Core.Expr.RecKind
-instance GHC.Read.Read Jikka.Language.Core.Expr.Expr
-instance GHC.Show.Show Jikka.Language.Core.Expr.Expr
-instance GHC.Classes.Ord Jikka.Language.Core.Expr.Expr
-instance GHC.Classes.Eq Jikka.Language.Core.Expr.Expr
-instance GHC.Read.Read Jikka.Language.Core.Expr.Literal
-instance GHC.Show.Show Jikka.Language.Core.Expr.Literal
-instance GHC.Classes.Ord Jikka.Language.Core.Expr.Literal
-instance GHC.Classes.Eq Jikka.Language.Core.Expr.Literal
-instance GHC.Read.Read Jikka.Language.Core.Expr.Builtin
-instance GHC.Show.Show Jikka.Language.Core.Expr.Builtin
-instance GHC.Classes.Ord Jikka.Language.Core.Expr.Builtin
-instance GHC.Classes.Eq Jikka.Language.Core.Expr.Builtin
-instance GHC.Read.Read Jikka.Language.Core.Expr.Type
-instance GHC.Show.Show Jikka.Language.Core.Expr.Type
-instance GHC.Classes.Ord Jikka.Language.Core.Expr.Type
-instance GHC.Classes.Eq Jikka.Language.Core.Expr.Type
+instance Data.String.IsString Jikka.Core.Language.Expr.VarName
+instance GHC.Read.Read Jikka.Core.Language.Expr.VarName
+instance GHC.Show.Show Jikka.Core.Language.Expr.VarName
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.VarName
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.VarName
+instance Data.String.IsString Jikka.Core.Language.Expr.TypeName
+instance GHC.Read.Read Jikka.Core.Language.Expr.TypeName
+instance GHC.Show.Show Jikka.Core.Language.Expr.TypeName
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.TypeName
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.TypeName
+instance GHC.Read.Read Jikka.Core.Language.Expr.Type
+instance GHC.Show.Show Jikka.Core.Language.Expr.Type
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.Type
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.Type
+instance GHC.Read.Read Jikka.Core.Language.Expr.Builtin
+instance GHC.Show.Show Jikka.Core.Language.Expr.Builtin
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.Builtin
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.Builtin
+instance GHC.Read.Read Jikka.Core.Language.Expr.Literal
+instance GHC.Show.Show Jikka.Core.Language.Expr.Literal
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.Literal
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.Literal
+instance GHC.Read.Read Jikka.Core.Language.Expr.Expr
+instance GHC.Show.Show Jikka.Core.Language.Expr.Expr
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.Expr
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.Expr
+instance GHC.Read.Read Jikka.Core.Language.Expr.RecKind
+instance GHC.Show.Show Jikka.Core.Language.Expr.RecKind
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.RecKind
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.RecKind
+instance GHC.Read.Read Jikka.Core.Language.Expr.ToplevelExpr
+instance GHC.Show.Show Jikka.Core.Language.Expr.ToplevelExpr
+instance GHC.Classes.Ord Jikka.Core.Language.Expr.ToplevelExpr
+instance GHC.Classes.Eq Jikka.Core.Language.Expr.ToplevelExpr
 
 
 -- | <a>BuiltinPatterns</a> provides pattern synonyms for applications of
 --   <a>Builtin</a> functions. For example, provide a pattern <tt>Sum'
 --   e</tt> which is interpreted as <tt>AppBuiltin Sum [e]</tt>, or the
 --   same thing, <tt>App (Lit (LitBuiltin Sum)) [e]</tt>.
-module Jikka.Language.Core.BuiltinPatterns
+module Jikka.Core.Language.BuiltinPatterns
 pattern Negate' :: Expr -> Expr
 pattern Plus' :: Expr -> Expr -> Expr
 pattern Minus' :: Expr -> Expr -> Expr
@@ -515,81 +679,84 @@ pattern Permute' :: Expr -> Expr -> Expr
 pattern MultiChoose' :: Expr -> Expr -> Expr
 
 
+module Jikka.Core.Format
+run :: Applicative m => Program -> m Text
+run' :: Program -> String
+instance GHC.Read.Read Jikka.Core.Format.Builtin'
+instance GHC.Show.Show Jikka.Core.Format.Builtin'
+instance GHC.Classes.Ord Jikka.Core.Format.Builtin'
+instance GHC.Classes.Eq Jikka.Core.Format.Builtin'
+
+
 -- | <a>Lint</a> module checks the invariants of data types. Mainly, this
 --   checks types of <a>Expr</a>.
-module Jikka.Language.Core.Lint
+module Jikka.Core.Language.Lint
 builtinToType :: Builtin -> Type
 literalToType :: Literal -> Type
 type TypeEnv = [(VarName, Type)]
 
 -- | <a>typecheckExpr</a> checks that the given <a>Expr</a> has the correct
 --   types.
-typecheckExpr :: MonadError String m => TypeEnv -> Expr -> m Type
-typecheckToplevelExpr :: MonadError String m => TypeEnv -> ToplevelExpr -> m Type
-typecheckProgram :: MonadError String m => Program -> m Type
-typecheckProgram' :: MonadError String m => Program -> m Program
+typecheckExpr :: MonadError Error m => TypeEnv -> Expr -> m Type
+typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
+typecheckProgram :: MonadError Error m => Program -> m Type
+typecheckProgram' :: MonadError Error m => Program -> m Program
 
 
--- | <a>Core</a> evaluates exprs to values. Also this recognizes users'
+-- | <a>Evaluate</a> evaluates exprs to values. Also this recognizes users'
 --   inputs at once.
 --   
 --   The implementation assumes that all variable names don't conflict even
 --   when their scopes are distinct. Also this assumes that exprs allow the
 --   eager evaluation. Please use <a>MakeEager</a> if needed.
-module Jikka.Evaluator.Core
-run :: Program -> ExceptT String IO Value
-run' :: [Token] -> Program -> Either String Value
+module Jikka.Core.Evaluate
+run :: (MonadIO m, MonadFix m, MonadError Error m) => Program -> m Value
+run' :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
 data Value
 ValInt :: Integer -> Value
 ValBool :: Bool -> Value
 ValList :: Array Int Value -> Value
+ValTuple :: [Value] -> Value
 ValBuiltin :: Builtin -> Value
 ValLambda :: Env -> [(VarName, Type)] -> Expr -> Value
 newtype Token
 Token :: String -> Token
 [unToken] :: Token -> String
 tokenize :: String -> [Token]
-instance GHC.Read.Read Jikka.Evaluator.Core.Value
-instance GHC.Show.Show Jikka.Evaluator.Core.Value
-instance GHC.Classes.Ord Jikka.Evaluator.Core.Value
-instance GHC.Classes.Eq Jikka.Evaluator.Core.Value
-instance GHC.Read.Read Jikka.Evaluator.Core.Token
-instance GHC.Show.Show Jikka.Evaluator.Core.Token
-instance GHC.Classes.Ord Jikka.Evaluator.Core.Token
-instance GHC.Classes.Eq Jikka.Evaluator.Core.Token
+instance GHC.Read.Read Jikka.Core.Evaluate.Token
+instance GHC.Show.Show Jikka.Core.Evaluate.Token
+instance GHC.Classes.Ord Jikka.Core.Evaluate.Token
+instance GHC.Classes.Eq Jikka.Core.Evaluate.Token
+instance GHC.Read.Read Jikka.Core.Evaluate.Value
+instance GHC.Show.Show Jikka.Core.Evaluate.Value
+instance GHC.Classes.Ord Jikka.Core.Evaluate.Value
+instance GHC.Classes.Eq Jikka.Core.Evaluate.Value
 
 
 -- | <a>MakeEager</a> wraps some exprs with lambda redundant things from
 --   AST. Specifically, this converts <tt>if p then a else b</tt> to
 --   <tt>(if p then (lambda x. a) else (lambda x. b)) 0</tt>.
-module Jikka.Converter.Core.MakeEager
-run :: Program -> Either String Program
+module Jikka.Core.Convert.MakeEager
+run :: MonadError Error m => Program -> m Program
 
 
 -- | <a>Alpha</a> renames variables in exprs to avoid name conflictions,
 --   even if the scopes of two variables are distinct.
-module Jikka.Converter.Core.Alpha
+module Jikka.Core.Convert.Alpha
 gensym :: MonadAlpha m => m VarName
 rename :: MonadAlpha m => VarName -> m VarName
 rename' :: VarName -> Int -> VarName
-runExpr :: (MonadAlpha m, MonadError String m) => [(VarName, VarName)] -> Expr -> m Expr
-runToplevelExpr :: (MonadAlpha m, MonadError String m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
-runProgram :: (MonadAlpha m, MonadError String m) => Program -> m Program
-run' :: Program -> Int -> Either String (Program, Int)
-run :: Program -> Either String Program
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
+runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
--- | <a>ValueApps</a> removes complicated exprs in lambda applications.
---   This removes <a>App</a>, <a>Lam</a> and <a>Let</a> from the callee and
---   arguments of <a>App</a>, and removes <a>Let</a> from the bound value
---   of <a>Let</a>.
---   
---   TODO: rename to a better name
-module Jikka.Converter.Core.ValueApps
-run :: Program -> Either String Program
+module Jikka.Core.Convert.ANormal
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
-module Jikka.Language.Core.Vars
+module Jikka.Core.Language.Vars
 
 -- | <a>isFreeVar</a> checks if the given variable occurs in the tiven
 --   expr. This considers contexts.
@@ -630,7 +797,7 @@ findFreshVar' :: [Expr] -> VarName
 getAnonymousVar :: Int -> VarName
 
 
-module Jikka.Language.Core.Beta
+module Jikka.Core.Language.Beta
 
 -- | <a>substitute</a> replaces the occrences of the given variable with
 --   the given expr. This considers contexts.
@@ -649,360 +816,1208 @@ substitute' :: [VarName] -> VarName -> Expr -> Expr -> Expr
 
 
 -- | <a>FromCore</a> converts exprs of our core language to exprs of C++.
-module Jikka.Converter.CPlusPlus.FromCore
-run :: Program -> Either String Program
+module Jikka.CPlusPlus.Convert.FromCore
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 -- | <a>StrengthReduction</a> replaces strong functions in exprs with
 --   weaker functions. For example, this replace <tt>abs x</tt> with
 --   <tt>max x (- x)</tt>.
-module Jikka.Converter.Core.StrengthReduction
-run :: Program -> Either String Program
+module Jikka.Core.Convert.StrengthReduction
+run :: MonadError Error m => Program -> m Program
 
 
 -- | <a>RemoveUnusedVars</a> remove unused variables from exprs.
-module Jikka.Converter.Core.RemoveUnusedVars
-run :: Program -> Either String Program
+module Jikka.Core.Convert.RemoveUnusedVars
+run :: MonadError Error m => Program -> m Program
 
 
 -- | <a>Optimize</a> is a module to combine other all optimizers.
-module Jikka.Converter.Core.Optimize
-run :: Program -> Either String Program
+module Jikka.Core.Convert.Optimize
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
-module Jikka.Language.Python.Parsed.Expr
-type Type' = WithPos Type
-type Expr' = WithPos Expr
-type Sentence' = WithPos Sentence
-type ToplevelDecl' = WithPos ToplevelDecl
-data Type
-TyInt :: Type
-TyNat :: Type
-TyInterval :: Expr' -> Expr' -> Type
-TyBool :: Type
-TyList :: Type' -> Type
-TyIterator :: Type' -> Type
-TyArray :: Type' -> Expr' -> Type
-data Literal
-LitInt :: Integer -> Literal
-LitBool :: Bool -> Literal
-data Comprehension
-Comprehension :: Expr' -> Maybe VarName -> Expr' -> Maybe Expr' -> Comprehension
+
+-- | <a>Expr</a> module has the basic data types for the standard Python.
+--   See the Python's <tt>ast</tt> module
+--   (<a>https://docs.python.org/ja/3/library/ast.html#abstract-grammar</a>)
+--   for reference.
+module Jikka.Python.Language.Expr
+newtype Ident
+Ident :: String -> Ident
+unIdent :: Ident -> String
+type Ident' = WithLoc Ident
+data Constant
+ConstNone :: Constant
+ConstInt :: Integer -> Constant
+ConstBool :: Bool -> Constant
+ConstString :: String -> Constant
+ConstBytes :: [Int8] -> Constant
+ConstFloat :: Double -> Constant
+ConstImaginary :: Double -> Constant
+data Statement
+FunctionDef :: Ident' -> Arguments -> [Statement'] -> [Decorator] -> Maybe Type' -> Statement
+AsyncFunctionDef :: Ident' -> Arguments -> [Statement'] -> [Decorator] -> Maybe Type' -> Statement
+ClassDef :: Ident' -> [Expr'] -> [Keyword'] -> [Statement'] -> [Decorator] -> Statement
+Return :: Maybe Expr' -> Statement
+Delete :: [Target'] -> Statement
+Assign :: [Target'] -> Expr' -> Statement
+AugAssign :: Target' -> Operator -> Expr' -> Statement
+AnnAssign :: Target' -> Type' -> Maybe Expr' -> Statement
+
+-- | <pre>
+--   For target iter body orelse
+--   </pre>
+For :: Target' -> Expr' -> [Statement'] -> [Statement'] -> Statement
+AsyncFor :: Target' -> Expr' -> [Statement'] -> [Statement'] -> Statement
+
+-- | <pre>
+--   While test body orelse
+--   </pre>
+While :: Expr' -> [Statement'] -> [Statement'] -> Statement
+If :: Expr' -> [Statement'] -> [Statement'] -> Statement
+With :: [WithItem] -> [Statement'] -> Statement
+AsyncWith :: [WithItem] -> [Statement'] -> Statement
+
+-- | <tt>Raise exc cause</tt> represents <tt>raise exc from cause</tt>.
+Raise :: Maybe Expr' -> Maybe Expr' -> Statement
+
+-- | <pre>
+--   Try body handlers orelse finalbody
+--   </pre>
+Try :: [Statement'] -> [ExceptHandler'] -> [Statement'] -> [Statement'] -> Statement
+
+-- | <pre>
+--   Assert test msg
+--   </pre>
+Assert :: Expr' -> Maybe Expr' -> Statement
+Import :: [Alias] -> Statement
+ImportFrom :: [Ident'] -> [Alias] -> Statement
+Global :: [Ident'] -> Statement
+Nonlocal :: [Ident'] -> Statement
+Expr' :: Expr' -> Statement
+Pass :: Statement
+Break :: Statement
+Continue :: Statement
+type Statement' = WithLoc Statement
 data Expr
-Lit :: Literal -> Expr
-Var :: VarName -> Expr
-Sub :: Expr' -> Expr' -> Expr
-ListExt :: [Expr'] -> Expr
-ListComp :: Comprehension -> Expr
-IterComp :: Comprehension -> Expr
-Call :: FunName -> [Expr'] -> Expr
-Cond :: Expr' -> Expr' -> Expr' -> Expr
-data ListShape
-NoneShape :: ListShape
-ListShape :: ListShape -> Expr' -> ListShape
-data Sentence
-If :: Expr' -> [Sentence'] -> [Sentence'] -> Sentence
-For :: VarName -> Expr' -> [Sentence'] -> Sentence
-Define :: VarName -> Maybe Type' -> Expr' -> Sentence
-Declare :: VarName -> Maybe Type' -> ListShape -> Sentence
-Assign :: VarName -> [Expr'] -> Expr' -> Sentence
-Assert :: Expr' -> Sentence
-Return :: Expr' -> Sentence
-data ToplevelDecl
-ConstDef :: VarName -> Maybe Type' -> Expr' -> ToplevelDecl
-FunDef :: FunName -> [(VarName, Maybe Type')] -> Maybe Type' -> [Sentence'] -> ToplevelDecl
-FromImport :: [Name] -> ToplevelDecl
-newtype Program
-Program :: [ToplevelDecl'] -> Program
-[decls] :: Program -> [ToplevelDecl']
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.Program
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.Program
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.Program
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.Program
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.ToplevelDecl
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.ToplevelDecl
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.ToplevelDecl
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.ToplevelDecl
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.Sentence
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.Sentence
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.Sentence
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.Sentence
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.ListShape
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.ListShape
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.ListShape
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.ListShape
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.Type
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.Type
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.Type
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.Type
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.Comprehension
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.Comprehension
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.Comprehension
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.Comprehension
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.Expr
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.Expr
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.Expr
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.Expr
-instance GHC.Read.Read Jikka.Language.Python.Parsed.Expr.Literal
-instance GHC.Show.Show Jikka.Language.Python.Parsed.Expr.Literal
-instance GHC.Classes.Ord Jikka.Language.Python.Parsed.Expr.Literal
-instance GHC.Classes.Eq Jikka.Language.Python.Parsed.Expr.Literal
+BoolOp :: Expr' -> BoolOp -> Expr' -> Expr
 
-module Jikka.Deserializer.Python.Parser
-run :: [WithPos Token] -> Either String Program
+-- | produced by the walrus operator <tt>:=</tt>
+NamedExpr :: Target' -> Expr' -> Expr
+BinOp :: Expr' -> Operator -> Expr' -> Expr
+UnaryOp :: UnaryOp -> Expr' -> Expr
+Lambda :: Arguments -> Expr' -> Expr
 
-module Jikka.Deserializer.Python
-run :: FilePath -> Text -> Either String Program
+-- | <pre>
+--   IfExp test body orelse
+--   </pre>
+IfExp :: Expr' -> Expr' -> Expr' -> Expr
 
-module Jikka.Language.Python.Typed.Stdlib
-data ChurchType
-TyInt :: ChurchType
-TyBool :: ChurchType
-TyList :: ChurchType -> ChurchType
-TyIterator :: ChurchType -> ChurchType
-TyVar :: TypeName -> ChurchType
-data CurryType expr
-ATyInt :: CurryType expr
-ATyBool :: CurryType expr
-ATyList :: CurryType expr -> CurryType expr
-ATyNat :: CurryType expr
-ATyInterval :: expr -> expr -> CurryType expr
-ATyIterator :: CurryType expr -> CurryType expr
-ATyArray :: CurryType expr -> expr -> CurryType expr
-ATyVar :: TypeName -> CurryType expr
-toChurchType :: CurryType expr -> ChurchType
-toCurryType :: ChurchType -> CurryType expr
-data Literal
-LitInt :: Integer -> Literal
-LitBool :: Bool -> Literal
+-- | NULL key is for <tt>**d</tt>.
+Dict :: [(Maybe Expr', Expr')] -> Expr
+Set :: [Expr'] -> Expr
+ListComp :: Expr' -> [Comprehension] -> Expr
+SetComp :: Expr' -> [Comprehension] -> Expr
+DictComp :: Expr' -> Expr' -> [Comprehension] -> Expr
+GeneratorExp :: Expr' -> [Comprehension] -> Expr
+Await :: Expr' -> Expr
+Yield :: Maybe Expr' -> Expr
+YieldFrom :: Expr' -> Expr
+Compare :: Expr' -> [(CmpOp, Expr')] -> Expr
+Call :: Expr' -> [Expr'] -> [Keyword'] -> Expr
+
+-- | <tt>FormattedValue value conversion format_spec</tt> for f-strings
+FormattedValue :: Expr' -> Maybe Char -> Maybe Expr' -> Expr
+JoinedStr :: [Expr'] -> Expr
+Constant :: Constant -> Expr
+
+-- | can appear in assignment context
+Attribute :: Expr' -> Ident' -> Expr
+
+-- | can appear in assignment context
+Subscript :: Expr' -> Expr' -> Expr
+
+-- | can appear in assignment context
+Starred :: Expr' -> Expr
+
+-- | can appear in assignment context
+Name :: Ident' -> Expr
+
+-- | can appear in assignment context
+List :: [Expr'] -> Expr
+
+-- | can appear in assignment context
+Tuple :: [Expr'] -> Expr
+
+-- | <tt>Slice lower upper step</tt> can appear only in Subscript
+Slice :: Maybe Expr' -> Maybe Expr' -> Maybe Expr' -> Expr
+type Expr' = WithLoc Expr
+type Target = Expr'
+type Target' = Expr'
+type Type = Expr'
+type Type' = Expr'
+type Decorator = Expr'
+type Decorator' = Expr'
+data ExprContext
+Load :: ExprContext
+Store :: ExprContext
+Del :: ExprContext
+data BoolOp
+And :: BoolOp
+Or :: BoolOp
+
+-- | our extension
+Implies :: BoolOp
+data Operator
+Add :: Operator
+Sub :: Operator
+Mult :: Operator
+MatMult :: Operator
+Div :: Operator
+FloorDiv :: Operator
+FloorMod :: Operator
+
+-- | our extension
+CeilDiv :: Operator
+
+-- | our extension
+CeilMod :: Operator
+Pow :: Operator
+BitLShift :: Operator
+BitRShift :: Operator
+BitOr :: Operator
+BitXor :: Operator
+BitAnd :: Operator
+
+-- | our extension
+Max :: Operator
+
+-- | our extension
+Min :: Operator
 data UnaryOp
-Negate :: UnaryOp
-Abs :: UnaryOp
-Fact :: UnaryOp
+
+-- | on int
+Invert :: UnaryOp
+
+-- | on bool
 Not :: UnaryOp
-BitNot :: UnaryOp
-Len :: ChurchType -> UnaryOp
-Sum :: UnaryOp
-Product :: UnaryOp
-Min1 :: UnaryOp
-Max1 :: UnaryOp
-ArgMin :: UnaryOp
-ArgMax :: UnaryOp
-All :: UnaryOp
-Any :: UnaryOp
-Sorted :: ChurchType -> UnaryOp
-List :: ChurchType -> UnaryOp
-Reversed :: ChurchType -> UnaryOp
-Range1 :: UnaryOp
-data BinaryOp
-Plus :: BinaryOp
-Minus :: BinaryOp
-Mult :: BinaryOp
-FloorDiv :: BinaryOp
-FloorMod :: BinaryOp
-CeilDiv :: BinaryOp
-CeilMod :: BinaryOp
-Pow :: BinaryOp
-Gcd :: BinaryOp
-Lcm :: BinaryOp
-Min :: BinaryOp
-Max :: BinaryOp
-Inv :: BinaryOp
-Choose :: BinaryOp
-Permute :: BinaryOp
-MultiChoose :: BinaryOp
-And :: BinaryOp
-Or :: BinaryOp
-Implies :: BinaryOp
-BitAnd :: BinaryOp
-BitOr :: BinaryOp
-BitXor :: BinaryOp
-BitLeftShift :: BinaryOp
-BitRightShift :: BinaryOp
-Range2 :: BinaryOp
-LessThan :: BinaryOp
-LessEqual :: BinaryOp
-GreaterThan :: BinaryOp
-GreaterEqual :: BinaryOp
-Equal :: ChurchType -> BinaryOp
-NotEqual :: ChurchType -> BinaryOp
-data TernaryOp
-Cond :: ChurchType -> TernaryOp
-PowMod :: TernaryOp
-Range3 :: TernaryOp
-literalType :: Literal -> CurryType expr
-unaryOpType :: UnaryOp -> (CurryType expr, CurryType expr)
-binaryOpType :: BinaryOp -> (CurryType expr, CurryType expr, CurryType expr)
-ternaryOpType :: TernaryOp -> (CurryType expr, CurryType expr, CurryType expr, CurryType expr)
-instance GHC.Read.Read Jikka.Language.Python.Typed.Stdlib.TernaryOp
-instance GHC.Show.Show Jikka.Language.Python.Typed.Stdlib.TernaryOp
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Stdlib.TernaryOp
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Stdlib.TernaryOp
-instance GHC.Read.Read Jikka.Language.Python.Typed.Stdlib.BinaryOp
-instance GHC.Show.Show Jikka.Language.Python.Typed.Stdlib.BinaryOp
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Stdlib.BinaryOp
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Stdlib.BinaryOp
-instance GHC.Read.Read Jikka.Language.Python.Typed.Stdlib.UnaryOp
-instance GHC.Show.Show Jikka.Language.Python.Typed.Stdlib.UnaryOp
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Stdlib.UnaryOp
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Stdlib.UnaryOp
-instance GHC.Read.Read Jikka.Language.Python.Typed.Stdlib.Literal
-instance GHC.Show.Show Jikka.Language.Python.Typed.Stdlib.Literal
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Stdlib.Literal
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Stdlib.Literal
-instance GHC.Read.Read expr => GHC.Read.Read (Jikka.Language.Python.Typed.Stdlib.CurryType expr)
-instance GHC.Show.Show expr => GHC.Show.Show (Jikka.Language.Python.Typed.Stdlib.CurryType expr)
-instance GHC.Classes.Ord expr => GHC.Classes.Ord (Jikka.Language.Python.Typed.Stdlib.CurryType expr)
-instance GHC.Classes.Eq expr => GHC.Classes.Eq (Jikka.Language.Python.Typed.Stdlib.CurryType expr)
-instance GHC.Read.Read Jikka.Language.Python.Typed.Stdlib.ChurchType
-instance GHC.Show.Show Jikka.Language.Python.Typed.Stdlib.ChurchType
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Stdlib.ChurchType
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Stdlib.ChurchType
+UAdd :: UnaryOp
+USub :: UnaryOp
+data CmpOp
+Eq' :: CmpOp
+NotEq :: CmpOp
+Lt :: CmpOp
+LtE :: CmpOp
+Gt :: CmpOp
+GtE :: CmpOp
+Is :: CmpOp
+IsNot :: CmpOp
+In :: CmpOp
+NotIn :: CmpOp
 
-module Jikka.Language.Python.Typed.Expr
-type Type = CurryType Expr
+-- | <pre>
+--   Comprehension target iter ifs is_async
+--   </pre>
 data Comprehension
-Comprehension :: Type -> Expr -> VarName -> Type -> Expr -> Maybe Expr -> Comprehension
+Comprehension :: Target' -> Expr' -> Maybe Expr' -> Comprehension
+[compTarget] :: Comprehension -> Target'
+[compIter] :: Comprehension -> Expr'
+[compIfs] :: Comprehension -> Maybe Expr'
+data ExceptHandler
+ExceptHandler :: Maybe Type' -> Maybe Ident' -> [Statement'] -> ExceptHandler
+[exchType] :: ExceptHandler -> Maybe Type'
+[exchName] :: ExceptHandler -> Maybe Ident'
+[exchBody] :: ExceptHandler -> [Statement']
+type ExceptHandler' = WithLoc ExceptHandler
+data Arguments
+Arguments :: [Arg] -> [Arg] -> Maybe Arg -> [Arg] -> [Expr'] -> Maybe Arg -> [Expr'] -> Arguments
+[argsPosonlyargs] :: Arguments -> [Arg]
+[argsArgs] :: Arguments -> [Arg]
+[argsVarargs] :: Arguments -> Maybe Arg
+[argsKwonlyargs] :: Arguments -> [Arg]
+[argsKwDefaults] :: Arguments -> [Expr']
+[argsKwarg] :: Arguments -> Maybe Arg
+[argsDefaults] :: Arguments -> [Expr']
+emptyArguments :: Arguments
+type Arg = (Ident', Maybe Type')
+
+-- | NULL identifier is for <tt>**kwargs</tt>.
+type Keyword = (Maybe Ident', Expr')
+type Keyword' = WithLoc Keyword
+
+-- | <tt>(name, asname)</tt>. <a>Alias</a> is used for <a>Import</a> and
+--   <a>ImportFrom</a>.
+type Alias = (Ident', Maybe Ident')
+
+-- | <pre>
+--   (context_expr, optional_vars)
+--   </pre>
+type WithItem = (Expr', Maybe Expr')
+type Program = [Statement']
+instance Data.String.IsString Jikka.Python.Language.Expr.Ident
+instance GHC.Read.Read Jikka.Python.Language.Expr.Ident
+instance GHC.Show.Show Jikka.Python.Language.Expr.Ident
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Ident
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Ident
+instance GHC.Read.Read Jikka.Python.Language.Expr.Constant
+instance GHC.Show.Show Jikka.Python.Language.Expr.Constant
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Constant
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Constant
+instance GHC.Read.Read Jikka.Python.Language.Expr.ExprContext
+instance GHC.Show.Show Jikka.Python.Language.Expr.ExprContext
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.ExprContext
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.ExprContext
+instance GHC.Read.Read Jikka.Python.Language.Expr.BoolOp
+instance GHC.Show.Show Jikka.Python.Language.Expr.BoolOp
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.BoolOp
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.BoolOp
+instance GHC.Read.Read Jikka.Python.Language.Expr.Operator
+instance GHC.Show.Show Jikka.Python.Language.Expr.Operator
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Operator
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Operator
+instance GHC.Read.Read Jikka.Python.Language.Expr.UnaryOp
+instance GHC.Show.Show Jikka.Python.Language.Expr.UnaryOp
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.UnaryOp
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.UnaryOp
+instance GHC.Read.Read Jikka.Python.Language.Expr.CmpOp
+instance GHC.Show.Show Jikka.Python.Language.Expr.CmpOp
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.CmpOp
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.CmpOp
+instance GHC.Read.Read Jikka.Python.Language.Expr.Comprehension
+instance GHC.Show.Show Jikka.Python.Language.Expr.Comprehension
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Comprehension
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Comprehension
+instance GHC.Read.Read Jikka.Python.Language.Expr.Arguments
+instance GHC.Show.Show Jikka.Python.Language.Expr.Arguments
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Arguments
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Arguments
+instance GHC.Read.Read Jikka.Python.Language.Expr.Expr
+instance GHC.Show.Show Jikka.Python.Language.Expr.Expr
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Expr
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Expr
+instance GHC.Read.Read Jikka.Python.Language.Expr.ExceptHandler
+instance GHC.Show.Show Jikka.Python.Language.Expr.ExceptHandler
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.ExceptHandler
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.ExceptHandler
+instance GHC.Read.Read Jikka.Python.Language.Expr.Statement
+instance GHC.Show.Show Jikka.Python.Language.Expr.Statement
+instance GHC.Classes.Ord Jikka.Python.Language.Expr.Statement
+instance GHC.Classes.Eq Jikka.Python.Language.Expr.Statement
+
+
+module Jikka.Python.Parse.Token
+data CmpOp
+DoubleEqual :: CmpOp
+NotEqual :: CmpOp
+LessThan :: CmpOp
+LessEqual :: CmpOp
+GreaterThan :: CmpOp
+GreaterEqual :: CmpOp
+data DivModOp
+Div :: DivModOp
+FloorDiv :: DivModOp
+FloorMod :: DivModOp
+CeilDiv :: DivModOp
+CeilMod :: DivModOp
+data AugOp
+AugAdd :: AugOp
+AugSub :: AugOp
+AugMul :: AugOp
+AugAt :: AugOp
+AugDiv :: AugOp
+AugFloorDiv :: AugOp
+AugFloorMod :: AugOp
+AugCeilDiv :: AugOp
+AugCeilMod :: AugOp
+AugPow :: AugOp
+AugBitRShift :: AugOp
+AugBitLShift :: AugOp
+AugBitAnd :: AugOp
+AugBitXor :: AugOp
+AugBitOr :: AugOp
+AugMin :: AugOp
+AugMax :: AugOp
+
+-- | We don't have to classify tokens in detail, but it's convenient for
+--   testing and debugging.
+data Token
+None :: Token
+Int :: Integer -> Token
+Bool :: Bool -> Token
+String :: String -> Token
+Bytes :: [Int8] -> Token
+Float :: Double -> Token
+Imaginary :: Double -> Token
+Def :: Token
+If :: Token
+Elif :: Token
+Else :: Token
+For :: Token
+In :: Token
+Assert :: Token
+Return :: Token
+Lambda :: Token
+Arrow :: Token
+Colon :: Token
+Semicolon :: Token
+Comma :: Token
+Dot :: Token
+Equal :: Token
+Underscore :: Token
+OpenBrace :: Token
+OpenBracket :: Token
+OpenParen :: Token
+CloseBrace :: Token
+CloseBracket :: Token
+CloseParen :: Token
+Ident :: String -> Token
+WalrusOp :: Token
+ImpliesOp :: Token
+OrOp :: Token
+AndOp :: Token
+NotOp :: Token
+CmpOp :: CmpOp -> Token
+MinOp :: Token
+MaxOp :: Token
+BitOrOp :: Token
+BitXorOp :: Token
+BitAndOp :: Token
+BitLShiftOp :: Token
+BitRShiftOp :: Token
+PlusOp :: Token
+MinusOp :: Token
+MulOp :: Token
+DivModOp :: DivModOp -> Token
+AtOp :: Token
+BitNotOp :: Token
+PowOp :: Token
+AugOp :: AugOp -> Token
+Newline :: Token
+Indent :: Token
+Dedent :: Token
+As :: Token
+Async :: Token
+Await :: Token
+Break :: Token
+Class :: Token
+Continue :: Token
+Del :: Token
+Except :: Token
+Finally :: Token
+From :: Token
+Global :: Token
+Import :: Token
+Is :: Token
+Nonlocal :: Token
+Pass :: Token
+Raise :: Token
+Try :: Token
+While :: Token
+With :: Token
+Yield :: Token
+type Token' = WithLoc Token
+instance GHC.Read.Read Jikka.Python.Parse.Token.CmpOp
+instance GHC.Show.Show Jikka.Python.Parse.Token.CmpOp
+instance GHC.Classes.Ord Jikka.Python.Parse.Token.CmpOp
+instance GHC.Classes.Eq Jikka.Python.Parse.Token.CmpOp
+instance GHC.Read.Read Jikka.Python.Parse.Token.DivModOp
+instance GHC.Show.Show Jikka.Python.Parse.Token.DivModOp
+instance GHC.Classes.Ord Jikka.Python.Parse.Token.DivModOp
+instance GHC.Classes.Eq Jikka.Python.Parse.Token.DivModOp
+instance GHC.Read.Read Jikka.Python.Parse.Token.AugOp
+instance GHC.Show.Show Jikka.Python.Parse.Token.AugOp
+instance GHC.Classes.Ord Jikka.Python.Parse.Token.AugOp
+instance GHC.Classes.Eq Jikka.Python.Parse.Token.AugOp
+instance GHC.Read.Read Jikka.Python.Parse.Token.Token
+instance GHC.Show.Show Jikka.Python.Parse.Token.Token
+instance GHC.Classes.Ord Jikka.Python.Parse.Token.Token
+instance GHC.Classes.Eq Jikka.Python.Parse.Token.Token
+
+
+module Jikka.Python.Parse.Happy
+run :: MonadError Error m => [WithLoc Token] -> m Program
+
+
+-- | <ul>
+--   <li>TODO: tokenize float literals</li>
+--   <li>TODO: tokenize string literals</li>
+--   </ul>
+module Jikka.Python.Parse.Alex
+run :: MonadError Error m => String -> m [Token']
+instance GHC.Show.Show Jikka.Python.Parse.Alex.AlexPosn
+instance GHC.Classes.Eq Jikka.Python.Parse.Alex.AlexPosn
+instance GHC.Base.Functor Jikka.Python.Parse.Alex.Alex
+instance GHC.Base.Applicative Jikka.Python.Parse.Alex.Alex
+instance GHC.Base.Monad Jikka.Python.Parse.Alex.Alex
+
+module Jikka.Python.Parse
+run :: MonadError Error m => FilePath -> Text -> m Program
+
+
+module Jikka.RestrictedPython.Language.Expr
+newtype VarName
+VarName :: String -> VarName
+unVarName :: VarName -> String
+newtype TypeName
+TypeName :: String -> TypeName
+unTypeName :: TypeName -> String
+
+-- | <a>Type</a> represents the types of our restricted Python-like
+--   language.
+--   
+--   &lt;math&gt;
+--   
+--   NOTE: &lt;math&gt; is represented as the 0-tuple.
+data Type
+VarTy :: TypeName -> Type
+IntTy :: Type
+BoolTy :: Type
+ListTy :: Type -> Type
+TupleTy :: [Type] -> Type
+CallableTy :: [Type] -> Type -> Type
+data Constant
+ConstNone :: Constant
+ConstInt :: Integer -> Constant
+ConstBool :: Bool -> Constant
+
+-- | <a>Target</a> represents the lvalue of our restricted Python-like
+--   language.
+--   
+--   &lt;math&gt;
+data Target
+SubscriptTrg :: Target -> Expr -> Target
+NameTrg :: VarName -> Target
+TupleTrg :: [Target] -> Target
+data Comprehension
+Comprehension :: Target -> Expr -> Maybe Expr -> Comprehension
+
+-- | <a>Expr</a> represents the exprs of our restricted Python-like
+--   language.
+--   
+--   &lt;math&gt;
 data Expr
-Var :: VarName -> Expr
-Lit :: Literal -> Expr
-UnOp :: UnaryOp -> Expr -> Expr
-BinOp :: BinaryOp -> Expr -> Expr -> Expr
-TerOp :: TernaryOp -> Expr -> Expr -> Expr -> Expr
-Sub :: Type -> Expr -> Expr -> Expr
-ListExt :: Type -> [Expr] -> Expr
-ListComp :: Comprehension -> Expr
-IterComp :: Comprehension -> Expr
-Call :: FunName -> [Expr] -> Expr
-data Sentence
-If :: Expr -> [Sentence] -> [Sentence] -> Sentence
-For :: VarName -> Type -> Expr -> [Sentence] -> Sentence
-Declare :: VarName -> Type -> [Expr] -> Sentence
-Assign :: VarName -> [Expr] -> Expr -> Sentence
-Define :: VarName -> Type -> Expr -> Sentence
-Assert :: Expr -> Sentence
-Return :: Expr -> Sentence
-data ToplevelDecl
-ConstDef :: VarName -> Type -> Expr -> ToplevelDecl
-FunDef :: FunName -> [(VarName, Type)] -> Type -> [Sentence] -> ToplevelDecl
-newtype Program
-Program :: [ToplevelDecl] -> Program
-[decls] :: Program -> [ToplevelDecl]
-instance GHC.Read.Read Jikka.Language.Python.Typed.Expr.Program
-instance GHC.Show.Show Jikka.Language.Python.Typed.Expr.Program
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Expr.Program
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Expr.Program
-instance GHC.Read.Read Jikka.Language.Python.Typed.Expr.ToplevelDecl
-instance GHC.Show.Show Jikka.Language.Python.Typed.Expr.ToplevelDecl
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Expr.ToplevelDecl
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Expr.ToplevelDecl
-instance GHC.Read.Read Jikka.Language.Python.Typed.Expr.Sentence
-instance GHC.Show.Show Jikka.Language.Python.Typed.Expr.Sentence
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Expr.Sentence
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Expr.Sentence
-instance GHC.Read.Read Jikka.Language.Python.Typed.Expr.Comprehension
-instance GHC.Show.Show Jikka.Language.Python.Typed.Expr.Comprehension
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Expr.Comprehension
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Expr.Comprehension
-instance GHC.Read.Read Jikka.Language.Python.Typed.Expr.Expr
-instance GHC.Show.Show Jikka.Language.Python.Typed.Expr.Expr
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.Expr.Expr
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.Expr.Expr
+BoolOp :: Expr -> BoolOp -> Expr -> Expr
+BinOp :: Expr -> Operator -> Expr -> Expr
+UnaryOp :: UnaryOp -> Expr -> Expr
+Lambda :: [(VarName, Type)] -> Expr -> Expr
+IfExp :: Expr -> Expr -> Expr -> Expr
+ListComp :: Expr -> Comprehension -> Expr
+Compare :: Expr -> CmpOp -> Expr -> Expr
+Call :: Expr -> [Expr] -> Expr
+Constant :: Constant -> Expr
+Subscript :: Expr -> Expr -> Expr
+Name :: VarName -> Expr
+List :: Type -> [Expr] -> Expr
+Tuple :: [Expr] -> Expr
+SubscriptSlice :: Expr -> Maybe Expr -> Maybe Expr -> Maybe Expr -> Expr
 
-module Jikka.Language.Python.Parsed.Stdlib
-unaryOps :: Map FunName UnaryOp
-genericUnaryOps :: Map FunName (ChurchType -> UnaryOp)
-binaryOps :: Map FunName BinaryOp
-genericBinaryOps :: Map FunName (ChurchType -> BinaryOp)
-ternaryOps :: Map FunName TernaryOp
-operatorNames :: Set FunName
+-- | <a>Statement</a> represents the statements of our restricted
+--   Python-like language. They appear in bodies of <tt>def</tt>.
+--   
+--   &lt;math&gt;
+data Statement
+Return :: Expr -> Statement
+AugAssign :: Target -> Operator -> Expr -> Statement
+AnnAssign :: Target -> Type -> Expr -> Statement
+For :: Target -> Expr -> [Statement] -> Statement
+If :: Expr -> [Statement] -> [Statement] -> Statement
+Assert :: Expr -> Statement
 
-module Jikka.Converter.Python.Alpha
-run :: Program -> Either String Program
-instance GHC.Read.Read Jikka.Converter.Python.Alpha.AlphaState
-instance GHC.Show.Show Jikka.Converter.Python.Alpha.AlphaState
-instance GHC.Classes.Ord Jikka.Converter.Python.Alpha.AlphaState
-instance GHC.Classes.Eq Jikka.Converter.Python.Alpha.AlphaState
+-- | <tt>TopLevelStatement</tt> represents the statements of our restricted
+--   Python-like language. They appear in the toplevel of programs.
+--   
+--   &lt;math&gt;
+data ToplevelStatement
+ToplevelAnnAssign :: VarName -> Type -> Expr -> ToplevelStatement
+ToplevelFunctionDef :: VarName -> [(VarName, Type)] -> Type -> [Statement] -> ToplevelStatement
+ToplevelAssert :: Expr -> ToplevelStatement
 
-module Jikka.Converter.Python.TypeInfer
-run :: Program -> Either String Program
+-- | <a>Program</a> represents the programs of our restricted Python-like
+--   language.
+--   
+--   &lt;math&gt;
+type Program = [ToplevelStatement]
+data BoolOp
+And :: BoolOp
+Or :: BoolOp
 
-module Jikka.Converter.Python.ToCore
-run :: Program -> Either String Program
+-- | our extension
+Implies :: BoolOp
+data CmpOp
+Eq' :: CmpOp
+NotEq :: CmpOp
+Lt :: CmpOp
+LtE :: CmpOp
+Gt :: CmpOp
+GtE :: CmpOp
+Is :: CmpOp
+IsNot :: CmpOp
+In :: CmpOp
+NotIn :: CmpOp
+data Operator
+Add :: Operator
+Sub :: Operator
+Mult :: Operator
+MatMult :: Operator
+Div :: Operator
+FloorDiv :: Operator
+FloorMod :: Operator
 
-module Jikka.Converter.Python.FromParsed
-run :: Program -> Either String Program
-instance GHC.Read.Read Jikka.Converter.Python.FromParsed.ConvState
-instance GHC.Show.Show Jikka.Converter.Python.FromParsed.ConvState
-instance GHC.Classes.Ord Jikka.Converter.Python.FromParsed.ConvState
-instance GHC.Classes.Eq Jikka.Converter.Python.FromParsed.ConvState
+-- | our extension
+CeilDiv :: Operator
 
-module Jikka.Language.Python.Typed.TypeInfer
-data TypeEnv
-TypeEnv :: [(FunName, ([Type], Type))] -> [(VarName, Type)] -> TypeEnv
-[funenv] :: TypeEnv -> [(FunName, ([Type], Type))]
-[varenv] :: TypeEnv -> [(VarName, Type)]
-emptyTypeEnv :: TypeEnv
-infer' :: TypeEnv -> Expr -> Either String Type
+-- | our extension
+CeilMod :: Operator
+Pow :: Operator
+BitLShift :: Operator
+BitRShift :: Operator
+BitOr :: Operator
+BitXor :: Operator
+BitAnd :: Operator
 
--- | <a>infer</a> extracts the type of the given expr, under the assumption
---   that the expr is correctly typed.
-infer :: TypeEnv -> Expr -> Type
-check' :: TypeEnv -> Expr -> Either String Type
+-- | our extension
+Max :: Operator
 
--- | <a>check</a> calculates the type of the given expr, with strict
---   checking about their Church-style types. This function says nothing
---   about Curry-style types.
-check :: TypeEnv -> Expr -> Either String ChurchType
-instance GHC.Read.Read Jikka.Language.Python.Typed.TypeInfer.TypeEnv
-instance GHC.Show.Show Jikka.Language.Python.Typed.TypeInfer.TypeEnv
-instance GHC.Classes.Ord Jikka.Language.Python.Typed.TypeInfer.TypeEnv
-instance GHC.Classes.Eq Jikka.Language.Python.Typed.TypeInfer.TypeEnv
+-- | our extension
+Min :: Operator
+data UnaryOp
 
-module Jikka.Serializer.AutoIndent
-indent :: String
-dedent :: String
-makeIndentFromMarkers :: Int -> [String] -> [String]
-makeIndentFromBraces :: Int -> [String] -> [String]
-insertIndentDedentFromBraces :: [String] -> [String]
+-- | on int
+Invert :: UnaryOp
+
+-- | on bool
+Not :: UnaryOp
+UAdd :: UnaryOp
+USub :: UnaryOp
+instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.VarName
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.VarName
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.VarName
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.VarName
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.VarName
+instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.TypeName
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.TypeName
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.TypeName
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.TypeName
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.TypeName
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Type
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Type
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Type
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Type
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Constant
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Constant
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Constant
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Constant
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Target
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Target
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Target
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Target
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Comprehension
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Comprehension
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Comprehension
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Comprehension
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Expr
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Expr
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Expr
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Expr
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Statement
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Statement
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Statement
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Statement
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.ToplevelStatement
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.ToplevelStatement
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.ToplevelStatement
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.ToplevelStatement
 
 
--- | <a>CPlusPlus</a> module converts the AST for C++ to the plain source
---   code.
-module Jikka.Serializer.CPlusPlus
-run :: Program -> Either String Text
+module Jikka.RestrictedPython.Format
+run :: Applicative m => Program -> m Text
 run' :: Program -> String
-instance GHC.Read.Read Jikka.Serializer.CPlusPlus.Assoc
-instance GHC.Show.Show Jikka.Serializer.CPlusPlus.Assoc
-instance GHC.Classes.Ord Jikka.Serializer.CPlusPlus.Assoc
-instance GHC.Classes.Eq Jikka.Serializer.CPlusPlus.Assoc
-instance GHC.Read.Read Jikka.Serializer.CPlusPlus.Prec
-instance GHC.Show.Show Jikka.Serializer.CPlusPlus.Prec
-instance GHC.Classes.Ord Jikka.Serializer.CPlusPlus.Prec
-instance GHC.Classes.Eq Jikka.Serializer.CPlusPlus.Prec
 
-module Jikka.Serializer.Core
-run :: Program -> Either String Text
-run' :: Program -> String
-instance GHC.Read.Read Jikka.Serializer.Core.Builtin'
-instance GHC.Show.Show Jikka.Serializer.Core.Builtin'
-instance GHC.Classes.Ord Jikka.Serializer.Core.Builtin'
-instance GHC.Classes.Eq Jikka.Serializer.Core.Builtin'
+module Jikka.RestrictedPython.Language.Stdlib
+builtinFunctions :: Set VarName
+standardBuiltinFunctions :: Set VarName
+additionalBuiltinFunctions :: Set VarName
 
-module Jikka.Serializer.Python
-run :: Program -> Either String Text
-run' :: Program -> String
+module Jikka.RestrictedPython.Language.Util
+genType :: MonadAlpha m => m Type
+genVarName :: MonadAlpha m => VarName -> m VarName
+freeTyVars :: Type -> [TypeName]
+freeVars :: Expr -> [VarName]
+freeVarsTarget :: Target -> [VarName]
+doesAlwaysReturn :: Statement -> Bool
+doesPossiblyReturn :: Statement -> Bool
+mapStatement :: (Statement -> [Statement]) -> Program -> Program
 
-module Jikka.Serializer.Show
-run :: Show program => program -> Either String Text
+-- | <a>mapStatementM</a> replaces all statements in a given program using
+--   a given function. This may breaks various constraints.
+mapStatementM :: Monad m => (Statement -> m [Statement]) -> Program -> m Program
+mapLargeStatement :: (Expr -> [Statement] -> [Statement] -> [Statement]) -> (Target -> Expr -> [Statement] -> [Statement]) -> Program -> Program
+mapLargeStatementM :: Monad m => (Expr -> [Statement] -> [Statement] -> m [Statement]) -> (Target -> Expr -> [Statement] -> m [Statement]) -> Program -> m Program
+mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
+mapStatementsM :: Monad m => ([Statement] -> m [Statement]) -> Program -> m Program
+listStatements :: Program -> [Statement]
 
-module Jikka.Subcommand.Convert
-run :: FilePath -> Text -> Either String Text
+-- | <a>mapSubExprM</a> replaces all exprs in a given expr using a given
+--   function. This may breaks various constraints.
+mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
+listSubExprs :: Expr -> [Expr]
+mapExprTargetM :: Monad m => (Expr -> m Expr) -> Target -> m Target
+mapExprStatementM :: Monad m => (Expr -> m Expr) -> Statement -> m Statement
+mapExprM :: Monad m => (Expr -> m Expr) -> Program -> m Program
+listExprs :: Program -> [Expr]
+targetVars :: Target -> [VarName]
+hasSubscriptTrg :: Target -> Bool
+hasBareNameTrg :: Target -> Bool
+readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
 
-module Jikka.Subcommand.Debug
-run :: FilePath -> ExceptT String IO ()
 
-module Jikka.Subcommand.Execute
-run :: FilePath -> ExceptT String IO ()
+module Jikka.RestrictedPython.Convert.TypeInfer
+
+-- | <a>run</a> infers types of given programs.
+--   
+--   There must be no name conflicts in given programs. They must be
+--   alpha-converted.
+--   
+--   As its interface, this function works as follows:
+--   
+--   <ol>
+--   <li>Finds a type environment &lt;math&gt; s.t. for all statement
+--   &lt;math&gt; in the given program, &lt;math&gt; holds, and</li>
+--   <li>Annotates each variable in the program using the
+--   &lt;math&gt;.</li>
+--   </ol>
+--   
+--   In its implementation, this function works like a Hindley-Milner type
+--   inference.
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+data Equation
+TypeEquation :: Type -> Type -> Equation
+TypeAssertion :: VarName -> Type -> Equation
+formularizeProgram :: MonadAlpha m => Program -> m [Equation]
+
+-- | <a>Env</a> is type environments. It's a mapping from variables to
+--   their types.
+newtype Env
+Env :: Map VarName Type -> Env
+[unEnv] :: Env -> Map VarName Type
+sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
+makeGamma :: [(VarName, Type)] -> (Env, [(Type, Type)])
+
+-- | <a>Subst</a> is type substituion. It's a mapping from type variables
+--   to their actual types.
+newtype Subst
+Subst :: Map TypeName Type -> Subst
+[unSubst] :: Subst -> Map TypeName Type
+subst :: Subst -> Type -> Type
+solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
+substGamma :: Subst -> Env -> Env
+
+-- | <a>substUnitGamma</a> replaces all undetermined type variables with
+--   the unit type.
+substUnitGamma :: Env -> Env
+substProgram :: Subst -> Env -> Program -> Program
+instance GHC.Read.Read Jikka.RestrictedPython.Convert.TypeInfer.Equation
+instance GHC.Show.Show Jikka.RestrictedPython.Convert.TypeInfer.Equation
+instance GHC.Classes.Ord Jikka.RestrictedPython.Convert.TypeInfer.Equation
+instance GHC.Classes.Eq Jikka.RestrictedPython.Convert.TypeInfer.Equation
+
+module Jikka.RestrictedPython.Convert.RemoveUnreachable
+
+-- | <a>run</a> removes unreachable statements after return-statements.
+--   
+--   For example, the following
+--   
+--   <pre>
+--   a = 0
+--   if True:
+--       b = 0
+--       return b
+--       b += 1
+--   else:
+--       return 1
+--   a += 1
+--   </pre>
+--   
+--   is converted to
+--   
+--   <pre>
+--   a = 0
+--   if True:
+--       b = 0
+--       return b
+--   else:
+--       return 1
+--   </pre>
+run :: Program -> Program
+
+module Jikka.RestrictedPython.Convert.RemoveUnbalancedIf
+
+-- | <a>run</a> removes if-statements that one branch always returns and
+--   the other branch doesn't.
+--   
+--   For example, the following
+--   
+--   <pre>
+--   if True:
+--       return 0
+--   else:
+--       a = 0
+--   b = 1
+--   return 2
+--   </pre>
+--   
+--   is converted to
+--   
+--   <pre>
+--   if True:
+--       return 0
+--   else:
+--       a = 0
+--       b = 1
+--       return 2
+--   </pre>
+run :: Program -> Program
+
+module Jikka.Python.Convert.ToRestrictedPython
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+module Jikka.RestrictedPython.Language.Value
+
+-- | <a>Value</a> is the values of our restricted Python-like language.
+--   
+--   &lt;math&gt;
+data Value
+IntVal :: Integer -> Value
+BoolVal :: Bool -> Value
+ListVal :: Vector Value -> Value
+TupleVal :: [Value] -> Value
+ClosureVal :: Local -> [(VarName, Type)] -> [Statement] -> Value
+BuiltinVal :: Builtin -> Value
+newtype Local
+Local :: Map VarName Value -> Local
+[unLocal] :: Local -> Map VarName Value
+data Builtin
+BuiltinUnsupported :: Builtin
+BuiltinAbs :: Builtin
+BuiltinAll :: Builtin
+BuiltinMin :: Builtin
+BuiltinAny :: Builtin
+BuiltinDivMod :: Builtin
+BuiltinSorted :: Builtin
+BuiltinEnumerate :: Builtin
+BuiltinBool :: Builtin
+BuiltinInt :: Builtin
+BuiltinSum :: Builtin
+BuiltinZip :: Builtin
+BuiltinFilter :: Builtin
+BuiltinTuple :: Builtin
+BuiltinLen :: Builtin
+BuiltinList :: Builtin
+BuiltinRange :: Builtin
+BuiltinMap :: Builtin
+BuiltinReversed :: Builtin
+BuiltinMax :: Builtin
+BuiltinArgMax :: Builtin
+BuiltinArgMin :: Builtin
+BuiltinCeilDiv :: Builtin
+BuiltinCeilMod :: Builtin
+BuiltinChoose :: Builtin
+BuiltinFact :: Builtin
+BuiltinFloorDiv :: Builtin
+BuiltinFloorMod :: Builtin
+BuiltinGcd :: Builtin
+BuiltinInv :: Builtin
+BuiltinLcm :: Builtin
+BuiltinMultiChoose :: Builtin
+BuiltinPermute :: Builtin
+BuiltinProduct :: Builtin
+standardBuiltinFunctions :: Map VarName Builtin
+additionalBuiltinFunctions :: Map VarName Builtin
+toIntList :: Vector Value -> Maybe (Vector Integer)
+toIntList' :: MonadError Error m => Vector Value -> m (Vector Integer)
+toBoolList' :: MonadError Error m => Vector Value -> m (Vector Bool)
+toMatrix :: Vector Value -> Maybe (Matrix Integer)
+toMatrix' :: MonadError Error m => Vector Value -> m (Matrix Integer)
+fromMatrix :: Matrix Integer -> Value
+compareValues :: Value -> Value -> Maybe Ordering
+compareValues' :: Value -> Value -> Ordering
+newtype Global
+Global :: Map VarName Value -> Global
+[unGlobal] :: Global -> Map VarName Value
+initialGlobal :: Global
+lookupGlobal :: MonadError Error m => VarName -> Global -> m Value
+makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName -> Global -> m Expr
+writeValueIO :: Value -> IO ()
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Builtin
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Builtin
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Builtin
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Value.Builtin
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Local
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Local
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Local
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Value.Local
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Value
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Value
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Value
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Value.Value
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Global
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Global
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Global
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Value.Global
+
+module Jikka.RestrictedPython.Language.VariableAnalysis
+newtype ReadList
+ReadList :: [VarName] -> ReadList
+newtype WriteList
+WriteList :: [VarName] -> WriteList
+haveWriteReadIntersection :: WriteList -> ReadList -> Bool
+analyzeExpr :: Expr -> ReadList
+analyzeTargetRead :: Target -> ReadList
+analyzeTargetWrite :: Target -> WriteList
+analyzeStatement :: Statement -> (ReadList, WriteList)
+analyzeStatements :: [Statement] -> (ReadList, WriteList)
+instance GHC.Read.Read Jikka.RestrictedPython.Language.VariableAnalysis.ReadList
+instance GHC.Show.Show Jikka.RestrictedPython.Language.VariableAnalysis.ReadList
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.VariableAnalysis.ReadList
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.VariableAnalysis.ReadList
+instance GHC.Read.Read Jikka.RestrictedPython.Language.VariableAnalysis.WriteList
+instance GHC.Show.Show Jikka.RestrictedPython.Language.VariableAnalysis.WriteList
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.VariableAnalysis.WriteList
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.VariableAnalysis.WriteList
+
+module Jikka.RestrictedPython.Language.Lint
+makeEnsureProgram :: MonadError Error m => (Program -> Bool) -> String -> Program -> m ()
+
+-- | <a>hasSubscriptionInLoopCounters</a> checks that there are
+--   <a>SubscriptTrg</a> in loop counters of for-loops. This includes loop
+--   counters of <a>ListComp</a>. For example, the followings has such
+--   subscriptions.
+--   
+--   <pre>
+--   for a[0] in range(100):
+--       pass
+--   return a[0]  # =&gt; 99
+--   </pre>
+--   
+--   <pre>
+--   a = [0]
+--   b = [0 for a[0] in range(100)]
+--   return a[0]  # =&gt; 99
+--   </pre>
+--   
+--   NOTE: This is allowd in the standard Python.
+hasSubscriptionInLoopCounters :: Program -> Bool
+doesntHaveSubscriptionInLoopCounters :: Program -> Bool
+ensureDoesntHaveSubscriptionInLoopCounters :: MonadError Error m => Program -> m ()
+
+-- | <a>hasNameLeakOfLoopCounters</a> checks that there are leaks of loop
+--   counters of for-loops. For example, the following has a leak.
+--   
+--   <pre>
+--   for i in range(100):
+--       pass
+--   return i  # =&gt; 100
+--   </pre>
+hasNameLeakOfLoopCounters :: Program -> Bool
+doesntHaveNameLeakOfLoopCounters :: Program -> Bool
+ensureDoesntHaveNameLeakOfLoopCounters :: MonadError Error m => Program -> m ()
+
+-- | <a>hasAssignmentToLoopCounters</a> checks that there are assignments
+--   to loop counters of for-loops. For example, the following has the
+--   assignment.
+--   
+--   <pre>
+--   for i in range(100):
+--       i += 1
+--   </pre>
+hasAssignmentToLoopCounters :: Program -> Bool
+doesntHaveAssignmentToLoopCounters :: Program -> Bool
+ensureDoesntHaveAssignmentToLoopCounters :: MonadError Error m => Program -> m ()
+
+-- | <a>hasAssignToLoopIterators</a> checks that there are assignments to
+--   loop iterators of for-loops. For example, the followings have the
+--   assignments.
+--   
+--   <pre>
+--   a = list(range(10))
+--   for i in a:
+--       a[5] = i
+--   </pre>
+--   
+--   <pre>
+--   a = 0
+--   for i in f(a):
+--       a += i
+--   </pre>
+hasAssignToLoopIterators :: Program -> Bool
+doesntHaveAssignmentToLoopIterators :: Program -> Bool
+ensureDoesntHaveAssignmentToLoopIterators :: MonadError Error m => Program -> m ()
+
+-- | <a>hasReturnInLoops</a> checks that there are return-statements in
+--   for-loops. For example, the following has such a return-statement.
+--   
+--   <pre>
+--   a = list(range(10))
+--   for i in a:
+--       return True
+--   </pre>
+hasReturnInLoops :: Program -> Bool
+doesntHaveReturnInLoops :: Program -> Bool
+ensureDoesntHaveReturnInLoops :: MonadError Error m => Program -> m ()
+
+-- | <a>hasMixedAssignment</a> checks that there are assignments which
+--   assign to both of bare variables and subscripted variables. For
+--   example, the following is such an assignment.
+--   
+--   <pre>
+--   a, b[0] = list(range(10))
+--   </pre>
+--   
+--   NOTE: this doesn't check loop counters of <a>For</a> or
+--   <a>ListComp</a>.
+hasMixedAssignment :: Program -> Bool
+doesntHaveMixedAssignment :: Program -> Bool
+ensureDoesntHaveMixedAssignment :: MonadError Error m => Program -> m ()
+
+
+module Jikka.RestrictedPython.Evaluate
+run :: MonadError Error m => Program -> Expr -> m Value
+
+-- | <a>makeGlobal</a> packs toplevel definitions into <a>Global</a>. This
+--   assumes <a>doesntHaveNameLeakOfLoopCounters</a>.
+makeGlobal :: MonadError Error m => Program -> m Global
+runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
+
+-- | <a>evalExpr</a> evaluates exprs of our restricted Python-like
+--   language.
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt; &lt;math&gt; &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt; &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr -> m Value
+
+-- | <a>evalStatement</a> evaluates statements of our restricted
+--   Python-like language. When a statement is evaluated, it returns a
+--   value &lt;math&gt;, doesn't return anything &lt;math&gt;, or fails
+--   &lt;math&gt;. Also it updates the environment function &lt;math&gt;
+--   from variables to values.
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+--   
+--   It assumes the program is properly alpha-converted, i.e.
+--   <a>doesntHaveNameLeakOfLoopCounters</a>. So it leaks loop counters to
+--   out of loops.
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Rules for &lt;math&gt;</h3>
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+evalStatement :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Statement -> m (Maybe Value)
+
+-- | <a>evalStatements</a> evaluates sequences of statements of our
+--   restricted Python-like language.
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+--   
+--   &lt;math&gt;
+evalStatements :: (MonadReader Global m, MonadState Local m, MonadError Error m) => [Statement] -> m (Maybe Value)
+execToplevelStatement :: (MonadState Global m, MonadError Error m) => ToplevelStatement -> m ()
+
+module Jikka.RestrictedPython.Convert.ToCore
+
+-- | <a>run</a> converts programs of our restricted Python-like language to
+--   programs of our core language. This assumes the follwing conditions:
+--   
+--   <ul>
+--   <li><a>doesntHaveSubscriptionInLoopCounters</a></li>
+--   <li><a>doesntHaveNameLeakOfLoopCounters</a></li>
+--   <li><a>doesntHaveAssignmentToLoopCounters</a></li>
+--   <li><a>doesntHaveAssignmentToLoopIterators</a></li>
+--   <li><a>doesntHaveReturnInLoops</a></li>
+--   <li><a>doesntHaveMixedAssignment</a></li>
+--   </ul>
+run :: MonadError Error m => Program -> m Program
+
+module Jikka.RestrictedPython.Convert.Alpha
+
+-- | <a>run</a> renames variables.
+--   
+--   <ul>
+--   <li>This introduce a new name for each assignment if possible. For
+--   example, the following</li>
+--   </ul>
+--   
+--   <pre>
+--   x = 21
+--   x += x
+--   x = 42
+--   x += x
+--   for _ in range(100):
+--       x = x + 1
+--   x = x + 1
+--   </pre>
+--   
+--   turns the following
+--   
+--   <pre>
+--   x0 = 21
+--   x1 += x0
+--   x2 = 42
+--   x3 += x2
+--   for a4 in range(100):
+--       x3 = x3 + 1
+--   x5 = x3 + 1
+--   </pre>
+--   
+--   <ul>
+--   <li>This blames leaks of loop counters of for-statements, i.e.
+--   <a>doesntHaveNameLeakOfLoopCounters</a>. For example, the followings
+--   is not allowed.</li>
+--   </ul>
+--   
+--   <pre>
+--   for i in range(10):
+--       a = 0
+--   return a  # error
+--   </pre>
+--   
+--   <ul>
+--   <li>This blames leaks of names from for-statements and if-statements
+--   at all. For example, the followings are not allowed.</li>
+--   </ul>
+--   
+--   <pre>
+--   if True:
+--       a = 0
+--   else:
+--       a = 1
+--   return a  # error
+--   </pre>
+--   
+--   <pre>
+--   for i in range(10):
+--       a = 0
+--   return a  # error
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+instance GHC.Show.Show Jikka.RestrictedPython.Convert.Alpha.Env
+instance GHC.Read.Read Jikka.RestrictedPython.Convert.Alpha.Env
+instance GHC.Classes.Ord Jikka.RestrictedPython.Convert.Alpha.Env
+instance GHC.Classes.Eq Jikka.RestrictedPython.Convert.Alpha.Env
+
+module Jikka.Main.Subcommand.Debug
+run :: FilePath -> ExceptT Error IO ()
+
+module Jikka.Main.Subcommand.Convert
+run :: FilePath -> Text -> Either Error Text
+
+module Jikka.RestrictedPython.Convert.SplitLoops
+
+-- | <a>run</a> does alpha conversion, check assumptions, and <a>run</a>`.
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+-- | <a>run</a>` splits for-loops into many small for-loops as possible.
+--   This assumes that <a>doesntHaveSubscriptionInLoopCounters</a>,
+--   <a>doesntHaveAssignmentToLoopCounters</a>, and
+--   <a>doesntHaveAssignmentToLoopIterators</a> hold. This may introduce
+--   name conflicts.
+--   
+--   For example, the following
+--   
+--   <pre>
+--   a = 0
+--   b = 0
+--   for i in range(10):
+--       c = b
+--       a += i
+--       b += c
+--   </pre>
+--   
+--   is split to
+--   
+--   <pre>
+--   a = 0
+--   b = 0
+--   for i in range(10):
+--       c = b
+--       b += c
+--   for i in range(10):
+--       a += i
+--   </pre>
+run' :: Program -> Program
+
+-- | <a>runForLoop</a> splits a for-loop to many for-loops as possible.
+--   This assumes that <a>doesntHaveSubscriptionInLoopCounters</a>,
+--   <a>doesntHaveAssignmentToLoopCounters</a>, and
+--   <a>doesntHaveAssignmentToLoopIterators</a> hold.
+--   
+--   This function analyzes read-variables and write-variables in
+--   statements, and split statements into connected components.
+runForLoop :: Target -> Expr -> [Statement] -> [Statement]
+
+module Jikka.Main.Subcommand.Execute
+run :: FilePath -> ExceptT Error IO ()
 
 module Jikka.Main
 data Flag
@@ -1016,8 +2031,8 @@ defaultOptions :: Options
 header :: String -> String
 options :: [OptDescr Flag]
 main :: String -> [String] -> IO ExitCode
-parseFlags :: String -> [Flag] -> Either String Options
-runSubcommand :: String -> Options -> FilePath -> ExceptT String IO ()
+parseFlags :: String -> [Flag] -> Either Error Options
+runSubcommand :: String -> Options -> FilePath -> ExceptT Error IO ()
 instance GHC.Read.Read Jikka.Main.Flag
 instance GHC.Show.Show Jikka.Main.Flag
 instance GHC.Classes.Ord Jikka.Main.Flag

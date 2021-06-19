@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- Module      : Jikka.Core.Language.Beta</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Description : substitutes variables with another exprs.</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2020</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Core.Language.Beta</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Beta.html#substitute"><span class="hs-identifier">substitute</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><a href="Jikka.Core.Language.Beta.html#substitute%27"><span class="hs-identifier">substitute'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Vars.html"><span class="hs-identifier">Jikka.Core.Language.Vars</span></a></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- | `substitute` replaces the occrences of the given variable with the given expr. This considers contexts.</span><span>
+</span><span id="line-21"></span><span class="hs-comment">--</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- &gt;&gt;&gt; substitute (VarName &quot;x&quot;) (Lit (LitInt 0)) (Lam1 (VarName &quot;y&quot;) IntTy (Var (VarName &quot;x&quot;)))</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- Lam [(VarName &quot;y&quot;,IntTy)] (Lit (LitInt 0))</span><span>
+</span><span id="line-24"></span><span class="hs-comment">--</span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- &gt;&gt;&gt; substitute (VarName &quot;x&quot;) (Lit (LitInt 0)) (Lam1 (VarName &quot;x&quot;) IntTy (Var (VarName &quot;x&quot;)))</span><span>
+</span><span id="line-26"></span><span class="hs-comment">-- Lam [(VarName &quot;x&quot;,IntTy)] (Var (VarName &quot;x&quot;))</span><span>
+</span><span id="line-27"></span><span class="annot"><a href="Jikka.Core.Language.Beta.html#substitute"><span class="hs-identifier hs-type">substitute</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-28"></span><span id="substitute"><span class="annot"><span class="annottext">substitute :: VarName -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#substitute"><span class="hs-identifier hs-var hs-var">substitute</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[VarName] -&gt; VarName -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#substitute%27"><span class="hs-identifier hs-var">substitute'</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><a href="Jikka.Core.Language.Beta.html#substitute%27"><span class="hs-identifier hs-type">substitute'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-31"></span><span id="substitute%27"><span class="annot"><span class="annottext">substitute' :: [VarName] -&gt; VarName -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#substitute%27"><span class="hs-identifier hs-var hs-var">substitute'</span></a></span></span><span> </span><span id="local-6989586621679259561"><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679259561"><span class="hs-identifier hs-var">used</span></a></span></span><span> </span><span id="local-6989586621679259560"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259560"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679259559"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259559"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259558"><span class="hs-identifier hs-var">go</span></a></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="#local-6989586621679259558"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span id="local-6989586621679259558"><span class="annot"><span class="annottext">go :: Expr -&gt; Expr
+</span><a href="#local-6989586621679259558"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-35"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679259556"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259556"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259556"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259560"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259559"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259556"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-36"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span id="local-6989586621679259554"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679259554"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679259554"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><span id="line-37"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621679259552"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259552"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679259551"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679259551"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-var">App</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259558"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259552"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; [Expr] -&gt; [Expr]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259558"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679259551"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679259549"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259549"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679259548"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259548"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-39"></span><span>        </span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259560"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; [VarName] -&gt; Bool
+forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="annot"><span class="annottext">((VarName, Type) -&gt; VarName) -&gt; [(VarName, Type)] -&gt; [VarName]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; VarName
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259549"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259549"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259548"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-40"></span><span>        </span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-41"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679259546"><span class="annot"><span class="annottext">rename' :: (VarName, b) -&gt; ([(VarName, b)], Expr) -&gt; ([(VarName, b)], Expr)
+</span><a href="#local-6989586621679259546"><span class="hs-identifier hs-var hs-var">rename'</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259545"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259545"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259544"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679259544"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259543"><span class="annot"><span class="annottext">[(VarName, b)]
+</span><a href="#local-6989586621679259543"><span class="hs-identifier hs-var">args'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259542"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259542"><span class="hs-identifier hs-var">body'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259541"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259541"><span class="hs-identifier hs-var">y'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259540"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259540"><span class="hs-identifier hs-var">body''</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarName, Expr) -&gt; (VarName, Expr)
+</span><a href="#local-6989586621679259539"><span class="hs-identifier hs-var">rename</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259545"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259542"><span class="hs-identifier hs-var">body'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259541"><span class="hs-identifier hs-var">y'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679259544"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(VarName, b) -&gt; [(VarName, b)] -&gt; [(VarName, b)]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, b)]
+</span><a href="#local-6989586621679259543"><span class="hs-identifier hs-var">args'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259540"><span class="hs-identifier hs-var">body''</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>              </span><span class="hs-special">(</span><span id="local-6989586621679259538"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259538"><span class="hs-identifier hs-var">args'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259537"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259537"><span class="hs-identifier hs-var">body'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((VarName, Type)
+ -&gt; ([(VarName, Type)], Expr) -&gt; ([(VarName, Type)], Expr))
+-&gt; ([(VarName, Type)], Expr)
+-&gt; [(VarName, Type)]
+-&gt; ([(VarName, Type)], Expr)
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">(VarName, Type)
+-&gt; ([(VarName, Type)], Expr) -&gt; ([(VarName, Type)], Expr)
+forall b.
+(VarName, b) -&gt; ([(VarName, b)], Expr) -&gt; ([(VarName, b)], Expr)
+</span><a href="#local-6989586621679259546"><span class="hs-identifier hs-var">rename'</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259548"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259549"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-43"></span><span>              </span><span id="local-6989586621679259535"><span class="annot"><span class="annottext">used' :: [VarName]
+</span><a href="#local-6989586621679259535"><span class="hs-identifier hs-var hs-var">used'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[VarName] -&gt; [VarName]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((VarName, Type) -&gt; VarName) -&gt; [(VarName, Type)] -&gt; [VarName]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; VarName
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259538"><span class="hs-identifier hs-var">args'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[VarName] -&gt; [VarName] -&gt; [VarName]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679259561"><span class="hs-identifier hs-var">used</span></a></span><span>
+</span><span id="line-44"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259538"><span class="hs-identifier hs-var">args'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[VarName] -&gt; VarName -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#substitute%27"><span class="hs-identifier hs-var">substitute'</span></a></span><span> </span><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679259535"><span class="hs-identifier hs-var">used'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259560"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259559"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259537"><span class="hs-identifier hs-var">body'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621679259532"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259532"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span id="local-6989586621679259531"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259531"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679259530"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259530"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679259529"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259529"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-46"></span><span>        </span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259532"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259560"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-var">Let</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259532"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259531"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259558"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259530"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259529"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-47"></span><span>        </span><span class="annot"><span class="annottext">()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-48"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259528"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259528"><span class="hs-identifier hs-var">y'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259527"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259527"><span class="hs-identifier hs-var">e2'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(VarName, Expr) -&gt; (VarName, Expr)
+</span><a href="#local-6989586621679259539"><span class="hs-identifier hs-var">rename</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259532"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259529"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>           </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-var">Let</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259528"><span class="hs-identifier hs-var">y'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259531"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259558"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259530"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[VarName] -&gt; VarName -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#substitute%27"><span class="hs-identifier hs-var">substitute'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259528"><span class="hs-identifier hs-var">y'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; [VarName] -&gt; [VarName]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679259561"><span class="hs-identifier hs-var">used</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259560"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259559"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259527"><span class="hs-identifier hs-var">e2'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="#local-6989586621679259539"><span class="hs-identifier hs-type">rename</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>    </span><span id="local-6989586621679259539"><span class="annot"><span class="annottext">rename :: (VarName, Expr) -&gt; (VarName, Expr)
+</span><a href="#local-6989586621679259539"><span class="hs-identifier hs-var hs-var">rename</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679259526"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259526"><span class="hs-identifier hs-var">y</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259525"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259525"><span class="hs-identifier hs-var">e'</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259526"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr -&gt; Bool
+</span><a href="Jikka.Core.Language.Vars.html#isFreeVarOrScopedVar"><span class="hs-operator hs-var">`isFreeVarOrScopedVar`</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259559"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259526"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259525"><span class="hs-identifier hs-var">e'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679259522"><span class="annot"><span class="annottext">z :: VarName
+</span><a href="#local-6989586621679259522"><span class="hs-identifier hs-var hs-var">z</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; VarName
+</span><a href="Jikka.Core.Language.Vars.html#findFreshVar%27"><span class="hs-identifier hs-var">findFreshVar'</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259559"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259525"><span class="hs-identifier hs-var">e'</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; [Expr] -&gt; [Expr]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">(VarName -&gt; Expr) -&gt; [VarName] -&gt; [Expr]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679259561"><span class="hs-identifier hs-var">used</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259522"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#renameWithoutContext"><span class="hs-identifier hs-var">renameWithoutContext</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259526"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259522"><span class="hs-identifier hs-var">z</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259525"><span class="hs-identifier hs-var">e'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Jikka.Core.Language.Beta.html#renameWithoutContext"><span class="hs-identifier hs-type">renameWithoutContext</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-56"></span><span id="renameWithoutContext"><span class="annot"><span class="annottext">renameWithoutContext :: VarName -&gt; VarName -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Beta.html#renameWithoutContext"><span class="hs-identifier hs-var hs-var">renameWithoutContext</span></a></span></span><span> </span><span id="local-6989586621679259519"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259519"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679259518"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259518"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var">go</span></a></span><span>
+</span><span id="line-57"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="#local-6989586621679259516"><span class="hs-identifier hs-type">rename</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span>
+</span><span id="line-59"></span><span>    </span><span id="local-6989586621679259516"><span class="annot"><span class="annottext">rename :: VarName -&gt; VarName
+</span><a href="#local-6989586621679259516"><span class="hs-identifier hs-var hs-var">rename</span></a></span></span><span> </span><span id="local-6989586621679259515"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259515"><span class="hs-identifier hs-var">z</span></a></span></span><span>
+</span><span id="line-60"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259515"><span class="hs-identifier hs-var">z</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; VarName -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259519"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259518"><span class="hs-identifier hs-var">y</span></a></span><span>
+</span><span id="line-61"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259515"><span class="hs-identifier hs-var">z</span></a></span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><a href="#local-6989586621679259517"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679259517"><span class="annot"><span class="annottext">go :: Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-64"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679259514"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259514"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; VarName
+</span><a href="#local-6989586621679259516"><span class="hs-identifier hs-var">rename</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259514"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span id="local-6989586621679259513"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679259513"><span class="hs-identifier hs-var">lit</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Lit"><span class="hs-identifier hs-var">Lit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679259513"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><span id="line-66"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621679259512"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259512"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679259511"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679259511"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-var">App</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259512"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; [Expr] -&gt; [Expr]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679259511"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679259510"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259510"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679259509"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259509"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((VarName, Type) -&gt; (VarName, Type))
+-&gt; [(VarName, Type)] -&gt; [(VarName, Type)]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679259508"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259508"><span class="hs-identifier hs-var">z</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679259507"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259507"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; VarName
+</span><a href="#local-6989586621679259516"><span class="hs-identifier hs-var">rename</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259508"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259507"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679259510"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259509"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621679259506"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259506"><span class="hs-identifier hs-var">z</span></a></span></span><span> </span><span id="local-6989586621679259505"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259505"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679259504"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259504"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679259503"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259503"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-var">Let</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; VarName
+</span><a href="#local-6989586621679259516"><span class="hs-identifier hs-var">rename</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679259506"><span class="hs-identifier hs-var">z</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679259505"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259504"><span class="hs-identifier hs-var">e1</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="#local-6989586621679259517"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679259503"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span></pre></body></html>

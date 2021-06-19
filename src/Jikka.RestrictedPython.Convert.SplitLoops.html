@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.RestrictedPython.Convert.SplitLoops</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run%27"><span class="hs-identifier">run'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#runForLoop"><span class="hs-identifier">runForLoop</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">partition</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html"><span class="hs-identifier">Jikka.Common.Alpha</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.Alpha.html"><span class="hs-identifier">Jikka.RestrictedPython.Convert.Alpha</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Alpha</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Convert.Alpha.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Lint</span></a></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Util.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Util</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.VariableAnalysis</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- | `runForLoop` splits a for-loop to many for-loops as possible.</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- This assumes that `doesntHaveSubscriptionInLoopCounters`, `doesntHaveAssignmentToLoopCounters`, and `doesntHaveAssignmentToLoopIterators` hold.</span><span>
+</span><span id="line-21"></span><span class="hs-comment">--</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- This function analyzes read-variables and write-variables in statements, and split statements into connected components.</span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#runForLoop"><span class="hs-identifier hs-type">runForLoop</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Target"><span class="hs-identifier hs-type">Target</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-24"></span><span id="runForLoop"><span class="annot"><span class="annottext">runForLoop :: Target -&gt; Expr -&gt; [Statement] -&gt; [Statement]
+</span><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#runForLoop"><span class="hs-identifier hs-var hs-var">runForLoop</span></a></span></span><span> </span><span id="local-6989586621679300767"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679300767"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679300766"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679300766"><span class="hs-identifier hs-var">iter</span></a></span></span><span> </span><span id="local-6989586621679300765"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300765"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679300764"><span class="annot"><span class="annottext">connected :: (a, (ReadList, WriteList)) -&gt; (a, (ReadList, WriteList)) -&gt; Bool
+</span><a href="#local-6989586621679300764"><span class="hs-identifier hs-var hs-var">connected</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679300763"><span class="annot"><span class="annottext">ReadList
+</span><a href="#local-6989586621679300763"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679300762"><span class="annot"><span class="annottext">WriteList
+</span><a href="#local-6989586621679300762"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679300761"><span class="annot"><span class="annottext">ReadList
+</span><a href="#local-6989586621679300761"><span class="hs-identifier hs-var">r'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679300760"><span class="annot"><span class="annottext">WriteList
+</span><a href="#local-6989586621679300760"><span class="hs-identifier hs-var">w'</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">WriteList -&gt; ReadList -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#haveWriteReadIntersection"><span class="hs-identifier hs-var">haveWriteReadIntersection</span></a></span><span> </span><span class="annot"><span class="annottext">WriteList
+</span><a href="#local-6989586621679300762"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">ReadList
+</span><a href="#local-6989586621679300761"><span class="hs-identifier hs-var">r'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">WriteList -&gt; ReadList -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#haveWriteReadIntersection"><span class="hs-identifier hs-var">haveWriteReadIntersection</span></a></span><span> </span><span class="annot"><span class="annottext">WriteList
+</span><a href="#local-6989586621679300760"><span class="hs-identifier hs-var">w'</span></a></span><span> </span><span class="annot"><span class="annottext">ReadList
+</span><a href="#local-6989586621679300763"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-26"></span><span>      </span><span id="local-6989586621679300757"><span class="annot"><span class="annottext">go :: [Statement] -&gt; [(Statement, (ReadList, WriteList))] -&gt; [Statement]
+</span><a href="#local-6989586621679300757"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679300756"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300756"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; [Statement]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300756"><span class="hs-identifier hs-var">result</span></a></span><span>
+</span><span id="line-27"></span><span>      </span><span class="annot"><a href="#local-6989586621679300757"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679300754"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300754"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679300753"><span class="annot"><span class="annottext">(Statement, (ReadList, WriteList))
+</span><a href="#local-6989586621679300753"><span class="hs-identifier hs-var">stmt</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679300752"><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300752"><span class="hs-identifier hs-var">stmts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-28"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679300751"><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300751"><span class="hs-identifier hs-var">same</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679300750"><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300750"><span class="hs-identifier hs-var">diff</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Statement, (ReadList, WriteList)) -&gt; Bool)
+-&gt; [(Statement, (ReadList, WriteList))]
+-&gt; ([(Statement, (ReadList, WriteList))],
+    [(Statement, (ReadList, WriteList))])
+forall a. (a -&gt; Bool) -&gt; [a] -&gt; ([a], [a])
+</span><span class="hs-identifier hs-var">partition</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Statement, (ReadList, WriteList))
+-&gt; (Statement, (ReadList, WriteList)) -&gt; Bool
+forall a a.
+(a, (ReadList, WriteList)) -&gt; (a, (ReadList, WriteList)) -&gt; Bool
+</span><a href="#local-6989586621679300764"><span class="hs-identifier hs-var">connected</span></a></span><span> </span><span class="annot"><span class="annottext">(Statement, (ReadList, WriteList))
+</span><a href="#local-6989586621679300753"><span class="hs-identifier hs-var">stmt</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300752"><span class="hs-identifier hs-var">stmts</span></a></span><span>
+</span><span id="line-29"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; [(Statement, (ReadList, WriteList))] -&gt; [Statement]
+</span><a href="#local-6989586621679300757"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Target -&gt; Expr -&gt; [Statement] -&gt; Statement
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-var">For</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679300767"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679300766"><span class="hs-identifier hs-var">iter</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Statement, (ReadList, WriteList)) -&gt; Statement)
+-&gt; [(Statement, (ReadList, WriteList))] -&gt; [Statement]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(Statement, (ReadList, WriteList)) -&gt; Statement
+forall a b. (a, b) -&gt; a
+</span><span class="hs-identifier hs-var">fst</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Statement, (ReadList, WriteList))
+</span><a href="#local-6989586621679300753"><span class="hs-identifier hs-var">stmt</span></a></span><span> </span><span class="annot"><span class="annottext">(Statement, (ReadList, WriteList))
+-&gt; [(Statement, (ReadList, WriteList))]
+-&gt; [(Statement, (ReadList, WriteList))]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300751"><span class="hs-identifier hs-var">same</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Statement -&gt; [Statement] -&gt; [Statement]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300754"><span class="hs-identifier hs-var">result</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300750"><span class="hs-identifier hs-var">diff</span></a></span><span>
+</span><span id="line-30"></span><span>      </span><span id="local-6989586621679300748"><span class="annot"><span class="annottext">body' :: [(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300748"><span class="hs-identifier hs-var hs-var">body'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; (Statement, (ReadList, WriteList)))
+-&gt; [Statement] -&gt; [(Statement, (ReadList, WriteList))]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679300747"><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679300747"><span class="hs-identifier hs-var">stmt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679300747"><span class="hs-identifier hs-var">stmt</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Statement -&gt; (ReadList, WriteList)
+</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#analyzeStatement"><span class="hs-identifier hs-var">analyzeStatement</span></a></span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679300747"><span class="hs-identifier hs-var">stmt</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300765"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-31"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; [(Statement, (ReadList, WriteList))] -&gt; [Statement]
+</span><a href="#local-6989586621679300757"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">[(Statement, (ReadList, WriteList))]
+</span><a href="#local-6989586621679300748"><span class="hs-identifier hs-var">body'</span></a></span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- | `run'` splits for-loops into many small for-loops as possible.</span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- This assumes that `doesntHaveSubscriptionInLoopCounters`, `doesntHaveAssignmentToLoopCounters`, and `doesntHaveAssignmentToLoopIterators` hold.</span><span>
+</span><span id="line-35"></span><span class="hs-comment">-- This may introduce name conflicts.</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- For example, the following</span><span>
+</span><span id="line-38"></span><span class="hs-comment">--</span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- &gt; a = 0</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- &gt; b = 0</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- &gt;     c = b</span><span>
+</span><span id="line-43"></span><span class="hs-comment">-- &gt;     a += i</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- &gt;     b += c</span><span>
+</span><span id="line-45"></span><span class="hs-comment">--</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- is split to</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- &gt; a = 0</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- &gt; b = 0</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- &gt;     c = b</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- &gt;     b += c</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- &gt;     a += i</span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run%27"><span class="hs-identifier hs-type">run'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span>
+</span><span id="line-56"></span><span id="run%27"><span class="annot"><span class="annottext">run' :: Program -&gt; Program
+</span><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run%27"><span class="hs-identifier hs-var hs-var">run'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; [Statement] -&gt; [Statement] -&gt; [Statement])
+-&gt; (Target -&gt; Expr -&gt; [Statement] -&gt; [Statement])
+-&gt; Program
+-&gt; Program
+</span><a href="Jikka.RestrictedPython.Language.Util.html#mapLargeStatement"><span class="hs-identifier hs-var">mapLargeStatement</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679300744"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679300744"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679300743"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300743"><span class="hs-identifier hs-var">pred1</span></a></span></span><span> </span><span id="local-6989586621679300742"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300742"><span class="hs-identifier hs-var">pred2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr -&gt; [Statement] -&gt; [Statement] -&gt; Statement
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#If"><span class="hs-identifier hs-var">If</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679300744"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300743"><span class="hs-identifier hs-var">pred1</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679300742"><span class="hs-identifier hs-var">pred2</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Expr -&gt; [Statement] -&gt; [Statement]
+</span><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#runForLoop"><span class="hs-identifier hs-var">runForLoop</span></a></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- | `run` does alpha conversion, check assumptions, and `run'`.</span><span>
+</span><span id="line-59"></span><span id="local-6989586621679300740"><span class="annot"><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679300740"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679300740"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679300740"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-60"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679300739"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300739"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-61"></span><span>  </span><span id="local-6989586621679300738"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300738"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m Program
+</span><a href="Jikka.RestrictedPython.Convert.Alpha.html#run"><span class="hs-identifier hs-var">Alpha.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300739"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-62"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m ()
+forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-var">ensureDoesntHaveSubscriptionInLoopCounters</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300738"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m ()
+forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-var">ensureDoesntHaveAssignmentToLoopCounters</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300738"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m ()
+forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-var">ensureDoesntHaveAssignmentToLoopIterators</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300738"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span id="local-6989586621679300734"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300734"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; m Program) -&gt; Program -&gt; m Program
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.RestrictedPython.Convert.SplitLoops.html#run%27"><span class="hs-identifier hs-var">run'</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300738"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-66"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m Program
+</span><a href="Jikka.RestrictedPython.Convert.Alpha.html#run"><span class="hs-identifier hs-var">Alpha.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679300734"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-67"></span></pre></body></html>
