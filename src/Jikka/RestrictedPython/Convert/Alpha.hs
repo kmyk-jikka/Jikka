@@ -13,6 +13,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Stdlib
+import Jikka.RestrictedPython.Language.Util
 
 data Env = Env
   { currentMapping :: [(VarName, VarName)],
@@ -48,12 +49,6 @@ withScope f = do
         parentMappings = tail (parentMappings env)
       }
   return x
-
-genVarName :: MonadAlpha m => VarName -> m VarName
-genVarName x = do
-  i <- nextCounter
-  let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
-  return $ VarName (base ++ '$' : show i)
 
 -- | `renameNew` renames given variables and record them to the `Env`.
 renameNew :: (MonadAlpha m, MonadState Env m) => VarName -> m VarName
@@ -143,19 +138,14 @@ runExpr = \case
   BoolOp e1 op e2 -> BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
   BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
   UnaryOp op e -> UnaryOp op <$> runExpr e
-  Lambda args body -> do
-    savedEnv <- get
-    args <- forM args $ \(x, t) -> do
-      y <- renameNew x
-      return (y, t)
-    body <- runExpr body
-    put savedEnv
-    return $ Lambda args body
-  IfExp e1 e2 e3 -> do
-    e1 <- runExpr e1
-    e2 <- runExpr e2
-    e3 <- runExpr e3
-    return $ IfExp e1 e2 e3
+  Lambda args body ->
+    withToplevelScope $ do
+      args <- forM args $ \(x, t) -> do
+        y <- renameNew x
+        return (y, t)
+      body <- runExpr body
+      return $ Lambda args body
+  IfExp e1 e2 e3 -> IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
   ListComp e (Comprehension x iter ifs) -> do
     iter <- runExpr iter
     y <- runAnnTarget x
@@ -164,33 +154,23 @@ runExpr = \case
     popTarget x
     return $ ListComp e (Comprehension y iter ifs)
   Compare e1 op e2 -> Compare <$> runExpr e1 <*> return op <*> runExpr e2
-  Call f args -> do
-    f <- runExpr f
-    args <- mapM runExpr args
-    return $ Call f args
+  Call f args -> Call <$> runExpr f <*> mapM runExpr args
   Constant const -> return $ Constant const
   Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
   Name x -> Name <$> lookupName' x
   List t es -> List t <$> mapM runExpr es
   Tuple es -> Tuple <$> mapM runExpr es
-  SubscriptSlice e from to step -> do
-    e <- runExpr e
-    from <- mapM runExpr from
-    to <- mapM runExpr to
-    step <- mapM runExpr step
-    return $ SubscriptSlice e from to step
+  SubscriptSlice e from to step -> SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
 
 runStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Statement -> m Statement
 runStatement = \case
-  Return e -> do
-    e <- runExpr e
-    return $ Return e
+  Return e -> Return <$> runExpr e
   AugAssign x op e -> do
     e <- runExpr e
     x <- runAugTarget x
     return $ AugAssign x op e
   AnnAssign x t e -> do
-    e <- runExpr e
+    e <- runExpr e -- visit e before x
     x <- runAnnTarget x
     return $ AnnAssign x t e
   For x e body -> do
@@ -206,9 +186,7 @@ runStatement = \case
     body2 <- withScope $ do
       runStatements body2
     return $ If e body1 body2
-  Assert e -> do
-    e <- runExpr e
-    return $ Assert e
+  Assert e -> Assert <$> runExpr e
 
 runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [Statement] -> m [Statement]
 runStatements = mapM runStatement
@@ -216,8 +194,8 @@ runStatements = mapM runStatement
 runToplevelStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => ToplevelStatement -> m ToplevelStatement
 runToplevelStatement = \case
   ToplevelAnnAssign x t e -> do
+    e <- runExpr e -- visit e before x
     y <- renameToplevel x
-    e <- runExpr e
     return $ ToplevelAnnAssign y t e
   ToplevelFunctionDef f args ret body -> do
     g <- renameToplevel f
@@ -227,9 +205,7 @@ runToplevelStatement = \case
         return (y, t)
       body <- runStatements body
       return $ ToplevelFunctionDef g args ret body
-  ToplevelAssert e -> do
-    e <- runExpr e
-    return $ ToplevelAssert e
+  ToplevelAssert e -> ToplevelAssert <$> runExpr e
 
 runProgram :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = mapM runToplevelStatement
