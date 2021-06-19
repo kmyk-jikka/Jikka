@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jikka.RestrictedPython.Language.Value where
@@ -9,6 +10,7 @@ import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Util
 
 -- | `Value` is the values of our restricted Python-like language.
 --
@@ -28,7 +30,7 @@ data Value
   | BoolVal Bool
   | ListVal (V.Vector Value)
   | TupleVal [Value]
-  | ClosureVal Local [VarName] [Statement]
+  | ClosureVal Local [(VarName, Type)] [Statement]
   | BuiltinVal Builtin
   deriving (Eq, Ord, Show, Read)
 
@@ -214,3 +216,35 @@ compareValues a b = case (a, b) of
 
 compareValues' :: Value -> Value -> Ordering
 compareValues' a b = fromMaybe EQ (compareValues a b)
+
+newtype Global = Global
+  { unGlobal :: M.Map VarName Value
+  }
+  deriving (Eq, Ord, Show, Read)
+
+initialGlobal :: Global
+initialGlobal = Global $ M.map BuiltinVal (M.union standardBuiltinFunctions additionalBuiltinFunctions)
+
+lookupGlobal :: MonadError Error m => VarName -> Global -> m Value
+lookupGlobal x global =
+  case M.lookup x (unGlobal global) of
+    Just y -> return y
+    Nothing -> throwSymbolError $ "undefined variable: " ++ unVarName x
+
+makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName -> Global -> m Expr
+makeEntryPointIO f global = do
+  v <- lookupGlobal f global
+  case v of
+    ClosureVal _ args _ -> do
+      args <- mapM (readValueIO . snd) args
+      return $ Call (Name f) args
+    _ -> throwSymbolError $ "not a function: " ++ unVarName f
+
+writeValueIO :: Value -> IO ()
+writeValueIO = \case
+  IntVal n -> print n
+  BoolVal p -> print p
+  ListVal xs -> mapM_ writeValueIO (V.toList xs)
+  TupleVal xs -> mapM_ writeValueIO xs
+  f@ClosureVal {} -> print f
+  BuiltinVal b -> print b

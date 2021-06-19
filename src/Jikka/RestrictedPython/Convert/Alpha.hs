@@ -78,6 +78,20 @@ renameCompletelyNew x = do
     Just _ -> throwSemanticError $ "cannot redefine variable: " ++ unVarName x
     Nothing -> renameNew x
 
+-- | `renameToplevel` records given variables to the `Env` without actual renaming.
+renameToplevel :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName -> m VarName
+renameToplevel x = do
+  env <- get
+  case lookupName x env of
+    Just _ -> throwSemanticError $ "cannot redefine variable in toplevel: " ++ unVarName x
+    Nothing -> do
+      when (unVarName x /= "_") $ do
+        put $
+          env
+            { currentMapping = (x, x) : currentMapping env
+            }
+      return x
+
 popRename :: (MonadState Env m, MonadError Error m) => VarName -> m ()
 popRename x =
   when (unVarName x /= "_") $ do
@@ -202,14 +216,14 @@ runStatements = mapM runStatement
 runToplevelStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => ToplevelStatement -> m ToplevelStatement
 runToplevelStatement = \case
   ToplevelAnnAssign x t e -> do
-    y <- renameNew x
+    y <- renameToplevel x
     e <- runExpr e
     return $ ToplevelAnnAssign y t e
   ToplevelFunctionDef f args ret body -> do
-    g <- renameNew f
+    g <- renameToplevel f
     withToplevelScope $ do
       args <- forM args $ \(x, t) -> do
-        y <- renameNew x
+        y <- renameToplevel x
         return (y, t)
       body <- runStatements body
       return $ ToplevelFunctionDef g args ret body

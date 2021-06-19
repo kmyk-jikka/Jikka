@@ -1,17 +1,18 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Main.Subcommand.Execute (run) where
 
 import Control.Monad.Except
 import qualified Data.Text.IO as T (readFile)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Core.Convert.MakeEager as MakeEager
-import qualified Jikka.Core.Convert.Optimize as Optimize
-import qualified Jikka.Core.Evaluate as Evaluator
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
 import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha
-import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
+import qualified Jikka.RestrictedPython.Convert.SplitLoops as SplitLoops
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
+import qualified Jikka.RestrictedPython.Evaluate as Evaluate
+import qualified Jikka.RestrictedPython.Language.Value as Value
 
 run :: FilePath -> ExceptT Error IO ()
 run path = flip evalAlphaT 0 $ do
@@ -20,8 +21,8 @@ run path = flip evalAlphaT 0 $ do
   prog <- ToRestrictedPython.run prog
   prog <- Alpha.run prog
   prog <- TypeInfer.run prog
-  prog <- ToCore.run prog
-  prog <- Optimize.run prog
-  prog <- MakeEager.run prog
-  value <- Evaluator.run prog
-  liftIO $ print value
+  prog <- SplitLoops.run prog
+  global <- Evaluate.makeGlobal prog
+  entrypoint <- Value.makeEntryPointIO "solve" global
+  value <- Evaluate.runWithGlobal global entrypoint
+  liftIO $ Value.writeValueIO value

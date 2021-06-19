@@ -27,10 +27,10 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "solve$0"
-              [("x$1", IntTy)]
+              "solve"
+              [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$2") IntTy (Name "x$1")
+              [ AnnAssign (NameTrg "y$0") IntTy (Name "x")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -51,16 +51,16 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "foo$0"
-              [("x$1", IntTy)]
+              "foo"
+              [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$2") IntTy (Name "x$1")
+              [ AnnAssign (NameTrg "y$0") IntTy (Name "x")
               ],
             ToplevelFunctionDef
-              "bar$3"
-              [("x$4", IntTy)]
+              "bar"
+              [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$5") IntTy (Name "x$4")
+              [ AnnAssign (NameTrg "y$1") IntTy (Name "x")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -84,18 +84,18 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "solve$0"
+              "solve"
               []
               IntTy
               [ For
-                  (NameTrg "i$1")
+                  (NameTrg "i$0")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$2") IntTy (Name "i$1")
+                  [ AnnAssign (NameTrg "x$1") IntTy (Name "i$0")
                   ],
                 For
-                  (NameTrg "i$3")
+                  (NameTrg "i$2")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$4") IntTy (Name "i$3")
+                  [ AnnAssign (NameTrg "x$3") IntTy (Name "i$2")
                   ]
               ]
           ]
@@ -116,12 +116,12 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelAnnAssign
-              "a$0"
+              "a"
               (ListTy IntTy)
               ( ListComp
                   (Constant (ConstInt 0))
                   ( Comprehension
-                      (NameTrg "$1")
+                      (NameTrg "$0")
                       (Call (Name "range") [Constant (ConstInt 10)])
                       Nothing
                   )
@@ -139,10 +139,10 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "f$0"
-              [("x$1", IntTy)]
+              "f"
+              [("x", IntTy)]
               IntTy
-              [ Return (Call (Name "f$0") [Name "x$1"])
+              [ Return (Call (Name "f") [Name "x"])
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -157,10 +157,10 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "f$0"
-              [("x$1", VarTy "x")]
+              "f"
+              [("x", VarTy "x")]
               (VarTy "f")
-              [ Return (Call (Name "f$0") [Name "x$1"])
+              [ Return (Call (Name "f") [Name "x"])
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -180,15 +180,15 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "main$0"
+              "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$1") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$2") IntTy (Name "x$1"),
-                AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$4") IntTy (Name "x$3"),
-                AnnAssign (NameTrg "x$5") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$6") IntTy (Name "x$5")
+              [ AnnAssign (NameTrg "x$0") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
+                AnnAssign (NameTrg "x$2") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$3") IntTy (Name "x$2"),
+                AnnAssign (NameTrg "x$4") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$5") IntTy (Name "x$4")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -208,15 +208,15 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "main$0"
+              "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$1") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$2") IntTy (Name "x$1"),
-                AugAssign (NameTrg "x$2") Add (Constant (ConstInt 0)),
-                AugAssign (NameTrg "x$2") Add (Name "x$2"),
-                AugAssign (NameTrg "x$2") Add (Constant (ConstInt 0)),
-                AugAssign (NameTrg "x$2") Add (Name "x$2")
+              [ AnnAssign (NameTrg "x$0") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
+                AugAssign (NameTrg "x$1") Add (Constant (ConstInt 0)),
+                AugAssign (NameTrg "x$1") Add (Name "x$1"),
+                AugAssign (NameTrg "x$1") Add (Constant (ConstInt 0)),
+                AugAssign (NameTrg "x$1") Add (Name "x$1")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -266,12 +266,12 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "main$0"
+              "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "i$1") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "a$3") (ListTy IntTy) (ListComp (Constant (ConstInt 0)) (Comprehension (NameTrg "i$2") (List IntTy []) Nothing)),
-                Return (Name "i$1")
+              [ AnnAssign (NameTrg "i$0") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "a$2") (ListTy IntTy) (ListComp (Constant (ConstInt 0)) (Comprehension (NameTrg "i$1") (List IntTy []) Nothing)),
+                Return (Name "i$0")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -302,26 +302,26 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "main$0"
+              "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$1") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$2") IntTy (Name "x$1"),
-                AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$4") IntTy (Name "x$3"),
+              [ AnnAssign (NameTrg "x$0") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
+                AnnAssign (NameTrg "x$2") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$3") IntTy (Name "x$2"),
                 If
-                  (Name "x$4")
-                  [ AnnAssign (NameTrg "x$4") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "x$4") IntTy (Name "x$4"),
-                    AnnAssign (NameTrg "y$5") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "y$6") IntTy (Name "y$5"),
-                    AnnAssign (NameTrg "x$4") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "x$4") IntTy (Name "x$4")
+                  (Name "x$3")
+                  [ AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
+                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3"),
+                    AnnAssign (NameTrg "y$4") IntTy (Constant (ConstInt 0)),
+                    AnnAssign (NameTrg "y$5") IntTy (Name "y$4"),
+                    AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
+                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3")
                   ]
                   [],
-                AnnAssign (NameTrg "x$7") IntTy (Name "x$4"),
-                AnnAssign (NameTrg "x$8") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$9") IntTy (Name "x$8")
+                AnnAssign (NameTrg "x$6") IntTy (Name "x$3"),
+                AnnAssign (NameTrg "x$7") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$8") IntTy (Name "x$7")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -352,26 +352,26 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "main$0"
+              "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$1") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$2") IntTy (Name "x$1"),
-                AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$4") IntTy (Name "x$3"),
+              [ AnnAssign (NameTrg "x$0") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
+                AnnAssign (NameTrg "x$2") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$3") IntTy (Name "x$2"),
                 For
-                  (NameTrg "i$5")
+                  (NameTrg "i$4")
                   (List IntTy [])
-                  [ AnnAssign (NameTrg "x$4") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "x$4") IntTy (Name "x$4"),
-                    AnnAssign (NameTrg "y$6") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "y$7") IntTy (Name "y$6"),
-                    AnnAssign (NameTrg "x$4") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "x$4") IntTy (Name "x$4")
+                  [ AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
+                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3"),
+                    AnnAssign (NameTrg "y$5") IntTy (Constant (ConstInt 0)),
+                    AnnAssign (NameTrg "y$6") IntTy (Name "y$5"),
+                    AnnAssign (NameTrg "x$3") IntTy (Constant (ConstInt 0)),
+                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3")
                   ],
-                AnnAssign (NameTrg "x$8") IntTy (Name "x$4"),
-                AnnAssign (NameTrg "x$9") IntTy (Constant (ConstInt 0)),
-                AnnAssign (NameTrg "x$10") IntTy (Name "x$9")
+                AnnAssign (NameTrg "x$7") IntTy (Name "x$3"),
+                AnnAssign (NameTrg "x$8") IntTy (Constant (ConstInt 0)),
+                AnnAssign (NameTrg "x$9") IntTy (Name "x$8")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -390,14 +390,14 @@ spec = describe "run" $ do
           ]
     let expected =
           [ ToplevelFunctionDef
-              "main$0"
+              "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "a$1") (ListTy IntTy) (List IntTy []),
-                AnnAssign (SubscriptTrg (NameTrg "a$1") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$1") (Constant (ConstInt 0))),
-                AnnAssign (SubscriptTrg (NameTrg "a$1") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$1") (Constant (ConstInt 0))),
-                AnnAssign (SubscriptTrg (NameTrg "a$1") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$1") (Constant (ConstInt 0))),
-                AnnAssign (SubscriptTrg (NameTrg "a$1") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$1") (Constant (ConstInt 0)))
+              [ AnnAssign (NameTrg "a$0") (ListTy IntTy) (List IntTy []),
+                AnnAssign (SubscriptTrg (NameTrg "a$0") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$0") (Constant (ConstInt 0))),
+                AnnAssign (SubscriptTrg (NameTrg "a$0") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$0") (Constant (ConstInt 0))),
+                AnnAssign (SubscriptTrg (NameTrg "a$0") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$0") (Constant (ConstInt 0))),
+                AnnAssign (SubscriptTrg (NameTrg "a$0") (Constant (ConstInt 0))) IntTy (Subscript (Name "a$0") (Constant (ConstInt 0)))
               ]
           ]
     run' parsed `shouldBe` Right expected

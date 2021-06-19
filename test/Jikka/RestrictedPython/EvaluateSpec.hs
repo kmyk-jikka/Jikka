@@ -4,6 +4,7 @@ module Jikka.RestrictedPython.EvaluateSpec (spec) where
 
 import Jikka.RestrictedPython.Evaluate
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Value
 import Test.Hspec
 
 spec :: Spec

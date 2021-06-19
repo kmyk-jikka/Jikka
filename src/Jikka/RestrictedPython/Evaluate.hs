@@ -11,13 +11,12 @@
 -- Portability : portable
 module Jikka.RestrictedPython.Evaluate
   ( run,
-    Value (..),
+    makeGlobal,
+    runWithGlobal,
     evalExpr,
     evalStatement,
     evalStatements,
     execToplevelStatement,
-    standardBuiltinFunctions,
-    additionalBuiltinFunctions,
   )
 where
 
@@ -32,14 +31,6 @@ import Jikka.Common.Matrix
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Value
 
-newtype Global = Global
-  { unGlobal :: M.Map VarName Value
-  }
-  deriving (Eq, Ord, Show, Read)
-
-initialGlobal :: Global
-initialGlobal = Global $ M.map BuiltinVal (M.union standardBuiltinFunctions additionalBuiltinFunctions)
-
 assign :: MonadState Local m => VarName -> Value -> m ()
 assign x v = modify' (Local . M.insert x v . unLocal)
 
@@ -48,7 +39,7 @@ lookupLocal x = do
   local <- get
   case M.lookup x (unLocal local) of
     Just v -> return v
-    Nothing -> throwRuntimeError "undefined variable"
+    Nothing -> throwRuntimeError $ "undefined variable: " ++ unVarName x
 
 assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Expr -> Value -> m ()
 assignSubscriptedTarget f index v = do
@@ -204,7 +195,7 @@ evalExpr = \case
       (_, _) -> throwRuntimeError "type error"
   Lambda args body -> do
     savedLocal <- get
-    return $ ClosureVal savedLocal (map fst args) [Return body]
+    return $ ClosureVal savedLocal args [Return body]
   IfExp e1 e2 e3 -> do
     v1 <- evalExpr e1
     case v1 of
@@ -286,7 +277,7 @@ evalCall' f actualArgs = case f of
       throwRuntimeError "wrong number of arguments"
     savedLocal <- get
     put local
-    mapM_ (uncurry assign) (zip formalArgs actualArgs)
+    mapM_ (uncurry assign) (zip (map fst formalArgs) actualArgs)
     v <- evalStatements body
     put savedLocal
     case v of
@@ -464,25 +455,28 @@ execToplevelStatement :: (MonadState Global m, MonadError Error m) => ToplevelSt
 execToplevelStatement = \case
   ToplevelAnnAssign x _ e -> do
     global <- get
-    v <- run' global e
+    v <- runWithGlobal global e
     put $ Global (M.insert x v (unGlobal global))
   ToplevelFunctionDef f args _ body -> do
     global <- get
-    let v = ClosureVal (Local M.empty) (map fst args) body
+    let v = ClosureVal (Local M.empty) args body
     put $ Global (M.insert f v (unGlobal global))
   ToplevelAssert e -> do
     global <- get
-    v <- run' global e
+    v <- runWithGlobal global e
     when (v /= BoolVal True) $ do
       throwRuntimeError "assertion failure"
 
-run' :: MonadError Error m => Global -> Expr -> m Value
-run' global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
+runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
+runWithGlobal global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
+
+makeGlobal :: MonadError Error m => Program -> m Global
+makeGlobal prog = execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
 run :: MonadError Error m => Program -> Expr -> m Value
 run prog e = do
-  global <- execStateT (mapM_ execToplevelStatement prog) initialGlobal
-  run' global e
+  global <- makeGlobal prog
+  runWithGlobal global e
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value
 evalBinOp v1 op v2 = do

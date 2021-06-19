@@ -1,9 +1,12 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Jikka.RestrictedPython.Language.Util where
 
 import Data.List (delete, nub)
 import Jikka.Common.Alpha
+import Jikka.Common.Error
+import Jikka.Common.IO
 import Jikka.RestrictedPython.Language.Expr
 
 genType :: MonadAlpha m => m Type
@@ -103,3 +106,19 @@ hasNoAssignToLoopCounters _ = True -- TODO
 -- >     a += i
 hasNoAssignToLoopIterators :: Program -> Bool
 hasNoAssignToLoopIterators _ = True -- TODO
+
+readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
+readValueIO = \case
+  VarTy _ -> throwRuntimeError "cannot read values of type variables"
+  IntTy -> do
+    n <- read <$> liftIO getWord
+    return $ Constant (ConstInt n)
+  BoolTy -> do
+    p <- read <$> liftIO getWord
+    return $ Constant (ConstBool p)
+  ListTy t -> do
+    n <- read <$> liftIO getWord
+    xs <- replicateM n (readValueIO t)
+    return $ List t xs
+  TupleTy ts -> Tuple <$> mapM readValueIO ts
+  CallableTy _ _ -> throwRuntimeError "cannot read functions"
