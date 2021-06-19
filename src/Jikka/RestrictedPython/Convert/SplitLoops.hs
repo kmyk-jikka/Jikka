@@ -16,12 +16,12 @@ import Jikka.RestrictedPython.Language.Util
 import Jikka.RestrictedPython.Language.VariableAnalysis
 
 -- | `runForLoop` splits a for-loop to many for-loops as possible.
--- This assumes that `hasNoSubscriptionInLoopCounters`, `hasNoAssignToLoopCounters`, and `hasNoAssignToLoopIterators` hold.
+-- This assumes that `doesntHaveSubscriptionInLoopCounters`, `doesntHaveAssignmentToLoopCounters`, and `doesntHaveAssignmentToLoopIterators` hold.
 --
 -- This function analyzes read-variables and write-variables in statements, and split statements into connected components.
 runForLoop :: Target -> Expr -> [Statement] -> [Statement]
 runForLoop x iter body =
-  let connected (_, (r, w)) (_, (r', w')) = haveIntersection w r' || haveIntersection w' r
+  let connected (_, (r, w)) (_, (r', w')) = haveWriteReadIntersection w r' || haveWriteReadIntersection w' r
       go result [] = reverse result
       go result (stmt : stmts) =
         let (same, diff) = partition (connected stmt) stmts
@@ -30,7 +30,7 @@ runForLoop x iter body =
    in go [] body'
 
 -- | `run` splits for-loops into many small for-loops as possible.
--- This assumes that `hasNoSubscriptionInLoopCounters`, `hasNoAssignToLoopCounters`, and `hasNoAssignToLoopIterators` hold.
+-- This assumes that `doesntHaveSubscriptionInLoopCounters`, `doesntHaveAssignmentToLoopCounters`, and `doesntHaveAssignmentToLoopIterators` hold.
 -- This may introduce name conflicts.
 --
 -- For example, the following

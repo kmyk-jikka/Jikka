@@ -12,8 +12,8 @@ newtype ReadList = ReadList [VarName]
 newtype WriteList = WriteList [VarName]
   deriving (Eq, Ord, Show, Read)
 
-haveIntersection :: WriteList -> ReadList -> Bool
-haveIntersection (WriteList w) (ReadList r) = not (null (w `intersect` r))
+haveWriteReadIntersection :: WriteList -> ReadList -> Bool
+haveWriteReadIntersection (WriteList w) (ReadList r) = not (null (w `intersect` r))
 
 analyzeExpr :: Expr -> ReadList
 analyzeExpr = ReadList . freeVars

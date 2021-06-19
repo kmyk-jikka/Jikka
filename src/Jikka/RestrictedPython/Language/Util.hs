@@ -1,7 +1,48 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Jikka.RestrictedPython.Language.Util where
+module Jikka.RestrictedPython.Language.Util
+  ( -- * generating symbols
+    genType,
+    genVarName,
+
+    -- * free variables
+    freeTyVars,
+    freeVars,
+    freeVarsTarget,
+
+    -- * return-statements
+    doesAlwaysReturn,
+    doesPossiblyReturn,
+
+    -- * traversing statements
+    mapStatement,
+    mapStatementM,
+    mapLargeStatement,
+    mapLargeStatementM,
+    mapStatements,
+    mapStatementsM,
+    listStatements,
+
+    -- * traversing sub exprs
+    mapSubExprM,
+    listSubExprs,
+
+    -- * traversing exprs
+    mapExprTargetM,
+    mapExprStatementM,
+    mapExprM,
+    listExprs,
+
+    -- * targets
+    targetVars,
+    hasSubscriptTrg,
+    hasBareNameTrg,
+
+    -- * IO
+    readValueIO,
+  )
+where
 
 import Control.Monad.Identity
 import Control.Monad.Writer.Strict
@@ -60,14 +101,6 @@ freeVarsTarget = nub . go
       NameTrg _ -> []
       TupleTrg xs -> concatMap go xs
 
-targetVars :: Target -> [VarName]
-targetVars = nub . go
-  where
-    go = \case
-      SubscriptTrg x _ -> go x
-      NameTrg x -> [x]
-      TupleTrg xs -> concatMap go xs
-
 doesAlwaysReturn :: Statement -> Bool
 doesAlwaysReturn = \case
   Return _ -> True
@@ -85,6 +118,69 @@ doesPossiblyReturn = \case
   For _ _ body -> any doesPossiblyReturn body
   If _ body1 body2 -> any doesPossiblyReturn body1 || any doesPossiblyReturn body2
   Assert _ -> False
+
+-- | `mapSubExprM` replaces all exprs in a given expr using a given function.
+-- This may breaks various constraints.
+mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
+mapSubExprM f = go
+  where
+    go = \case
+      BoolOp e1 op e2 -> f =<< BoolOp <$> go e1 <*> return op <*> go e2
+      BinOp e1 op e2 -> f =<< BinOp <$> go e1 <*> return op <*> go e2
+      UnaryOp op e -> f . UnaryOp op =<< go e
+      Lambda args body -> f . Lambda args =<< go body
+      IfExp e1 e2 e3 -> f =<< IfExp <$> go e1 <*> go e2 <*> go e3
+      ListComp e (Comprehension x iter pred) -> do
+        x <- mapExprTargetM f x
+        iter <- go iter
+        pred <- mapM go pred
+        f $ ListComp e (Comprehension x iter pred)
+      Compare e1 op e2 -> f =<< Compare <$> go e1 <*> return op <*> go e2
+      Call g args -> f =<< Call <$> go g <*> mapM go args
+      Constant const -> f $ Constant const
+      Subscript e1 e2 -> f =<< Subscript <$> go e1 <*> go e2
+      Name x -> f $ Name x
+      List t es -> f . List t =<< mapM go es
+      Tuple es -> f . Tuple =<< mapM go es
+      SubscriptSlice e from to step -> f =<< SubscriptSlice <$> go e <*> mapM go from <*> mapM go to <*> mapM go step
+
+listSubExprs :: Expr -> [Expr]
+listSubExprs = reverse . getDual . execWriter . mapSubExprM go
+  where
+    go e = do
+      tell $ Dual [e]
+      return e
+
+mapExprTargetM :: Monad m => (Expr -> m Expr) -> Target -> m Target
+mapExprTargetM f = \case
+  SubscriptTrg x e -> SubscriptTrg <$> mapExprTargetM f x <*> f e
+  NameTrg x -> return $ NameTrg x
+  TupleTrg xs -> TupleTrg <$> mapM (mapExprTargetM f) xs
+
+mapExprStatementM :: Monad m => (Expr -> m Expr) -> Statement -> m Statement
+mapExprStatementM f = \case
+  Return e -> Return <$> f e
+  AugAssign x op e -> AugAssign <$> mapExprTargetM f x <*> pure op <*> f e
+  AnnAssign x t e -> AnnAssign <$> mapExprTargetM f x <*> pure t <*> f e
+  For x iter body -> For <$> mapExprTargetM f x <*> f iter <*> mapM (mapExprStatementM f) body
+  If e body1 body2 -> If <$> f e <*> mapM (mapExprStatementM f) body1 <*> mapM (mapExprStatementM f) body2
+  Assert e -> Assert <$> f e
+
+mapExprToplevelStatementM :: Monad m => (Expr -> m Expr) -> ToplevelStatement -> m ToplevelStatement
+mapExprToplevelStatementM f = \case
+  ToplevelAnnAssign x t e -> ToplevelAnnAssign x t <$> f e
+  ToplevelFunctionDef g args ret body -> ToplevelFunctionDef g args ret <$> mapM (mapExprStatementM f) body
+  ToplevelAssert e -> ToplevelAssert <$> f e
+
+mapExprM :: Monad m => (Expr -> m Expr) -> Program -> m Program
+mapExprM f = mapM (mapExprToplevelStatementM f)
+
+listExprs :: Program -> [Expr]
+listExprs = reverse . getDual . execWriter . mapExprM go
+  where
+    go e = do
+      tell $ Dual [e]
+      return e
 
 mapStatementStatementM :: Monad m => (Statement -> m [Statement]) -> Statement -> m [Statement]
 mapStatementStatementM f = \case
@@ -108,6 +204,8 @@ mapStatementToplevelStatementM go = \case
     return $ ToplevelFunctionDef f args ret body
   ToplevelAssert e -> return $ ToplevelAssert e
 
+-- | `mapStatementM` replaces all statements in a given program using a given function.
+-- This may breaks various constraints.
 mapStatementM :: Monad m => (Statement -> m [Statement]) -> Program -> m Program
 mapStatementM f = mapM (mapStatementToplevelStatementM f)
 
@@ -164,6 +262,14 @@ mapStatementsM f = mapM (mapStatementsToplevelStatementM f)
 
 mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
 mapStatements f = runIdentity . mapStatementsM (return . f)
+
+targetVars :: Target -> [VarName]
+targetVars = nub . go
+  where
+    go = \case
+      SubscriptTrg x _ -> go x
+      NameTrg x -> [x]
+      TupleTrg xs -> concatMap go xs
 
 hasSubscriptTrg :: Target -> Bool
 hasSubscriptTrg = \case
