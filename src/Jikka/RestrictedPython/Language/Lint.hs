@@ -43,20 +43,20 @@ doesntHaveSubscriptionInLoopCounters = not . hasSubscriptionInLoopCounters
 ensureDoesntHaveSubscriptionInLoopCounters :: MonadError Error m => Program -> m ()
 ensureDoesntHaveSubscriptionInLoopCounters = makeEnsureProgram doesntHaveSubscriptionInLoopCounters "there must not be subscription in loop counters"
 
--- | `hasNameLeakOfLoopCounters` checks that there are leaks of loop counters of for-loops.
+-- | `hasLeakOfLoopCounters` checks that there are leaks of loop counters of for-loops.
 -- For example, the following has a leak.
 --
 -- > for i in range(100):
 -- >     pass
 -- > return i  # => 100
-hasNameLeakOfLoopCounters :: Program -> Bool
-hasNameLeakOfLoopCounters _ = False -- TODO
+hasLeakOfLoopCounters :: Program -> Bool
+hasLeakOfLoopCounters _ = False -- TODO
 
-doesntHaveNameLeakOfLoopCounters :: Program -> Bool
-doesntHaveNameLeakOfLoopCounters = not . hasNameLeakOfLoopCounters
+doesntHaveLeakOfLoopCounters :: Program -> Bool
+doesntHaveLeakOfLoopCounters = not . hasLeakOfLoopCounters
 
-ensureDoesntHaveNameLeakOfLoopCounters :: MonadError Error m => Program -> m ()
-ensureDoesntHaveNameLeakOfLoopCounters = makeEnsureProgram doesntHaveNameLeakOfLoopCounters "there must not be leaks of loop counters"
+ensureDoesntHaveLeakOfLoopCounters :: MonadError Error m => Program -> m ()
+ensureDoesntHaveLeakOfLoopCounters = makeEnsureProgram doesntHaveLeakOfLoopCounters "there must not be leaks of loop counters"
 
 -- | `hasAssignmentToLoopCounters` checks that there are assignments to loop counters of for-loops.
 -- For example, the following has the assignment.

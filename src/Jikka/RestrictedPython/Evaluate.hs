@@ -350,7 +350,7 @@ evalCall' f actualArgs = case f of
 --     \qquad{(a \in \lbrace v, \mathbf{stop} \rbrace)}
 -- \]
 --
--- It assumes the program is properly alpha-converted, i.e. `doesntHaveNameLeakOfLoopCounters`. So it leaks loop counters to out of loops.
+-- It assumes the program is properly alpha-converted, i.e. `doesntHaveLeakOfLoopCounters`. So it leaks loop counters to out of loops.
 --
 -- === Rules for \(\mathbf{if}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt};\quad \mathbf{else}\colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt}\)
 --
@@ -472,10 +472,10 @@ runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
 runWithGlobal global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
 
 -- | `makeGlobal` packs toplevel definitions into `Global`.
--- This assumes `doesntHaveNameLeakOfLoopCounters`.
+-- This assumes `doesntHaveLeakOfLoopCounters`.
 makeGlobal :: MonadError Error m => Program -> m Global
 makeGlobal prog = do
-  ensureDoesntHaveNameLeakOfLoopCounters prog
+  ensureDoesntHaveLeakOfLoopCounters prog
   execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
 run :: MonadError Error m => Program -> Expr -> m Value

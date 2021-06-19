@@ -234,7 +234,7 @@ runProgram = mapM runToplevelStatement
 --   >     x3 = x3 + 1
 --   > x5 = x3 + 1
 --
--- * This blames leaks of loop counters of for-statements, i.e. `doesntHaveNameLeakOfLoopCounters`.
+-- * This blames leaks of loop counters of for-statements, i.e. `doesntHaveLeakOfLoopCounters`.
 --   For example, the followings is not allowed.
 --
 --   > for i in range(10):
@@ -255,5 +255,5 @@ runProgram = mapM runToplevelStatement
 --   > return a  # error
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.Alpha" $ do
-  ensureDoesntHaveNameLeakOfLoopCounters prog
+  ensureDoesntHaveLeakOfLoopCounters prog
   evalStateT (runProgram prog) initialEnv

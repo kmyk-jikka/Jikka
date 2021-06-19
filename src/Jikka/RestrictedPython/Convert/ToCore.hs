@@ -14,7 +14,7 @@ import qualified Jikka.RestrictedPython.Language.Lint as X
 -- This assumes the follwing conditions:
 --
 -- * `X.doesntHaveSubscriptionInLoopCounters`
--- * `X.doesntHaveNameLeakOfLoopCounters`
+-- * `X.doesntHaveLeakOfLoopCounters`
 -- * `X.doesntHaveAssignmentToLoopCounters`
 -- * `X.doesntHaveAssignmentToLoopIterators`
 -- * `X.doesntHaveReturnInLoops`
@@ -22,7 +22,7 @@ import qualified Jikka.RestrictedPython.Language.Lint as X
 run :: MonadError Error m => X.Program -> m Y.Program
 run prog = do
   X.ensureDoesntHaveSubscriptionInLoopCounters prog
-  X.ensureDoesntHaveNameLeakOfLoopCounters prog
+  X.ensureDoesntHaveLeakOfLoopCounters prog
   X.ensureDoesntHaveAssignmentToLoopCounters prog
   X.ensureDoesntHaveAssignmentToLoopIterators prog
   X.ensureDoesntHaveReturnInLoops prog
