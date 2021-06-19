@@ -3,6 +3,8 @@
 
 module Jikka.RestrictedPython.Language.Util where
 
+import Control.Monad.Identity
+import Control.Monad.Writer.Strict
 import Data.List (delete, nub)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -59,6 +61,58 @@ targetVars = nub . go
       SubscriptTrg x _ -> go x
       NameTrg x -> [x]
       TupleTrg xs -> concatMap go xs
+
+mapStatementStatementM :: Monad m => (Statement -> m [Statement]) -> Statement -> m [Statement]
+mapStatementStatementM f = \case
+  Return e -> f $ Return e
+  AugAssign x op e -> f $ AugAssign x op e
+  AnnAssign x t e -> f $ AnnAssign x t e
+  For x iter body -> do
+    body <- concat <$> mapM (mapStatementStatementM f) body
+    f $ For x iter body
+  If e body1 body2 -> do
+    body1 <- concat <$> mapM (mapStatementStatementM f) body1
+    body2 <- concat <$> mapM (mapStatementStatementM f) body2
+    f $ If e body1 body2
+  Assert e -> f $ Assert e
+
+mapStatementToplevelStatementM :: Monad m => (Statement -> m [Statement]) -> ToplevelStatement -> m ToplevelStatement
+mapStatementToplevelStatementM go = \case
+  ToplevelAnnAssign x t e -> return $ ToplevelAnnAssign x t e
+  ToplevelFunctionDef f args ret body -> do
+    body <- concat <$> mapM (mapStatementStatementM go) body
+    return $ ToplevelFunctionDef f args ret body
+  ToplevelAssert e -> return $ ToplevelAssert e
+
+mapStatementM :: Monad m => (Statement -> m [Statement]) -> Program -> m Program
+mapStatementM f = mapM (mapStatementToplevelStatementM f)
+
+mapStatement :: (Statement -> [Statement]) -> Program -> Program
+mapStatement f = runIdentity . mapStatementM (return . f)
+
+mapLargeStatementM :: Monad m => (Expr -> [Statement] -> [Statement] -> m [Statement]) -> (Target -> Expr -> [Statement] -> m [Statement]) -> Program -> m Program
+mapLargeStatementM fIf fFor = mapStatementM go
+  where
+    go = \case
+      Return e -> return [Return e]
+      AugAssign x op e -> return [AugAssign x op e]
+      AnnAssign x t e -> return [AnnAssign x t e]
+      For x iter body -> fFor x iter body
+      If e body1 body2 -> fIf e body1 body2
+      Assert e -> return [Assert e]
+
+mapLargeStatement :: (Expr -> [Statement] -> [Statement] -> [Statement]) -> (Target -> Expr -> [Statement] -> [Statement]) -> Program -> Program
+mapLargeStatement fIf fFor = runIdentity . mapLargeStatementM fIf' fFor'
+  where
+    fIf' e body1 body2 = return $ fIf e body1 body2
+    fFor' x iter body = return $ fFor x iter body
+
+listStatements :: Program -> [Statement]
+listStatements = reverse . getDual . execWriter . mapStatementM go
+  where
+    go stmt = do
+      tell $ Dual [stmt]
+      return [stmt]
 
 hasNoSubscriptTrg :: Target -> Bool
 hasNoSubscriptTrg = \case

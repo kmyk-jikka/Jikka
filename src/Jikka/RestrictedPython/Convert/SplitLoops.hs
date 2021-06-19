@@ -80,21 +80,6 @@ runForLoop x iter body =
       body' = map (\stmt -> (stmt, analyzeStatement stmt)) body
    in go [] body'
 
-runStatement :: Statement -> [Statement]
-runStatement = \case
-  Return e -> [Return e]
-  AugAssign x op e -> [AugAssign x op e]
-  AnnAssign x t e -> [AnnAssign x t e]
-  For x iter body -> runForLoop x iter body
-  If e body1 body2 -> [If e (concatMap runStatement body1) (concatMap runStatement body2)]
-  Assert e -> [Assert e]
-
-runToplevelStatement :: ToplevelStatement -> ToplevelStatement
-runToplevelStatement = \case
-  ToplevelAnnAssign x t e -> ToplevelAnnAssign x t e
-  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f args ret (concatMap runStatement body)
-  ToplevelAssert e -> ToplevelAssert e
-
 -- | `run` splits for-loops into many small for-loops as possible.
 -- This assumes that `hasNoSubscriptionInLoopCounters`, `hasNoAssignToLoopCounters`, and `hasNoAssignToLoopIterators` hold.
 -- This may introduce name conflicts.
@@ -118,7 +103,7 @@ runToplevelStatement = \case
 -- > for i in range(10):
 -- >     a += i
 run' :: Program -> Program
-run' = map runToplevelStatement
+run' = mapLargeStatement (\e pred1 pred2 -> [If e pred1 pred2]) runForLoop
 
 -- | `run` does `run'` and alpha conversion.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
