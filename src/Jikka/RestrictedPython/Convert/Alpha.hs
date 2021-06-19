@@ -12,6 +12,7 @@ import qualified Data.Set as S
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Stdlib
 import Jikka.RestrictedPython.Language.Util
 
@@ -233,6 +234,13 @@ runProgram = mapM runToplevelStatement
 --   >     x3 = x3 + 1
 --   > x5 = x3 + 1
 --
+-- * This blames leaks of loop counters of for-statements, i.e. `doesntHaveNameLeakOfLoopCounters`.
+--   For example, the followings is not allowed.
+--
+--   > for i in range(10):
+--   >     a = 0
+--   > return a  # error
+--
 -- * This blames leaks of names from for-statements and if-statements at all.
 --   For example, the followings are not allowed.
 --
@@ -242,10 +250,10 @@ runProgram = mapM runToplevelStatement
 --   >     a = 1
 --   > return a  # error
 --
---   > i = 0
 --   > for i in range(10):
---   >     pass
---   > return i  # error
+--   >     a = 0
+--   > return a  # error
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.Alpha" $ do
+  ensureDoesntHaveNameLeakOfLoopCounters prog
   evalStateT (runProgram prog) initialEnv

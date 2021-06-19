@@ -102,8 +102,8 @@ hasAssignToLoopIterators prog = any check (listStatements prog)
 doesntHaveAssignmentToLoopIterators :: Program -> Bool
 doesntHaveAssignmentToLoopIterators = not . hasAssignToLoopIterators
 
-ensureDoesntHaveAssignToLoopIterators :: MonadError Error m => Program -> m ()
-ensureDoesntHaveAssignToLoopIterators = makeEnsureProgram doesntHaveAssignmentToLoopIterators "there must not be assignments changing loop iterators"
+ensureDoesntHaveAssignmentToLoopIterators :: MonadError Error m => Program -> m ()
+ensureDoesntHaveAssignmentToLoopIterators = makeEnsureProgram doesntHaveAssignmentToLoopIterators "there must not be assignments changing loop iterators"
 
 -- | `hasReturnInLoops` checks that there are return-statements in for-loops.
 -- For example, the following has such a return-statement.

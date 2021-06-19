@@ -29,6 +29,7 @@ import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Value
 
 assign :: MonadState Local m => VarName -> Value -> m ()
@@ -349,7 +350,7 @@ evalCall' f actualArgs = case f of
 --     \qquad{(a \in \lbrace v, \mathbf{stop} \rbrace)}
 -- \]
 --
--- It assumes the program is properly alpha-converted and leaks the scope of loop counters.
+-- It assumes the program is properly alpha-converted, i.e. `doesntHaveNameLeakOfLoopCounters`. So it leaks loop counters to out of loops.
 --
 -- === Rules for \(\mathbf{if}~ e \colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt};\quad \mathbf{else}\colon\quad \mathrm{stmt}; \mathrm{stmt}; \dots; \mathrm{stmt}\)
 --
@@ -470,8 +471,12 @@ execToplevelStatement = \case
 runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
 runWithGlobal global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
 
+-- | `makeGlobal` packs toplevel definitions into `Global`.
+-- This assumes `doesntHaveNameLeakOfLoopCounters`.
 makeGlobal :: MonadError Error m => Program -> m Global
-makeGlobal prog = execStateT (mapM_ execToplevelStatement prog) initialGlobal
+makeGlobal prog = do
+  ensureDoesntHaveNameLeakOfLoopCounters prog
+  execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
 run :: MonadError Error m => Program -> Expr -> m Value
 run prog e = do

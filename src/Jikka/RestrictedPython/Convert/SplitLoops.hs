@@ -12,6 +12,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.RestrictedPython.Convert.Alpha as Alpha (run)
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Util
 import Jikka.RestrictedPython.Language.VariableAnalysis
 
@@ -29,7 +30,7 @@ runForLoop x iter body =
       body' = map (\stmt -> (stmt, analyzeStatement stmt)) body
    in go [] body'
 
--- | `run` splits for-loops into many small for-loops as possible.
+-- | `run'` splits for-loops into many small for-loops as possible.
 -- This assumes that `doesntHaveSubscriptionInLoopCounters`, `doesntHaveAssignmentToLoopCounters`, and `doesntHaveAssignmentToLoopIterators` hold.
 -- This may introduce name conflicts.
 --
@@ -54,6 +55,12 @@ runForLoop x iter body =
 run' :: Program -> Program
 run' = mapLargeStatement (\e pred1 pred2 -> [If e pred1 pred2]) runForLoop
 
--- | `run` does `run'` and alpha conversion.
+-- | `run` does alpha conversion, check assumptions, and `run'`.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run = Alpha.run . run'
+run prog = do
+  prog <- Alpha.run prog
+  ensureDoesntHaveSubscriptionInLoopCounters prog
+  ensureDoesntHaveAssignmentToLoopCounters prog
+  ensureDoesntHaveAssignmentToLoopIterators prog
+  prog <- return $ run' prog
+  Alpha.run prog
