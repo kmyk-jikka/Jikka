@@ -77,6 +77,15 @@ doesAlwaysReturn = \case
   If _ body1 body2 -> any doesAlwaysReturn body1 && any doesAlwaysReturn body2
   Assert _ -> False
 
+doesPossiblyReturn :: Statement -> Bool
+doesPossiblyReturn = \case
+  Return _ -> True
+  AugAssign _ _ _ -> False
+  AnnAssign _ _ _ -> False
+  For _ _ body -> any doesPossiblyReturn body
+  If _ body1 body2 -> any doesPossiblyReturn body1 || any doesPossiblyReturn body2
+  Assert _ -> False
+
 mapStatementStatementM :: Monad m => (Statement -> m [Statement]) -> Statement -> m [Statement]
 mapStatementStatementM f = \case
   Return e -> f $ Return e
@@ -156,52 +165,17 @@ mapStatementsM f = mapM (mapStatementsToplevelStatementM f)
 mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
 mapStatements f = runIdentity . mapStatementsM (return . f)
 
-hasNoSubscriptTrg :: Target -> Bool
-hasNoSubscriptTrg = \case
+hasSubscriptTrg :: Target -> Bool
+hasSubscriptTrg = \case
+  SubscriptTrg _ _ -> True
+  NameTrg _ -> False
+  TupleTrg xs -> any hasSubscriptTrg xs
+
+hasBareNameTrg :: Target -> Bool
+hasBareNameTrg = \case
   SubscriptTrg _ _ -> False
   NameTrg _ -> True
-  TupleTrg xs -> all hasNoSubscriptTrg xs
-
--- | `hasNoSubscriptionInLoopCounters` checks that there are no `SubscriptTrg` in loop counters of for-loops.
--- For example, the following has subscription.
---
--- > for a[0] in range(100):
--- >     pass
--- > return a[0]
---
--- NOTE: This is allowd in the standard Python.
-hasNoSubscriptionInLoopCounters :: Program -> Bool
-hasNoSubscriptionInLoopCounters _ = True -- TODO
-
--- | `hasNoNameLeakOfLoopCounters` checks that there are no leaks of loop counters of for-loops.
--- For example, the following has a leak.
---
--- > for i in range(100):
--- >     pass
--- > return i  # => 100
-hasNoNameLeakOfLoopCounters :: Program -> Bool
-hasNoNameLeakOfLoopCounters _ = True -- TODO
-
--- | `hasNoAssignToLoopCounters` checks that there are no assignments to loop counters of for-loops.
--- For example, the following has the assignment.
---
--- > for i in range(100):
--- >     i += 1
-hasNoAssignToLoopCounters :: Program -> Bool
-hasNoAssignToLoopCounters _ = True -- TODO
-
--- | `hasNoAssignToLoopIterators` checks that there are no assignments to loop iterators of for-loops.
--- For example, the following have the assignments.
---
--- > a = list(range(10))
--- > for i in a:
--- >     a[5] = i
---
--- > a = 0
--- > for i in f(a):
--- >     a += i
-hasNoAssignToLoopIterators :: Program -> Bool
-hasNoAssignToLoopIterators _ = True -- TODO
+  TupleTrg xs -> any hasSubscriptTrg xs
 
 readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
 readValueIO = \case
