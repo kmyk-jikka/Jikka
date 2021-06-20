@@ -149,7 +149,7 @@ ensureDoesntHaveMixedAssignment = makeEnsureProgram doesntHaveMixedAssignment "t
 -- | `hasNonTrivialSubscriptedAssignmentInForLoops` checks that there are assignments with non-trivial subscriptions in for-loops.
 -- A trivial subscription is a sequence of subscriptions to a variable with constant indices and at most one trivial loop-counter indices for each loops.
 -- A constant index is an expr which has a constant value in the loop.
--- A trivial loop-counter index is the loop counter from "range(n)", "range(n, m)" or "enumerate(a)" with optional post-addition with a int literal.
+-- A trivial loop-counter index is the loop counter from "range(n)", "range(n, m)" or "enumerate(a)" with optional post-addition with a positive int literal.
 --
 -- For example, the followings have such assignments.
 --
@@ -167,6 +167,9 @@ ensureDoesntHaveMixedAssignment = makeEnsureProgram doesntHaveMixedAssignment "t
 --
 -- > for i in range(10):
 -- >     a[1 + i] += 1
+--
+-- > for i in range(10):
+-- >     a[i - 1] += 1
 --
 -- > c = 1
 -- > for i in range(10):

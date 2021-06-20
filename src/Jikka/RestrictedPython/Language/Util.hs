@@ -38,6 +38,10 @@ module Jikka.RestrictedPython.Language.Util
     mapExprM,
     listExprs,
 
+    -- * exprs
+    hasFunctionCall,
+    isSmallExpr,
+
     -- * targets
     targetVars,
     hasSubscriptTrg,
@@ -275,6 +279,17 @@ mapStatementsM f = mapM (mapStatementsToplevelStatementM f)
 
 mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
 mapStatements f = runIdentity . mapStatementsM (return . f)
+
+hasFunctionCall :: Expr -> Bool
+hasFunctionCall = any check . listSubExprs
+  where
+    check = \case
+      Call _ _ -> True
+      _ -> False
+
+-- | `isSmallExpr` is true if the evaluation of a given expr trivially terminates.
+isSmallExpr :: Expr -> Bool
+isSmallExpr = not . hasFunctionCall
 
 targetVars :: Target -> [VarName]
 targetVars = nub . go
