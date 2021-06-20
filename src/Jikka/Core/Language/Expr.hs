@@ -87,10 +87,10 @@ data Builtin
     Gcd
   | -- | \(: \int \times \int \to \int\)
     Lcm
-  | -- | \(: \int \times \int \to \int\)
-    Min2
-  | -- | \(: \int \times \int \to \int\)
-    Max2
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    Min2 Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    Max2 Type
   | -- logical functions
 
     -- | \(: \bool \to \bool\)

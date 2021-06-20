@@ -107,8 +107,8 @@ runOperator = \case
   X.BitOr -> Y.BitOr
   X.BitXor -> Y.BitXor
   X.BitAnd -> Y.BitAnd
-  X.Max -> Y.Max2
-  X.Min -> Y.Min2
+  X.Max -> Y.Max2 Y.IntTy
+  X.Min -> Y.Min2 Y.IntTy
 
 runCmpOp :: X.CmpOp' -> Y.Builtin
 runCmpOp (X.CmpOp' op t) = case op of

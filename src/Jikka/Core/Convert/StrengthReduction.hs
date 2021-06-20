@@ -32,7 +32,7 @@ eliminateSomeBuiltins = \case
   -- arithmetical functions
   Minus' e1 e2 -> go $ Plus' e1 (Negate' e2)
   -- advanced arithmetical functions
-  Abs' e -> go $ Max2' e (Negate' e)
+  Abs' e -> go $ Max2' IntTy e (Negate' e)
   Lcm' e1 e2 -> go $ FloorDiv' (Gcd' e1 e2) (Mult' e1 e2)
   -- logical functions
   Implies' e1 e2 -> Or' (Not' e1) e2
@@ -51,8 +51,8 @@ reduceNegate = \case
   Mult' (Negate' e1) e2 -> go $ Negate' (Mult' e1 e2)
   Mult' e1 (Negate' e2) -> go $ Negate' (Mult' e1 e2)
   -- `Abs` is already removed.
-  Min2' (Negate' e1) (Negate' e2) -> go $ Negate' (Max2' e1 e2)
-  Max2' (Negate' e1) (Negate' e2) -> go $ Negate' (Min2' e1 e2)
+  Min2' IntTy (Negate' e1) (Negate' e2) -> go $ Negate' (Max2' IntTy e1 e2)
+  Max2' IntTy (Negate' e1) (Negate' e2) -> go $ Negate' (Min2' IntTy e1 e2)
   e -> e
 
 -- | `reduceNot` brings `Not` to the root.
@@ -82,8 +82,8 @@ reduceAssoc = \case
   Plus' (Plus' e1 e2) e3 -> Plus' e1 (Plus' e2 e3)
   Minus' (Minus' e1 e2) e3 -> Minus' e1 (Minus' e2 e3)
   Mult' (Mult' e1 e2) e3 -> Mult' e1 (Mult' e2 e3)
-  Max2' (Max2' e1 e2) e3 -> Max2' e1 (Max2' e2 e3)
-  Min2' (Min2' e1 e2) e3 -> Min2' e1 (Min2' e2 e3)
+  Max2' t1 (Max2' t2 e1 e2) e3 -> Max2' t1 e1 (Max2' t2 e2 e3)
+  Min2' t1 (Min2' t2 e1 e2) e3 -> Min2' t1 e1 (Min2' t2 e2 e3)
   And' (And' e1 e2) e3 -> And' e1 (And' e2 e3)
   Or' (Or' e1 e2) e3 -> Or' e1 (Or' e2 e3)
   BitAnd' (BitAnd' e1 e2) e3 -> BitAnd' e1 (BitAnd' e2 e3)
@@ -156,12 +156,12 @@ reduceFoldMap = \case
   Product' (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Mult' (Pow' (Negate' Lit0) (Len' t1 xs)) (Product' (Map' t1 t2 (Lam1 x t e) xs))
   Product' (Map' t1 t2 (Lam1 x t (Mult' e1 e2)) xs) -> go $ Mult' (Product' (Map' t1 t2 (Lam1 x t e1) xs)) (Product' (Map' t1 t2 (Lam1 x t e2) xs))
   Max1' _ (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> e
-  Max1' _ (Map' t1 t2 (Lam1 x t (Max2' e1 e2)) xs) -> go $ Max2' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
+  Max1' _ (Map' t1 t2 (Lam1 x t (Max2' t' e1 e2)) xs) -> go $ Max2' t' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
   Max1' _ (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Negate' (Min1' t2 (Map' t1 t2 (Lam1 x t e) xs))
   Max1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ Plus' e1 (Max1' t2 (Map' t1 t2 (Lam1 x t e2) xs))
   Max1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ Plus' (Max1' t2 (Map' t1 t2 (Lam1 x t e1) xs)) e1
   Min1' _ (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> e
-  Min1' _ (Map' t1 t2 (Lam1 x t (Min2' e1 e2)) xs) -> go $ Min2' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
+  Min1' _ (Map' t1 t2 (Lam1 x t (Min2' t' e1 e2)) xs) -> go $ Min2' t' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
   Min1' _ (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Negate' (Max1' t2 (Map' t1 t2 (Lam1 x t e) xs))
   Min1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ Plus' e1 (Min1' t2 (Map' t1 t2 (Lam1 x t e2) xs))
   Min1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ Plus' (Min1' t2 (Map' t1 t2 (Lam1 x t e1) xs)) e1

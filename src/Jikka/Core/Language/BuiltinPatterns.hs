@@ -44,9 +44,9 @@ pattern Gcd' e1 e2 = AppBuiltin Gcd [e1, e2]
 
 pattern Lcm' e1 e2 = AppBuiltin Lcm [e1, e2]
 
-pattern Min2' e1 e2 = AppBuiltin Min2 [e1, e2]
+pattern Min2' t e1 e2 = AppBuiltin (Min2 t) [e1, e2]
 
-pattern Max2' e1 e2 = AppBuiltin Max2 [e1, e2]
+pattern Max2' t e1 e2 = AppBuiltin (Max2 t) [e1, e2]
 
 -- logical functions
 pattern Not' e = AppBuiltin Not [e]

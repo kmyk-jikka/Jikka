@@ -88,8 +88,12 @@ runAppBuiltin f args = case (f, args) of
   (X.Abs, [e]) -> return $ Y.Call (Y.Function "std::abs" []) [e]
   (X.Gcd, [e1, e2]) -> return $ Y.Call (Y.Function "std::gcd" []) [e1, e2]
   (X.Lcm, [e1, e2]) -> return $ Y.Call (Y.Function "std::lcm" []) [e1, e2]
-  (X.Min2, [e1, e2]) -> return $ Y.Call (Y.Function "std::min" []) [e1, e2]
-  (X.Max2, [e1, e2]) -> return $ Y.Call (Y.Function "std::max" []) [e1, e2]
+  (X.Min2 t, [e1, e2]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "std::min" [t]) [e1, e2]
+  (X.Max2 t, [e1, e2]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "std::max" [t]) [e1, e2]
   -- logical functions
   (X.Not, [e]) -> return $ Y.UnOp Y.Not e
   (X.And, [e1, e2]) -> return $ Y.BinOp Y.And e1 e2

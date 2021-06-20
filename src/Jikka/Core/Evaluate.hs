@@ -251,8 +251,8 @@ callBuiltin builtin args = case (builtin, args) of
   (Abs, [ValInt n]) -> return $ ValInt (abs n)
   (Gcd, [ValInt a, ValInt b]) -> return $ ValInt (gcd a b)
   (Lcm, [ValInt a, ValInt b]) -> return $ ValInt (lcm a b)
-  (Min2, [ValInt a, ValInt b]) -> return $ ValInt (min a b)
-  (Max2, [ValInt a, ValInt b]) -> return $ ValInt (max a b)
+  (Min2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (min a b) -- TODO: allow non-integers
+  (Max2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (max a b) -- TODO: allow non-integers
   -- logical functions
   (Not, [ValBool p]) -> return $ ValBool (not p)
   (And, [ValBool p, ValBool q]) -> return $ ValBool (p && q)

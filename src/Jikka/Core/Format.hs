@@ -65,8 +65,8 @@ analyzeBuiltin = \case
   Abs -> fun "abs"
   Gcd -> fun "gcd"
   Lcm -> fun "lcm"
-  Min2 -> fun "min"
-  Max2 -> fun "max"
+  Min2 t -> Fun [t] "min"
+  Max2 t -> Fun [t] "max"
   -- logical functions
   Not -> PrefixOp "not"
   And -> infixOp "and"

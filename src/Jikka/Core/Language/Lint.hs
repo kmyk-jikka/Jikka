@@ -34,8 +34,8 @@ builtinToType = \case
   Abs -> Fun1Ty IntTy
   Gcd -> Fun2Ty IntTy
   Lcm -> Fun2Ty IntTy
-  Min2 -> Fun2Ty IntTy
-  Max2 -> Fun2Ty IntTy
+  Min2 t -> Fun2Ty t
+  Max2 t -> Fun2Ty t
   -- logical functions
   Not -> Fun1Ty BoolTy
   And -> Fun2Ty BoolTy
