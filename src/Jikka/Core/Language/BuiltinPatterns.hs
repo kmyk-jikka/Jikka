@@ -86,6 +86,8 @@ pattern Map' t1 t2 f e = AppBuiltin (Map t1 t2) [f, e]
 
 pattern At' t e1 e2 = AppBuiltin (At t) [e1, e2]
 
+pattern Elem' t e1 e2 = AppBuiltin (Elem t) [e1, e2]
+
 pattern Sum' e = AppBuiltin Sum [e]
 
 pattern Product' e = AppBuiltin Product [e]

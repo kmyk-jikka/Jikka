@@ -133,6 +133,8 @@ data Builtin
     Map Type Type
   | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
     At Type
+  | -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \bool\)
+    Elem Type
   | -- | \(: \list(\int) \to \int\)
     Sum
   | -- | \(: \list(\int) \to \int\)
