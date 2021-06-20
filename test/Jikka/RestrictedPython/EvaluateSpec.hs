@@ -17,7 +17,7 @@ spec = describe "run" $ do
               [("n", IntTy)]
               IntTy
               [ If
-                  (Compare (Name "n") Eq' (constIntExp 0))
+                  (Compare (Name "n") (CmpOp' Eq' IntTy) (constIntExp 0))
                   [Return (constIntExp 1)]
                   [Return (BinOp (Name "n") Mult (Call (Name "fact") [BinOp (Name "n") Sub (constIntExp 1)]))]
               ]

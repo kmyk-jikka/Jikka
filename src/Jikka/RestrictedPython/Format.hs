@@ -69,8 +69,8 @@ formatUnaryOp = \case
   UAdd -> "+"
   USub -> "-"
 
-formatCmpOp :: CmpOp -> String
-formatCmpOp = \case
+formatCmpOp :: CmpOp' -> String
+formatCmpOp (CmpOp' op _) = case op of
   Eq' -> "=="
   NotEq -> "!="
   Lt -> "<"

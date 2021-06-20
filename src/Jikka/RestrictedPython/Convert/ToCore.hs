@@ -65,8 +65,8 @@ runOperator = \case
   X.Max -> Y.Max
   X.Min -> Y.Min
 
-runCmpOp :: X.CmpOp -> Y.Builtin
-runCmpOp = \case
+runCmpOp :: X.CmpOp' -> Y.Builtin
+runCmpOp (X.CmpOp' op _) = case op of
   X.Lt -> Y.LessThan
   X.LtE -> Y.LessEqual
   X.Gt -> Y.GreaterThan

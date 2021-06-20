@@ -23,6 +23,7 @@ module Jikka.RestrictedPython.Language.Expr
     Program,
     BoolOp (..),
     CmpOp (..),
+    CmpOp' (..),
     Operator (..),
     UnaryOp (..),
   )
@@ -85,6 +86,11 @@ data Target
   | TupleTrg [Target]
   deriving (Eq, Ord, Show, Read)
 
+-- | `CmpOp'` is a type for comparision operators.
+-- This is annotated with its type as let-polymorphism.
+data CmpOp' = CmpOp' CmpOp Type
+  deriving (Eq, Ord, Show, Read)
+
 data Comprehension = Comprehension Target Expr (Maybe Expr)
   deriving (Eq, Ord, Show, Read)
 
@@ -114,7 +120,7 @@ data Expr
   | Lambda [(VarName, Type)] Expr
   | IfExp Expr Expr Expr
   | ListComp Expr Comprehension
-  | Compare Expr CmpOp Expr
+  | Compare Expr CmpOp' Expr
   | Call Expr [Expr]
   | Constant Constant
   | Subscript Expr Expr

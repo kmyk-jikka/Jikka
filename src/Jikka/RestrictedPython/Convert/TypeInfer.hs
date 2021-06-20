@@ -102,10 +102,11 @@ formularizeExpr = \case
         tpred <- formularizeExpr pred
         formularizeType tpred BoolTy
     return $ ListTy te
-  Compare e1 _ e2 -> do
+  Compare e1 (CmpOp' op t) e2 -> do
     t1 <- formularizeExpr e1
     t2 <- formularizeExpr e2
-    formularizeType t1 t2
+    formularizeType t1 t
+    formularizeType t2 (if op == In || op == NotIn then ListTy t else t)
     return BoolTy
   Call f args -> do
     ts <- mapM formularizeExpr args
