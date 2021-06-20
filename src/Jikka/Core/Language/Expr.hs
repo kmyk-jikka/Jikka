@@ -32,11 +32,14 @@ unTypeName (TypeName name) = name
 -- See also [commentary/compiler/type-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/type-type).
 --
 -- \[
+--     \newcommand\int{\mathbf{int}}
+--     \newcommand\bool{\mathbf{bool}}
+--     \newcommand\list{\mathbf{list}}
 --     \begin{array}{rl}
 --         \tau ::= & \alpha \\
---         \vert & \mathbf{int} \\
---         \vert & \mathbf{bool} \\
---         \vert & \mathbf{list}(\tau) \\
+--         \vert & \int \\
+--         \vert & \bool \\
+--         \vert & \list(\tau) \\
 --         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \\
 --         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \to \tau_n
 --     \end{array}
@@ -53,71 +56,137 @@ data Type
 
 data Builtin
   = -- arithmetical functions
+
+    -- | \(: \int \to \int\)
     Negate
-  | Plus
-  | Minus
-  | Mult
-  | FloorDiv
-  | FloorMod
-  | CeilDiv
-  | CeilMod
-  | Pow
+  | -- | \(: \int \times \int \to \int\)
+    Plus
+  | -- | \(: \int \times \int \to \int\)
+    Minus
+  | -- | \(: \int \times \int \to \int\)
+    Mult
+  | -- | \(: \int \times \int \to \int\)
+    FloorDiv
+  | -- | \(: \int \times \int \to \int\)
+    FloorMod
+  | -- | \(: \int \times \int \to \int\)
+    CeilDiv
+  | -- | \(: \int \times \int \to \int\)
+    CeilMod
+  | -- | \(: \int \times \int \to \int\)
+    Pow
   | -- induction functions
+
+    -- | natural induction \(: \forall \alpha. \alpha \times (\alpha \to \alpha) \times \int \to \alpha\)
     NatInd Type
   | -- advanced arithmetical functions
+
+    -- | \(: \int \to \int\)
     Abs
-  | Gcd
-  | Lcm
-  | Min
-  | Max
+  | -- | \(: \int \times \int \to \int\)
+    Gcd
+  | -- | \(: \int \times \int \to \int\)
+    Lcm
+  | -- | \(: \int \times \int \to \int\)
+    Min
+  | -- | \(: \int \times \int \to \int\)
+    Max
   | -- logical functions
+
+    -- | \(: \bool \to \bool\)
     Not
-  | And
-  | Or
-  | Implies
-  | If Type
+  | -- | \(: \bool \times \bool \to \bool\)
+    And
+  | -- | \(: \bool \times \bool \to \bool\)
+    Or
+  | -- | \(: \bool \times \bool \to \bool\)
+    Implies
+  | -- | \(: \forall \alpha. \bool \times \alpha \times \alpha \to \alpha\)
+    If Type
   | -- bitwise functions
+
+    -- | \(: \int \to \int\)
     BitNot
-  | BitAnd
-  | BitOr
-  | BitXor
-  | BitLeftShift
-  | BitRightShift
+  | -- | \(: \int \times \int \to \int\)
+    BitAnd
+  | -- | \(: \int \times \int \to \int\)
+    BitOr
+  | -- | \(: \int \times \int \to \int\)
+    BitXor
+  | -- | \(: \int \times \int \to \int\)
+    BitLeftShift
+  | -- | \(: \int \times \int \to \int\)
+    BitRightShift
   | -- modular functions
+
+    -- | \(: \int \times \int \to \int\)
     Inv
-  | PowMod
+  | -- | \(: \int \times \int \times \int \to \int\)
+    PowMod
   | -- list functions
+
+    -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
-  | Tabulate Type
-  | Map Type Type
-  | At Type
-  | Sum
-  | Product
-  | Min1
-  | Max1
-  | ArgMin
-  | ArgMax
-  | All
-  | Any
-  | Sorted Type
-  | List Type
-  | Reversed Type
-  | Range1
-  | Range2
-  | Range3
+  | -- | \(: \forall \alpha. \int \times (\int \to \alpha) \to \list(\alpha)\)
+    Tabulate Type
+  | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \times \list(\alpha) \to \list(\beta)\)
+    Map Type Type
+  | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
+    At Type
+  | -- | \(: \list(\int) \to \int\)
+    Sum
+  | -- | \(: \list(\int) \to \int\)
+    Product
+  | -- | \(: \list(\int) \to \int\)
+    Min1
+  | -- | \(: \list(\int) \to \int\)
+    Max1
+  | -- | \(: \list(\int) \to \int\)
+    ArgMin
+  | -- | \(: \list(\int) \to \int\)
+    ArgMax
+  | -- | \(: \list(\bool) \to \bool\)
+    All
+  | -- | \(: \list(\bool) \to \bool\)
+    Any
+  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    Sorted Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    List Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    Reversed Type
+  | -- | \(: \int \to \list(\int)\)1
+    Range1
+  | -- | \(: \int \times \int \to \list(\int)\)1
+    Range2
+  | -- | \(: \int \times \int \times \int \to \list(\int)\)1
+    Range3
   | -- arithmetical relations
+
+    -- | \(: \int \times \int \to \int\)
     LessThan
-  | LessEqual
-  | GreaterThan
-  | GreaterEqual
+  | -- | \(: \int \times \int \to \int\)
+    LessEqual
+  | -- | \(: \int \times \int \to \int\)
+    GreaterThan
+  | -- | \(: \int \times \int \to \int\)
+    GreaterEqual
   | -- equality relations (polymorphic)
+
+    -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     Equal Type
-  | NotEqual Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+    NotEqual Type
   | -- combinational functions
+
+    -- | \(: \int \to \int\)
     Fact
-  | Choose
-  | Permute
-  | MultiChoose
+  | -- | \(: \int \times \int \to \int\)
+    Choose
+  | -- | \(: \int \times \int \to \int\)
+    Permute
+  | -- | \(: \int \times \int \to \int\)
+    MultiChoose
   deriving (Eq, Ord, Show, Read)
 
 data Literal
