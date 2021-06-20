@@ -35,6 +35,35 @@ spec = describe "run" $ do
               ]
           ]
     run' parsed `shouldBe` Right expected
+  it "fails with undefined variables" $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "solve"
+              []
+              IntTy
+              [ Return (Name "y")
+              ]
+          ]
+    let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: y"))
+    run' parsed `shouldBe` Left expected
+  it "doesn't rename builtin functions " $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "solve"
+              []
+              IntTy
+              [ Return (Name "range")
+              ]
+          ]
+    let expected =
+          [ ToplevelFunctionDef
+              "solve"
+              []
+              IntTy
+              [ Return (Name "range")
+              ]
+          ]
+    run' parsed `shouldBe` Right expected
   it "distinguishes local variables in two diffrent functions" $ do
     let parsed =
           [ ToplevelFunctionDef

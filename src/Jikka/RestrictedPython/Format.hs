@@ -19,6 +19,7 @@ where
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
+import Jikka.RestrictedPython.Language.Builtin
 import Jikka.RestrictedPython.Language.Expr
 
 formatType :: Type -> String
@@ -32,9 +33,11 @@ formatType t = case t of
   CallableTy ts ret -> "Callable[[" ++ intercalate ", " (map formatType ts) ++ "], " ++ formatType ret ++ "]"
 
 formatConstant :: Constant -> String
-formatConstant ConstNone = "None"
-formatConstant (ConstInt n) = show n
-formatConstant (ConstBool p) = show p
+formatConstant = \case
+  ConstNone -> "None"
+  ConstInt n -> show n
+  ConstBool p -> show p
+  ConstBuiltin b -> formatBuiltin b
 
 formatBoolOp :: BoolOp -> String
 formatBoolOp = \case

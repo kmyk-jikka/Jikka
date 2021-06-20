@@ -4,7 +4,9 @@
 module Jikka.RestrictedPython.Language.Lint where
 
 import Control.Monad.Writer.Strict
+import qualified Data.Set as S
 import Jikka.Common.Error
+import Jikka.RestrictedPython.Language.Builtin (builtinNames)
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Util
 import Jikka.RestrictedPython.Language.VariableAnalysis
@@ -229,3 +231,34 @@ doesntHaveNonTrivialSubscriptedAssignmentInForLoops = not . hasMixedAssignment
 
 ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops :: MonadError Error m => Program -> m ()
 ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops = makeEnsureProgram doesntHaveNonTrivialSubscriptedAssignmentInForLoops "there must not be assignments with non-trivial subscriptions in for-loops"
+
+-- | `hasAssginmentToBuiltin` checks that there are assignments to builtin functions.
+-- For example, the followings have such assignments.
+--
+-- > map = 3
+--
+-- > return [range for range in range(10)]
+hasAssignmentToBuiltin :: Program -> Bool
+hasAssignmentToBuiltin _ = False -- TODO
+
+doesntHaveAssignmentToBuiltin :: Program -> Bool
+doesntHaveAssignmentToBuiltin = not . hasAssignmentToBuiltin
+
+ensureDoesntHaveAssignmentToBuiltin :: MonadError Error m => Program -> m ()
+ensureDoesntHaveAssignmentToBuiltin = makeEnsureProgram doesntHaveAssignmentToBuiltin "there must not be assignments to builtin functions"
+
+-- | `hasNonResolvedBuiltin` checks that there are not resolved builtin functions.
+-- This always doesn't hold after `Jikka.RestrictedPython.Language.Convert.ResolveBuiltin`.
+hasNonResolvedBuiltin :: Program -> Bool
+hasNonResolvedBuiltin = any check . listExprs
+  where
+    check = any check' . listSubExprs
+    check' = \case
+      Name x | x `S.member` builtinNames -> True
+      _ -> False
+
+doesntHaveNonResolvedBuiltin :: Program -> Bool
+doesntHaveNonResolvedBuiltin = not . hasAssignmentToBuiltin
+
+ensureDoesntHaveNonResolvedBuiltin :: MonadError Error m => Program -> m ()
+ensureDoesntHaveNonResolvedBuiltin = makeEnsureProgram doesntHaveNonResolvedBuiltin "there must not be assignments to builtin functions"

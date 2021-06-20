@@ -39,136 +39,6 @@ newtype Local = Local
   }
   deriving (Eq, Ord, Show, Read)
 
-data Builtin
-  = BuiltinUnsupported
-  | BuiltinAbs
-  | BuiltinAll
-  | BuiltinMin
-  | BuiltinAny
-  | BuiltinDivMod
-  | BuiltinSorted
-  | BuiltinEnumerate
-  | BuiltinBool
-  | BuiltinInt
-  | BuiltinSum
-  | BuiltinZip
-  | BuiltinFilter
-  | BuiltinTuple
-  | BuiltinLen
-  | BuiltinList
-  | BuiltinRange
-  | BuiltinMap
-  | BuiltinReversed
-  | BuiltinMax
-  | BuiltinArgMax
-  | BuiltinArgMin
-  | BuiltinCeilDiv
-  | BuiltinCeilMod
-  | BuiltinChoose
-  | BuiltinFact
-  | BuiltinFloorDiv
-  | BuiltinFloorMod
-  | BuiltinGcd
-  | BuiltinInv
-  | BuiltinLcm
-  | BuiltinMultiChoose
-  | BuiltinPermute
-  | BuiltinProduct
-  deriving (Eq, Ord, Show, Read)
-
-standardBuiltinFunctions :: M.Map VarName Builtin
-standardBuiltinFunctions =
-  M.fromList
-    [ ("abs", BuiltinAbs),
-      ("delattr", BuiltinUnsupported),
-      ("hash", BuiltinUnsupported),
-      ("memoryview", BuiltinUnsupported),
-      ("set", BuiltinUnsupported),
-      ("all", BuiltinAll),
-      ("dict", BuiltinUnsupported),
-      ("help", BuiltinUnsupported),
-      ("min", BuiltinMin),
-      ("setattr", BuiltinUnsupported),
-      ("any", BuiltinAny),
-      ("dir", BuiltinUnsupported),
-      ("hex", BuiltinUnsupported),
-      ("next", BuiltinUnsupported),
-      ("slice", BuiltinUnsupported),
-      ("ascii", BuiltinUnsupported),
-      ("divmod", BuiltinDivMod),
-      ("id", BuiltinUnsupported),
-      ("object", BuiltinUnsupported),
-      ("sorted", BuiltinSorted),
-      ("bin", BuiltinUnsupported),
-      ("enumerate", BuiltinEnumerate),
-      ("input", BuiltinUnsupported),
-      ("oct", BuiltinUnsupported),
-      ("staticmethod", BuiltinUnsupported),
-      ("bool", BuiltinBool),
-      ("eval", BuiltinUnsupported),
-      ("int", BuiltinInt),
-      ("open", BuiltinUnsupported),
-      ("str", BuiltinUnsupported),
-      ("breakpoint", BuiltinUnsupported),
-      ("exec", BuiltinUnsupported),
-      ("isinstance", BuiltinUnsupported),
-      ("ord", BuiltinUnsupported),
-      ("sum", BuiltinSum),
-      ("bytearray", BuiltinUnsupported),
-      ("filter", BuiltinFilter),
-      ("issubclass", BuiltinUnsupported),
-      ("pow", BuiltinUnsupported),
-      ("super", BuiltinUnsupported),
-      ("bytes", BuiltinUnsupported),
-      ("float", BuiltinUnsupported),
-      ("iter", BuiltinUnsupported),
-      ("print", BuiltinUnsupported),
-      ("tuple", BuiltinUnsupported),
-      ("callable", BuiltinUnsupported),
-      ("format", BuiltinUnsupported),
-      ("len", BuiltinLen),
-      ("property", BuiltinUnsupported),
-      ("type", BuiltinUnsupported),
-      ("chr", BuiltinUnsupported),
-      ("frozenset", BuiltinUnsupported),
-      ("list", BuiltinList),
-      ("range", BuiltinRange),
-      ("vars", BuiltinUnsupported),
-      ("classmethod", BuiltinUnsupported),
-      ("getattr", BuiltinUnsupported),
-      ("locals", BuiltinUnsupported),
-      ("repr", BuiltinUnsupported),
-      ("zip", BuiltinZip),
-      ("compile", BuiltinUnsupported),
-      ("globals", BuiltinUnsupported),
-      ("map", BuiltinMap),
-      ("reversed", BuiltinReversed),
-      ("__import__", BuiltinUnsupported),
-      ("complex", BuiltinUnsupported),
-      ("hasattr", BuiltinUnsupported),
-      ("max", BuiltinMax),
-      ("round", BuiltinUnsupported)
-    ]
-
-additionalBuiltinFunctions :: M.Map VarName Builtin
-additionalBuiltinFunctions =
-  M.fromList
-    [ ("argmax", BuiltinArgMax),
-      ("argmin", BuiltinArgMin),
-      ("ceildiv", BuiltinCeilDiv),
-      ("ceilmod", BuiltinCeilMod),
-      ("choose", BuiltinChoose),
-      ("fact", BuiltinFact),
-      ("floordiv", BuiltinFloorDiv),
-      ("floormod", BuiltinFloorMod),
-      ("gcd", BuiltinGcd),
-      ("inv", BuiltinInv),
-      ("lcm", BuiltinLcm),
-      ("multichoose", BuiltinMultiChoose),
-      ("permute", BuiltinPermute),
-      ("product", BuiltinProduct)
-    ]
-
 toIntList :: V.Vector Value -> Maybe (V.Vector Integer)
 toIntList xs = mapM go xs
   where
@@ -223,7 +93,7 @@ newtype Global = Global
   deriving (Eq, Ord, Show, Read)
 
 initialGlobal :: Global
-initialGlobal = Global $ M.map BuiltinVal (M.union standardBuiltinFunctions additionalBuiltinFunctions)
+initialGlobal = Global M.empty
 
 lookupGlobal :: MonadError Error m => VarName -> Global -> m Value
 lookupGlobal x global =

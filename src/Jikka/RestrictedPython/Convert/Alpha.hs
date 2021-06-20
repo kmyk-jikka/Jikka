@@ -11,9 +11,9 @@ import Data.List (delete)
 import qualified Data.Set as S
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.RestrictedPython.Language.Builtin
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
-import Jikka.RestrictedPython.Language.Stdlib
 import Jikka.RestrictedPython.Language.Util
 
 data Env = Env
@@ -26,7 +26,7 @@ initialEnv :: Env
 initialEnv =
   Env
     { currentMapping = [],
-      parentMappings = [map (\x -> (x, x)) (S.toList builtinFunctions)]
+      parentMappings = [map (\x -> (x, x)) (S.toList builtinNames)]
     }
 
 withToplevelScope :: MonadState Env m => m a -> m a
@@ -212,6 +212,7 @@ runProgram :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Program ->
 runProgram = mapM runToplevelStatement
 
 -- | `run` renames variables.
+-- This assumes `doesntHaveAssignmentToBuiltin`.
 --
 -- * This introduce a new name for each assignment if possible.
 --   For example, the following
@@ -256,4 +257,5 @@ runProgram = mapM runToplevelStatement
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.Alpha" $ do
   ensureDoesntHaveLeakOfLoopCounters prog
+  ensureDoesntHaveAssignmentToBuiltin prog
   evalStateT (runProgram prog) initialEnv

@@ -26,11 +26,56 @@ runType = \case
   X.TupleTy ts -> Y.TupleTy (map runType ts)
   X.CallableTy args ret -> Y.FunTy (map runType args) (runType ret)
 
-runConstant :: X.Constant -> Y.Literal
+runConstant :: X.Constant -> Y.Expr
 runConstant = \case
   X.ConstNone -> undefined -- TODO
-  X.ConstInt n -> Y.LitInt n
-  X.ConstBool p -> Y.LitBool p
+  X.ConstInt n -> Y.Lit (Y.LitInt n)
+  X.ConstBool p -> Y.Lit (Y.LitBool p)
+  X.ConstBuiltin builtin -> runBuiltin builtin
+
+runBuiltin :: X.Builtin -> Y.Expr
+runBuiltin builtin =
+  let f = Y.Lit . Y.LitBuiltin
+   in case builtin of
+        X.BuiltinAbs -> f Y.Abs
+        X.BuiltinPow -> f Y.Pow
+        X.BuiltinModPow -> undefined -- TODO
+        X.BuiltinDivMod -> undefined -- TODO
+        X.BuiltinCeilDiv -> f Y.CeilDiv
+        X.BuiltinCeilMod -> f Y.CeilMod
+        X.BuiltinFloorDiv -> f Y.FloorDiv
+        X.BuiltinFloorMod -> f Y.FloorMod
+        X.BuiltinGcd -> f Y.Gcd
+        X.BuiltinLcm -> f Y.Lcm
+        X.BuiltinInt _ -> undefined -- TODO
+        X.BuiltinBool _ -> undefined -- TODO
+        X.BuiltinList _ -> undefined -- TODO
+        X.BuiltinTuple _ -> undefined -- TODO
+        X.BuiltinLen t -> f $ Y.Len (runType t)
+        X.BuiltinMap _ _ -> undefined -- TODO
+        X.BuiltinSorted t -> f $ Y.Sorted (runType t)
+        X.BuiltinReversed t -> f $ Y.Reversed (runType t)
+        X.BuiltinEnumerate _ -> undefined -- TODO
+        X.BuiltinFilter _ -> undefined -- TODO
+        X.BuiltinZip _ -> undefined -- TODO
+        X.BuiltinAll -> undefined -- TODO
+        X.BuiltinAny -> undefined -- TODO
+        X.BuiltinSum -> f Y.Sum
+        X.BuiltinProduct -> f Y.Product
+        X.BuiltinRange1 -> f Y.Range1
+        X.BuiltinRange2 -> f Y.Range2
+        X.BuiltinRange3 -> f Y.Range1
+        X.BuiltinMax1 _ -> undefined -- TODO
+        X.BuiltinMax _ _ -> undefined -- TODO
+        X.BuiltinMin1 _ -> undefined -- TODO
+        X.BuiltinMin _ _ -> undefined -- TODO
+        X.BuiltinArgMax _ -> undefined -- TODO
+        X.BuiltinArgMin _ -> undefined -- TODO
+        X.BuiltinFact -> f Y.Fact
+        X.BuiltinChoose -> f Y.Choose
+        X.BuiltinPermute -> f Y.Permute
+        X.BuiltinMultiChoose -> f Y.MultiChoose
+        X.BuiltinModInv -> f Y.Inv
 
 runBoolOp :: X.BoolOp -> Y.Builtin
 runBoolOp = \case
@@ -96,7 +141,7 @@ runExpr = \case
   X.ListComp _ (X.Comprehension _ _ _) -> undefined -- TODO
   X.Compare e1 op e2 -> Y.AppBuiltin (runCmpOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.Call f args -> Y.App <$> runExpr f <*> mapM runExpr args
-  X.Constant const -> return $ Y.Lit (runConstant const)
+  X.Constant const -> return $ runConstant const
   X.Subscript e1 e2 -> Y.AppBuiltin <$> (Y.At <$> Y.genType) <*> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.Name x -> return $ Y.Var (runVarName x)
   X.List _ _ -> undefined -- TODO

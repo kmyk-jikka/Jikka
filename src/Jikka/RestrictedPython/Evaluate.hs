@@ -27,7 +27,6 @@ import Data.List (maximumBy, minimumBy, sortBy)
 import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
 import Jikka.Common.Error
-import Jikka.Common.Matrix
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Value
@@ -227,6 +226,7 @@ evalExpr = \case
       ConstNone -> TupleVal []
       ConstInt v -> IntVal v
       ConstBool v -> BoolVal v
+      ConstBuiltin v -> BuiltinVal v
   Subscript e1 e2 -> do
     v1 <- evalExpr e1
     v2 <- evalExpr e2
@@ -485,42 +485,13 @@ run prog e = do
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value
 evalBinOp v1 op v2 = do
-  case (v1, op, v2) of
-    (IntVal v1, MatMult, ListVal v2) -> do
-      v2 <- toMatrix' v2
-      return $ fromMatrix (matscalar v1 v2)
-    (ListVal v1, MatMult, ListVal v2) -> do
-      v1 <- toMatrix' v1
-      let (_, w) = matsize v1
-      case (toMatrix v2, toIntList v2) of
-        (Just v2, _) -> do
-          let (h, _) = matsize v2
-          when (w /= h) $ do
-            throwRuntimeError "sizes of matrices mismatch"
-          return $ fromMatrix (matmul v1 v2)
-        (_, Just v2) -> do
-          let h = V.length v2
-          when (w /= h) $ do
-            throwRuntimeError "sizes of a matrix and a vector mismatch"
-          return $ ListVal (V.map IntVal (matap v1 v2))
-        (_, _) -> throwRuntimeError "not a matrix nor a vector"
-    (ListVal v1, Pow, IntVal v2) -> do
-      v1 <- toMatrix' v1
-      when (v2 < 0) $ do
-        throwRuntimeError "cannot calculate a negative power of a matrix"
-      return $ fromMatrix (matpow v1 v2)
-    (ListVal v1, Add, ListVal v2) -> do
-      return $ ListVal (v1 V.++ v2)
-    (ListVal v1, Mult, IntVal v2) -> do
-      return $ ListVal (V.concat (replicate (fromInteger v2) v1))
-    (IntVal v1, Mult, ListVal v2) -> do
-      return $ ListVal (V.concat (replicate (fromInteger v1) v2))
-    (IntVal v1, _, IntVal v2) -> do
+  case (v1, v2) of
+    (IntVal v1, IntVal v2) -> do
       v <- case (op, v2) of
         (Add, _) -> return $ v1 + v2
         (Sub, _) -> return $ v1 - v2
         (Mult, _) -> return $ v1 * v2
-        (MatMult, _) -> throwRuntimeError "type error"
+        (MatMult, _) -> throwRuntimeError "matmul operator ('@') is not supported"
         (Div, _) -> throwRuntimeError "floatdiv operator ('/') is not supported"
         (FloorDiv, 0) -> throwRuntimeError "division by zero"
         (FloorDiv, _) -> return $ v1 `div` v2
@@ -539,31 +510,33 @@ evalBinOp v1 op v2 = do
         (Max, _) -> return $ max v1 v2
         (Min, _) -> return $ min v1 v2
       return $ IntVal v
-    (_, _, _) -> throwRuntimeError "type error"
+    (_, _) -> throwRuntimeError "type error"
 
 evalBuiltin :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Builtin -> [Value] -> m Value
 evalBuiltin b args = case (b, args) of
   (BuiltinAbs, [IntVal n]) -> return $ IntVal (abs n)
+  (BuiltinPow, [IntVal x, IntVal k]) -> return $ IntVal (x ^ k)
+  (BuiltinModPow, [IntVal x, IntVal k, IntVal m]) -> return $ IntVal ((x ^ k) `mod` m)
   (BuiltinAll, [ListVal xs]) -> BoolVal . minimum <$> toBoolList' xs
-  (BuiltinMin, [ListVal xs]) -> return $ V.minimumBy compareValues' xs
-  (BuiltinMin, xs@(_ : _ : _)) -> return $ minimumBy compareValues' xs
+  (BuiltinMin1 _, [ListVal xs]) -> return $ V.minimumBy compareValues' xs
+  (BuiltinMin _ _, xs@(_ : _ : _)) -> return $ minimumBy compareValues' xs
   (BuiltinAny, [ListVal xs]) -> BoolVal . maximum <$> toBoolList' xs
   (BuiltinDivMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinDivMod, [IntVal a, IntVal b]) -> return $ TupleVal [IntVal (a `div` b), IntVal (a `mod` b)]
-  (BuiltinSorted, [ListVal xs]) ->
+  (BuiltinSorted _, [ListVal xs]) ->
     return $ ListVal (V.fromList (sortBy compareValues' (V.toList xs)))
-  (BuiltinEnumerate, [ListVal xs]) ->
+  (BuiltinEnumerate _, [ListVal xs]) ->
     return $ ListVal (V.fromList (zipWith (\i x -> TupleVal [IntVal i, x]) [0 ..] (V.toList xs)))
-  (BuiltinBool, [IntVal n]) -> return $ BoolVal (n /= 0)
-  (BuiltinBool, [BoolVal p]) -> return $ BoolVal p
-  (BuiltinBool, [ListVal xs]) -> return $ BoolVal (not (V.null xs))
-  (BuiltinBool, [TupleVal xs]) -> return $ BoolVal (not (null xs))
-  (BuiltinInt, [IntVal n]) -> return $ IntVal n
-  (BuiltinInt, [BoolVal p]) -> return $ IntVal (if p then 1 else 0)
+  (BuiltinBool _, [IntVal n]) -> return $ BoolVal (n /= 0)
+  (BuiltinBool _, [BoolVal p]) -> return $ BoolVal p
+  (BuiltinBool _, [ListVal xs]) -> return $ BoolVal (not (V.null xs))
+  (BuiltinBool _, [TupleVal xs]) -> return $ BoolVal (not (null xs))
+  (BuiltinInt _, [IntVal n]) -> return $ IntVal n
+  (BuiltinInt _, [BoolVal p]) -> return $ IntVal (if p then 1 else 0)
   (BuiltinSum, [ListVal xs]) -> IntVal . sum <$> toIntList' xs
-  (BuiltinZip, [ListVal xs1, ListVal xs2]) -> return $ ListVal (V.zipWith (\x1 x2 -> TupleVal [x1, x2]) xs1 xs2)
-  (BuiltinZip, [ListVal xs1, ListVal xs2, ListVal xs3]) -> return $ ListVal (V.zipWith3 (\x1 x2 x3 -> TupleVal [x1, x2, x3]) xs1 xs2 xs3)
-  (BuiltinFilter, [f, ListVal xs]) -> do
+  (BuiltinZip _, [ListVal xs1, ListVal xs2]) -> return $ ListVal (V.zipWith (\x1 x2 -> TupleVal [x1, x2]) xs1 xs2)
+  (BuiltinZip _, [ListVal xs1, ListVal xs2, ListVal xs3]) -> return $ ListVal (V.zipWith3 (\x1 x2 x3 -> TupleVal [x1, x2, x3]) xs1 xs2 xs3)
+  (BuiltinFilter _, [f, ListVal xs]) -> do
     let go x = do
           pred <- evalCall' f [x]
           case pred of
@@ -571,22 +544,22 @@ evalBuiltin b args = case (b, args) of
             BoolVal False -> return Nothing
             _ -> throwRuntimeError "type error"
     ListVal <$> V.mapMaybeM go xs
-  (BuiltinLen, [ListVal xs]) -> return $ IntVal (fromIntegral (V.length xs))
-  (BuiltinList, [ListVal xs]) -> return $ ListVal xs
-  (BuiltinRange, [IntVal to]) -> return $ ListVal (V.fromList (map IntVal [0 .. to - 1]))
-  (BuiltinRange, [IntVal from, IntVal to]) -> return $ ListVal (V.fromList (map IntVal [from .. to - 1]))
-  (BuiltinRange, [IntVal from, IntVal to, IntVal step]) -> return $ ListVal (V.fromList (map IntVal [from, from + step .. to - 1]))
-  (BuiltinMap, [f, ListVal xs]) -> do
+  (BuiltinLen _, [ListVal xs]) -> return $ IntVal (fromIntegral (V.length xs))
+  (BuiltinList _, [ListVal xs]) -> return $ ListVal xs
+  (BuiltinRange1, [IntVal to]) -> return $ ListVal (V.fromList (map IntVal [0 .. to - 1]))
+  (BuiltinRange2, [IntVal from, IntVal to]) -> return $ ListVal (V.fromList (map IntVal [from .. to - 1]))
+  (BuiltinRange3, [IntVal from, IntVal to, IntVal step]) -> return $ ListVal (V.fromList (map IntVal [from, from + step .. to - 1]))
+  (BuiltinMap _ _, [f, ListVal xs]) -> do
     let go x = evalCall' f [x]
     ListVal <$> V.mapM go xs
-  (BuiltinMap, [f, ListVal xs1, ListVal xs2]) -> do
+  (BuiltinMap _ _, [f, ListVal xs1, ListVal xs2]) -> do
     let go x1 x2 = evalCall' f [x1, x2]
     ListVal <$> V.zipWithM go xs1 xs2
-  (BuiltinReversed, [ListVal xs]) -> return $ ListVal (V.reverse xs)
-  (BuiltinMax, [ListVal xs]) -> return $ V.maximumBy compareValues' xs
-  (BuiltinMax, xs@(_ : _ : _)) -> return $ maximumBy compareValues' xs
-  (BuiltinArgMax, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
-  (BuiltinArgMin, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinReversed _, [ListVal xs]) -> return $ ListVal (V.reverse xs)
+  (BuiltinMax1 _, [ListVal xs]) -> return $ V.maximumBy compareValues' xs
+  (BuiltinMax _ _, xs@(_ : _ : _)) -> return $ maximumBy compareValues' xs
+  (BuiltinArgMax _, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinArgMin _, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinCeilDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinCeilDiv, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `div` b)
   (BuiltinCeilMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
@@ -598,10 +571,9 @@ evalBuiltin b args = case (b, args) of
   (BuiltinFloorMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinFloorMod, [IntVal a, IntVal b]) -> return $ IntVal (a `mod` b)
   (BuiltinGcd, [IntVal a, IntVal b]) -> return $ IntVal (gcd a b)
-  (BuiltinInv, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinModInv, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinLcm, [IntVal a, IntVal b]) -> return $ IntVal (lcm a b)
   (BuiltinMultiChoose, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinPermute, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinProduct, [ListVal xs]) -> IntVal . product <$> toIntList' xs
-  (BuiltinUnsupported, _) -> throwRuntimeError "unsupported builtin function"
   _ -> throwRuntimeError "type error on builtin function call"

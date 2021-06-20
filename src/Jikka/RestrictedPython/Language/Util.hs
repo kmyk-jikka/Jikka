@@ -9,6 +9,7 @@ module Jikka.RestrictedPython.Language.Util
     -- * constants
     constIntExp,
     constBoolExp,
+    constBuiltinExp,
 
     -- * free variables
     freeTyVars,
@@ -79,6 +80,9 @@ constIntExp = Constant . ConstInt
 
 constBoolExp :: Bool -> Expr
 constBoolExp = Constant . ConstBool
+
+constBuiltinExp :: Builtin -> Expr
+constBuiltinExp = Constant . ConstBuiltin
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go

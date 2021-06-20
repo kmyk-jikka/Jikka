@@ -32,6 +32,7 @@ import Control.Monad.Writer.Strict
 import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.RestrictedPython.Language.Builtin
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Util
 
@@ -118,6 +119,7 @@ formularizeExpr = \case
       ConstNone -> TupleTy []
       ConstInt _ -> IntTy
       ConstBool _ -> BoolTy
+      ConstBuiltin b -> typeBuiltin b
   Subscript e1 e2 -> do
     t <- genType
     formularizeExpr' e1 (ListTy t)

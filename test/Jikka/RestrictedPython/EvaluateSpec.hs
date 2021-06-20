@@ -31,13 +31,13 @@ spec = describe "run" $ do
               "solve"
               [("n", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "a") (ListTy IntTy) (Call (Name "list") [Call (Name "range") [Name "n"]]),
+              [ AnnAssign (NameTrg "a") (ListTy IntTy) (Call (constBuiltinExp (BuiltinList IntTy)) [Call (constBuiltinExp BuiltinRange1) [Name "n"]]),
                 For
                   (TupleTrg [NameTrg "i", NameTrg "a_i"])
-                  (Call (Name "enumerate") [Name "a"])
+                  (Call (constBuiltinExp (BuiltinEnumerate IntTy)) [Name "a"])
                   [ AugAssign (SubscriptTrg (NameTrg "a") (Name "i")) Mult (Name "a_i")
                   ],
-                Return (Call (Name "sum") [Name "a"])
+                Return (Call (constBuiltinExp BuiltinSum) [Name "a"])
               ]
           ]
     let e = Call (Name "solve") [constIntExp 100]
