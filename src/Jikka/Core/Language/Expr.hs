@@ -137,14 +137,14 @@ data Builtin
     Sum
   | -- | \(: \list(\int) \to \int\)
     Product
-  | -- | \(: \list(\int) \to \int\)
-    Min1
-  | -- | \(: \list(\int) \to \int\)
-    Max1
-  | -- | \(: \list(\int) \to \int\)
-    ArgMin
-  | -- | \(: \list(\int) \to \int\)
-    ArgMax
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    Min1 Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    Max1 Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    ArgMin Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    ArgMax Type
   | -- | \(: \list(\bool) \to \bool\)
     All
   | -- | \(: \list(\bool) \to \bool\)
@@ -161,19 +161,17 @@ data Builtin
     Range2
   | -- | \(: \int \times \int \times \int \to \list(\int)\)1
     Range3
-  | -- arithmetical relations
+  | -- comparison
 
-    -- | \(: \int \times \int \to \int\)
-    LessThan
-  | -- | \(: \int \times \int \to \int\)
-    LessEqual
-  | -- | \(: \int \times \int \to \int\)
-    GreaterThan
-  | -- | \(: \int \times \int \to \int\)
-    GreaterEqual
-  | -- equality relations (polymorphic)
-
-    -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+    -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    LessThan Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    LessEqual Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    GreaterThan Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    GreaterEqual Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     Equal Type
   | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     NotEqual Type

@@ -59,10 +59,10 @@ builtinToType = \case
   At t -> FunTy [ListTy t, IntTy] t
   Sum -> FunLTy IntTy
   Product -> FunLTy IntTy
-  Min1 -> FunLTy IntTy
-  Max1 -> FunLTy IntTy
-  ArgMin -> FunLTy IntTy
-  ArgMax -> FunLTy IntTy
+  Min1 t -> FunLTy t
+  Max1 t -> FunLTy t
+  ArgMin t -> FunTy [ListTy t] IntTy
+  ArgMax t -> FunTy [ListTy t] IntTy
   All -> FunLTy BoolTy
   Any -> FunLTy BoolTy
   Sorted t -> Fun1Ty (ListTy t)
@@ -71,12 +71,11 @@ builtinToType = \case
   Range1 -> FunTy [IntTy] (ListTy IntTy)
   Range2 -> FunTy [IntTy, IntTy] (ListTy IntTy)
   Range3 -> FunTy [IntTy, IntTy, IntTy] (ListTy IntTy)
-  -- arithmetical relations
-  LessThan -> FunTy [IntTy, IntTy] BoolTy
-  LessEqual -> FunTy [IntTy, IntTy] BoolTy
-  GreaterThan -> FunTy [IntTy, IntTy] BoolTy
-  GreaterEqual -> FunTy [IntTy, IntTy] BoolTy
-  -- equality relations (polymorphic)
+  -- comparison
+  LessThan t -> FunTy [t, t] BoolTy
+  LessEqual t -> FunTy [t, t] BoolTy
+  GreaterThan t -> FunTy [t, t] BoolTy
+  GreaterEqual t -> FunTy [t, t] BoolTy
   Equal t -> FunTy [t, t] BoolTy
   NotEqual t -> FunTy [t, t] BoolTy
   -- combinational functions

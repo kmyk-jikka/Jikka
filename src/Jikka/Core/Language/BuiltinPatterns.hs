@@ -90,13 +90,13 @@ pattern Sum' e = AppBuiltin Sum [e]
 
 pattern Product' e = AppBuiltin Product [e]
 
-pattern Min1' e = AppBuiltin Min1 [e]
+pattern Min1' t e = AppBuiltin (Min1 t) [e]
 
-pattern Max1' e = AppBuiltin Max1 [e]
+pattern Max1' t e = AppBuiltin (Max1 t) [e]
 
-pattern ArgMin' e = AppBuiltin ArgMin [e]
+pattern ArgMin' t e = AppBuiltin (ArgMin t) [e]
 
-pattern ArgMax' e = AppBuiltin ArgMax [e]
+pattern ArgMax' t e = AppBuiltin (ArgMax t) [e]
 
 pattern All' e = AppBuiltin All [e]
 
@@ -115,13 +115,13 @@ pattern Range2' e1 e2 = AppBuiltin Range2 [e1, e2]
 pattern Range3' e1 e2 e3 = AppBuiltin Range3 [e1, e2, e3]
 
 -- arithmetical relations
-pattern LessThan' e1 e2 = AppBuiltin LessThan [e1, e2]
+pattern LessThan' t e1 e2 = AppBuiltin (LessThan t) [e1, e2]
 
-pattern LessEqual' e1 e2 = AppBuiltin LessEqual [e1, e2]
+pattern LessEqual' t e1 e2 = AppBuiltin (LessEqual t) [e1, e2]
 
-pattern GreaterThan' e1 e2 = AppBuiltin GreaterThan [e1, e2]
+pattern GreaterThan' t e1 e2 = AppBuiltin (GreaterThan t) [e1, e2]
 
-pattern GreaterEqual' e1 e2 = AppBuiltin GreaterEqual [e1, e2]
+pattern GreaterEqual' t e1 e2 = AppBuiltin (GreaterEqual t) [e1, e2]
 
 -- equality relations (polymorphic)
 pattern Equal' t e1 e2 = AppBuiltin (Equal t) [e1, e2]

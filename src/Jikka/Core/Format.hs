@@ -90,10 +90,10 @@ analyzeBuiltin = \case
   At t -> At' t
   Sum -> fun "sum"
   Product -> fun "product"
-  Min1 -> fun "min1"
-  Max1 -> fun "max1"
-  ArgMin -> fun "argmin"
-  ArgMax -> fun "argmax"
+  Min1 t -> Fun [t] "min1"
+  Max1 t -> Fun [t] "max1"
+  ArgMin t -> Fun [t] "argmin"
+  ArgMax t -> Fun [t] "argmax"
   All -> fun "all"
   Any -> fun "any"
   Sorted t -> Fun [t] "sort"
@@ -102,12 +102,11 @@ analyzeBuiltin = \case
   Range1 -> fun "range1"
   Range2 -> fun "range2"
   Range3 -> fun "range3"
-  -- arithmetical relations
-  LessThan -> infixOp "<"
-  LessEqual -> infixOp "<="
-  GreaterThan -> infixOp ">"
-  GreaterEqual -> infixOp ">="
-  -- equality relations (polymorphic)
+  -- comparison
+  LessThan t -> InfixOp [t] "<"
+  LessEqual t -> InfixOp [t] "<="
+  GreaterThan t -> InfixOp [t] ">"
+  GreaterEqual t -> InfixOp [t] ">="
   Equal t -> InfixOp [t] "=="
   NotEqual t -> InfixOp [t] "!="
   -- combinational functions

@@ -111,11 +111,11 @@ runOperator = \case
   X.Min -> Y.Min2
 
 runCmpOp :: X.CmpOp' -> Y.Builtin
-runCmpOp (X.CmpOp' op _) = case op of
-  X.Lt -> Y.LessThan
-  X.LtE -> Y.LessEqual
-  X.Gt -> Y.GreaterThan
-  X.GtE -> Y.GreaterEqual
+runCmpOp (X.CmpOp' op t) = case op of
+  X.Lt -> Y.LessThan (runType t)
+  X.LtE -> Y.LessEqual (runType t)
+  X.Gt -> Y.GreaterThan (runType t)
+  X.GtE -> Y.GreaterEqual (runType t)
   X.Eq' -> Y.Equal undefined -- TODO
   X.NotEq -> Y.NotEqual undefined -- TODO
   X.Is -> undefined -- TODO

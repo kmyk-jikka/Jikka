@@ -276,10 +276,10 @@ callBuiltin builtin args = case (builtin, args) of
   (At _, [ValList a, ValInt n]) -> atEither a n
   (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
   (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
-  (Min1, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a)
-  (Max1, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a)
-  (ArgMin, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a)
-  (ArgMax, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a)
+  (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
+  (Max1 IntTy, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a) -- TODO: allow non-integers
+  (ArgMin IntTy, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a) -- TODO: allow non-integers
+  (ArgMax IntTy, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a) -- TODO: allow non-integers
   (All, [ValList a]) -> ValBool . and <$> valueToBoolList a
   (Any, [ValList a]) -> ValBool . or <$> valueToBoolList a
   (Sorted _, [ValList a]) -> return $ ValList (sortArray a)
@@ -288,12 +288,11 @@ callBuiltin builtin args = case (builtin, args) of
   (Range1, [ValInt n]) -> ValList <$> range1 n
   (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
   (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
-  -- arithmetical relations
-  (LessThan, [ValInt a, ValInt b]) -> return $ ValBool (a < b)
-  (LessEqual, [ValInt a, ValInt b]) -> return $ ValBool (a <= b)
-  (GreaterThan, [ValInt a, ValInt b]) -> return $ ValBool (a > b)
-  (GreaterEqual, [ValInt a, ValInt b]) -> return $ ValBool (a >= b)
-  -- equality relations (polymorphic)
+  -- comparison
+  (LessThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a < b) -- TODO: allow non-integers
+  (LessEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a <= b) -- TODO: allow non-integers
+  (GreaterThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a > b) -- TODO: allow non-integers
+  (GreaterEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a >= b) -- TODO: allow non-integers
   (Equal _, [a, b]) -> return $ ValBool (a == b)
   (NotEqual _, [a, b]) -> return $ ValBool (a /= b)
   -- combinational functions

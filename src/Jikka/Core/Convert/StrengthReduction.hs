@@ -36,10 +36,9 @@ eliminateSomeBuiltins = \case
   Lcm' e1 e2 -> go $ FloorDiv' (Gcd' e1 e2) (Mult' e1 e2)
   -- logical functions
   Implies' e1 e2 -> Or' (Not' e1) e2
-  -- arithmetical relations
-  GreaterThan' e1 e2 -> LessThan' e2 e1
-  GreaterEqual' e1 e2 -> LessEqual' e2 e1
-  -- equality relations (polymorphic)
+  -- comparison
+  GreaterThan' t e1 e2 -> LessThan' t e2 e1
+  GreaterEqual' t e1 e2 -> LessEqual' t e2 e1
   NotEqual' t e1 e2 -> Not' (Equal' t e1 e2)
   e -> e
 
@@ -131,18 +130,18 @@ reduceFoldMap = \case
   At' t (Reversed' _ xs) i -> go $ At' t xs (Minus' (Minus' (Len' t xs) i) Lit1)
   Sum' (Reversed' _ xs) -> go $ Sum' xs
   Product' (Reversed' _ xs) -> go $ Product' xs
-  Max1' (Reversed' _ xs) -> go $ Max1' xs
-  Min1' (Reversed' _ xs) -> go $ Min1' xs
-  ArgMin' (Reversed' _ xs) -> go $ ArgMin' xs
-  ArgMax' (Reversed' _ xs) -> go $ ArgMax' xs
+  Max1' t (Reversed' _ xs) -> go $ Max1' t xs
+  Min1' t (Reversed' _ xs) -> go $ Min1' t xs
+  ArgMin' t (Reversed' _ xs) -> go $ ArgMin' t xs
+  ArgMax' t (Reversed' _ xs) -> go $ ArgMax' t xs
   All' (Reversed' _ xs) -> go $ All' xs
   Any' (Reversed' _ xs) -> go $ Any' xs
   -- reduce `Sorted`
   Len' t (Sorted' _ xs) -> go $ Len' t xs
   Sum' (Sorted' _ xs) -> go $ Sum' xs
   Product' (Sorted' _ xs) -> go $ Product' xs
-  Max1' (Sorted' _ xs) -> go $ Max1' xs
-  Min1' (Sorted' _ xs) -> go $ Min1' xs
+  Max1' t (Sorted' _ xs) -> go $ Max1' t xs
+  Min1' t (Sorted' _ xs) -> go $ Min1' t xs
   All' (Sorted' _ xs) -> go $ All' xs
   Any' (Sorted' _ xs) -> go $ Any' xs
   -- reduce `Map`
@@ -156,22 +155,22 @@ reduceFoldMap = \case
   Product' (Map' t1 _ (Lam1 x _ e) xs) | x `isUnusedVar` e -> go $ Pow' e (Len' t1 xs)
   Product' (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Mult' (Pow' (Negate' Lit0) (Len' t1 xs)) (Product' (Map' t1 t2 (Lam1 x t e) xs))
   Product' (Map' t1 t2 (Lam1 x t (Mult' e1 e2)) xs) -> go $ Mult' (Product' (Map' t1 t2 (Lam1 x t e1) xs)) (Product' (Map' t1 t2 (Lam1 x t e2) xs))
-  Max1' (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> e
-  Max1' (Map' t1 t2 (Lam1 x t (Max2' e1 e2)) xs) -> go $ Max2' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
-  Max1' (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Negate' (Min1' (Map' t1 t2 (Lam1 x t e) xs))
-  Max1' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ Plus' e1 (Max1' (Map' t1 t2 (Lam1 x t e2) xs))
-  Max1' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ Plus' (Max1' (Map' t1 t2 (Lam1 x t e1) xs)) e1
-  Min1' (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> e
-  Min1' (Map' t1 t2 (Lam1 x t (Min2' e1 e2)) xs) -> go $ Min2' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
-  Min1' (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Negate' (Max1' (Map' t1 t2 (Lam1 x t e) xs))
-  Min1' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ Plus' e1 (Min1' (Map' t1 t2 (Lam1 x t e2) xs))
-  Min1' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ Plus' (Min1' (Map' t1 t2 (Lam1 x t e1) xs)) e1
-  ArgMax' (Map' _ _ (Lam1 x t e) xs) | x `isUnusedVar` e -> go $ Minus' (Len' t xs) Lit1
-  ArgMax' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ ArgMax' (Map' t1 t2 (Lam1 x t e2) xs)
-  ArgMax' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ ArgMax' (Map' t1 t2 (Lam1 x t e1) xs)
-  ArgMin' (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> Lit0
-  ArgMin' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ ArgMin' (Map' t1 t2 (Lam1 x t e2) xs)
-  ArgMin' (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ ArgMin' (Map' t1 t2 (Lam1 x t e1) xs)
+  Max1' _ (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> e
+  Max1' _ (Map' t1 t2 (Lam1 x t (Max2' e1 e2)) xs) -> go $ Max2' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
+  Max1' _ (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Negate' (Min1' t2 (Map' t1 t2 (Lam1 x t e) xs))
+  Max1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ Plus' e1 (Max1' t2 (Map' t1 t2 (Lam1 x t e2) xs))
+  Max1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ Plus' (Max1' t2 (Map' t1 t2 (Lam1 x t e1) xs)) e1
+  Min1' _ (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> e
+  Min1' _ (Map' t1 t2 (Lam1 x t (Min2' e1 e2)) xs) -> go $ Min2' (Map' t1 t2 (Lam1 x t e1) xs) (Map' t1 t2 (Lam1 x t e2) xs)
+  Min1' _ (Map' t1 t2 (Lam1 x t (Negate' e)) xs) -> go $ Negate' (Max1' t2 (Map' t1 t2 (Lam1 x t e) xs))
+  Min1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ Plus' e1 (Min1' t2 (Map' t1 t2 (Lam1 x t e2) xs))
+  Min1' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ Plus' (Min1' t2 (Map' t1 t2 (Lam1 x t e1) xs)) e1
+  ArgMax' _ (Map' _ _ (Lam1 x t e) xs) | x `isUnusedVar` e -> go $ Minus' (Len' t xs) Lit1
+  ArgMax' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ ArgMax' t2 (Map' t1 t2 (Lam1 x t e2) xs)
+  ArgMax' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ ArgMax' t2 (Map' t1 t2 (Lam1 x t e1) xs)
+  ArgMin' _ (Map' _ _ (Lam1 x _ e) _) | x `isUnusedVar` e -> Lit0
+  ArgMin' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> go $ ArgMin' t2 (Map' t1 t2 (Lam1 x t e2) xs)
+  ArgMin' _ (Map' t1 t2 (Lam1 x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> go $ ArgMin' t2 (Map' t1 t2 (Lam1 x t e1) xs)
   e -> e
 
 reduceFoldBuild :: Expr -> Expr
@@ -182,10 +181,10 @@ reduceFoldBuild = \case
   Sum' (Map' _ _ (Lam1 x _ (Mult' x' x'')) (Range1' n)) | x' == Var x && x'' == Var x -> go $ FloorDiv' (Mult' n (Mult' (Minus' n Lit1) (Minus' (Mult' Lit2 n) Lit1))) (Lit (LitInt 6))
   Sum' (Map' _ _ (Lam1 x _ (Mult' x' (Mult' x'' x'''))) (Range1' n)) | x' == Var x && x'' == Var x && x''' == Var x -> go $ FloorDiv' (Mult' n (Mult' n (Mult' (Minus' n Lit1) (Minus' n Lit1)))) (Lit (LitInt 4))
   Product' (Range1' n) -> go $ If' IntTy (Equal' IntTy n Lit0) Lit1 Lit0
-  Max1' (Range1' n) -> go $ Minus' n Lit1
-  Min1' (Range1' _) -> Lit0
-  ArgMax' (Range1' n) -> go $ Minus' n Lit1
-  ArgMin' (Range1' _) -> Lit0
+  Max1' _ (Range1' n) -> go $ Minus' n Lit1
+  Min1' _ (Range1' _) -> Lit0
+  ArgMax' _ (Range1' n) -> go $ Minus' n Lit1
+  ArgMin' _ (Range1' _) -> Lit0
   e -> e
 
 reduceList :: Expr -> Expr

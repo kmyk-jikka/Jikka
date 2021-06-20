@@ -118,10 +118,18 @@ runAppBuiltin f args = case (f, args) of
   (X.At _, [e1, e2]) -> return $ Y.At e1 e2
   (X.Sum, [e]) -> return $ Y.Call (Y.Function "jikka::sum" []) [e]
   (X.Product, [e]) -> return $ Y.Call (Y.Function "jikka::product" []) [e]
-  (X.Min1, [e]) -> return $ Y.Call (Y.Function "jikka::minimum" []) [e]
-  (X.Max1, [e]) -> return $ Y.Call (Y.Function "jikka::maximum" []) [e]
-  (X.ArgMin, [e]) -> return $ Y.Call (Y.Function "jikka::argmin" []) [e]
-  (X.ArgMax, [e]) -> return $ Y.Call (Y.Function "jikka::argmax" []) [e]
+  (X.Min1 t, [e]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::minimum" [t]) [e]
+  (X.Max1 t, [e]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::maximum" [t]) [e]
+  (X.ArgMin t, [e]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::argmin" [t]) [e]
+  (X.ArgMax t, [e]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::argmax" [t]) [e]
   (X.All, [e]) -> return $ Y.Call (Y.Function "jikka::all" []) [e]
   (X.Any, [e]) -> return $ Y.Call (Y.Function "jikka::any" []) [e]
   (X.Sorted t, [e]) -> do
@@ -134,12 +142,11 @@ runAppBuiltin f args = case (f, args) of
   (X.Range1, [e]) -> return $ Y.Call (Y.Function "jikka::range" []) [e]
   (X.Range2, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::range" []) [e1, e2]
   (X.Range3, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::range" []) [e1, e2, e3]
-  -- arithmetical relations
-  (X.LessThan, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
-  (X.LessEqual, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2
-  (X.GreaterThan, [e1, e2]) -> return $ Y.BinOp Y.GreaterThan e1 e2
-  (X.GreaterEqual, [e1, e2]) -> return $ Y.BinOp Y.GreaterEqual e1 e2
-  -- equality relations (polymorphic)
+  -- comparison
+  (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
+  (X.LessEqual _, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2
+  (X.GreaterThan _, [e1, e2]) -> return $ Y.BinOp Y.GreaterThan e1 e2
+  (X.GreaterEqual _, [e1, e2]) -> return $ Y.BinOp Y.GreaterEqual e1 e2
   (X.Equal _, [e1, e2]) -> return $ Y.BinOp Y.Equal e1 e2
   (X.NotEqual _, [e1, e2]) -> return $ Y.BinOp Y.NotEqual e1 e2
   -- combinational functions
