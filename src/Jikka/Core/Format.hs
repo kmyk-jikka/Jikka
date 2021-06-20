@@ -88,6 +88,7 @@ analyzeBuiltin = \case
   Len t -> Fun [t] "len"
   Tabulate t -> Fun [t] "tabulate"
   Map t1 t2 -> Fun [t1, t2] "map"
+  Filter t -> Fun [t] "filter"
   At t -> At' t
   Elem t -> Fun [t] "elem"
   Sum -> fun "sum"

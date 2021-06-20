@@ -133,6 +133,8 @@ data Builtin
     Tabulate Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \times \list(\alpha) \to \list(\beta)\)
     Map Type Type
+  | -- | \(: \forall \alpha \beta. (\alpha \to \bool) \times \list(\alpha) \to \list(\beta)\)
+    Filter Type
   | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
     At Type
   | -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \bool\)

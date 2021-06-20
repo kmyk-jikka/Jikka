@@ -86,6 +86,8 @@ pattern Tabulate' t n f = AppBuiltin (Tabulate t) [n, f]
 
 pattern Map' t1 t2 f e = AppBuiltin (Map t1 t2) [f, e]
 
+pattern Filter' t f e = AppBuiltin (Filter t) [f, e]
+
 pattern At' t e1 e2 = AppBuiltin (At t) [e1, e2]
 
 pattern Elem' t e1 e2 = AppBuiltin (Elem t) [e1, e2]
