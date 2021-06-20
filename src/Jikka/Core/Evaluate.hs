@@ -26,9 +26,9 @@ where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
-import qualified Data.Array as A
 import Data.Bits
 import Data.List (sort)
+import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (builtinToType)
@@ -40,7 +40,7 @@ import Text.Read (readEither)
 data Value
   = ValInt Integer
   | ValBool Bool
-  | ValList (A.Array Int Value)
+  | ValList (V.Vector Value)
   | ValTuple [Value]
   | ValBuiltin Builtin
   | ValLambda Env [(VarName, Type)] Expr
@@ -57,16 +57,16 @@ valueToInt = \case
   ValInt n -> return n
   val -> throwRuntimeError $ "Internal Error: not int: " ++ show val
 
-valueToIntList :: MonadError Error m => A.Array Int Value -> m [Integer]
-valueToIntList = mapM valueToInt . A.elems
+valueToIntList :: MonadError Error m => V.Vector Value -> m [Integer]
+valueToIntList = mapM valueToInt . V.toList
 
 valueToBool :: MonadError Error m => Value -> m Bool
 valueToBool = \case
   ValBool p -> return p
   val -> throwRuntimeError $ "Internal Error: not bool: " ++ show val
 
-valueToBoolList :: MonadError Error m => A.Array Int Value -> m [Bool]
-valueToBoolList = mapM valueToBool . A.elems
+valueToBoolList :: MonadError Error m => V.Vector Value -> m [Bool]
+valueToBoolList = mapM valueToBool . V.toList
 
 -- -----------------------------------------------------------------------------
 -- inputs
@@ -112,8 +112,7 @@ readInput t tokens = case (t, tokens) of
   (ListTy t, token : tokens) -> do
     n <- readToken token
     (a, tokens) <- readInputList t n tokens
-    let a' = A.listArray (0, n - 1) a
-    return (ValList a', tokens)
+    return (ValList (V.fromList a), tokens)
   (TupleTy ts, _) -> do
     let readInput' :: MonadError Error m => Type -> StateT [Token] m Value
         readInput' t = StateT (readInput t)
@@ -172,44 +171,31 @@ powmod :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 powmod _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for powmod: MOD = " ++ show m
 powmod a b m = return $ (a ^ b) `mod` m
 
-listToArray :: [a] -> A.Array Int a
-listToArray xs = A.listArray (0, length xs) xs
+tabulate :: MonadError Error m => Integer -> Value -> m (V.Vector Value)
+tabulate n f = V.fromList <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
 
-lengthArray :: A.Array Int a -> Integer
-lengthArray a =
-  let (l, r) = A.bounds a
-   in toInteger (r - l + 1)
+map' :: MonadError Error m => Value -> V.Vector Value -> m (V.Vector Value)
+map' f a = V.fromList <$> mapM (\val -> callValue f [val]) (V.toList a)
 
-tabulate :: MonadError Error m => Integer -> Value -> m (A.Array Int Value)
-tabulate n f = listToArray <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
+atEither :: MonadError Error m => V.Vector a -> Integer -> m a
+atEither xs i = case xs V.!? fromInteger i of
+  Just x -> return x
+  Nothing -> throwRuntimeError $ "out of bounds: " ++ show (V.length xs, i)
 
-map' :: MonadError Error m => Value -> A.Array Int Value -> m (A.Array Int Value)
-map' f a = listToArray <$> mapM (\val -> callValue f [val]) (A.elems a)
+sortVector :: Ord a => V.Vector a -> V.Vector a
+sortVector = V.fromList . sort . V.toList
 
-atEither :: MonadError Error m => A.Array Int a -> Integer -> m a
-atEither a n =
-  let (l, r) = A.bounds a
-   in if toInteger l <= n && n <= toInteger r
-        then return (a A.! fromInteger n)
-        else throwRuntimeError $ "out of bounds: " ++ show (l, r, n)
-
-sortArray :: Ord a => A.Array Int a -> A.Array Int a
-sortArray = listToArray . sort . A.elems
-
-reverseArray :: A.Array Int a -> A.Array Int a
-reverseArray = listToArray . reverse . A.elems
-
-range1 :: MonadError Error m => Integer -> m (A.Array Int Value)
+range1 :: MonadError Error m => Integer -> m (V.Vector Value)
 range1 n | n < 0 = throwRuntimeError $ "invalid argument for range1: " ++ show n
-range1 n = return $ listToArray (map ValInt [0 .. n - 1])
+range1 n = return $ V.fromList (map ValInt [0 .. n - 1])
 
-range2 :: MonadError Error m => Integer -> Integer -> m (A.Array Int Value)
+range2 :: MonadError Error m => Integer -> Integer -> m (V.Vector Value)
 range2 l r | l > r = throwRuntimeError $ "invalid argument for range2: " ++ show (l, r)
-range2 l r = return $ listToArray (map ValInt [l .. r - 1])
+range2 l r = return $ V.fromList (map ValInt [l .. r - 1])
 
-range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (A.Array Int Value)
+range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (V.Vector Value)
 range3 l r step | not (l <= r && step >= 0) = throwRuntimeError $ "invalid argument for range3: " ++ show (l, r, step)
-range3 l r step = return $ listToArray (map ValInt [l, l + step .. r])
+range3 l r step = return $ V.fromList (map ValInt [l, l + step .. r])
 
 fact :: MonadError Error m => Integer -> m Integer
 fact n | n < 0 = throwRuntimeError $ "invalid argument for fact: " ++ show n
@@ -270,7 +256,7 @@ callBuiltin builtin args = case (builtin, args) of
   (ModInv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
   (ModPow, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
   -- list functions
-  (Len _, [ValList a]) -> return $ ValInt (lengthArray a)
+  (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
   (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
   (Map _ _, [f, ValList a]) -> ValList <$> map' f a
   (At _, [ValList a, ValInt n]) -> atEither a n
@@ -282,9 +268,9 @@ callBuiltin builtin args = case (builtin, args) of
   (ArgMax IntTy, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a) -- TODO: allow non-integers
   (All, [ValList a]) -> ValBool . and <$> valueToBoolList a
   (Any, [ValList a]) -> ValBool . or <$> valueToBoolList a
-  (Sorted _, [ValList a]) -> return $ ValList (sortArray a)
+  (Sorted _, [ValList a]) -> return $ ValList (sortVector a)
   (List _, [ValList a]) -> return $ ValList a
-  (Reversed _, [ValList a]) -> return $ ValList (reverseArray a)
+  (Reversed _, [ValList a]) -> return $ ValList (V.reverse a)
   (Range1, [ValInt n]) -> ValList <$> range1 n
   (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
   (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
