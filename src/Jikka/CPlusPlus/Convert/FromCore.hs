@@ -62,11 +62,14 @@ runType = \case
   X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
   t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ show t
 
-runLiteral :: MonadError Error m => X.Literal -> m Y.Literal
+runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
 runLiteral = \case
   X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ show builtin
-  X.LitInt n -> return $ Y.LitInt64 n
-  X.LitBool p -> return $ Y.LitBool p
+  X.LitInt n -> return $ Y.Lit (Y.LitInt64 n)
+  X.LitBool p -> return $ Y.Lit (Y.LitBool p)
+  X.LitNil t -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "std::vector" [t]) []
 
 runAppBuiltin :: MonadError Error m => X.Builtin -> [Y.Expr] -> m Y.Expr
 runAppBuiltin f args = case (f, args) of
@@ -163,7 +166,7 @@ runAppBuiltin f args = case (f, args) of
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
   X.Var x -> Y.Var <$> lookupVarName env x
-  X.Lit lit -> Y.Lit <$> runLiteral lit
+  X.Lit lit -> runLiteral lit
   X.App f args -> do
     args <- mapM (runExpr env) args
     case f of

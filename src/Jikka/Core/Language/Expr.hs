@@ -54,6 +54,7 @@ data Type
     FunTy [Type] Type
   deriving (Eq, Ord, Show, Read)
 
+-- | TODO: What is the difference between `Literal` and `Builtin`?
 data Builtin
   = -- arithmetical functions
 
@@ -126,7 +127,8 @@ data Builtin
   | -- list functions
 
     -- | \(: \forall \alpha. \list(\alpha) \to \int\)
-    Len Type
+    Cons Type
+  | Len Type
   | -- | \(: \forall \alpha. \int \times (\int \to \alpha) \to \list(\alpha)\)
     Tabulate Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \times \list(\alpha) \to \list(\beta)\)
@@ -163,6 +165,12 @@ data Builtin
     Range2
   | -- | \(: \int \times \int \times \int \to \list(\int)\)1
     Range3
+  | -- tuple functions
+
+    -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_0 \times \dots \times \alpha _ {n - 1}\)
+    Tuple [Type]
+  | -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_i\)
+    Proj [Type] Int
   | -- comparison
 
     -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
@@ -191,8 +199,12 @@ data Builtin
 
 data Literal
   = LitBuiltin Builtin
-  | LitInt Integer
-  | LitBool Bool
+  | -- | \(: \forall \alpha. \int\)
+    LitInt Integer
+  | -- | \(: \forall \alpha. \bool\)
+    LitBool Bool
+  | -- | \(: \forall \alpha. \list(\alpha)\)
+    LitNil Type
   deriving (Eq, Ord, Show, Read)
 
 -- | `Expr` represents the exprs of our core language. This is similar to the `Expr` of GHC Core.

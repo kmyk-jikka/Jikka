@@ -84,6 +84,7 @@ analyzeBuiltin = \case
   ModInv -> fun "modinv"
   ModPow -> fun "modpow"
   -- list functions
+  Cons t -> Fun [t] "cons"
   Len t -> Fun [t] "len"
   Tabulate t -> Fun [t] "tabulate"
   Map t1 t2 -> Fun [t1, t2] "map"
@@ -103,6 +104,9 @@ analyzeBuiltin = \case
   Range1 -> fun "range1"
   Range2 -> fun "range2"
   Range3 -> fun "range3"
+  -- tuple functions
+  Tuple ts -> Fun ts "tuple"
+  Proj ts n -> Fun ts ("proj" ++ show n)
   -- comparison
   LessThan t -> InfixOp [t] "<"
   LessEqual t -> InfixOp [t] "<="
@@ -146,6 +150,7 @@ formatLiteral = \case
   LitBuiltin builtin -> formatBuiltinIsolated (analyzeBuiltin builtin)
   LitInt n -> show n
   LitBool p -> show p
+  LitNil t -> "nil" ++ formatTemplate [t]
 
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args

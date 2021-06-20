@@ -51,6 +51,7 @@ literalToValue = \case
   LitBuiltin builtin -> ValBuiltin builtin
   LitInt n -> ValInt n
   LitBool p -> ValBool p
+  LitNil _ -> ValList V.empty
 
 valueToInt :: MonadError Error m => Value -> m Integer
 valueToInt = \case
@@ -256,6 +257,7 @@ callBuiltin builtin args = case (builtin, args) of
   (ModInv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
   (ModPow, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
   -- list functions
+  (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
   (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
   (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
   (Map _ _, [f, ValList a]) -> ValList <$> map' f a
@@ -274,6 +276,9 @@ callBuiltin builtin args = case (builtin, args) of
   (Range1, [ValInt n]) -> ValList <$> range1 n
   (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
   (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
+  -- tuple functions
+  (Tuple _, xs) -> return $ ValTuple xs
+  (Proj _ n, [ValTuple xs]) -> return $ xs !! n
   -- comparison
   (LessThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a < b) -- TODO: allow non-integers
   (LessEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a <= b) -- TODO: allow non-integers

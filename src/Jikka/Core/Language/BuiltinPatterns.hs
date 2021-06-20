@@ -78,6 +78,8 @@ pattern ModInv' e1 e2 = AppBuiltin ModInv [e1, e2]
 pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
 
 -- list functions
+pattern Cons' t e1 e2 = AppBuiltin (Cons t) [e1, e2]
+
 pattern Len' t e = AppBuiltin (Len t) [e]
 
 pattern Tabulate' t n f = AppBuiltin (Tabulate t) [n, f]
@@ -115,6 +117,11 @@ pattern Range1' e = AppBuiltin Range1 [e]
 pattern Range2' e1 e2 = AppBuiltin Range2 [e1, e2]
 
 pattern Range3' e1 e2 e3 = AppBuiltin Range3 [e1, e2, e3]
+
+-- tuple functions
+pattern Tuple' ts es = AppBuiltin (Tuple ts) es
+
+pattern Proj' ts n es = AppBuiltin (Proj ts n) es
 
 -- arithmetical relations
 pattern LessThan' t e1 e2 = AppBuiltin (LessThan t) [e1, e2]

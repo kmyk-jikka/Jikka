@@ -53,6 +53,7 @@ builtinToType = \case
   ModInv -> Fun2Ty IntTy
   ModPow -> Fun3Ty IntTy
   -- list functions
+  Cons t -> FunTy [t, ListTy t] (ListTy t)
   Len t -> FunTy [ListTy t] IntTy
   Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)
   Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)
@@ -72,6 +73,9 @@ builtinToType = \case
   Range1 -> FunTy [IntTy] (ListTy IntTy)
   Range2 -> FunTy [IntTy, IntTy] (ListTy IntTy)
   Range3 -> FunTy [IntTy, IntTy, IntTy] (ListTy IntTy)
+  -- tuple functions
+  Tuple ts -> FunTy ts (TupleTy ts)
+  Proj ts n -> FunTy [TupleTy ts] (ts !! n)
   -- comparison
   LessThan t -> FunTy [t, t] BoolTy
   LessEqual t -> FunTy [t, t] BoolTy
@@ -90,6 +94,7 @@ literalToType = \case
   LitBuiltin builtin -> builtinToType builtin
   LitInt _ -> IntTy
   LitBool _ -> BoolTy
+  LitNil t -> ListTy t
 
 type TypeEnv = [(VarName, Type)]
 
