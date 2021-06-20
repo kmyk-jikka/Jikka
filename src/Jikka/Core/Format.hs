@@ -65,8 +65,8 @@ analyzeBuiltin = \case
   Abs -> fun "abs"
   Gcd -> fun "gcd"
   Lcm -> fun "lcm"
-  Min -> fun "min"
-  Max -> fun "max"
+  Min2 -> fun "min"
+  Max2 -> fun "max"
   -- logical functions
   Not -> PrefixOp "not"
   And -> infixOp "and"
@@ -81,8 +81,8 @@ analyzeBuiltin = \case
   BitLeftShift -> infixOp "<<"
   BitRightShift -> infixOp ">>"
   -- modular functions
-  Inv -> fun "inv"
-  PowMod -> fun "powmod"
+  ModInv -> fun "modinv"
+  ModPow -> fun "modpow"
   -- list functions
   Len t -> Fun [t] "len"
   Tabulate t -> Fun [t] "tabulate"

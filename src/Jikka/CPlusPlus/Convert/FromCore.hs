@@ -88,8 +88,8 @@ runAppBuiltin f args = case (f, args) of
   (X.Abs, [e]) -> return $ Y.Call (Y.Function "std::abs" []) [e]
   (X.Gcd, [e1, e2]) -> return $ Y.Call (Y.Function "std::gcd" []) [e1, e2]
   (X.Lcm, [e1, e2]) -> return $ Y.Call (Y.Function "std::lcm" []) [e1, e2]
-  (X.Min, [e1, e2]) -> return $ Y.Call (Y.Function "std::min" []) [e1, e2]
-  (X.Max, [e1, e2]) -> return $ Y.Call (Y.Function "std::max" []) [e1, e2]
+  (X.Min2, [e1, e2]) -> return $ Y.Call (Y.Function "std::min" []) [e1, e2]
+  (X.Max2, [e1, e2]) -> return $ Y.Call (Y.Function "std::max" []) [e1, e2]
   -- logical functions
   (X.Not, [e]) -> return $ Y.UnOp Y.Not e
   (X.And, [e1, e2]) -> return $ Y.BinOp Y.And e1 e2
@@ -104,8 +104,8 @@ runAppBuiltin f args = case (f, args) of
   (X.BitLeftShift, [e1, e2]) -> return $ Y.BinOp Y.BitLeftShift e1 e2
   (X.BitRightShift, [e1, e2]) -> return $ Y.BinOp Y.BitRightShift e1 e2
   -- modular functions
-  (X.Inv, [e1, e2]) -> return $ Y.Call (Y.Function "std::modinv" []) [e1, e2]
-  (X.PowMod, [e1, e2, e3]) -> return $ Y.Call (Y.Function "std::modpow" []) [e1, e2, e3]
+  (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "std::modinv" []) [e1, e2]
+  (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "std::modpow" []) [e1, e2, e3]
   -- list functions
   (X.Len _, [e]) -> return $ Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
   (X.Tabulate t, [n, f]) -> do

@@ -75,7 +75,7 @@ runBuiltin builtin =
         X.BuiltinChoose -> f Y.Choose
         X.BuiltinPermute -> f Y.Permute
         X.BuiltinMultiChoose -> f Y.MultiChoose
-        X.BuiltinModInv -> f Y.Inv
+        X.BuiltinModInv -> f Y.ModInv
 
 runBoolOp :: X.BoolOp -> Y.Builtin
 runBoolOp = \case
@@ -107,8 +107,8 @@ runOperator = \case
   X.BitOr -> Y.BitOr
   X.BitXor -> Y.BitXor
   X.BitAnd -> Y.BitAnd
-  X.Max -> Y.Max
-  X.Min -> Y.Min
+  X.Max -> Y.Max2
+  X.Min -> Y.Min2
 
 runCmpOp :: X.CmpOp' -> Y.Builtin
 runCmpOp (X.CmpOp' op _) = case op of

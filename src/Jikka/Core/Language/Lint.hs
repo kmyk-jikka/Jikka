@@ -34,8 +34,8 @@ builtinToType = \case
   Abs -> Fun1Ty IntTy
   Gcd -> Fun2Ty IntTy
   Lcm -> Fun2Ty IntTy
-  Min -> Fun2Ty IntTy
-  Max -> Fun2Ty IntTy
+  Min2 -> Fun2Ty IntTy
+  Max2 -> Fun2Ty IntTy
   -- logical functions
   Not -> Fun1Ty BoolTy
   And -> Fun2Ty BoolTy
@@ -50,8 +50,8 @@ builtinToType = \case
   BitLeftShift -> Fun2Ty IntTy
   BitRightShift -> Fun2Ty IntTy
   -- modular functions
-  Inv -> Fun2Ty IntTy
-  PowMod -> Fun3Ty IntTy
+  ModInv -> Fun2Ty IntTy
+  ModPow -> Fun3Ty IntTy
   -- list functions
   Len t -> FunTy [ListTy t] IntTy
   Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)

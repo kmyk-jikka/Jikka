@@ -88,9 +88,9 @@ data Builtin
   | -- | \(: \int \times \int \to \int\)
     Lcm
   | -- | \(: \int \times \int \to \int\)
-    Min
+    Min2
   | -- | \(: \int \times \int \to \int\)
-    Max
+    Max2
   | -- logical functions
 
     -- | \(: \bool \to \bool\)
@@ -120,9 +120,9 @@ data Builtin
   | -- modular functions
 
     -- | \(: \int \times \int \to \int\)
-    Inv
+    ModInv
   | -- | \(: \int \times \int \times \int \to \int\)
-    PowMod
+    ModPow
   | -- list functions
 
     -- | \(: \forall \alpha. \list(\alpha) \to \int\)

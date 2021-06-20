@@ -251,8 +251,8 @@ callBuiltin builtin args = case (builtin, args) of
   (Abs, [ValInt n]) -> return $ ValInt (abs n)
   (Gcd, [ValInt a, ValInt b]) -> return $ ValInt (gcd a b)
   (Lcm, [ValInt a, ValInt b]) -> return $ ValInt (lcm a b)
-  (Min, [ValInt a, ValInt b]) -> return $ ValInt (min a b)
-  (Max, [ValInt a, ValInt b]) -> return $ ValInt (max a b)
+  (Min2, [ValInt a, ValInt b]) -> return $ ValInt (min a b)
+  (Max2, [ValInt a, ValInt b]) -> return $ ValInt (max a b)
   -- logical functions
   (Not, [ValBool p]) -> return $ ValBool (not p)
   (And, [ValBool p, ValBool q]) -> return $ ValBool (p && q)
@@ -267,8 +267,8 @@ callBuiltin builtin args = case (builtin, args) of
   (BitLeftShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger b)
   (BitRightShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger (- b))
   -- modular functions
-  (Inv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
-  (PowMod, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
+  (ModInv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
+  (ModPow, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
   -- list functions
   (Len _, [ValList a]) -> return $ ValInt (lengthArray a)
   (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f

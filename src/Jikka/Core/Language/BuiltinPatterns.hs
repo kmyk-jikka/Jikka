@@ -44,9 +44,9 @@ pattern Gcd' e1 e2 = AppBuiltin Gcd [e1, e2]
 
 pattern Lcm' e1 e2 = AppBuiltin Lcm [e1, e2]
 
-pattern Min' e1 e2 = AppBuiltin Min [e1, e2]
+pattern Min2' e1 e2 = AppBuiltin Min2 [e1, e2]
 
-pattern Max' e1 e2 = AppBuiltin Max [e1, e2]
+pattern Max2' e1 e2 = AppBuiltin Max2 [e1, e2]
 
 -- logical functions
 pattern Not' e = AppBuiltin Not [e]
@@ -73,9 +73,9 @@ pattern BitLeftShift' e1 e2 = AppBuiltin BitLeftShift [e1, e2]
 pattern BitRightShift' e1 e2 = AppBuiltin BitRightShift [e1, e2]
 
 -- modular functions
-pattern Inv' e1 e2 = AppBuiltin Inv [e1, e2]
+pattern ModInv' e1 e2 = AppBuiltin ModInv [e1, e2]
 
-pattern PowMod' e1 e2 e3 = AppBuiltin PowMod [e1, e2, e3]
+pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
 
 -- list functions
 pattern Len' t e = AppBuiltin (Len t) [e]
