@@ -31,7 +31,7 @@ runType = \case
 
 runConstant :: MonadError Error m => X.Constant -> m Y.Expr
 runConstant = \case
-  X.ConstNone -> undefined -- TODO
+  X.ConstNone -> return $ Y.Tuple' [] []
   X.ConstInt n -> return $ Y.Lit (Y.LitInt n)
   X.ConstBool p -> return $ Y.Lit (Y.LitBool p)
   X.ConstBuiltin builtin -> runBuiltin builtin
@@ -43,24 +43,33 @@ runBuiltin builtin =
         X.BuiltinAbs -> f Y.Abs
         X.BuiltinPow -> f Y.Pow
         X.BuiltinModPow -> f Y.ModPow
-        X.BuiltinDivMod -> undefined -- TODO
+        X.BuiltinDivMod -> return $ Y.Lam [("a", Y.IntTy), ("b", Y.IntTy)] (Y.Tuple' [Y.IntTy, Y.IntTy] [Y.FloorDiv' (Y.Var "a") (Y.Var "b"), Y.FloorMod' (Y.Var "a") (Y.Var "b")])
         X.BuiltinCeilDiv -> f Y.CeilDiv
         X.BuiltinCeilMod -> f Y.CeilMod
         X.BuiltinFloorDiv -> f Y.FloorDiv
         X.BuiltinFloorMod -> f Y.FloorMod
         X.BuiltinGcd -> f Y.Gcd
         X.BuiltinLcm -> f Y.Lcm
-        X.BuiltinInt _ -> undefined -- TODO
-        X.BuiltinBool _ -> undefined -- TODO
-        X.BuiltinList _ -> undefined -- TODO
-        X.BuiltinTuple _ -> undefined -- TODO
+        X.BuiltinInt t -> case t of
+          X.IntTy -> return $ Y.Lam [("x", Y.IntTy)] (Y.Var "x")
+          X.BoolTy -> return $ Y.Lam [("p", Y.BoolTy)] (Y.If' Y.IntTy (Y.Var "p") Y.Lit1 Y.Lit0)
+          _ -> throwTypeError "the argument of int must be int or bool"
+        X.BuiltinBool t -> case t of
+          X.IntTy -> return $ Y.Lam [("x", Y.IntTy)] (Y.If' Y.BoolTy (Y.Equal' Y.IntTy (Y.Var "x") Y.Lit0) Y.LitFalse Y.LitTrue)
+          X.BoolTy -> return $ Y.Lam [("p", Y.BoolTy)] (Y.Var "p")
+          X.ListTy t ->
+            let t' = runType t
+             in return $ Y.Lam [("xs", Y.ListTy t')] (Y.If' Y.BoolTy (Y.Equal' (Y.ListTy t') (Y.Var "xs") (Y.Lit (Y.LitNil t'))) Y.LitFalse Y.LitTrue)
+          _ -> throwTypeError "the argument of bool must be bool, int, or list(a)"
+        X.BuiltinList t -> return $ Y.Lam [("xs", Y.ListTy (runType t))] (Y.Var "xs")
+        X.BuiltinTuple ts -> f $ Y.Tuple (map runType ts)
         X.BuiltinLen t -> f $ Y.Len (runType t)
-        X.BuiltinMap _ _ -> undefined -- TODO
+        X.BuiltinMap _ _ -> throwInternalError "runBuiltin TODO"
         X.BuiltinSorted t -> f $ Y.Sorted (runType t)
         X.BuiltinReversed t -> f $ Y.Reversed (runType t)
-        X.BuiltinEnumerate _ -> undefined -- TODO
-        X.BuiltinFilter _ -> undefined -- TODO
-        X.BuiltinZip _ -> undefined -- TODO
+        X.BuiltinEnumerate _ -> throwInternalError "runBuiltin TODO"
+        X.BuiltinFilter _ -> throwInternalError "runBuiltin TODO"
+        X.BuiltinZip _ -> throwInternalError "runBuiltin TODO"
         X.BuiltinAll -> f Y.All
         X.BuiltinAny -> f Y.Any
         X.BuiltinSum -> f Y.Sum
@@ -146,6 +155,9 @@ runCmpOp (X.CmpOp' op t) =
 makeList2 :: a -> a -> [a]
 makeList2 x y = [x, y]
 
+runListComp :: (MonadAlpha m, MonadError Error m) => X.Expr -> X.Comprehension -> m Y.Expr
+runListComp _ (X.Comprehension _ _ _) = undefined -- TODO
+
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr -> m Y.Expr
 runExpr = \case
   X.BoolOp e1 op e2 -> Y.AppBuiltin (runBoolOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
@@ -158,23 +170,34 @@ runExpr = \case
     e3 <- runExpr e3
     t <- Y.genType
     return $ Y.AppBuiltin (Y.If t) [e1, e2, e3]
-  X.ListComp _ (X.Comprehension _ _ _) -> undefined -- TODO
+  X.ListComp x comp -> runListComp x comp
   X.Compare e1 op e2 -> Y.App (runCmpOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.Call f args -> Y.App <$> runExpr f <*> mapM runExpr args
   X.Constant const -> runConstant const
   X.Subscript e1 e2 -> Y.AppBuiltin <$> (Y.At <$> Y.genType) <*> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.Name x -> return $ Y.Var (runVarName x)
-  X.List _ _ -> undefined -- TODO
-  X.Tuple _ -> undefined -- TODO
-  X.SubscriptSlice _ _ _ _ -> undefined -- TODO
+  X.List t es -> do
+    let t' = runType t
+    foldr (Y.Cons' t') (Y.Lit (Y.LitNil t')) <$> mapM runExpr es
+  X.Tuple es -> Y.Tuple' <$> mapM (const Y.genType) es <*> mapM runExpr es
+  X.SubscriptSlice _ _ _ _ -> throwInternalError "runExpr TODO"
+
+runAugAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Operator -> X.Expr -> m Y.Expr
+runAugAssign = undefined -- TODO
+
+runAnnAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Type -> X.Expr -> m Y.Expr
+runAnnAssign = undefined -- TODO
+
+runForStatement :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Expr -> [X.Statement] -> m Y.Expr
+runForStatement = undefined -- TODO
 
 runStatements :: (MonadAlpha m, MonadError Error m) => [X.Statement] -> m Y.Expr
 runStatements [] = throwSemanticError "function may not return"
 runStatements (stmt : stmts) = case stmt of
   X.Return e -> runExpr e
-  X.AugAssign _ _ _ -> undefined -- TODO
-  X.AnnAssign _ _ _ -> undefined -- TODO
-  X.For _ _ _ -> undefined -- TODO
+  X.AugAssign x op e -> runAugAssign x op e
+  X.AnnAssign x t e -> runAnnAssign x t e
+  X.For x iter body -> runForStatement x iter body
   X.If e body1 body2 -> do
     e <- runExpr e
     body1 <- runStatements (body1 ++ stmts)
