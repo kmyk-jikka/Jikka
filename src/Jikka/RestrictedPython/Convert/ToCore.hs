@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Jikka.RestrictedPython.Convert.ToCore
   ( run,
@@ -9,6 +11,7 @@ where
 import Control.Arrow ((***))
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Language.BuiltinPatterns as Y
 import qualified Jikka.Core.Language.Expr as Y
 import qualified Jikka.Core.Language.Util as Y
 import qualified Jikka.RestrictedPython.Language.Expr as X
@@ -26,20 +29,20 @@ runType = \case
   X.TupleTy ts -> Y.TupleTy (map runType ts)
   X.CallableTy args ret -> Y.FunTy (map runType args) (runType ret)
 
-runConstant :: X.Constant -> Y.Expr
+runConstant :: MonadError Error m => X.Constant -> m Y.Expr
 runConstant = \case
   X.ConstNone -> undefined -- TODO
-  X.ConstInt n -> Y.Lit (Y.LitInt n)
-  X.ConstBool p -> Y.Lit (Y.LitBool p)
+  X.ConstInt n -> return $ Y.Lit (Y.LitInt n)
+  X.ConstBool p -> return $ Y.Lit (Y.LitBool p)
   X.ConstBuiltin builtin -> runBuiltin builtin
 
-runBuiltin :: X.Builtin -> Y.Expr
+runBuiltin :: MonadError Error m => X.Builtin -> m Y.Expr
 runBuiltin builtin =
-  let f = Y.Lit . Y.LitBuiltin
+  let f = return . Y.Lit . Y.LitBuiltin
    in case builtin of
         X.BuiltinAbs -> f Y.Abs
         X.BuiltinPow -> f Y.Pow
-        X.BuiltinModPow -> undefined -- TODO
+        X.BuiltinModPow -> f Y.ModPow
         X.BuiltinDivMod -> undefined -- TODO
         X.BuiltinCeilDiv -> f Y.CeilDiv
         X.BuiltinCeilMod -> f Y.CeilMod
@@ -58,19 +61,31 @@ runBuiltin builtin =
         X.BuiltinEnumerate _ -> undefined -- TODO
         X.BuiltinFilter _ -> undefined -- TODO
         X.BuiltinZip _ -> undefined -- TODO
-        X.BuiltinAll -> undefined -- TODO
-        X.BuiltinAny -> undefined -- TODO
+        X.BuiltinAll -> f Y.All
+        X.BuiltinAny -> f Y.Any
         X.BuiltinSum -> f Y.Sum
         X.BuiltinProduct -> f Y.Product
         X.BuiltinRange1 -> f Y.Range1
         X.BuiltinRange2 -> f Y.Range2
         X.BuiltinRange3 -> f Y.Range1
-        X.BuiltinMax1 _ -> undefined -- TODO
-        X.BuiltinMax _ _ -> undefined -- TODO
-        X.BuiltinMin1 _ -> undefined -- TODO
-        X.BuiltinMin _ _ -> undefined -- TODO
-        X.BuiltinArgMax _ -> undefined -- TODO
-        X.BuiltinArgMin _ -> undefined -- TODO
+        X.BuiltinMax1 t -> f $ Y.Max1 (runType t)
+        X.BuiltinMax t n ->
+          if n < 2
+            then throwTypeError $ "max expected 2 or more arguments, got " ++ show n
+            else
+              let t' = runType t
+                  args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
+               in return $ Y.Lam (map (,t') args) (foldr1 (Y.Max2' t') (map Y.Var args))
+        X.BuiltinMin1 t -> f $ Y.Min1 (runType t)
+        X.BuiltinMin t n ->
+          if n < 2
+            then throwTypeError $ "max min 2 or more arguments, got " ++ show n
+            else
+              let t' = runType t
+                  args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
+               in return $ Y.Lam (map (,t') args) (foldr1 (Y.Min2' t') (map Y.Var args))
+        X.BuiltinArgMax t -> f $ Y.ArgMax (runType t)
+        X.BuiltinArgMin t -> f $ Y.ArgMin (runType t)
         X.BuiltinFact -> f Y.Fact
         X.BuiltinChoose -> f Y.Choose
         X.BuiltinPermute -> f Y.Permute
@@ -83,45 +98,50 @@ runBoolOp = \case
   X.Or -> Y.Or
   X.Implies -> Y.Implies
 
-runUnaryOp :: X.UnaryOp -> Y.Builtin
-runUnaryOp = \case
-  X.Invert -> Y.BitNot
-  X.Not -> Y.Not
-  X.UAdd -> undefined -- TODO
-  X.USub -> Y.Negate
+runUnaryOp :: X.UnaryOp -> Y.Expr
+runUnaryOp =
+  let f = Y.Lit . Y.LitBuiltin
+   in \case
+        X.Invert -> f Y.BitNot
+        X.Not -> f Y.Not
+        X.UAdd -> Y.Lam [("x", Y.IntTy)] (Y.Var "x")
+        X.USub -> f Y.Negate
 
-runOperator :: X.Operator -> Y.Builtin
+runOperator :: MonadError Error m => X.Operator -> m Y.Builtin
 runOperator = \case
-  X.Add -> Y.Plus
-  X.Sub -> Y.Minus
-  X.Mult -> Y.Mult
-  X.MatMult -> undefined -- TODO
-  X.Div -> undefined -- TODO
-  X.FloorDiv -> Y.FloorDiv
-  X.FloorMod -> Y.FloorMod
-  X.CeilDiv -> Y.CeilDiv
-  X.CeilMod -> Y.CeilMod
-  X.Pow -> Y.Pow
-  X.BitLShift -> Y.BitLeftShift
-  X.BitRShift -> Y.BitRightShift
-  X.BitOr -> Y.BitOr
-  X.BitXor -> Y.BitXor
-  X.BitAnd -> Y.BitAnd
-  X.Max -> Y.Max2 Y.IntTy
-  X.Min -> Y.Min2 Y.IntTy
+  X.Add -> return Y.Plus
+  X.Sub -> return Y.Minus
+  X.Mult -> return Y.Mult
+  X.MatMult -> throwSemanticError "matmul operator ('@') is not supported"
+  X.Div -> throwSemanticError "floatdiv operator ('/') is not supported"
+  X.FloorDiv -> return Y.FloorDiv
+  X.FloorMod -> return Y.FloorMod
+  X.CeilDiv -> return Y.CeilDiv
+  X.CeilMod -> return Y.CeilMod
+  X.Pow -> return Y.Pow
+  X.BitLShift -> return Y.BitLeftShift
+  X.BitRShift -> return Y.BitRightShift
+  X.BitOr -> return Y.BitOr
+  X.BitXor -> return Y.BitXor
+  X.BitAnd -> return Y.BitAnd
+  X.Max -> return $ Y.Max2 Y.IntTy
+  X.Min -> return $ Y.Min2 Y.IntTy
 
-runCmpOp :: X.CmpOp' -> Y.Builtin
-runCmpOp (X.CmpOp' op t) = case op of
-  X.Lt -> Y.LessThan (runType t)
-  X.LtE -> Y.LessEqual (runType t)
-  X.Gt -> Y.GreaterThan (runType t)
-  X.GtE -> Y.GreaterEqual (runType t)
-  X.Eq' -> Y.Equal undefined -- TODO
-  X.NotEq -> Y.NotEqual undefined -- TODO
-  X.Is -> undefined -- TODO
-  X.IsNot -> undefined -- TODO
-  X.In -> undefined -- TODO
-  X.NotIn -> undefined -- TODO
+runCmpOp :: X.CmpOp' -> Y.Expr
+runCmpOp (X.CmpOp' op t) =
+  let t' = runType t
+      f = Y.Lit . Y.LitBuiltin
+   in case op of
+        X.Lt -> f $ Y.LessThan t'
+        X.LtE -> f $ Y.LessEqual t'
+        X.Gt -> f $ Y.GreaterThan t'
+        X.GtE -> f $ Y.GreaterEqual t'
+        X.Eq' -> f $ Y.Equal t'
+        X.NotEq -> f $ Y.NotEqual t'
+        X.Is -> f $ Y.Equal t'
+        X.IsNot -> f $ Y.NotEqual t'
+        X.In -> f $ Y.Elem t'
+        X.NotIn -> Y.Lam [("x", t'), ("xs", Y.ListTy t')] (Y.Not' (Y.Elem' t' (Y.Var "x") (Y.Var "xs")))
 
 makeList2 :: a -> a -> [a]
 makeList2 x y = [x, y]
@@ -129,9 +149,9 @@ makeList2 x y = [x, y]
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr -> m Y.Expr
 runExpr = \case
   X.BoolOp e1 op e2 -> Y.AppBuiltin (runBoolOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
-  X.BinOp e1 op e2 -> Y.AppBuiltin (runOperator op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
-  X.UnaryOp op e -> Y.AppBuiltin (runUnaryOp op) . (: []) <$> runExpr e
-  X.Lambda _ _ -> undefined -- TODO
+  X.BinOp e1 op e2 -> Y.AppBuiltin <$> runOperator op <*> (makeList2 <$> runExpr e1 <*> runExpr e2)
+  X.UnaryOp op e -> Y.App (runUnaryOp op) . (: []) <$> runExpr e
+  X.Lambda args body -> Y.Lam (map (runVarName *** runType) args) <$> runExpr body
   X.IfExp e1 e2 e3 -> do
     e1 <- runExpr e1
     e2 <- runExpr e2
@@ -139,9 +159,9 @@ runExpr = \case
     t <- Y.genType
     return $ Y.AppBuiltin (Y.If t) [e1, e2, e3]
   X.ListComp _ (X.Comprehension _ _ _) -> undefined -- TODO
-  X.Compare e1 op e2 -> Y.AppBuiltin (runCmpOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
+  X.Compare e1 op e2 -> Y.App (runCmpOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.Call f args -> Y.App <$> runExpr f <*> mapM runExpr args
-  X.Constant const -> return $ runConstant const
+  X.Constant const -> runConstant const
   X.Subscript e1 e2 -> Y.AppBuiltin <$> (Y.At <$> Y.genType) <*> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.Name x -> return $ Y.Var (runVarName x)
   X.List _ _ -> undefined -- TODO
@@ -164,7 +184,7 @@ runStatements (stmt : stmts) = case stmt of
   X.Assert _ -> runStatements stmts
 
 runToplevelStatements :: (MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
-runToplevelStatements [] = return $ Y.ResultExpr (Y.Var (Y.VarName "solve"))
+runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
 runToplevelStatements (stmt : stmts) = case stmt of
   X.ToplevelAnnAssign _ _ _ -> undefined -- TODO
   X.ToplevelFunctionDef f args ret body -> Y.ToplevelLet Y.Rec (runVarName f) (map (runVarName *** runType) args) (runType ret) <$> runStatements body <*> runToplevelStatements stmts
