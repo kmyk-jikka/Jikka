@@ -45,5 +45,22 @@ runToplevelExpr = \case
           then ToplevelLet f (FunTy (map snd args) ret) (Lam args body') cont'
           else ToplevelLetRec f args ret body' cont'
 
+-- | `run` removes unused variables in given programs.
+--
+-- This also removes variables for recursion, i.e. "rec" flags.
+-- `ToplevelLetRec` may becomes `ToplevelLet`.
+--
+-- For example, this converts
+--
+-- > let rec solve x =
+-- >     let y = 0
+-- >     in x
+-- > in solve
+--
+-- to
+--
+-- > let solve x =
+-- >     x
+-- > in solve
 run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . runToplevelExpr
