@@ -13,6 +13,7 @@
 -- `Jikka.Language.Core.RemoveUnusedVars` remove unused variables from exprs.
 module Jikka.Core.Convert.RemoveUnusedVars
   ( run,
+    run',
   )
 where
 
@@ -45,6 +46,9 @@ runToplevelExpr = \case
           then ToplevelLet f (FunTy (map snd args) ret) (Lam args body') cont'
           else ToplevelLetRec f args ret body' cont'
 
+run' :: Program -> Program
+run' = runToplevelExpr
+
 -- | `run` removes unused variables in given programs.
 --
 -- This also removes variables for recursion, i.e. "rec" flags.
@@ -63,4 +67,4 @@ runToplevelExpr = \case
 -- >     x
 -- > in solve
 run :: MonadError Error m => Program -> m Program
-run = typecheckProgram' . runToplevelExpr
+run = typecheckProgram' . run'
