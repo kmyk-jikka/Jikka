@@ -57,7 +57,7 @@ run' = mapLargeStatement (\e pred1 pred2 -> [If e pred1 pred2]) runForLoop
 
 -- | `run` does alpha conversion, check assumptions, and `run'`.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run prog = wrapError' "Jikka.RestrictedPython.Convert.SplitLoops" $ do
   prog <- Alpha.run prog
   ensureDoesntHaveSubscriptionInLoopCounters prog
   ensureDoesntHaveAssignmentToLoopCounters prog

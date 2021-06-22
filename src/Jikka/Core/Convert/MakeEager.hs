@@ -60,4 +60,6 @@ run' = runToplevelExpr
 -- >     )()
 -- > in fact 10
 run :: MonadError Error m => Program -> m Program
-run = typecheckProgram' . run'
+run prog = wrapError' "Jikka.Core.Convert.MakeEager" $ do
+  prog <- return $ run' prog
+  typecheckProgram' prog

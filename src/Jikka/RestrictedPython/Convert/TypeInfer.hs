@@ -339,7 +339,7 @@ substProgram sigma gamma prog = map (substToplevelStatement sigma gamma) prog
 --
 -- In its implementation, this function works like a Hindley-Milner type inference.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run prog = wrapError' "Jikka.RestrictedPython.Convert.TypeInfer" $ do
   eqns <- formularizeProgram prog
   let (eqns', assertions) = sortEquations eqns
   let (gamma, eqns'') = makeGamma assertions

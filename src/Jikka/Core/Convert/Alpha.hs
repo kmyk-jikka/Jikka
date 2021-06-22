@@ -77,6 +77,6 @@ runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = runToplevelExpr []
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run prog = wrapError' "Jikka.Core.Convert.Alpha" $ do
   prog <- runToplevelExpr [] prog
   typecheckProgram' prog

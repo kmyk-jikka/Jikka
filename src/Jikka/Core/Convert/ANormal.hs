@@ -83,7 +83,7 @@ runToplevelExpr env = \case
     return $ ToplevelLetRec f args ret body cont
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run prog = wrapError' "Jikka.Core.Convert.ANormal" $ do
   prog <- Alpha.runProgram prog
   prog <- runToplevelExpr [] prog
   typecheckProgram' prog

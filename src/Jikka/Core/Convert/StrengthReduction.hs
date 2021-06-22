@@ -224,4 +224,6 @@ weakenToplevelExpr e = case e of
   ToplevelLetRec f args ret body cont -> ToplevelLetRec f args ret (weakenExpr body) (weakenToplevelExpr cont)
 
 run :: MonadError Error m => Program -> m Program
-run = typecheckProgram' . weakenToplevelExpr
+run prog = wrapError' "Jikka.Core.Convert.StrengthReduction" $ do
+  prog <- return $ weakenToplevelExpr prog
+  typecheckProgram' prog

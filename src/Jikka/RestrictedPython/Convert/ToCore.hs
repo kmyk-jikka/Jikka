@@ -376,7 +376,7 @@ runToplevelStatements (stmt : stmts) = case stmt of
 -- >     fst (foldl (fun (a, b) i -> (b, a + b)) (0, 1) [0 .. n - 1])
 -- > in solve
 run :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
-run prog = do
+run prog = wrapError' "Jikka.RestrictedPython.Convert.ToCore" $ do
   X.ensureDoesntHaveSubscriptionInLoopCounters prog
   X.ensureDoesntHaveLeakOfLoopCounters prog
   X.ensureDoesntHaveAssignmentToLoopCounters prog
