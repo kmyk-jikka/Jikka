@@ -54,6 +54,8 @@ builtinToType = \case
   ModPow -> Fun3Ty IntTy
   -- list functions
   Cons t -> FunTy [t, ListTy t] (ListTy t)
+  Foldl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] t2
+  Scanl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] (ListTy t2)
   Len t -> FunTy [ListTy t] IntTy
   Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)
   Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)

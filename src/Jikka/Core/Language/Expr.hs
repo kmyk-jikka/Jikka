@@ -128,6 +128,10 @@ data Builtin
 
     -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \list(\alpha)\)
     Cons Type
+  | -- | \(: \foall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \beta\)
+    Foldl Type Type
+  | -- | \(: \foall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \list(\beta)\)
+    Scanl Type Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
   | -- | \(: \forall \alpha. \int \times (\int \to \alpha) \to \list(\alpha)\)

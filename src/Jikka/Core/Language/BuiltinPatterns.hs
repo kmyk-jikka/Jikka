@@ -80,6 +80,10 @@ pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
 -- list functions
 pattern Cons' t e1 e2 = AppBuiltin (Cons t) [e1, e2]
 
+pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin (Foldl t1 t2) [e1, e2, e3]
+
+pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin (Scanl t1 t2) [e1, e2, e3]
+
 pattern Len' t e = AppBuiltin (Len t) [e]
 
 pattern Tabulate' t n f = AppBuiltin (Tabulate t) [n, f]

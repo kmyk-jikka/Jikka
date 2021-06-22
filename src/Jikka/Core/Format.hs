@@ -85,6 +85,8 @@ analyzeBuiltin = \case
   ModPow -> fun "modpow"
   -- list functions
   Cons t -> Fun [t] "cons"
+  Foldl t1 t2 -> Fun [t1, t2] "foldl"
+  Scanl t1 t2 -> Fun [t1, t2] "scanl"
   Len t -> Fun [t] "len"
   Tabulate t -> Fun [t] "tabulate"
   Map t1 t2 -> Fun [t1, t2] "map"
