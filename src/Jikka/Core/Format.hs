@@ -90,6 +90,7 @@ analyzeBuiltin = \case
   Map t1 t2 -> Fun [t1, t2] "map"
   Filter t -> Fun [t] "filter"
   At t -> At' t
+  SetAt t -> Fun [t] "setAt"
   Elem t -> Fun [t] "elem"
   Sum -> fun "sum"
   Product -> fun "product"

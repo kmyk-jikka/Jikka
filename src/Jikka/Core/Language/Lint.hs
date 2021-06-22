@@ -59,6 +59,7 @@ builtinToType = \case
   Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)
   Filter t -> FunTy [FunTy [t] BoolTy, ListTy t] (ListTy t)
   At t -> FunTy [ListTy t, IntTy] t
+  SetAt t -> FunTy [ListTy t, IntTy, t] (ListTy t)
   Elem t -> FunTy [t, ListTy t] BoolTy
   Sum -> FunLTy IntTy
   Product -> FunLTy IntTy

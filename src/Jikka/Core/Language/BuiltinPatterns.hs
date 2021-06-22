@@ -90,6 +90,8 @@ pattern Filter' t f e = AppBuiltin (Filter t) [f, e]
 
 pattern At' t e1 e2 = AppBuiltin (At t) [e1, e2]
 
+pattern SetAt' t e1 e2 e3 = AppBuiltin (SetAt t) [e1, e2, e3]
+
 pattern Elem' t e1 e2 = AppBuiltin (Elem t) [e1, e2]
 
 pattern Sum' e = AppBuiltin Sum [e]

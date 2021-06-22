@@ -137,6 +137,8 @@ data Builtin
     Filter Type
   | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
     At Type
+  | -- | \(: \forall \alpha. \list(alpha) \times \int \times \alpha \to \list(\alpha)\)
+    SetAt Type
   | -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \bool\)
     Elem Type
   | -- | \(: \list(\int) \to \int\)
