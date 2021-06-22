@@ -155,8 +155,33 @@ runCmpOp (X.CmpOp' op t) =
 makeList2 :: a -> a -> [a]
 makeList2 x y = [x, y]
 
+runTargetExpr :: (MonadAlpha m, MonadError Error m) => X.Target -> m Y.Expr
+runTargetExpr = \case
+  X.SubscriptTrg x e -> Y.At' <$> Y.genType <*> runTargetExpr x <*> runExpr e
+  X.NameTrg x -> return $ Y.Var (runVarName x)
+  X.TupleTrg xs -> Y.Tuple' <$> replicateM (length xs) Y.genType <*> mapM runTargetExpr xs
+
+runAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> Y.Expr -> Y.Expr -> m Y.Expr
+runAssign x e cont = case x of
+  X.SubscriptTrg x index -> join $ runAssign x <$> (Y.SetAt' <$> Y.genType <*> runTargetExpr x <*> runExpr index <*> pure e) <*> pure cont
+  X.NameTrg x -> Y.Let (runVarName x) <$> Y.genType <*> pure e <*> pure cont
+  X.TupleTrg xs -> do
+    y <- Y.genVarName'
+    ts <- replicateM (length xs) Y.genType
+    cont <- foldM (\cont (i, x) -> runAssign x (Y.Proj' ts i (Y.Var y)) cont) cont (zip [0 ..] xs)
+    return $ Y.Let y (Y.TupleTy ts) e cont
+
 runListComp :: (MonadAlpha m, MonadError Error m) => X.Expr -> X.Comprehension -> m Y.Expr
-runListComp _ (X.Comprehension _ _ _) = undefined -- TODO
+runListComp e (X.Comprehension x iter pred) = do
+  iter <- runExpr iter
+  iter <- case pred of
+    Nothing -> return iter
+    Just pred -> Y.Filter' <$> Y.genType <*> runExpr pred <*> pure iter
+  y <- Y.genVarName'
+  t1 <- Y.genType
+  t2 <- Y.genType
+  e <- runExpr e
+  Y.Map' t1 t2 <$> (Y.Lam [(y, t1)] <$> runAssign x (Y.Var y) e) <*> pure iter
 
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr -> m Y.Expr
 runExpr = \case
@@ -182,12 +207,6 @@ runExpr = \case
   X.Tuple es -> Y.Tuple' <$> mapM (const Y.genType) es <*> mapM runExpr es
   X.SubscriptSlice _ _ _ _ -> throwInternalError "runExpr TODO"
 
-runAugAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Operator -> X.Expr -> m Y.Expr
-runAugAssign = undefined -- TODO
-
-runAnnAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Type -> X.Expr -> m Y.Expr
-runAnnAssign = undefined -- TODO
-
 runForStatement :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Expr -> [X.Statement] -> m Y.Expr
 runForStatement = undefined -- TODO
 
@@ -195,8 +214,8 @@ runStatements :: (MonadAlpha m, MonadError Error m) => [X.Statement] -> m Y.Expr
 runStatements [] = throwSemanticError "function may not return"
 runStatements (stmt : stmts) = case stmt of
   X.Return e -> runExpr e
-  X.AugAssign x op e -> runAugAssign x op e
-  X.AnnAssign x t e -> runAnnAssign x t e
+  X.AugAssign x op e -> join $ runAssign x <$> (Y.App <$> (Y.Lit . Y.LitBuiltin <$> runOperator op) <*> (makeList2 <$> runTargetExpr x <*> runExpr e)) <*> runStatements stmts
+  X.AnnAssign x _ e -> join $ runAssign x <$> runExpr e <*> runStatements stmts
   X.For x iter body -> runForStatement x iter body
   X.If e body1 body2 -> do
     e <- runExpr e

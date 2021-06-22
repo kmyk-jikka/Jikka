@@ -13,3 +13,6 @@ genVarName x = do
   i <- nextCounter
   let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
   return $ VarName (base ++ '$' : show i)
+
+genVarName' :: MonadAlpha m => m VarName
+genVarName' = genVarName (VarName "_")
