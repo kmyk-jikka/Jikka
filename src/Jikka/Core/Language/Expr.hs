@@ -128,9 +128,9 @@ data Builtin
 
     -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \list(\alpha)\)
     Cons Type
-  | -- | \(: \foall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \beta\)
+  | -- | \(: \forall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \beta\)
     Foldl Type Type
-  | -- | \(: \foall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \list(\beta)\)
+  | -- | \(: \forall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \list(\beta)\)
     Scanl Type Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
@@ -292,7 +292,7 @@ pattern LamId x t <-
 --     \begin{array}{rl}
 --         \mathrm{tle} ::= & e \\
 --         \vert & \mathbf{let}~ x: \tau = e ~\mathbf{in}~ \mathrm{tle} \\
---         \vert & \mathbf{letrec}~ x(x: \tau, x: \tau, \dots, x: \tau): \tau = e ~\mathbf{in}~ \mathrm{tle}
+--         \vert & \mathbf{let~rec}~ x(x: \tau, x: \tau, \dots, x: \tau): \tau = e ~\mathbf{in}~ \mathrm{tle}
 --     \end{array}
 -- \]
 data ToplevelExpr
