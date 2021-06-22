@@ -6,11 +6,13 @@
 module Jikka.RestrictedPython.Convert.ToCore
   ( run,
     runForStatement,
+    runIfStatement,
   )
 where
 
 import Control.Arrow ((***))
 import Control.Monad.State.Strict
+import Data.List (intersect)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Language.BuiltinPatterns as Y
@@ -256,6 +258,43 @@ runForStatement x iter body cont = do
   cont <- runStatements cont
   return $ Y.Let z (Y.TupleTy ts) (loop init) (write cont)
 
+-- | `runIfStatement` converts if-loops to if-exprs.
+--
+-- > # a, b are defined
+-- > if True:
+-- >     a = 0
+-- >     b = 1
+-- >     c = 3
+-- > else:
+-- >     a = 1
+-- >     c = 10
+-- > ...
+--
+-- to:
+--
+-- > let (a, c) = if true then (0, 3) else (1, 10)
+-- > in ...
+runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Expr -> [X.Statement] -> [X.Statement] -> [X.Statement] -> m Y.Expr
+runIfStatement e body1 body2 cont = do
+  e <- runExpr e
+  t <- Y.genType
+  case (any X.doesAlwaysReturn body1, any X.doesAlwaysReturn body2) of
+    (False, False) -> do
+      let (_, X.WriteList w1) = X.analyzeStatementsMin body1
+      let (_, X.WriteList w2) = X.analyzeStatementsMin body2
+      let w = w1 `intersect` w2
+      let read = X.Tuple (map X.Name w)
+      ts <- replicateM (length w) Y.genType
+      z <- Y.genVarName'
+      let write value cont = Y.Let z (Y.TupleTy ts) value (foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] w ts))
+      body1 <- runStatements (body1 ++ [X.Return read])
+      body2 <- runStatements (body2 ++ [X.Return read])
+      cont <- runStatements cont
+      return $ write (Y.AppBuiltin (Y.If t) [e, body1, body2]) cont
+    (False, True) -> Y.If' t e <$> runStatements (body1 ++ cont) <*> runStatements body2
+    (True, False) -> Y.If' t e <$> runStatements body1 <*> runStatements (body2 ++ cont)
+    (True, True) -> Y.If' t e <$> runStatements body1 <*> runStatements body2
+
 runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.Statement] -> m Y.Expr
 runStatements [] = throwSemanticError "function may not return"
 runStatements (stmt : stmts) = case stmt of
@@ -273,13 +312,7 @@ runStatements (stmt : stmts) = case stmt of
         mapM_ defineVar (X.targetVars x)
         runStatements stmts
   X.For x iter body -> runForStatement x iter body stmts
-  X.If e body1 body2 -> do
-    e <- runExpr e
-    -- TODO: optimize cases when both statements doesn't return. The current implementation, it exponentially explodes.
-    body1 <- runStatements (body1 ++ stmts)
-    body2 <- runStatements (body2 ++ stmts)
-    t <- Y.genType
-    return $ Y.AppBuiltin (Y.If t) [e, body1, body2]
+  X.If e body1 body2 -> runIfStatement e body1 body2 stmts
   X.Assert _ -> runStatements stmts
 
 runToplevelStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr

@@ -97,3 +97,34 @@ spec = describe "run" $ do
               "solve"
             ]
     (Y.Format.run' <$> run' prog) `shouldBe` Right expected
+  it "converts if-statements correctly" $ do
+    let prog =
+          [ X.ToplevelFunctionDef
+              "solve"
+              []
+              X.IntTy
+              [ X.If
+                  (X.constBoolExp True)
+                  [ X.AnnAssign (X.NameTrg "x") X.IntTy (X.constIntExp 1)
+                  ]
+                  [ X.AnnAssign (X.NameTrg "x") X.IntTy (X.constIntExp 0)
+                  ],
+                X.Return (X.Name "x")
+              ]
+          ]
+    let expected =
+          unlines
+            [ "let rec solve : int =",
+              "    let $2: ($1,) =",
+              "        (if true then let x: $3 =",
+              "            1",
+              "        in tuple(x) else let x: $5 =",
+              "            0",
+              "        in tuple(x))",
+              "    in let x: $1 =",
+              "        proj0($2)",
+              "    in x",
+              "in",
+              "solve"
+            ]
+    (Y.Format.run' <$> run' prog) `shouldBe` Right expected

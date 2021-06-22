@@ -7,7 +7,7 @@ module Jikka.RestrictedPython.Convert.Alpha
 where
 
 import Control.Monad.State.Strict
-import Data.List (delete)
+import Data.List (delete, intersect)
 import qualified Data.Set as S
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -15,6 +15,7 @@ import Jikka.RestrictedPython.Language.Builtin
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Util
+import Jikka.RestrictedPython.Language.VariableAnalysis
 
 data Env = Env
   { currentMapping :: [(VarName, VarName)],
@@ -182,6 +183,9 @@ runStatement = \case
       return $ For y e body
   If e body1 body2 -> do
     e <- runExpr e
+    let (_, WriteList w1) = analyzeStatementsMin body1
+    let (_, WriteList w2) = analyzeStatementsMin body2
+    mapM_ renameNew (w1 `intersect` w2) -- introduce variables to the parent scope
     body1 <- withScope $ do
       runStatements body1
     body2 <- withScope $ do
@@ -248,7 +252,7 @@ runProgram = mapM runToplevelStatement
 --   > if True:
 --   >     a = 0
 --   > else:
---   >     a = 1
+--   >     b = 1
 --   > return a  # error
 --
 --   > for i in range(10):

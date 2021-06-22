@@ -31,26 +31,26 @@ analyzeStatementGeneric isMax = \case
     let w = analyzeTargetWrite x
         (ReadList r) = analyzeTargetRead x
         (ReadList r') = analyzeExpr e
-     in (ReadList (r ++ r'), w)
+     in (ReadList (nub $ r ++ r'), w)
   AnnAssign x _ e ->
     let w = analyzeTargetWrite x
         (ReadList r) = analyzeTargetRead x
         (ReadList r') = analyzeExpr e
-     in (ReadList (r ++ r'), w)
+     in (ReadList (nub $ r ++ r'), w)
   For x iter body ->
     let xs = targetVars x
         ReadList r = analyzeExpr iter
         (ReadList r', WriteList w) = analyzeStatementsGeneric isMax body
      in if isMax
-          then (ReadList (r ++ foldl (flip delete) r' xs), WriteList (foldl (flip delete) w xs))
+          then (ReadList (nub $ r ++ foldl (flip delete) r' xs), WriteList (nub $ foldl (flip delete) w xs))
           else (ReadList r, WriteList [])
   If e body1 body2 ->
     let ReadList r = analyzeExpr e
         (ReadList r1, WriteList w1) = analyzeStatementsGeneric isMax body1
         (ReadList r2, WriteList w2) = analyzeStatementsGeneric isMax body2
      in if isMax
-          then (ReadList (r ++ r1 ++ r2), WriteList (w1 ++ w2))
-          else (ReadList (r ++ intersect r1 r2), WriteList (w1 `intersect` w2))
+          then (ReadList (nub $ r ++ r1 ++ r2), WriteList (nub $ w1 ++ w2))
+          else (ReadList (nub $ r ++ intersect r1 r2), WriteList (nub $ w1 `intersect` w2))
   Assert e -> (analyzeExpr e, WriteList [])
 
 analyzeStatementsGeneric :: Bool -> [Statement] -> (ReadList, WriteList)

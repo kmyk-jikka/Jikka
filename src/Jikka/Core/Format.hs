@@ -16,6 +16,7 @@ module Jikka.Core.Format
   )
 where
 
+import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
@@ -30,7 +31,9 @@ formatType = \case
   IntTy -> "int"
   BoolTy -> "bool"
   ListTy t -> formatType t ++ " list"
-  TupleTy ts -> paren $ intercalate " * " (map formatType ts)
+  TupleTy ts -> case ts of
+    [t] -> paren $ formatType t ++ ","
+    _ -> paren $ intercalate " * " (map formatType ts)
   FunTy ts ret -> paren $ intercalate " * " (map formatType ts) ++ " -> " ++ formatType ret
 
 data Builtin'
@@ -153,7 +156,7 @@ formatLiteral :: Literal -> String
 formatLiteral = \case
   LitBuiltin builtin -> formatBuiltinIsolated (analyzeBuiltin builtin)
   LitInt n -> show n
-  LitBool p -> show p
+  LitBool p -> map toLower $ show p
   LitNil t -> "nil" ++ formatTemplate [t]
 
 formatFormalArgs :: [(VarName, Type)] -> String

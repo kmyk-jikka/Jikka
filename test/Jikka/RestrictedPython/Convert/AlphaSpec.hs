@@ -194,7 +194,7 @@ spec = describe "run" $ do
               ]
           ]
     run' parsed `shouldBe` Right expected
-  it "makes repeated assignments for the same variable to single-assignments" $ do
+  it "makes repeated assignments for the same variable to single-assignments for different variables" $ do
     let parsed =
           [ ToplevelFunctionDef
               "main"
@@ -299,6 +299,52 @@ spec = describe "run" $ do
           ]
     let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: a"))
     run' parsed `shouldBe` Left expected
+  it "blames using variables which are defined in only one branch of if-statement" $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ If
+                  (constBoolExp True)
+                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                  ]
+                  [],
+                Return (Name "a")
+              ]
+          ]
+    let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: a"))
+    run' parsed `shouldBe` Left expected
+  it "works with variables which are defined in both branches of if-statement" $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ If
+                  (constBoolExp True)
+                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                  ]
+                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 1)
+                  ],
+                Return (Name "a")
+              ]
+          ]
+    let expected =
+          [ ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ If
+                  (constBoolExp True)
+                  [ AnnAssign (NameTrg "a$0") IntTy (constIntExp 0)
+                  ]
+                  [ AnnAssign (NameTrg "a$0") IntTy (constIntExp 1)
+                  ],
+                Return (Name "a$0")
+              ]
+          ]
+    run' parsed `shouldBe` Right expected
   it "doesn't leak loop counters of for-exprs" $ do
     let parsed =
           [ ToplevelFunctionDef
