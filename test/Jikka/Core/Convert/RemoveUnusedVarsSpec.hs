@@ -9,15 +9,15 @@ spec = describe "run" $ do
   it "works" $ do
     let input =
           ToplevelLetRec
-            (VarName "solve@0")
-            [(VarName "x@1", BoolTy)]
+            (VarName "solve")
+            [(VarName "x", BoolTy)]
             BoolTy
-            (Let (VarName "y@2") IntTy Lit0 (Var (VarName "x@1")))
-            (ResultExpr (Var (VarName "solve@0")))
+            (Let (VarName "y") IntTy Lit0 (Var (VarName "x")))
+            (ResultExpr (Var (VarName "solve")))
     let expected =
           ToplevelLet
-            (VarName "solve@0")
+            (VarName "solve")
             (FunTy [BoolTy] BoolTy)
-            (Lam [(VarName "x@1", BoolTy)] (Var (VarName "x@1")))
-            (ResultExpr (Var (VarName "solve@0")))
+            (Lam [(VarName "x", BoolTy)] (Var (VarName "x")))
+            (ResultExpr (Var (VarName "solve")))
     run input `shouldBe` Right expected
