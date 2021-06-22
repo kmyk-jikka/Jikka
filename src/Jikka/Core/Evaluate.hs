@@ -32,42 +32,8 @@ import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (builtinToType)
+import Jikka.Core.Language.Value
 import Text.Read (readEither)
-
--- -----------------------------------------------------------------------------
--- values
-
-data Value
-  = ValInt Integer
-  | ValBool Bool
-  | ValList (V.Vector Value)
-  | ValTuple [Value]
-  | ValBuiltin Builtin
-  | ValLambda Env [(VarName, Type)] Expr
-  deriving (Eq, Ord, Show, Read)
-
-literalToValue :: Literal -> Value
-literalToValue = \case
-  LitBuiltin builtin -> ValBuiltin builtin
-  LitInt n -> ValInt n
-  LitBool p -> ValBool p
-  LitNil _ -> ValList V.empty
-
-valueToInt :: MonadError Error m => Value -> m Integer
-valueToInt = \case
-  ValInt n -> return n
-  val -> throwRuntimeError $ "Internal Error: not int: " ++ show val
-
-valueToIntList :: MonadError Error m => V.Vector Value -> m [Integer]
-valueToIntList = mapM valueToInt . V.toList
-
-valueToBool :: MonadError Error m => Value -> m Bool
-valueToBool = \case
-  ValBool p -> return p
-  val -> throwRuntimeError $ "Internal Error: not bool: " ++ show val
-
-valueToBoolList :: MonadError Error m => V.Vector Value -> m [Bool]
-valueToBoolList = mapM valueToBool . V.toList
 
 -- -----------------------------------------------------------------------------
 -- inputs
@@ -217,8 +183,6 @@ multichoose n r = choose (n + r - 1) r
 
 -- -----------------------------------------------------------------------------
 -- evaluator
-
-type Env = [(VarName, Value)]
 
 callBuiltin :: MonadError Error m => Builtin -> [Value] -> m Value
 callBuiltin builtin args = case (builtin, args) of

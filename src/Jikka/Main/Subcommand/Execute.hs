@@ -8,6 +8,7 @@ import qualified Data.Text.IO as T (readFile)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Evaluate as EvaluateCore
+import qualified Jikka.Core.Language.Value as ValueCore
 import Jikka.Main.Target
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
@@ -36,7 +37,7 @@ runCore path = flip evalAlphaT 0 $ do
   prog <- ToRestrictedPython.run prog
   prog <- ToCore.run prog
   value <- EvaluateCore.run prog
-  liftIO $ print value
+  liftIO $ putStrLn (ValueCore.formatValue value)
 
 runCPlusPlus :: FilePath -> ExceptT Error IO ()
 runCPlusPlus _ = throwCommandLineError "cannot execute C++"
