@@ -5,10 +5,12 @@
 
 module Jikka.RestrictedPython.Convert.ToCore
   ( run,
+    runForStatement,
   )
 where
 
 import Control.Arrow ((***))
+import Control.Monad.State.Strict
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Language.BuiltinPatterns as Y
@@ -16,6 +18,23 @@ import qualified Jikka.Core.Language.Expr as Y
 import qualified Jikka.Core.Language.Util as Y
 import qualified Jikka.RestrictedPython.Language.Expr as X
 import qualified Jikka.RestrictedPython.Language.Lint as X
+import qualified Jikka.RestrictedPython.Language.Util as X
+import qualified Jikka.RestrictedPython.Language.VariableAnalysis as X
+
+type Env = [X.VarName]
+
+defineVar :: MonadState Env m => X.VarName -> m ()
+defineVar x = modify' (x :)
+
+isDefinedVar :: MonadState Env m => X.VarName -> m Bool
+isDefinedVar x = gets (x `elem`)
+
+withScope :: MonadState Env m => m a -> m a
+withScope f = do
+  env <- get
+  x <- f
+  put env
+  return x
 
 runVarName :: X.VarName -> Y.VarName
 runVarName (X.VarName x) = Y.VarName x
@@ -161,14 +180,14 @@ runTargetExpr = \case
   X.NameTrg x -> return $ Y.Var (runVarName x)
   X.TupleTrg xs -> Y.Tuple' <$> replicateM (length xs) Y.genType <*> mapM runTargetExpr xs
 
-runAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> Y.Expr -> Y.Expr -> m Y.Expr
+runAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> Y.Expr -> m Y.Expr -> m Y.Expr
 runAssign x e cont = case x of
   X.SubscriptTrg x index -> join $ runAssign x <$> (Y.SetAt' <$> Y.genType <*> runTargetExpr x <*> runExpr index <*> pure e) <*> pure cont
-  X.NameTrg x -> Y.Let (runVarName x) <$> Y.genType <*> pure e <*> pure cont
+  X.NameTrg x -> Y.Let (runVarName x) <$> Y.genType <*> pure e <*> cont
   X.TupleTrg xs -> do
     y <- Y.genVarName'
     ts <- replicateM (length xs) Y.genType
-    cont <- foldM (\cont (i, x) -> runAssign x (Y.Proj' ts i (Y.Var y)) cont) cont (zip [0 ..] xs)
+    cont <- join $ foldM (\cont (i, x) -> return $ runAssign x (Y.Proj' ts i (Y.Var y)) cont) cont (zip [0 ..] xs)
     return $ Y.Let y (Y.TupleTy ts) e cont
 
 runListComp :: (MonadAlpha m, MonadError Error m) => X.Expr -> X.Comprehension -> m Y.Expr
@@ -181,7 +200,7 @@ runListComp e (X.Comprehension x iter pred) = do
   t1 <- Y.genType
   t2 <- Y.genType
   e <- runExpr e
-  Y.Map' t1 t2 <$> (Y.Lam [(y, t1)] <$> runAssign x (Y.Var y) e) <*> pure iter
+  Y.Map' t1 t2 <$> (Y.Lam [(y, t1)] <$> runAssign x (Y.Var y) (pure e)) <*> pure iter
 
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr -> m Y.Expr
 runExpr = \case
@@ -207,29 +226,77 @@ runExpr = \case
   X.Tuple es -> Y.Tuple' <$> mapM (const Y.genType) es <*> mapM runExpr es
   X.SubscriptSlice _ _ _ _ -> throwInternalError "runExpr TODO"
 
-runForStatement :: (MonadAlpha m, MonadError Error m) => X.Target -> X.Expr -> [X.Statement] -> m Y.Expr
-runForStatement = undefined -- TODO
+-- | `runForStatement` converts for-loops to `foldl`.
+-- For example, this converts the following:
+--
+-- > # a, b are defined
+-- > for _ in range(n):
+-- >     c = a + b
+-- >     a = b
+-- >     b = c
+-- > ...
+--
+-- to:
+--
+-- > let (a, b) = foldl (fun (a, b) i -> (b, a + b)) (a, b) (range n)
+-- > in ...
+runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Target -> X.Expr -> [X.Statement] -> [X.Statement] -> m Y.Expr
+runForStatement x iter body cont = do
+  tx <- Y.genType
+  iter <- runExpr iter
+  z <- Y.genVarName'
+  let (_, X.WriteList w) = X.analyzeStatements body
+  ys <- filterM isDefinedVar w
+  ts <- replicateM (length ys) Y.genType
+  let init = Y.Tuple' ts (map (Y.Var . runVarName) ys)
+  let write cont = foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
+  body <- runAssign x (Y.Var z) $ do
+    runStatements (body ++ [X.Return (X.Tuple (map X.Name ys))])
+  let loop init = Y.Foldl' tx (Y.TupleTy ts) (Y.Lam [(z, Y.TupleTy ts)] (write body)) init iter
+  cont <- runStatements cont
+  return $ Y.Let z (Y.TupleTy ts) (loop init) (write cont)
 
-runStatements :: (MonadAlpha m, MonadError Error m) => [X.Statement] -> m Y.Expr
+runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.Statement] -> m Y.Expr
 runStatements [] = throwSemanticError "function may not return"
 runStatements (stmt : stmts) = case stmt of
   X.Return e -> runExpr e
-  X.AugAssign x op e -> join $ runAssign x <$> (Y.App <$> (Y.Lit . Y.LitBuiltin <$> runOperator op) <*> (makeList2 <$> runTargetExpr x <*> runExpr e)) <*> runStatements stmts
-  X.AnnAssign x _ e -> join $ runAssign x <$> runExpr e <*> runStatements stmts
-  X.For x iter body -> runForStatement x iter body
+  X.AugAssign x op e -> do
+    y <- runTargetExpr x
+    op <- Y.Lit . Y.LitBuiltin <$> runOperator op
+    e <- runExpr e
+    runAssign x (Y.App op [y, e]) $ do
+      runStatements stmts
+  X.AnnAssign x _ e -> do
+    e <- runExpr e
+    runAssign x e $ do
+      withScope $ do
+        mapM_ defineVar (X.targetVars x)
+        runStatements stmts
+  X.For x iter body -> runForStatement x iter body stmts
   X.If e body1 body2 -> do
     e <- runExpr e
+    -- TODO: optimize cases when both statements doesn't return. The current implementation, it exponentially explodes.
     body1 <- runStatements (body1 ++ stmts)
     body2 <- runStatements (body2 ++ stmts)
     t <- Y.genType
     return $ Y.AppBuiltin (Y.If t) [e, body1, body2]
   X.Assert _ -> runStatements stmts
 
-runToplevelStatements :: (MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
+runToplevelStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
 runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
 runToplevelStatements (stmt : stmts) = case stmt of
-  X.ToplevelAnnAssign _ _ _ -> undefined -- TODO
-  X.ToplevelFunctionDef f args ret body -> Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) <$> runStatements body <*> runToplevelStatements stmts
+  X.ToplevelAnnAssign x t e -> do
+    e <- runExpr e
+    defineVar x
+    cont <- runToplevelStatements stmts
+    return $ Y.ToplevelLet (runVarName x) (runType t) e cont
+  X.ToplevelFunctionDef f args ret body -> do
+    defineVar f
+    body <- withScope $ do
+      mapM_ (defineVar . fst) args
+      runStatements body
+    cont <- runToplevelStatements stmts
+    return $ Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) body cont
   X.ToplevelAssert _ -> runToplevelStatements stmts -- TOOD: use assertions as hints
 
 -- | `run` converts programs of our restricted Python-like language to programs of our core language.
@@ -241,6 +308,40 @@ runToplevelStatements (stmt : stmts) = case stmt of
 -- * `X.doesntHaveAssignmentToLoopIterators`
 -- * `X.doesntHaveReturnInLoops`
 -- * `X.doesntHaveNonTrivialSubscriptedAssignmentInForLoops`
+--
+-- For example, this converts the following:
+--
+-- > def solve(n):
+-- >     if n == 0:
+-- >         return 1
+-- >     else:
+-- >         return n * solve(n - 1)
+--
+-- to:
+--
+-- > let solve n =
+-- >     if n == 0 then
+-- >         1
+-- >     else:
+-- >         n * solve (n - 1)
+-- > in solve
+--
+-- Also, this converts the following:
+--
+-- > def solve(n):
+-- >     a = 0
+-- >     b = 1
+-- >     for _ in range(n):
+-- >         c = a + b
+-- >         a = b
+-- >         b = c
+-- >     return a
+--
+-- to:
+--
+-- > let solve n =
+-- >     fst (foldl (fun (a, b) i -> (b, a + b)) (0, 1) [0 .. n - 1])
+-- > in solve
 run :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 run prog = do
   X.ensureDoesntHaveSubscriptionInLoopCounters prog
@@ -249,4 +350,4 @@ run prog = do
   X.ensureDoesntHaveAssignmentToLoopIterators prog
   X.ensureDoesntHaveReturnInLoops prog
   X.ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops prog
-  runToplevelStatements prog
+  evalStateT (runToplevelStatements prog) []

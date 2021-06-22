@@ -283,6 +283,22 @@ spec = describe "run" $ do
           ]
     let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SemanticError (Error "cannot redefine variable: i"))
     run' parsed `shouldBe` Left expected
+  it "blames undefined variables which will be defined in the rest of the same loop" $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ For
+                  (NameTrg "i")
+                  (List IntTy [])
+                  [ Return (Name "a"),
+                    AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                  ]
+              ]
+          ]
+    let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: a"))
+    run' parsed `shouldBe` Left expected
   it "doesn't leak loop counters of for-exprs" $ do
     let parsed =
           [ ToplevelFunctionDef
