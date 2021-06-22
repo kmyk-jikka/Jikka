@@ -125,7 +125,7 @@ pattern Range3' e1 e2 e3 = AppBuiltin Range3 [e1, e2, e3]
 -- tuple functions
 pattern Tuple' ts es = AppBuiltin (Tuple ts) es
 
-pattern Proj' ts n es = AppBuiltin (Proj ts n) es
+pattern Proj' ts n e = AppBuiltin (Proj ts n) [e]
 
 -- arithmetical relations
 pattern LessThan' t e1 e2 = AppBuiltin (LessThan t) [e1, e2]
