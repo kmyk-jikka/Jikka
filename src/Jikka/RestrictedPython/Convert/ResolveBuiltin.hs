@@ -24,8 +24,8 @@ runExpr = mapSubExprM go
 -- | `run` resolves types of polymorphic builtin functions.
 -- This assumes there are no assignments to builtin functions, i.e. `doesntHaveAssignmentToBuiltin`.
 --
--- For example, the "max" of "max(xs)" has a type \(\mathbf{list}(\alpha) \to \alpha\) but the "max" of "max(x, y, z)" has a type \(\alpha \times \alpha \times \alpha \to \alpha\).
--- So this function converts `Var "max"` to `BuiltinMax1 t`,`BuiltinMax t 2`, `BuiltinMax t 3`, etc..
+-- For example, the @max@ of @max(xs)@ has a type \(\mathbf{list}(\alpha) \to \alpha\) but the @max@ of @max(x, y, z)@ has a type \(\alpha \times \alpha \times \alpha \to \alpha\).
+-- So this function converts @Var "max"@ to @BuiltinMax1 t@, @BuiltinMax t 2@, @BuiltinMax t 3@, etc..
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.ResolveBuiltin" $ do
   ensureDoesntHaveAssignmentToBuiltin prog
