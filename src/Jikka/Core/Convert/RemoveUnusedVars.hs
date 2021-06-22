@@ -21,29 +21,29 @@ import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint (typecheckProgram')
 import Jikka.Core.Language.Vars (isUnusedVar)
 
-cleanLet :: VarName -> Type -> Expr -> Expr -> Expr
-cleanLet x t e1 e2
+runLet :: VarName -> Type -> Expr -> Expr -> Expr
+runLet x t e1 e2
   | isUnusedVar x e2 = e2
   | otherwise = Let x t e1 e2
 
-cleanExpr :: Expr -> Expr
-cleanExpr = \case
+runExpr :: Expr -> Expr
+runExpr = \case
   Var x -> Var x
   Lit lit -> Lit lit
-  App f args -> App (cleanExpr f) (map cleanExpr args)
-  Lam args e -> Lam args (cleanExpr e)
-  Let x t e1 e2 -> cleanLet x t (cleanExpr e1) (cleanExpr e2)
+  App f args -> App (runExpr f) (map runExpr args)
+  Lam args e -> Lam args (runExpr e)
+  Let x t e1 e2 -> runLet x t (runExpr e1) (runExpr e2)
 
-cleanToplevelExpr :: ToplevelExpr -> ToplevelExpr
-cleanToplevelExpr = \case
-  ResultExpr e -> ResultExpr $ cleanExpr e
-  ToplevelLet x t e cont -> ToplevelLet x t (cleanExpr e) (cleanToplevelExpr cont)
+runToplevelExpr :: ToplevelExpr -> ToplevelExpr
+runToplevelExpr = \case
+  ResultExpr e -> ResultExpr $ runExpr e
+  ToplevelLet x t e cont -> ToplevelLet x t (runExpr e) (runToplevelExpr cont)
   ToplevelLetRec f args ret body cont ->
-    let body' = cleanExpr body
-        cont' = cleanToplevelExpr cont
+    let body' = runExpr body
+        cont' = runToplevelExpr cont
      in if isUnusedVar f body'
           then ToplevelLet f (FunTy (map snd args) ret) (Lam args body') cont'
           else ToplevelLetRec f args ret body' cont'
 
 run :: MonadError Error m => Program -> m Program
-run = typecheckProgram' . cleanToplevelExpr
+run = typecheckProgram' . runToplevelExpr
