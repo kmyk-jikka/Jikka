@@ -126,9 +126,10 @@ data Builtin
     ModPow
   | -- list functions
 
-    -- | \(: \forall \alpha. \list(\alpha) \to \int\)
+    -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \list(\alpha)\)
     Cons Type
-  | Len Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
+    Len Type
   | -- | \(: \forall \alpha. \int \times (\int \to \alpha) \to \list(\alpha)\)
     Tabulate Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \times \list(\alpha) \to \list(\beta)\)
