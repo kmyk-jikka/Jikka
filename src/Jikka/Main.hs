@@ -29,7 +29,7 @@ defaultOptions =
     }
 
 header :: String -> String
-header progName = "Usage: " ++ progName ++ " [convert | debug | exec] FILE"
+header progName = "Usage: " ++ progName ++ " [convert | debug | execute] FILE"
 
 options :: [OptDescr Flag]
 options =
