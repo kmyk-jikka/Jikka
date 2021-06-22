@@ -27,7 +27,7 @@ runForLoop x iter body =
       go result (stmt : stmts) =
         let (same, diff) = partition (connected stmt) stmts
          in go (For x iter (map fst (stmt : same)) : result) diff
-      body' = map (\stmt -> (stmt, analyzeStatement stmt)) body
+      body' = map (\stmt -> (stmt, analyzeStatementMax stmt)) body
    in go [] body'
 
 -- | `run'` splits for-loops into many small for-loops as possible.

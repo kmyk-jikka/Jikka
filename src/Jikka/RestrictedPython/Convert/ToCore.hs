@@ -245,7 +245,7 @@ runForStatement x iter body cont = do
   tx <- Y.genType
   iter <- runExpr iter
   z <- Y.genVarName'
-  let (_, X.WriteList w) = X.analyzeStatements body
+  let (_, X.WriteList w) = X.analyzeStatementsMax body
   ys <- filterM isDefinedVar w
   ts <- replicateM (length ys) Y.genType
   let init = Y.Tuple' ts (map (Y.Var . runVarName) ys)

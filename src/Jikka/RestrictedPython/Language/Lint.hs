@@ -71,7 +71,7 @@ hasAssignmentToLoopCounters prog = any check (listStatements prog)
     check = \case
       For x _ body ->
         let r = ReadList $ targetVars x
-            (_, w) = analyzeStatements body
+            (_, w) = analyzeStatementsMax body
          in haveWriteReadIntersection w r
       _ -> False
 
@@ -97,7 +97,7 @@ hasAssignmentToLoopIterators prog = any check (listStatements prog)
     check = \case
       For _ iter body ->
         let r = analyzeExpr iter
-            (_, w) = analyzeStatements body
+            (_, w) = analyzeStatementsMax body
          in haveWriteReadIntersection w r
       _ -> False
 
