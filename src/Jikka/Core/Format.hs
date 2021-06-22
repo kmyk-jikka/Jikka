@@ -170,22 +170,17 @@ formatExpr = \case
   Lam args e -> paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr e ++ "\n" ++ dedent ++ "\n"
   Let x t e1 e2 -> "let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ formatExpr e1 ++ "\n" ++ dedent ++ "\nin " ++ formatExpr e2
 
-formatRecKind :: RecKind -> String
-formatRecKind = \case
-  NonRec -> "let "
-  Rec -> "let rec "
-
 formatToplevelExpr :: ToplevelExpr -> [String]
 formatToplevelExpr = \case
   ResultExpr e -> [formatExpr e]
-  ToplevelLet rec f args ret e cont ->
-    [ formatRecKind rec ++ unVarName f ++ " " ++ formatFormalArgs args ++ ": " ++ formatType ret ++ " =",
-      indent
-    ]
-      ++ lines (formatExpr e)
-      ++ [dedent]
-      ++ ["in"]
-      ++ formatToplevelExpr cont
+  ToplevelLet x t e cont -> let' (unVarName x) t e cont
+  ToplevelLetRec f args ret e cont -> let' ("rec " ++ unVarName f ++ " " ++ formatFormalArgs args) ret e cont
+  where
+    let' s t e cont =
+      ["let " ++ s ++ ": " ++ formatType t ++ " =", indent]
+        ++ lines (formatExpr e)
+        ++ [dedent, "in"]
+        ++ formatToplevelExpr cont
 
 formatProgram :: Program -> [String]
 formatProgram = formatToplevelExpr

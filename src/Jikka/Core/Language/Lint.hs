@@ -125,14 +125,16 @@ typecheckExpr env = \case
 typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckToplevelExpr env = \case
   ResultExpr e -> typecheckExpr env e
-  ToplevelLet rec x args ret body cont -> do
+  ToplevelLet x t e cont -> do
+    t' <- typecheckExpr env e
+    if t' == t then return () else throwInternalError "assigned type is not correct"
+    typecheckToplevelExpr ((x, t) : env) cont
+  ToplevelLetRec x args ret body cont -> do
     let t = case args of
           [] -> ret
           _ -> FunTy (map snd args) ret
-    ret' <- case rec of
-      NonRec -> typecheckExpr (reverse args ++ env) body
-      Rec -> typecheckExpr (reverse args ++ (x, t) : env) body
-    if ret' == ret then return () else throwInternalError "returned type is not corrent"
+    ret' <- typecheckExpr (reverse args ++ (x, t) : env) body
+    if ret' == ret then return () else throwInternalError "returned type is not correct"
     typecheckToplevelExpr ((x, t) : env) cont
 
 typecheckProgram :: MonadError Error m => Program -> m Type

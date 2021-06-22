@@ -238,13 +238,15 @@ runToplevelExpr env = \case
         let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
         return [Y.FunDef ret f args body]
       _ -> runToplevelVarDef env (Y.VarName "ans") t e
-  X.ToplevelLet rec f args ret body cont -> do
+  X.ToplevelLet x t e cont -> do
+    y <- renameVarName "c" x
+    stmt <- runToplevelVarDef env y t e
+    cont <- runToplevelExpr ((x, t, y) : env) cont
+    return $ stmt ++ cont
+  X.ToplevelLetRec f args ret body cont -> do
     g <- renameVarName "f" f
     let t = X.FunTy (map snd args) ret
-    stmt <- case (rec, args) of
-      (X.NonRec, []) -> runToplevelVarDef env g ret body
-      (X.NonRec, _) -> runToplevelFunDef env g args ret body
-      (X.Rec, _) -> runToplevelFunDef ((f, t, g) : env) g args ret body
+    stmt <- runToplevelFunDef ((f, t, g) : env) g args ret body
     cont <- runToplevelExpr ((f, t, g) : env) cont
     return $ stmt ++ cont
 

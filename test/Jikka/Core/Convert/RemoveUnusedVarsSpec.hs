@@ -8,8 +8,7 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let input =
-          ToplevelLet
-            Rec
+          ToplevelLetRec
             (VarName "solve@0")
             [(VarName "x@1", BoolTy)]
             BoolTy
@@ -17,10 +16,8 @@ spec = describe "run" $ do
             (ResultExpr (Var (VarName "solve@0")))
     let expected =
           ToplevelLet
-            NonRec
             (VarName "solve@0")
-            [(VarName "x@1", BoolTy)]
-            BoolTy
-            (Var (VarName "x@1"))
+            (FunTy [BoolTy] BoolTy)
+            (Lam [(VarName "x@1", BoolTy)] (Var (VarName "x@1")))
             (ResultExpr (Var (VarName "solve@0")))
     run input `shouldBe` Right expected

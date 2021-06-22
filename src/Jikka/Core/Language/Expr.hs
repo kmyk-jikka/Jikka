@@ -286,15 +286,19 @@ pattern LamId x t <-
   where
     LamId x t = Lam [(x, t)] (Var x)
 
-data RecKind
-  = NonRec
-  | Rec
-  deriving (Eq, Ord, Show, Read)
-
 -- | `ToplevelExpr` is the toplevel exprs. In our core, "let rec" is allowed only on the toplevel.
+--
+-- \[
+--     \begin{array}{rl}
+--         \mathrm{tle} ::= & e \\
+--         \vert & \mathbf{let}~ x: \tau = e ~\mathbf{in}~ \mathrm{tle} \\
+--         \vert & \mathbf{letrec}~ x(x: \tau, x: \tau, \dots, x: \tau): \tau = e ~\mathbf{in}~ \mathrm{tle}
+--     \end{array}
+-- \]
 data ToplevelExpr
   = ResultExpr Expr
-  | ToplevelLet RecKind VarName [(VarName, Type)] Type Expr ToplevelExpr
+  | ToplevelLet VarName Type Expr ToplevelExpr
+  | ToplevelLetRec VarName [(VarName, Type)] Type Expr ToplevelExpr
   deriving (Eq, Ord, Show, Read)
 
 type Program = ToplevelExpr

@@ -8,8 +8,7 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let prog =
-          ToplevelLet
-            Rec
+          ToplevelLetRec
             (VarName "solve@0")
             [(VarName "xs@1", ListTy IntTy)]
             IntTy
@@ -30,8 +29,7 @@ spec = describe "run" $ do
     run' tokens prog `shouldBe` Right expected
   it "works on a recursive function" $ do
     let prog =
-          ToplevelLet
-            Rec
+          ToplevelLetRec
             (VarName "fact@0")
             [(VarName "n@1", IntTy)]
             IntTy

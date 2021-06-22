@@ -34,7 +34,8 @@ makeEagerExpr = \case
 makeEagerToplevelExpr :: ToplevelExpr -> ToplevelExpr
 makeEagerToplevelExpr e = case e of
   ResultExpr e -> ResultExpr $ makeEagerExpr e
-  ToplevelLet rec x args ret body cont -> ToplevelLet rec x args ret (makeEagerExpr body) (makeEagerToplevelExpr cont)
+  ToplevelLet x t e cont -> ToplevelLet x t (makeEagerExpr e) (makeEagerToplevelExpr cont)
+  ToplevelLetRec x args ret body cont -> ToplevelLetRec x args ret (makeEagerExpr body) (makeEagerToplevelExpr cont)
 
 run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . makeEagerToplevelExpr

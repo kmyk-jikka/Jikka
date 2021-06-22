@@ -220,7 +220,8 @@ weakenExpr = \case
 weakenToplevelExpr :: ToplevelExpr -> ToplevelExpr
 weakenToplevelExpr e = case e of
   ResultExpr e -> ResultExpr $ weakenExpr e
-  ToplevelLet rec x args ret body cont -> ToplevelLet rec x args ret (weakenExpr body) (weakenToplevelExpr cont)
+  ToplevelLet x t e cont -> ToplevelLet x t (weakenExpr e) (weakenToplevelExpr cont)
+  ToplevelLetRec f args ret body cont -> ToplevelLetRec f args ret (weakenExpr body) (weakenToplevelExpr cont)
 
 run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . weakenToplevelExpr

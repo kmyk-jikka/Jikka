@@ -229,7 +229,7 @@ runToplevelStatements :: (MonadAlpha m, MonadError Error m) => [X.ToplevelStatem
 runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
 runToplevelStatements (stmt : stmts) = case stmt of
   X.ToplevelAnnAssign _ _ _ -> undefined -- TODO
-  X.ToplevelFunctionDef f args ret body -> Y.ToplevelLet Y.Rec (runVarName f) (map (runVarName *** runType) args) (runType ret) <$> runStatements body <*> runToplevelStatements stmts
+  X.ToplevelFunctionDef f args ret body -> Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) <$> runStatements body <*> runToplevelStatements stmts
   X.ToplevelAssert _ -> runToplevelStatements stmts -- TOOD: use assertions as hints
 
 -- | `run` converts programs of our restricted Python-like language to programs of our core language.

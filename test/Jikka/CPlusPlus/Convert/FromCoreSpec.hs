@@ -20,8 +20,7 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let prog =
-          X.ToplevelLet
-            X.Rec
+          X.ToplevelLetRec
             "f"
             [("n", X.IntTy)]
             X.IntTy

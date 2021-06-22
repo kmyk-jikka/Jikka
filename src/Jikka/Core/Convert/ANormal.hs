@@ -72,13 +72,15 @@ runExpr env = \case
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr <$> runExpr env e
-  ToplevelLet rec f args ret body cont -> do
+  ToplevelLet x t e cont -> do
+    e <- runExpr env e
+    cont <- runToplevelExpr ((x, t) : env) cont
+    return $ ToplevelLet x t e cont
+  ToplevelLetRec f args ret body cont -> do
     let t = FunTy (map snd args) ret
-    body <- case rec of
-      NonRec -> runExpr (reverse args ++ env) body
-      Rec -> runExpr (reverse args ++ (f, t) : env) body
+    body <- runExpr (reverse args ++ (f, t) : env) body
     cont <- runToplevelExpr ((f, t) : env) cont
-    return $ ToplevelLet rec f args ret body cont
+    return $ ToplevelLetRec f args ret body cont
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = do

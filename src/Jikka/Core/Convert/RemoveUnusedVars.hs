@@ -37,13 +37,13 @@ cleanExpr = \case
 cleanToplevelExpr :: ToplevelExpr -> ToplevelExpr
 cleanToplevelExpr = \case
   ResultExpr e -> ResultExpr $ cleanExpr e
-  ToplevelLet rec x args ret body cont ->
-    let rec' = case rec of
-          Rec | isUnusedVar x body -> NonRec
-          _ -> rec
-        body' = cleanExpr body
+  ToplevelLet x t e cont -> ToplevelLet x t (cleanExpr e) (cleanToplevelExpr cont)
+  ToplevelLetRec f args ret body cont ->
+    let body' = cleanExpr body
         cont' = cleanToplevelExpr cont
-     in ToplevelLet rec' x args ret body' cont'
+     in if isUnusedVar f body'
+          then ToplevelLet f (FunTy (map snd args) ret) (Lam args body') cont'
+          else ToplevelLetRec f args ret body' cont'
 
 run :: MonadError Error m => Program -> m Program
 run = typecheckProgram' . cleanToplevelExpr

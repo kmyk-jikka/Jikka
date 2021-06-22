@@ -57,18 +57,21 @@ runExpr env = \case
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr <$> runExpr env e
-  ToplevelLet rec f args ret body cont -> do
+  ToplevelLet x t e cont -> do
+    y <- rename x
+    e <- runExpr env e
+    cont <- runToplevelExpr ((x, y) : env) cont
+    return $ ToplevelLet y t e cont
+  ToplevelLetRec f args ret body cont -> do
     g <- rename f
     args <- forM args $ \(x, t) -> do
       y <- rename x
       return (x, y, t)
     let args1 = map (\(x, y, _) -> (x, y)) args
     let args2 = map (\(_, y, t) -> (y, t)) args
-    body <- case rec of
-      NonRec -> runExpr (args1 ++ env) body
-      Rec -> runExpr (args1 ++ (f, g) : env) body
+    body <- runExpr (args1 ++ (f, g) : env) body
     cont <- runToplevelExpr ((f, g) : env) cont
-    return $ ToplevelLet rec g args2 ret body cont
+    return $ ToplevelLetRec g args2 ret body cont
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = runToplevelExpr []

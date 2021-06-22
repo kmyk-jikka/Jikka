@@ -340,10 +340,11 @@ callLambdaWithTokens tokens env args body = case args of
 
 evaluateToplevelExpr :: (MonadFix m, MonadError Error m) => [Token] -> Env -> ToplevelExpr -> m (Value, [Token])
 evaluateToplevelExpr tokens env = \case
-  ToplevelLet rec f args _ body cont -> do
-    val <- case rec of
-      NonRec -> evaluateExpr env (Lam args body)
-      Rec -> mfix $ \val -> evaluateExpr ((f, val) : env) (Lam args body)
+  ToplevelLet x _ e cont -> do
+    val <- evaluateExpr env e
+    evaluateToplevelExpr tokens ((x, val) : env) cont
+  ToplevelLetRec f args _ body cont -> do
+    val <- mfix $ \val -> evaluateExpr ((f, val) : env) (Lam args body)
     evaluateToplevelExpr tokens ((f, val) : env) cont
   ResultExpr e -> do
     val <- evaluateExpr env e
