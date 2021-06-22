@@ -27,8 +27,8 @@ rename hint = rename' hint <$> nextCounter
 
 rename' :: VarName -> Int -> VarName
 rename' hint i =
-  let base = takeWhile (/= '@') (unVarName hint)
-   in VarName (base ++ "@" ++ show i)
+  let base = takeWhile (/= '$') (unVarName hint)
+   in VarName (base ++ "$" ++ show i)
 
 -- -----------------------------------------------------------------------------
 -- run
