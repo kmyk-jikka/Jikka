@@ -138,9 +138,10 @@ typecheckToplevelExpr env = \case
     typecheckToplevelExpr ((x, t) : env) cont
 
 typecheckProgram :: MonadError Error m => Program -> m Type
-typecheckProgram = typecheckToplevelExpr []
+typecheckProgram prog = wrapError' "Jikka.Core.Language.Lint" $ do
+  typecheckToplevelExpr [] prog
 
 typecheckProgram' :: MonadError Error m => Program -> m Program
-typecheckProgram' prog = do
-  typecheckProgram prog
+typecheckProgram' prog = wrapError' "Jikka.Core.Language.Lint" $ do
+  typecheckToplevelExpr [] prog
   return prog
