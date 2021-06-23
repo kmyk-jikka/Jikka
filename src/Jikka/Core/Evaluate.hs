@@ -14,7 +14,6 @@
 -- `Jikka.Core.Evaluate` evaluates exprs to values. Also this recognizes users' inputs at once.
 --
 -- The implementation assumes that all variable names don't conflict even when their scopes are distinct.
--- Also this assumes that exprs allow the eager evaluation. Please use `Jikka.Core.Convert.MakeEager` if needed.
 module Jikka.Core.Evaluate
   ( run,
     run',
@@ -30,6 +29,7 @@ import Data.Bits
 import Data.List (sort)
 import qualified Data.Vector as V
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.TypeCheck (builtinToType)
 import Jikka.Core.Language.Value
@@ -328,7 +328,9 @@ evaluateProgram tokens prog = do
 -- run
 
 run' :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
-run' tokens prog = wrapError' "Jikka.Core.Evaluate.run' failed" $ evaluateProgram tokens prog
+run' tokens prog = wrapError' "Jikka.Core.Evaluate.run' failed" $ do
+  prog <- MakeEager.run prog
+  evaluateProgram tokens prog
 
 run :: (MonadIO m, MonadFix m, MonadError Error m) => Program -> m Value
 run prog = do
