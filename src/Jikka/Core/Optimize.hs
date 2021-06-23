@@ -27,8 +27,8 @@ import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetEliminati
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
 
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run' prog = do
   prog <- Alpha.run prog
   prog <- TypeInfer.run prog
   prog <- RemoveUnusedVars.run prog
@@ -37,3 +37,8 @@ run prog = do
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   StrengthReduction.run prog
+
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run prog =
+  let iteration = 20
+   in foldM (\prog _ -> run' prog) prog [0 .. iteration - 1]
