@@ -13,14 +13,11 @@ module Jikka.RestrictedPython.Convert.TypeInfer
   ( run,
     Equation (..),
     formularizeProgram,
-    Env (..),
     sortEquations,
-    makeGamma,
+    mergeAssertions,
     Subst (..),
     subst,
     solveEquations,
-    substGamma,
-    substUnitGamma,
     substProgram,
   )
 where
@@ -195,9 +192,6 @@ formularizeToplevelStatement = \case
 formularizeProgram :: MonadAlpha m => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (mapM_ formularizeToplevelStatement prog)
 
--- | `Env` is type environments. It's a mapping from variables to their types.
-newtype Env = Env {unEnv :: M.Map VarName Type}
-
 sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
 sortEquations = go [] []
   where
@@ -206,10 +200,10 @@ sortEquations = go [] []
       TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
       TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
-makeGamma :: [(VarName, Type)] -> (Env, [(Type, Type)])
-makeGamma = go M.empty []
+mergeAssertions :: [(VarName, Type)] -> [(Type, Type)]
+mergeAssertions = go M.empty []
   where
-    go gamma eqns [] = (Env gamma, eqns)
+    go _ eqns [] = eqns
     go gamma eqns ((x, t) : assertions) = case M.lookup x gamma of
       Nothing -> go (M.insert x t gamma) eqns assertions
       Just t' -> go gamma ((t, t') : eqns) assertions
@@ -264,9 +258,6 @@ solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
 solveEquations eqns = wrapError' "failed to solve type equations" $ do
   execStateT (mapM_ (uncurry unifyType) eqns) (Subst M.empty)
 
-substGamma :: Subst -> Env -> Env
-substGamma sigma gamma = Env (M.map (subst sigma) (unEnv gamma))
-
 -- | `substUnit` replaces all undetermined type variables with the unit type.
 substUnit :: Type -> Type
 substUnit = \case
@@ -277,22 +268,18 @@ substUnit = \case
   TupleTy ts -> TupleTy (map substUnit ts)
   CallableTy ts ret -> CallableTy (map substUnit ts) (substUnit ret)
 
--- | `substUnitGamma` replaces all undetermined type variables with the unit type.
-substUnitGamma :: Env -> Env
-substUnitGamma gamma = Env (M.map substUnit (unEnv gamma))
-
--- | `subst'` replaces all undetermined type variables with the unit type.
+-- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
 
-substTarget :: Subst -> Env -> Target -> Target
-substTarget sigma gamma = \case
-  SubscriptTrg f index -> SubscriptTrg (substTarget sigma gamma f) (substExpr sigma gamma index)
+substTarget :: Subst -> Target -> Target
+substTarget sigma = \case
+  SubscriptTrg f index -> SubscriptTrg (substTarget sigma f) (substExpr sigma index)
   NameTrg x -> NameTrg x
-  TupleTrg xs -> TupleTrg (map (substTarget sigma gamma) xs)
+  TupleTrg xs -> TupleTrg (map (substTarget sigma) xs)
 
-substExpr :: Subst -> Env -> Expr -> Expr
-substExpr sigma gamma = go
+substExpr :: Subst -> Expr -> Expr
+substExpr sigma = go
   where
     go = \case
       BoolOp e1 op e2 -> BoolOp (go e1) op (go e2)
@@ -300,7 +287,7 @@ substExpr sigma gamma = go
       UnaryOp op e -> UnaryOp op (go e)
       Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
       IfExp e1 e2 e3 -> IfExp (go e1) (go e2) (go e3)
-      ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma gamma x) (go iter) (fmap go pred))
+      ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma x) (go iter) (fmap go pred))
       Compare e1 op e2 -> Compare (go e1) op (go e2)
       Call f args -> Call (go f) (map go args)
       Constant const -> Constant const
@@ -310,40 +297,38 @@ substExpr sigma gamma = go
       Tuple es -> Tuple (map go es)
       SubscriptSlice e from to step -> SubscriptSlice (go e) (fmap go from) (fmap go to) (fmap go step)
 
-substStatement :: Subst -> Env -> Statement -> Statement
-substStatement sigma gamma = \case
-  Return e -> Return (substExpr sigma gamma e)
-  AugAssign x op e -> AugAssign (substTarget sigma gamma x) op (substExpr sigma gamma e)
-  AnnAssign x t e -> AnnAssign (substTarget sigma gamma x) (subst' sigma t) (substExpr sigma gamma e)
-  For x iter body -> For (substTarget sigma gamma x) (substExpr sigma gamma iter) (map (substStatement sigma gamma) body)
-  If pred body1 body2 -> If (substExpr sigma gamma pred) (map (substStatement sigma gamma) body1) (map (substStatement sigma gamma) body2)
-  Assert e -> Assert (substExpr sigma gamma e)
+substStatement :: Subst -> Statement -> Statement
+substStatement sigma = \case
+  Return e -> Return (substExpr sigma e)
+  AugAssign x op e -> AugAssign (substTarget sigma x) op (substExpr sigma e)
+  AnnAssign x t e -> AnnAssign (substTarget sigma x) (subst' sigma t) (substExpr sigma e)
+  For x iter body -> For (substTarget sigma x) (substExpr sigma iter) (map (substStatement sigma) body)
+  If pred body1 body2 -> If (substExpr sigma pred) (map (substStatement sigma) body1) (map (substStatement sigma) body2)
+  Assert e -> Assert (substExpr sigma e)
 
-substToplevelStatement :: Subst -> Env -> ToplevelStatement -> ToplevelStatement
-substToplevelStatement sigma gamma = \case
-  ToplevelAnnAssign x t e -> ToplevelAnnAssign x (subst' sigma t) (substExpr sigma gamma e)
-  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f (map (second (subst' sigma)) args) (subst' sigma ret) (map (substStatement sigma gamma) body)
-  ToplevelAssert e -> ToplevelAssert (substExpr sigma gamma e)
+substToplevelStatement :: Subst -> ToplevelStatement -> ToplevelStatement
+substToplevelStatement sigma = \case
+  ToplevelAnnAssign x t e -> ToplevelAnnAssign x (subst' sigma t) (substExpr sigma e)
+  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f (map (second (subst' sigma)) args) (subst' sigma ret) (map (substStatement sigma) body)
+  ToplevelAssert e -> ToplevelAssert (substExpr sigma e)
 
-substProgram :: Subst -> Env -> Program -> Program
-substProgram sigma gamma prog = map (substToplevelStatement sigma gamma) prog
+substProgram :: Subst -> Program -> Program
+substProgram sigma prog = map (substToplevelStatement sigma) prog
 
 -- | `run` infers types of given programs.
 --
 -- There must be no name conflicts in given programs. They must be alpha-converted.
 --
--- As its interface, this function works as follows:
+-- As the interface, you can understand this function does the following:
 --
 -- 1. Finds a type environment \(\Gamma\) s.t. for all statement \(\mathrm{stmt}\) in the given program, \(\Gamma \vdash \mathrm{stmt}\) holds, and
 -- 2. Annotates each variable in the program using the \(\Gamma\).
 --
--- In its implementation, this function works like a Hindley-Milner type inference.
+-- In its implementation, this is just something like a Hindley-Milner type inference.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.TypeInfer" $ do
   eqns <- formularizeProgram prog
   let (eqns', assertions) = sortEquations eqns
-  let (gamma, eqns'') = makeGamma assertions
+  let eqns'' = mergeAssertions assertions
   sigma <- solveEquations (eqns' ++ eqns'')
-  let gamma' = substGamma sigma gamma
-  let gamma'' = substUnitGamma gamma'
-  return $ substProgram sigma gamma'' prog
+  return $ substProgram sigma prog
