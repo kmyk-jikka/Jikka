@@ -23,6 +23,7 @@ import qualified Data.Map.Strict as M
 import Data.Monoid (Dual (..))
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Core.Format (formatType)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.TypeCheck (literalToType, typecheckProgram)
 import Jikka.Core.Language.Util
@@ -118,12 +119,12 @@ subst sigma = \case
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
   if x `elem` freeTyVars t
-    then throwInternalError $ "looped type equation " ++ show x ++ " = " ++ show t
+    then throwInternalError $ "looped type equation " ++ unTypeName x ++ " = " ++ formatType t
     else do
       modify' (Subst . M.insert x t . unSubst) -- This doesn't introduce the loop.
 
 unifyType :: (MonadState Subst m, MonadError Error m) => Type -> Type -> m ()
-unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t2) $ do
+unifyType t1 t2 = wrapError' ("failed to unify " ++ formatType t1 ++ " and " ++ formatType t2) $ do
   sigma <- get
   t1 <- return $ subst sigma t1 -- shadowing
   t2 <- return $ subst sigma t2 -- shadowing
@@ -138,13 +139,13 @@ unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t
     (TupleTy ts1, TupleTy ts2) -> do
       if length ts1 == length ts2
         then mapM_ (uncurry unifyType) (zip ts1 ts2)
-        else throwInternalError $ "different types " ++ show t1 ++ " /= " ++ show t2
+        else throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
     (FunTy args1 ret1, FunTy args2 ret2) -> do
       if length args1 == length args2
         then mapM_ (uncurry unifyType) (zip args1 args2)
-        else throwInternalError $ "different types " ++ show t1 ++ " /= " ++ show t2
+        else throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
       unifyType ret1 ret2
-    _ -> throwInternalError $ "different types " ++ show t1 ++ " /= " ++ show t2
+    _ -> throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
 
 solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
 solveEquations eqns = wrapError' "failed to solve type equations" $ do

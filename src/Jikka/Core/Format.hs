@@ -13,6 +13,8 @@
 module Jikka.Core.Format
   ( run,
     run',
+    formatType,
+    formatExpr,
   )
 where
 
