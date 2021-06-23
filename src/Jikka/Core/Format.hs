@@ -137,7 +137,7 @@ formatTemplate = \case
   ts -> "<" ++ intercalate ", " (map formatType ts) ++ ">"
 
 formatFunCall :: String -> [Type] -> [Expr] -> String
-formatFunCall f _ args = f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
+formatFunCall f _ args = f ++ "(" ++ intercalate ", " (map formatExpr' args) ++ ")"
 
 formatBuiltinIsolated' :: Builtin' -> String
 formatBuiltinIsolated' = \case
@@ -153,10 +153,10 @@ formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
 formatBuiltin' :: Builtin' -> [Expr] -> String
 formatBuiltin' builtin args = case (builtin, args) of
   (Fun ts name, _) -> formatFunCall name ts args
-  (PrefixOp op, [e1]) -> paren $ op ++ " " ++ formatExpr e1
-  (InfixOp _ op, [e1, e2]) -> paren $ formatExpr e1 ++ " " ++ op ++ " " ++ formatExpr e2
-  (At' _, [e1, e2]) -> paren $ formatExpr e1 ++ ")[" ++ formatExpr e2 ++ "]"
-  (If' _, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr e1 ++ " then " ++ formatExpr e2 ++ " else " ++ formatExpr e3
+  (PrefixOp op, [e1]) -> paren $ op ++ " " ++ formatExpr' e1
+  (InfixOp _ op, [e1, e2]) -> paren $ formatExpr' e1 ++ " " ++ op ++ " " ++ formatExpr' e2
+  (At' _, [e1, e2]) -> paren $ formatExpr' e1 ++ ")[" ++ formatExpr' e2 ++ "]"
+  (If' _, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr' e1 ++ " then " ++ formatExpr' e2 ++ " else " ++ formatExpr' e3
   _ -> formatFunCall (formatBuiltinIsolated' builtin) [] args
 
 formatBuiltin :: Builtin -> [Expr] -> String
@@ -172,26 +172,29 @@ formatLiteral = \case
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args
 
-formatExpr :: Expr -> String
-formatExpr = \case
+formatExpr' :: Expr -> String
+formatExpr' = \case
   Var x -> unVarName x
   Lit lit -> formatLiteral lit
   App f args -> case f of
     Var x -> formatFunCall (unVarName x) [] args
     Lit (LitBuiltin builtin) -> formatBuiltin builtin args
-    _ -> formatFunCall (formatExpr f) [] args
-  Lam args e -> paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr e ++ "\n" ++ dedent ++ "\n"
-  Let x t e1 e2 -> "let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ formatExpr e1 ++ "\n" ++ dedent ++ "\nin " ++ formatExpr e2
+    _ -> formatFunCall (formatExpr' f) [] args
+  Lam args e -> paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr' e ++ "\n" ++ dedent ++ "\n"
+  Let x t e1 e2 -> "let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ formatExpr' e1 ++ "\n" ++ dedent ++ "\nin " ++ formatExpr' e2
+
+formatExpr :: Expr -> String
+formatExpr = unwords . makeIndentFromMarkers 4 . lines . formatExpr'
 
 formatToplevelExpr :: ToplevelExpr -> [String]
 formatToplevelExpr = \case
-  ResultExpr e -> [formatExpr e]
+  ResultExpr e -> lines (formatExpr' e)
   ToplevelLet x t e cont -> let' (unVarName x) t e cont
   ToplevelLetRec f args ret e cont -> let' ("rec " ++ unVarName f ++ " " ++ formatFormalArgs args) ret e cont
   where
     let' s t e cont =
       ["let " ++ s ++ ": " ++ formatType t ++ " =", indent]
-        ++ lines (formatExpr e)
+        ++ lines (formatExpr' e)
         ++ [dedent, "in"]
         ++ formatToplevelExpr cont
 
