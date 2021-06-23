@@ -77,7 +77,7 @@ spec = describe "run" $ do
             (Var "x")
             (ResultExpr Lit0)
     run' prog `shouldBe` Right expected
-  it "works on fact" $ do
+  it "works on builtin functions" $ do
     let prog =
           ToplevelLetRec
             "solve"
