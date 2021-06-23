@@ -13,37 +13,61 @@
 -- `Jikka.Language.Core.RemoveUnusedVars` remove unused variables from exprs.
 module Jikka.Core.Convert.RemoveUnusedVars
   ( run,
+    run',
   )
 where
 
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (typecheckProgram')
+import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Vars (isUnusedVar)
 
-cleanLet :: VarName -> Type -> Expr -> Expr -> Expr
-cleanLet x t e1 e2
+runLet :: VarName -> Type -> Expr -> Expr -> Expr
+runLet x t e1 e2
   | isUnusedVar x e2 = e2
   | otherwise = Let x t e1 e2
 
-cleanExpr :: Expr -> Expr
-cleanExpr = \case
+runExpr :: Expr -> Expr
+runExpr = \case
   Var x -> Var x
   Lit lit -> Lit lit
-  App f args -> App (cleanExpr f) (map cleanExpr args)
-  Lam args e -> Lam args (cleanExpr e)
-  Let x t e1 e2 -> cleanLet x t (cleanExpr e1) (cleanExpr e2)
+  App f args -> App (runExpr f) (map runExpr args)
+  Lam args e -> Lam args (runExpr e)
+  Let x t e1 e2 -> runLet x t (runExpr e1) (runExpr e2)
 
-cleanToplevelExpr :: ToplevelExpr -> ToplevelExpr
-cleanToplevelExpr = \case
-  ResultExpr e -> ResultExpr $ cleanExpr e
-  ToplevelLet rec x args ret body cont ->
-    let rec' = case rec of
-          Rec | isUnusedVar x body -> NonRec
-          _ -> rec
-        body' = cleanExpr body
-        cont' = cleanToplevelExpr cont
-     in ToplevelLet rec' x args ret body' cont'
+runToplevelExpr :: ToplevelExpr -> ToplevelExpr
+runToplevelExpr = \case
+  ResultExpr e -> ResultExpr $ runExpr e
+  ToplevelLet x t e cont -> ToplevelLet x t (runExpr e) (runToplevelExpr cont)
+  ToplevelLetRec f args ret body cont ->
+    let body' = runExpr body
+        cont' = runToplevelExpr cont
+     in if isUnusedVar f body'
+          then ToplevelLet f (FunTy (map snd args) ret) (Lam args body') cont'
+          else ToplevelLetRec f args ret body' cont'
 
+run' :: Program -> Program
+run' = runToplevelExpr
+
+-- | `run` removes unused variables in given programs.
+--
+-- This also removes variables for recursion, i.e. "rec" flags.
+-- `ToplevelLetRec` may becomes `ToplevelLet`.
+--
+-- For example, this converts
+--
+-- > let rec solve x =
+-- >     let y = 0
+-- >     in x
+-- > in solve
+--
+-- to
+--
+-- > let solve x =
+-- >     x
+-- > in solve
 run :: MonadError Error m => Program -> m Program
-run = typecheckProgram' . cleanToplevelExpr
+run prog = wrapError' "Jikka.Core.Convert.RemoveUnusedVars" $ do
+  prog <- return $ run' prog
+  ensureWellTyped prog
+  return prog

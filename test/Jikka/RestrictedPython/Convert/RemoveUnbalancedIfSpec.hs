@@ -7,39 +7,32 @@ where
 
 import Jikka.RestrictedPython.Convert.RemoveUnbalancedIf (run)
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Util
 import Test.Hspec
 
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let prog =
-          [ ToplevelFunctionDef
-              "solve"
-              []
-              IntTy
-              [ If
-                  (Constant (ConstBool True))
-                  [ Return (Constant (ConstInt 0))
-                  ]
-                  [ AnnAssign (NameTrg "a") IntTy (Constant (ConstInt 0))
-                  ],
-                AnnAssign (NameTrg "b") IntTy (Constant (ConstInt 1)),
-                Return (Constant (ConstInt 2))
-              ]
-          ]
+          toplevelMainDef
+            [ If
+                (constBoolExp True)
+                [ Return (constIntExp 0)
+                ]
+                [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                ],
+              AnnAssign (NameTrg "b") IntTy (constIntExp 1),
+              Return (constIntExp 2)
+            ]
     let expected =
-          [ ToplevelFunctionDef
-              "solve"
-              []
-              IntTy
-              [ If
-                  (Constant (ConstBool True))
-                  [ Return (Constant (ConstInt 0))
-                  ]
-                  [ AnnAssign (NameTrg "a") IntTy (Constant (ConstInt 0)),
-                    AnnAssign (NameTrg "b") IntTy (Constant (ConstInt 1)),
-                    Return (Constant (ConstInt 2))
-                  ]
-              ]
-          ]
+          toplevelMainDef
+            [ If
+                (constBoolExp True)
+                [ Return (constIntExp 0)
+                ]
+                [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
+                  AnnAssign (NameTrg "b") IntTy (constIntExp 1),
+                  Return (constIntExp 2)
+                ]
+            ]
     run prog `shouldBe` expected

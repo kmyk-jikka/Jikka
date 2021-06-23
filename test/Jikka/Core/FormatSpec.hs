@@ -11,8 +11,7 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let program =
-          ToplevelLet
-            Rec
+          ToplevelLetRec
             (VarName "solve@0")
             [(VarName "n@1", IntTy)]
             IntTy

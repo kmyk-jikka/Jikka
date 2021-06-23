@@ -13,9 +13,14 @@
 module Jikka.Core.Format
   ( run,
     run',
+    formatBuiltinIsolated,
+    formatBuiltin,
+    formatType,
+    formatExpr,
   )
 where
 
+import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
@@ -30,7 +35,9 @@ formatType = \case
   IntTy -> "int"
   BoolTy -> "bool"
   ListTy t -> formatType t ++ " list"
-  TupleTy ts -> paren $ intercalate " * " (map formatType ts)
+  TupleTy ts -> case ts of
+    [t] -> paren $ formatType t ++ ","
+    _ -> paren $ intercalate " * " (map formatType ts)
   FunTy ts ret -> paren $ intercalate " * " (map formatType ts) ++ " -> " ++ formatType ret
 
 data Builtin'
@@ -65,8 +72,8 @@ analyzeBuiltin = \case
   Abs -> fun "abs"
   Gcd -> fun "gcd"
   Lcm -> fun "lcm"
-  Min -> fun "min"
-  Max -> fun "max"
+  Min2 t -> Fun [t] "min"
+  Max2 t -> Fun [t] "max"
   -- logical functions
   Not -> PrefixOp "not"
   And -> infixOp "and"
@@ -81,19 +88,25 @@ analyzeBuiltin = \case
   BitLeftShift -> infixOp "<<"
   BitRightShift -> infixOp ">>"
   -- modular functions
-  Inv -> fun "inv"
-  PowMod -> fun "powmod"
+  ModInv -> fun "modinv"
+  ModPow -> fun "modpow"
   -- list functions
+  Cons t -> Fun [t] "cons"
+  Foldl t1 t2 -> Fun [t1, t2] "foldl"
+  Scanl t1 t2 -> Fun [t1, t2] "scanl"
   Len t -> Fun [t] "len"
   Tabulate t -> Fun [t] "tabulate"
   Map t1 t2 -> Fun [t1, t2] "map"
+  Filter t -> Fun [t] "filter"
   At t -> At' t
+  SetAt t -> Fun [t] "setAt"
+  Elem t -> Fun [t] "elem"
   Sum -> fun "sum"
   Product -> fun "product"
-  Min1 -> fun "min1"
-  Max1 -> fun "max1"
-  ArgMin -> fun "argmin"
-  ArgMax -> fun "argmax"
+  Min1 t -> Fun [t] "min1"
+  Max1 t -> Fun [t] "max1"
+  ArgMin t -> Fun [t] "argmin"
+  ArgMax t -> Fun [t] "argmax"
   All -> fun "all"
   Any -> fun "any"
   Sorted t -> Fun [t] "sort"
@@ -102,12 +115,14 @@ analyzeBuiltin = \case
   Range1 -> fun "range1"
   Range2 -> fun "range2"
   Range3 -> fun "range3"
-  -- arithmetical relations
-  LessThan -> infixOp "<"
-  LessEqual -> infixOp "<="
-  GreaterThan -> infixOp ">"
-  GreaterEqual -> infixOp ">="
-  -- equality relations (polymorphic)
+  -- tuple functions
+  Tuple ts -> Fun ts "tuple"
+  Proj ts n -> Fun ts ("proj" ++ show n)
+  -- comparison
+  LessThan t -> InfixOp [t] "<"
+  LessEqual t -> InfixOp [t] "<="
+  GreaterThan t -> InfixOp [t] ">"
+  GreaterEqual t -> InfixOp [t] ">="
   Equal t -> InfixOp [t] "=="
   NotEqual t -> InfixOp [t] "!="
   -- combinational functions
@@ -124,28 +139,35 @@ formatTemplate = \case
 formatFunCall :: String -> [Type] -> [Expr] -> String
 formatFunCall f _ args = f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
 
-formatBuiltinIsolated :: Builtin' -> String
-formatBuiltinIsolated = \case
+formatBuiltinIsolated' :: Builtin' -> String
+formatBuiltinIsolated' = \case
   Fun ts name -> name ++ formatTemplate ts
   PrefixOp op -> paren op
   InfixOp ts op -> paren $ op ++ formatTemplate ts
   At' t -> paren $ "at" ++ formatTemplate [t]
   If' t -> paren $ "if-then-else" ++ formatTemplate [t]
 
-formatBuiltin :: Builtin' -> [Expr] -> String
-formatBuiltin builtin args = case (builtin, args) of
+formatBuiltinIsolated :: Builtin -> String
+formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
+
+formatBuiltin' :: Builtin' -> [Expr] -> String
+formatBuiltin' builtin args = case (builtin, args) of
   (Fun ts name, _) -> formatFunCall name ts args
   (PrefixOp op, [e1]) -> paren $ op ++ " " ++ formatExpr e1
   (InfixOp _ op, [e1, e2]) -> paren $ formatExpr e1 ++ " " ++ op ++ " " ++ formatExpr e2
   (At' _, [e1, e2]) -> paren $ formatExpr e1 ++ ")[" ++ formatExpr e2 ++ "]"
   (If' _, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr e1 ++ " then " ++ formatExpr e2 ++ " else " ++ formatExpr e3
-  _ -> formatFunCall (formatBuiltinIsolated builtin) [] args
+  _ -> formatFunCall (formatBuiltinIsolated' builtin) [] args
+
+formatBuiltin :: Builtin -> [Expr] -> String
+formatBuiltin = formatBuiltin' . analyzeBuiltin
 
 formatLiteral :: Literal -> String
 formatLiteral = \case
-  LitBuiltin builtin -> formatBuiltinIsolated (analyzeBuiltin builtin)
+  LitBuiltin builtin -> formatBuiltinIsolated builtin
   LitInt n -> show n
-  LitBool p -> show p
+  LitBool p -> map toLower $ show p
+  LitNil t -> "nil" ++ formatTemplate [t]
 
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args
@@ -156,27 +178,22 @@ formatExpr = \case
   Lit lit -> formatLiteral lit
   App f args -> case f of
     Var x -> formatFunCall (unVarName x) [] args
-    Lit (LitBuiltin builtin) -> formatBuiltin (analyzeBuiltin builtin) args
+    Lit (LitBuiltin builtin) -> formatBuiltin builtin args
     _ -> formatFunCall (formatExpr f) [] args
   Lam args e -> paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr e ++ "\n" ++ dedent ++ "\n"
   Let x t e1 e2 -> "let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ formatExpr e1 ++ "\n" ++ dedent ++ "\nin " ++ formatExpr e2
 
-formatRecKind :: RecKind -> String
-formatRecKind = \case
-  NonRec -> "let "
-  Rec -> "let rec "
-
 formatToplevelExpr :: ToplevelExpr -> [String]
 formatToplevelExpr = \case
   ResultExpr e -> [formatExpr e]
-  ToplevelLet rec f args ret e cont ->
-    [ formatRecKind rec ++ unVarName f ++ " " ++ formatFormalArgs args ++ ": " ++ formatType ret ++ " =",
-      indent
-    ]
-      ++ lines (formatExpr e)
-      ++ [dedent]
-      ++ ["in"]
-      ++ formatToplevelExpr cont
+  ToplevelLet x t e cont -> let' (unVarName x) t e cont
+  ToplevelLetRec f args ret e cont -> let' ("rec " ++ unVarName f ++ " " ++ formatFormalArgs args) ret e cont
+  where
+    let' s t e cont =
+      ["let " ++ s ++ ": " ++ formatType t ++ " =", indent]
+        ++ lines (formatExpr e)
+        ++ [dedent, "in"]
+        ++ formatToplevelExpr cont
 
 formatProgram :: Program -> [String]
 formatProgram = formatToplevelExpr

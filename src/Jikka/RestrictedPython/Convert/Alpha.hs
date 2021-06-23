@@ -7,14 +7,15 @@ module Jikka.RestrictedPython.Convert.Alpha
 where
 
 import Control.Monad.State.Strict
-import Data.List (delete)
+import Data.List (delete, intersect)
 import qualified Data.Set as S
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.RestrictedPython.Language.Builtin
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
-import Jikka.RestrictedPython.Language.Stdlib
 import Jikka.RestrictedPython.Language.Util
+import Jikka.RestrictedPython.Language.VariableAnalysis
 
 data Env = Env
   { currentMapping :: [(VarName, VarName)],
@@ -26,7 +27,7 @@ initialEnv :: Env
 initialEnv =
   Env
     { currentMapping = [],
-      parentMappings = [map (\x -> (x, x)) (S.toList builtinFunctions)]
+      parentMappings = [map (\x -> (x, x)) (S.toList builtinNames)]
     }
 
 withToplevelScope :: MonadState Env m => m a -> m a
@@ -182,6 +183,9 @@ runStatement = \case
       return $ For y e body
   If e body1 body2 -> do
     e <- runExpr e
+    let (_, WriteList w1) = analyzeStatementsMin body1
+    let (_, WriteList w2) = analyzeStatementsMin body2
+    mapM_ renameNew (w1 `intersect` w2) -- introduce variables to the parent scope
     body1 <- withScope $ do
       runStatements body1
     body2 <- withScope $ do
@@ -212,6 +216,7 @@ runProgram :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Program ->
 runProgram = mapM runToplevelStatement
 
 -- | `run` renames variables.
+-- This assumes `doesntHaveAssignmentToBuiltin`.
 --
 -- * This introduce a new name for each assignment if possible.
 --   For example, the following
@@ -234,7 +239,7 @@ runProgram = mapM runToplevelStatement
 --   >     x3 = x3 + 1
 --   > x5 = x3 + 1
 --
--- * This blames leaks of loop counters of for-statements, i.e. `doesntHaveNameLeakOfLoopCounters`.
+-- * This blames leaks of loop counters of for-statements, i.e. `doesntHaveLeakOfLoopCounters`.
 --   For example, the followings is not allowed.
 --
 --   > for i in range(10):
@@ -247,7 +252,7 @@ runProgram = mapM runToplevelStatement
 --   > if True:
 --   >     a = 0
 --   > else:
---   >     a = 1
+--   >     b = 1
 --   > return a  # error
 --
 --   > for i in range(10):
@@ -255,5 +260,6 @@ runProgram = mapM runToplevelStatement
 --   > return a  # error
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.Alpha" $ do
-  ensureDoesntHaveNameLeakOfLoopCounters prog
+  ensureDoesntHaveLeakOfLoopCounters prog
+  ensureDoesntHaveAssignmentToBuiltin prog
   evalStateT (runProgram prog) initialEnv

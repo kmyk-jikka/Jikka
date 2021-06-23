@@ -44,9 +44,9 @@ pattern Gcd' e1 e2 = AppBuiltin Gcd [e1, e2]
 
 pattern Lcm' e1 e2 = AppBuiltin Lcm [e1, e2]
 
-pattern Min' e1 e2 = AppBuiltin Min [e1, e2]
+pattern Min2' t e1 e2 = AppBuiltin (Min2 t) [e1, e2]
 
-pattern Max' e1 e2 = AppBuiltin Max [e1, e2]
+pattern Max2' t e1 e2 = AppBuiltin (Max2 t) [e1, e2]
 
 -- logical functions
 pattern Not' e = AppBuiltin Not [e]
@@ -73,30 +73,42 @@ pattern BitLeftShift' e1 e2 = AppBuiltin BitLeftShift [e1, e2]
 pattern BitRightShift' e1 e2 = AppBuiltin BitRightShift [e1, e2]
 
 -- modular functions
-pattern Inv' e1 e2 = AppBuiltin Inv [e1, e2]
+pattern ModInv' e1 e2 = AppBuiltin ModInv [e1, e2]
 
-pattern PowMod' e1 e2 e3 = AppBuiltin PowMod [e1, e2, e3]
+pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
 
 -- list functions
+pattern Cons' t e1 e2 = AppBuiltin (Cons t) [e1, e2]
+
+pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin (Foldl t1 t2) [e1, e2, e3]
+
+pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin (Scanl t1 t2) [e1, e2, e3]
+
 pattern Len' t e = AppBuiltin (Len t) [e]
 
 pattern Tabulate' t n f = AppBuiltin (Tabulate t) [n, f]
 
 pattern Map' t1 t2 f e = AppBuiltin (Map t1 t2) [f, e]
 
+pattern Filter' t f e = AppBuiltin (Filter t) [f, e]
+
 pattern At' t e1 e2 = AppBuiltin (At t) [e1, e2]
+
+pattern SetAt' t e1 e2 e3 = AppBuiltin (SetAt t) [e1, e2, e3]
+
+pattern Elem' t e1 e2 = AppBuiltin (Elem t) [e1, e2]
 
 pattern Sum' e = AppBuiltin Sum [e]
 
 pattern Product' e = AppBuiltin Product [e]
 
-pattern Min1' e = AppBuiltin Min1 [e]
+pattern Min1' t e = AppBuiltin (Min1 t) [e]
 
-pattern Max1' e = AppBuiltin Max1 [e]
+pattern Max1' t e = AppBuiltin (Max1 t) [e]
 
-pattern ArgMin' e = AppBuiltin ArgMin [e]
+pattern ArgMin' t e = AppBuiltin (ArgMin t) [e]
 
-pattern ArgMax' e = AppBuiltin ArgMax [e]
+pattern ArgMax' t e = AppBuiltin (ArgMax t) [e]
 
 pattern All' e = AppBuiltin All [e]
 
@@ -114,14 +126,19 @@ pattern Range2' e1 e2 = AppBuiltin Range2 [e1, e2]
 
 pattern Range3' e1 e2 e3 = AppBuiltin Range3 [e1, e2, e3]
 
+-- tuple functions
+pattern Tuple' ts es = AppBuiltin (Tuple ts) es
+
+pattern Proj' ts n e = AppBuiltin (Proj ts n) [e]
+
 -- arithmetical relations
-pattern LessThan' e1 e2 = AppBuiltin LessThan [e1, e2]
+pattern LessThan' t e1 e2 = AppBuiltin (LessThan t) [e1, e2]
 
-pattern LessEqual' e1 e2 = AppBuiltin LessEqual [e1, e2]
+pattern LessEqual' t e1 e2 = AppBuiltin (LessEqual t) [e1, e2]
 
-pattern GreaterThan' e1 e2 = AppBuiltin GreaterThan [e1, e2]
+pattern GreaterThan' t e1 e2 = AppBuiltin (GreaterThan t) [e1, e2]
 
-pattern GreaterEqual' e1 e2 = AppBuiltin GreaterEqual [e1, e2]
+pattern GreaterEqual' t e1 e2 = AppBuiltin (GreaterEqual t) [e1, e2]
 
 -- equality relations (polymorphic)
 pattern Equal' t e1 e2 = AppBuiltin (Equal t) [e1, e2]

@@ -27,7 +27,7 @@ runForLoop x iter body =
       go result (stmt : stmts) =
         let (same, diff) = partition (connected stmt) stmts
          in go (For x iter (map fst (stmt : same)) : result) diff
-      body' = map (\stmt -> (stmt, analyzeStatement stmt)) body
+      body' = map (\stmt -> (stmt, analyzeStatementMax stmt)) body
    in go [] body'
 
 -- | `run'` splits for-loops into many small for-loops as possible.
@@ -57,7 +57,7 @@ run' = mapLargeStatement (\e pred1 pred2 -> [If e pred1 pred2]) runForLoop
 
 -- | `run` does alpha conversion, check assumptions, and `run'`.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run prog = wrapError' "Jikka.RestrictedPython.Convert.SplitLoops" $ do
   prog <- Alpha.run prog
   ensureDoesntHaveSubscriptionInLoopCounters prog
   ensureDoesntHaveAssignmentToLoopCounters prog

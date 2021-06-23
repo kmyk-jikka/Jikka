@@ -9,22 +9,31 @@
 -- Stability   : experimental
 -- Portability : portable
 module Jikka.RestrictedPython.Language.Expr
-  ( VarName (..),
-    unVarName,
+  ( -- * types
     TypeName (..),
     unTypeName,
     Type (..),
+
+    -- * operators
+    UnaryOp (..),
+    Operator (..),
+    BoolOp (..),
+    CmpOp (..),
+    CmpOp' (..),
     Constant (..),
-    Target (..),
-    Comprehension (..),
+    Builtin (..),
+
+    -- * exprs
+    VarName (..),
+    unVarName,
     Expr (..),
+    Comprehension (..),
+
+    -- * statements
+    Target (..),
     Statement (..),
     ToplevelStatement (..),
     Program,
-    BoolOp (..),
-    CmpOp (..),
-    Operator (..),
-    UnaryOp (..),
   )
 where
 
@@ -44,11 +53,14 @@ unTypeName (TypeName x) = x
 -- | `Type` represents the types of our restricted Python-like language.
 --
 -- \[
+--     \newcommand\int{\mathbf{int}}
+--     \newcommand\bool{\mathbf{bool}}
+--     \newcommand\list{\mathbf{list}}
 --     \begin{array}{rl}
 --         \tau ::= & \alpha \\
---         \vert & \mathbf{int} \\
---         \vert & \mathbf{bool} \\
---         \vert & \mathbf{list}(\tau) \\
+--         \vert & \int \\
+--         \vert & \bool \\
+--         \vert & \list(\tau) \\
 --         \vert & \tau \times \tau \times \dots \times \tau \\
 --         \vert & \tau \times \tau \times \dots \times \tau \to \tau
 --     \end{array}
@@ -68,6 +80,88 @@ data Constant
   = ConstNone
   | ConstInt Integer
   | ConstBool Bool
+  | ConstBuiltin Builtin
+  deriving (Eq, Ord, Show, Read)
+
+data Builtin
+  = -- | "abs" \(: \int \to \int\)
+    BuiltinAbs
+  | -- | "pow" \((\lambda x k. x^k) : \int \times \int \to \int\)
+    BuiltinPow
+  | -- | modulo power "pow" \((\lambda x k m. x^k \bmod m): \int \times \int \to \int\)
+    BuiltinModPow
+  | -- | "divmod" \(: \int \times \int \to \int \times \int\)
+    BuiltinDivMod
+  | -- | ceil div \(: \int \times \int \to \int\)
+    BuiltinCeilDiv
+  | -- | ceil mod \(: \int \times \int \to \int\)
+    BuiltinCeilMod
+  | -- | floor div \(: \int \times \int \to \int\)
+    BuiltinFloorDiv
+  | -- | floor mod \(: \int \times \int \to \int\)
+    BuiltinFloorMod
+  | -- | \(\gcd: \int \times \int \to \int\)
+    BuiltinGcd
+  | -- | \(\mathbf{lcm}: \int \times \int \to \int\)
+    BuiltinLcm
+  | -- | "int" \(: \forall \alpha. \alpha \to \int\)
+    BuiltinInt Type
+  | -- | "bool" \(: \forall \alpha. \alpha \to \bool\)
+    BuiltinBool Type
+  | -- | "list" \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    BuiltinList Type
+  | -- | "tuple" \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \tau \to \tau\) where \(\tau = \alpha_0 \times \dots \times \alpha _ {n - 1}\)
+    BuiltinTuple [Type]
+  | -- | "len" \(: \forall \alpha. \list(\alpha) \to \int\)
+    BuiltinLen Type
+  | -- | "map" \(: \forall \alpha_0 \alpha_1 \dots \alpha_n. (\alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_n) \times \list(\alpha_0) \times \dots \list(\alpha _ {n - 1}) \to \list(\alpha_n)\)
+    BuiltinMap [Type] Type
+  | -- | "sorted" \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    BuiltinSorted Type
+  | -- | "reversed" \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    BuiltinReversed Type
+  | -- | "enumerate" \(: \forall \alpha. \list(\alpha) \to \list(\int \times \alpha)\)
+    BuiltinEnumerate Type
+  | -- | "filter" \(: \forall \alpha. (\alpha \to \bool) \times \list(\alpha) \to \list(\alpha)\)
+    BuiltinFilter Type
+  | -- | "zip" \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \list(\alpha_0) \times \dots \list(\alpha _ {n - 1}) \to \list(\alpha_0 \times \dots \times \alpha _ {n - 1})\)
+    BuiltinZip [Type]
+  | -- | "all" \(: \list(\bool) \to \bool\)
+    BuiltinAll
+  | -- | "any" \(: \list(\bool) \to \bool\)
+    BuiltinAny
+  | -- | "sum" \(: \list(\int) \to \int\)
+    BuiltinSum
+  | -- | product \(: \list(\int) \to \int\)
+    BuiltinProduct
+  | -- | "range" \(: \int \to \list(\int)\)
+    BuiltinRange1
+  | -- | "range" \(: \int \times \int \to \list(\int)\)
+    BuiltinRange2
+  | -- | "range" \(: \int \times \int \times \int \to \list(\int)\)
+    BuiltinRange3
+  | -- | "max" \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    BuiltinMax1 Type
+  | -- | "max" \(: \forall \alpha. \underbrace{\alpha \times \alpha \times \dots \times \alpha} _ {n ~\text{times}} \to \alpha\)
+    BuiltinMax Type Int
+  | -- | "min" \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    BuiltinMin1 Type
+  | -- | "min" \(: \forall \alpha. \underbrace{\alpha \times \alpha \times \dots \times \alpha} _ {n ~\text{times}} \to \alpha\)
+    BuiltinMin Type Int
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
+    BuiltinArgMax Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
+    BuiltinArgMin Type
+  | -- | factorial \((\lambda n. n!): \int \to \int\)
+    BuiltinFact
+  | -- | \((\lambda n r. {} _ n C _ r): \int \times \int \to \int\)
+    BuiltinChoose
+  | -- | \((\lambda n r. {} _ n P _ r): \int \times \int \to \int\)
+    BuiltinPermute
+  | -- | \((\lambda n r. {} _ n H _ r): \int \times \int \to \int\)
+    BuiltinMultiChoose
+  | -- | modulo inverse \((\lambda x m. x^{-1} \bmod m): \int \times \int \to \int\)
+    BuiltinModInv
   deriving (Eq, Ord, Show, Read)
 
 -- | `Target` represents the lvalue of our restricted Python-like language.
@@ -83,6 +177,11 @@ data Target
   = SubscriptTrg Target Expr
   | NameTrg VarName
   | TupleTrg [Target]
+  deriving (Eq, Ord, Show, Read)
+
+-- | `CmpOp'` is a type for comparision operators.
+-- This is annotated with its type as let-polymorphism.
+data CmpOp' = CmpOp' CmpOp Type
   deriving (Eq, Ord, Show, Read)
 
 data Comprehension = Comprehension Target Expr (Maybe Expr)
@@ -114,7 +213,7 @@ data Expr
   | Lambda [(VarName, Type)] Expr
   | IfExp Expr Expr Expr
   | ListComp Expr Comprehension
-  | Compare Expr CmpOp Expr
+  | Compare Expr CmpOp' Expr
   | Call Expr [Expr]
   | Constant Constant
   | Subscript Expr Expr

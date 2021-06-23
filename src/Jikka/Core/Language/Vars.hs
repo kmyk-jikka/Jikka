@@ -57,3 +57,12 @@ findFreshVar' es = head . filter pred $ map getAnonymousVar [0 ..]
 
 getAnonymousVar :: Int -> VarName
 getAnonymousVar i = VarName ("@" ++ show i)
+
+freeTyVars :: Type -> [TypeName]
+freeTyVars = \case
+  VarTy x -> [x]
+  IntTy -> []
+  BoolTy -> []
+  ListTy t -> freeTyVars t
+  TupleTy ts -> concatMap freeTyVars ts
+  FunTy ts ret -> concatMap freeTyVars (ret : ts)

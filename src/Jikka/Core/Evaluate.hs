@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : Jikka.Core.Evaluate
@@ -14,7 +15,6 @@
 -- `Jikka.Core.Evaluate` evaluates exprs to values. Also this recognizes users' inputs at once.
 --
 -- The implementation assumes that all variable names don't conflict even when their scopes are distinct.
--- Also this assumes that exprs allow the eager evaluation. Please use `Jikka.Core.Convert.MakeEager` if needed.
 module Jikka.Core.Evaluate
   ( run,
     run',
@@ -26,47 +26,16 @@ where
 
 import Control.Monad.Except
 import Control.Monad.State.Strict
-import qualified Data.Array as A
 import Data.Bits
-import Data.List (sort)
+import Data.List (intercalate, sort)
+import qualified Data.Vector as V
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert.MakeEager as MakeEager
+import Jikka.Core.Format (formatBuiltinIsolated)
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (builtinToType)
+import Jikka.Core.Language.TypeCheck (builtinToType)
+import Jikka.Core.Language.Value
 import Text.Read (readEither)
-
--- -----------------------------------------------------------------------------
--- values
-
-data Value
-  = ValInt Integer
-  | ValBool Bool
-  | ValList (A.Array Int Value)
-  | ValTuple [Value]
-  | ValBuiltin Builtin
-  | ValLambda Env [(VarName, Type)] Expr
-  deriving (Eq, Ord, Show, Read)
-
-literalToValue :: Literal -> Value
-literalToValue = \case
-  LitBuiltin builtin -> ValBuiltin builtin
-  LitInt n -> ValInt n
-  LitBool p -> ValBool p
-
-valueToInt :: MonadError Error m => Value -> m Integer
-valueToInt = \case
-  ValInt n -> return n
-  val -> throwRuntimeError $ "Internal Error: not int: " ++ show val
-
-valueToIntList :: MonadError Error m => A.Array Int Value -> m [Integer]
-valueToIntList = mapM valueToInt . A.elems
-
-valueToBool :: MonadError Error m => Value -> m Bool
-valueToBool = \case
-  ValBool p -> return p
-  val -> throwRuntimeError $ "Internal Error: not bool: " ++ show val
-
-valueToBoolList :: MonadError Error m => A.Array Int Value -> m [Bool]
-valueToBoolList = mapM valueToBool . A.elems
 
 -- -----------------------------------------------------------------------------
 -- inputs
@@ -102,7 +71,7 @@ readInputMap ts tokens = case ts of
 
 readInput :: MonadError Error m => Type -> [Token] -> m (Value, [Token])
 readInput t tokens = case (t, tokens) of
-  (VarTy a, _) -> throwInternalError $ "input type is undetermined: " ++ show a
+  (VarTy a, _) -> throwInternalError $ "input type is undetermined: type variable " ++ unTypeName a
   (IntTy, token : tokens) -> do
     n <- readToken token
     return (ValInt n, tokens)
@@ -112,8 +81,7 @@ readInput t tokens = case (t, tokens) of
   (ListTy t, token : tokens) -> do
     n <- readToken token
     (a, tokens) <- readInputList t n tokens
-    let a' = A.listArray (0, n - 1) a
-    return (ValList a', tokens)
+    return (ValList (V.fromList a), tokens)
   (TupleTy ts, _) -> do
     let readInput' :: MonadError Error m => Type -> StateT [Token] m Value
         readInput' t = StateT (readInput t)
@@ -172,44 +140,42 @@ powmod :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 powmod _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for powmod: MOD = " ++ show m
 powmod a b m = return $ (a ^ b) `mod` m
 
-listToArray :: [a] -> A.Array Int a
-listToArray xs = A.listArray (0, length xs) xs
+scanM :: Monad m => (a -> b -> m a) -> a -> V.Vector b -> m (V.Vector a)
+scanM f y xs = do
+  (ys, y) <- V.foldM (\(ys, y) x -> (y : ys,) <$> f y x) ([], y) xs
+  return $ V.fromList (reverse (y : ys))
 
-lengthArray :: A.Array Int a -> Integer
-lengthArray a =
-  let (l, r) = A.bounds a
-   in toInteger (r - l + 1)
+tabulate :: MonadError Error m => Integer -> Value -> m (V.Vector Value)
+tabulate n f = V.fromList <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
 
-tabulate :: MonadError Error m => Integer -> Value -> m (A.Array Int Value)
-tabulate n f = listToArray <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
+map' :: MonadError Error m => Value -> V.Vector Value -> m (V.Vector Value)
+map' f a = V.fromList <$> mapM (\val -> callValue f [val]) (V.toList a)
 
-map' :: MonadError Error m => Value -> A.Array Int Value -> m (A.Array Int Value)
-map' f a = listToArray <$> mapM (\val -> callValue f [val]) (A.elems a)
+atEither :: MonadError Error m => V.Vector a -> Integer -> m a
+atEither xs i = case xs V.!? fromInteger i of
+  Just x -> return x
+  Nothing -> throwRuntimeError $ "out of bounds: length = " ++ show (V.length xs) ++ ", index = " ++ show i
 
-atEither :: MonadError Error m => A.Array Int a -> Integer -> m a
-atEither a n =
-  let (l, r) = A.bounds a
-   in if toInteger l <= n && n <= toInteger r
-        then return (a A.! fromInteger n)
-        else throwRuntimeError $ "out of bounds: " ++ show (l, r, n)
+setAtEither :: MonadError Error m => V.Vector a -> Integer -> a -> m (V.Vector a)
+setAtEither xs i x =
+  if 0 <= i && i < fromIntegral (V.length xs)
+    then return $ xs V.// [(fromInteger i, x)]
+    else throwRuntimeError $ "out of bounds: length = " ++ show (V.length xs) ++ ", index = " ++ show i
 
-sortArray :: Ord a => A.Array Int a -> A.Array Int a
-sortArray = listToArray . sort . A.elems
+sortVector :: Ord a => V.Vector a -> V.Vector a
+sortVector = V.fromList . sort . V.toList
 
-reverseArray :: A.Array Int a -> A.Array Int a
-reverseArray = listToArray . reverse . A.elems
-
-range1 :: MonadError Error m => Integer -> m (A.Array Int Value)
+range1 :: MonadError Error m => Integer -> m (V.Vector Value)
 range1 n | n < 0 = throwRuntimeError $ "invalid argument for range1: " ++ show n
-range1 n = return $ listToArray (map ValInt [0 .. n - 1])
+range1 n = return $ V.fromList (map ValInt [0 .. n - 1])
 
-range2 :: MonadError Error m => Integer -> Integer -> m (A.Array Int Value)
+range2 :: MonadError Error m => Integer -> Integer -> m (V.Vector Value)
 range2 l r | l > r = throwRuntimeError $ "invalid argument for range2: " ++ show (l, r)
-range2 l r = return $ listToArray (map ValInt [l .. r - 1])
+range2 l r = return $ V.fromList (map ValInt [l .. r - 1])
 
-range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (A.Array Int Value)
+range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (V.Vector Value)
 range3 l r step | not (l <= r && step >= 0) = throwRuntimeError $ "invalid argument for range3: " ++ show (l, r, step)
-range3 l r step = return $ listToArray (map ValInt [l, l + step .. r])
+range3 l r step = return $ V.fromList (map ValInt [l, l + step .. r])
 
 fact :: MonadError Error m => Integer -> m Integer
 fact n | n < 0 = throwRuntimeError $ "invalid argument for fact: " ++ show n
@@ -231,8 +197,6 @@ multichoose n r = choose (n + r - 1) r
 -- -----------------------------------------------------------------------------
 -- evaluator
 
-type Env = [(VarName, Value)]
-
 callBuiltin :: MonadError Error m => Builtin -> [Value] -> m Value
 callBuiltin builtin args = case (builtin, args) of
   -- arithmetical functions
@@ -251,8 +215,8 @@ callBuiltin builtin args = case (builtin, args) of
   (Abs, [ValInt n]) -> return $ ValInt (abs n)
   (Gcd, [ValInt a, ValInt b]) -> return $ ValInt (gcd a b)
   (Lcm, [ValInt a, ValInt b]) -> return $ ValInt (lcm a b)
-  (Min, [ValInt a, ValInt b]) -> return $ ValInt (min a b)
-  (Max, [ValInt a, ValInt b]) -> return $ ValInt (max a b)
+  (Min2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (min a b) -- TODO: allow non-integers
+  (Max2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (max a b) -- TODO: allow non-integers
   -- logical functions
   (Not, [ValBool p]) -> return $ ValBool (not p)
   (And, [ValBool p, ValBool q]) -> return $ ValBool (p && q)
@@ -267,33 +231,41 @@ callBuiltin builtin args = case (builtin, args) of
   (BitLeftShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger b)
   (BitRightShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger (- b))
   -- modular functions
-  (Inv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
-  (PowMod, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
+  (ModInv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
+  (ModPow, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
   -- list functions
-  (Len _, [ValList a]) -> return $ ValInt (lengthArray a)
+  (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
+  (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a
+  (Scanl _ _, [f, x, ValList a]) -> ValList <$> scanM (\x y -> callValue f [x, y]) x a
+  (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
   (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
   (Map _ _, [f, ValList a]) -> ValList <$> map' f a
+  (Filter _, [f, ValList a]) -> ValList <$> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) a -- TODO
   (At _, [ValList a, ValInt n]) -> atEither a n
+  (SetAt _, [ValList a, ValInt n, x]) -> ValList <$> setAtEither a n x
+  (Elem _, [x, ValList a]) -> return $ ValBool (x `V.elem` a)
   (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
   (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
-  (Min1, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a)
-  (Max1, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a)
-  (ArgMin, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a)
-  (ArgMax, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a)
+  (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
+  (Max1 IntTy, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a) -- TODO: allow non-integers
+  (ArgMin IntTy, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a) -- TODO: allow non-integers
+  (ArgMax IntTy, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a) -- TODO: allow non-integers
   (All, [ValList a]) -> ValBool . and <$> valueToBoolList a
   (Any, [ValList a]) -> ValBool . or <$> valueToBoolList a
-  (Sorted _, [ValList a]) -> return $ ValList (sortArray a)
+  (Sorted _, [ValList a]) -> return $ ValList (sortVector a)
   (List _, [ValList a]) -> return $ ValList a
-  (Reversed _, [ValList a]) -> return $ ValList (reverseArray a)
+  (Reversed _, [ValList a]) -> return $ ValList (V.reverse a)
   (Range1, [ValInt n]) -> ValList <$> range1 n
   (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
   (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
-  -- arithmetical relations
-  (LessThan, [ValInt a, ValInt b]) -> return $ ValBool (a < b)
-  (LessEqual, [ValInt a, ValInt b]) -> return $ ValBool (a <= b)
-  (GreaterThan, [ValInt a, ValInt b]) -> return $ ValBool (a > b)
-  (GreaterEqual, [ValInt a, ValInt b]) -> return $ ValBool (a >= b)
-  -- equality relations (polymorphic)
+  -- tuple functions
+  (Tuple _, xs) -> return $ ValTuple xs
+  (Proj _ n, [ValTuple xs]) -> return $ xs !! n
+  -- comparison
+  (LessThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a < b) -- TODO: allow non-integers
+  (LessEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a <= b) -- TODO: allow non-integers
+  (GreaterThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a > b) -- TODO: allow non-integers
+  (GreaterEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a >= b) -- TODO: allow non-integers
   (Equal _, [a, b]) -> return $ ValBool (a == b)
   (NotEqual _, [a, b]) -> return $ ValBool (a /= b)
   -- combinational functions
@@ -301,7 +273,7 @@ callBuiltin builtin args = case (builtin, args) of
   (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
   (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
   (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
-  _ -> throwInternalError $ "invalid builtin call: " ++ show (builtin, args)
+  _ -> throwInternalError $ "invalid builtin call: " ++ formatBuiltinIsolated builtin ++ "(" ++ intercalate "," (map formatValue args) ++ ")"
 
 callLambda :: MonadError Error m => Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
 callLambda env formalArgs body actualArgs = case (formalArgs, actualArgs) of
@@ -313,12 +285,12 @@ callValue :: MonadError Error m => Value -> [Value] -> m Value
 callValue f args = case f of
   ValBuiltin builtin -> callBuiltin builtin args
   ValLambda env args' body -> callLambda env args' body args
-  _ -> throwInternalError $ "call non-function: " ++ show f
+  _ -> throwInternalError $ "call non-function: " ++ formatValue f
 
 evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
 evaluateExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwRuntimeError $ "Internal Error: undefined variable: " ++ show (unVarName x)
+    Nothing -> throwRuntimeError $ "Internal Error: undefined variable: " ++ unVarName x
     Just val -> return val
   Lit lit -> return $ literalToValue lit
   App f args -> do
@@ -350,10 +322,11 @@ callLambdaWithTokens tokens env args body = case args of
 
 evaluateToplevelExpr :: (MonadFix m, MonadError Error m) => [Token] -> Env -> ToplevelExpr -> m (Value, [Token])
 evaluateToplevelExpr tokens env = \case
-  ToplevelLet rec f args _ body cont -> do
-    val <- case rec of
-      NonRec -> evaluateExpr env (Lam args body)
-      Rec -> mfix $ \val -> evaluateExpr ((f, val) : env) (Lam args body)
+  ToplevelLet x _ e cont -> do
+    val <- evaluateExpr env e
+    evaluateToplevelExpr tokens ((x, val) : env) cont
+  ToplevelLetRec f args _ body cont -> do
+    val <- mfix $ \val -> evaluateExpr ((f, val) : env) (Lam args body)
     evaluateToplevelExpr tokens ((f, val) : env) cont
   ResultExpr e -> do
     val <- evaluateExpr env e
@@ -367,13 +340,15 @@ evaluateProgram tokens prog = do
   (val, tokens) <- evaluateToplevelExpr tokens [] prog
   if null tokens
     then return val
-    else throwWrongInputError $ "evaluation succeeds, but unused inputs remain: " ++ show (val, tokens)
+    else throwWrongInputError $ "evaluation succeeds, but unused inputs remain: value = " ++ formatValue val ++ ", tokens = " ++ show tokens
 
 -- -----------------------------------------------------------------------------
 -- run
 
 run' :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
-run' tokens prog = wrapError' "Jikka.Core.Evaluate.run' failed" $ evaluateProgram tokens prog
+run' tokens prog = wrapError' "Jikka.Core.Evaluate.run' failed" $ do
+  prog <- MakeEager.run prog
+  evaluateProgram tokens prog
 
 run :: (MonadIO m, MonadFix m, MonadError Error m) => Program -> m Value
 run prog = do

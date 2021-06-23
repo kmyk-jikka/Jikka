@@ -16,21 +16,22 @@ where
 
 import Jikka.Common.Alpha (MonadAlpha)
 import Jikka.Common.Error
-import Jikka.Core.Convert.Alpha (gensym)
 import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (TypeEnv, typecheckExpr, typecheckProgram')
+import Jikka.Core.Language.Lint
+import Jikka.Core.Language.TypeCheck
+import Jikka.Core.Language.Util
 
 destruct :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m (TypeEnv, Expr -> Expr, Expr)
 destruct env = \case
   e@Var {} -> return (env, id, e)
   e@Lit {} -> return (env, id, e)
   e@App {} -> do
-    x <- gensym
+    x <- genVarName'
     t <- typecheckExpr env e
     return ((x, t) : env, Let x t e, Var x)
   e@Lam {} -> do
-    x <- gensym
+    x <- genVarName'
     t <- typecheckExpr env e
     return ((x, t) : env, Let x t e, Var x)
   Let x t e1 e2 -> do
@@ -72,16 +73,19 @@ runExpr env = \case
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr <$> runExpr env e
-  ToplevelLet rec f args ret body cont -> do
+  ToplevelLet x t e cont -> do
+    e <- runExpr env e
+    cont <- runToplevelExpr ((x, t) : env) cont
+    return $ ToplevelLet x t e cont
+  ToplevelLetRec f args ret body cont -> do
     let t = FunTy (map snd args) ret
-    body <- case rec of
-      NonRec -> runExpr (reverse args ++ env) body
-      Rec -> runExpr (reverse args ++ (f, t) : env) body
+    body <- runExpr (reverse args ++ (f, t) : env) body
     cont <- runToplevelExpr ((f, t) : env) cont
-    return $ ToplevelLet rec f args ret body cont
+    return $ ToplevelLetRec f args ret body cont
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
+run prog = wrapError' "Jikka.Core.Convert.ANormal" $ do
   prog <- Alpha.runProgram prog
   prog <- runToplevelExpr [] prog
-  typecheckProgram' prog
+  ensureWellTyped prog
+  return prog

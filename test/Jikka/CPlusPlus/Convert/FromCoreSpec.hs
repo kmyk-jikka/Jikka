@@ -20,8 +20,7 @@ spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let prog =
-          X.ToplevelLet
-            X.Rec
+          X.ToplevelLetRec
             "f"
             [("n", X.IntTy)]
             X.IntTy
@@ -35,19 +34,19 @@ spec = describe "run" $ do
     let expectedF =
           Y.FunDef
             Y.TyInt64
-            "f0_f"
-            [(Y.TyInt64, "a1_n")]
+            "f_0"
+            [(Y.TyInt64, "n_1")]
             [ Y.If
-                (Y.BinOp Y.Equal (Y.Var "a1_n") (Y.Lit (Y.LitInt64 0)))
+                (Y.BinOp Y.Equal (Y.Var "n_1") (Y.Lit (Y.LitInt64 0)))
                 [Y.Return (Y.Lit (Y.LitInt64 1))]
                 ( Just
                     [ Y.Return
                         ( Y.BinOp
                             Y.Mul
-                            (Y.Var "a1_n")
+                            (Y.Var "n_1")
                             ( Y.Call
-                                (Y.Callable (Y.Var "f0_f"))
-                                [Y.BinOp Y.Sub (Y.Var "a1_n") (Y.Lit (Y.LitInt64 1))]
+                                (Y.Callable (Y.Var "f_0"))
+                                [Y.BinOp Y.Sub (Y.Var "n_1") (Y.Lit (Y.LitInt64 1))]
                             )
                         )
                     ]
@@ -58,6 +57,6 @@ spec = describe "run" $ do
             Y.TyInt64
             "solve"
             [(Y.TyInt64, "a2")]
-            [Y.Return (Y.Call (Y.Callable (Y.Var "f0_f")) [Y.Var "a2"])]
+            [Y.Return (Y.Call (Y.Callable (Y.Var "f_0")) [Y.Var "a2"])]
     let expected = Y.Program [expectedF, expectedSolve]
     run' prog `shouldBe` Right expected

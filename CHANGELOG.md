@@ -1,6 +1,12 @@
 # Changelog for Jikka
 
+## 2021-06-23: v5.0.3.0
+
+Now the conversion from restricted Python to core works.
+
 ## 2021-06-19: v5.0.2.0
+
+Most conversions in restricted Python are implemented.
 
 ## 2020-12-03: v5.0.1.0
 

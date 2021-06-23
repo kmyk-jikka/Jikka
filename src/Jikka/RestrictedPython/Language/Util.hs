@@ -6,6 +6,11 @@ module Jikka.RestrictedPython.Language.Util
     genType,
     genVarName,
 
+    -- * constants
+    constIntExp,
+    constBoolExp,
+    constBuiltinExp,
+
     -- * free variables
     freeTyVars,
     freeVars,
@@ -34,10 +39,17 @@ module Jikka.RestrictedPython.Language.Util
     mapExprM,
     listExprs,
 
+    -- * exprs
+    hasFunctionCall,
+    isSmallExpr,
+
     -- * targets
     targetVars,
     hasSubscriptTrg,
     hasBareNameTrg,
+
+    -- * programs
+    toplevelMainDef,
 
     -- * IO
     readValueIO,
@@ -62,6 +74,15 @@ genVarName x = do
   i <- nextCounter
   let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
   return $ VarName (base ++ '$' : show i)
+
+constIntExp :: Integer -> Expr
+constIntExp = Constant . ConstInt
+
+constBoolExp :: Bool -> Expr
+constBoolExp = Constant . ConstBool
+
+constBuiltinExp :: Builtin -> Expr
+constBuiltinExp = Constant . ConstBuiltin
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
@@ -263,6 +284,17 @@ mapStatementsM f = mapM (mapStatementsToplevelStatementM f)
 mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
 mapStatements f = runIdentity . mapStatementsM (return . f)
 
+hasFunctionCall :: Expr -> Bool
+hasFunctionCall = any check . listSubExprs
+  where
+    check = \case
+      Call _ _ -> True
+      _ -> False
+
+-- | `isSmallExpr` is true if the evaluation of a given expr trivially terminates.
+isSmallExpr :: Expr -> Bool
+isSmallExpr = not . hasFunctionCall
+
 targetVars :: Target -> [VarName]
 targetVars = nub . go
   where
@@ -282,6 +314,9 @@ hasBareNameTrg = \case
   SubscriptTrg _ _ -> False
   NameTrg _ -> True
   TupleTrg xs -> any hasSubscriptTrg xs
+
+toplevelMainDef :: [Statement] -> Program
+toplevelMainDef body = [ToplevelFunctionDef (VarName "main") [] IntTy body]
 
 readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
 readValueIO = \case

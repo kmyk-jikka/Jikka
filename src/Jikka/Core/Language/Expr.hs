@@ -32,11 +32,14 @@ unTypeName (TypeName name) = name
 -- See also [commentary/compiler/type-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/type-type).
 --
 -- \[
+--     \newcommand\int{\mathbf{int}}
+--     \newcommand\bool{\mathbf{bool}}
+--     \newcommand\list{\mathbf{list}}
 --     \begin{array}{rl}
 --         \tau ::= & \alpha \\
---         \vert & \mathbf{int} \\
---         \vert & \mathbf{bool} \\
---         \vert & \mathbf{list}(\tau) \\
+--         \vert & \int \\
+--         \vert & \bool \\
+--         \vert & \list(\tau) \\
 --         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \\
 --         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \to \tau_n
 --     \end{array}
@@ -51,79 +54,166 @@ data Type
     FunTy [Type] Type
   deriving (Eq, Ord, Show, Read)
 
+-- | TODO: What is the difference between `Literal` and `Builtin`?
 data Builtin
   = -- arithmetical functions
+
+    -- | \(: \int \to \int\)
     Negate
-  | Plus
-  | Minus
-  | Mult
-  | FloorDiv
-  | FloorMod
-  | CeilDiv
-  | CeilMod
-  | Pow
+  | -- | \(: \int \times \int \to \int\)
+    Plus
+  | -- | \(: \int \times \int \to \int\)
+    Minus
+  | -- | \(: \int \times \int \to \int\)
+    Mult
+  | -- | \(: \int \times \int \to \int\)
+    FloorDiv
+  | -- | \(: \int \times \int \to \int\)
+    FloorMod
+  | -- | \(: \int \times \int \to \int\)
+    CeilDiv
+  | -- | \(: \int \times \int \to \int\)
+    CeilMod
+  | -- | \(: \int \times \int \to \int\)
+    Pow
   | -- induction functions
+
+    -- | natural induction \(: \forall \alpha. \alpha \times (\alpha \to \alpha) \times \int \to \alpha\)
     NatInd Type
   | -- advanced arithmetical functions
+
+    -- | \(: \int \to \int\)
     Abs
-  | Gcd
-  | Lcm
-  | Min
-  | Max
+  | -- | \(: \int \times \int \to \int\)
+    Gcd
+  | -- | \(: \int \times \int \to \int\)
+    Lcm
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    Min2 Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    Max2 Type
   | -- logical functions
+
+    -- | \(: \bool \to \bool\)
     Not
-  | And
-  | Or
-  | Implies
-  | If Type
+  | -- | \(: \bool \times \bool \to \bool\)
+    And
+  | -- | \(: \bool \times \bool \to \bool\)
+    Or
+  | -- | \(: \bool \times \bool \to \bool\)
+    Implies
+  | -- | \(: \forall \alpha. \bool \times \alpha \times \alpha \to \alpha\)
+    If Type
   | -- bitwise functions
+
+    -- | \(: \int \to \int\)
     BitNot
-  | BitAnd
-  | BitOr
-  | BitXor
-  | BitLeftShift
-  | BitRightShift
+  | -- | \(: \int \times \int \to \int\)
+    BitAnd
+  | -- | \(: \int \times \int \to \int\)
+    BitOr
+  | -- | \(: \int \times \int \to \int\)
+    BitXor
+  | -- | \(: \int \times \int \to \int\)
+    BitLeftShift
+  | -- | \(: \int \times \int \to \int\)
+    BitRightShift
   | -- modular functions
-    Inv
-  | PowMod
+
+    -- | \(: \int \times \int \to \int\)
+    ModInv
+  | -- | \(: \int \times \int \times \int \to \int\)
+    ModPow
   | -- list functions
+
+    -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \list(\alpha)\)
+    Cons Type
+  | -- | \(: \forall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \beta\)
+    Foldl Type Type
+  | -- | \(: \forall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \list(\beta)\)
+    Scanl Type Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
-  | Tabulate Type
-  | Map Type Type
-  | At Type
-  | Sum
-  | Product
-  | Min1
-  | Max1
-  | ArgMin
-  | ArgMax
-  | All
-  | Any
-  | Sorted Type
-  | List Type
-  | Reversed Type
-  | Range1
-  | Range2
-  | Range3
-  | -- arithmetical relations
-    LessThan
-  | LessEqual
-  | GreaterThan
-  | GreaterEqual
-  | -- equality relations (polymorphic)
+  | -- | \(: \forall \alpha. \int \times (\int \to \alpha) \to \list(\alpha)\)
+    Tabulate Type
+  | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \times \list(\alpha) \to \list(\beta)\)
+    Map Type Type
+  | -- | \(: \forall \alpha \beta. (\alpha \to \bool) \times \list(\alpha) \to \list(\beta)\)
+    Filter Type
+  | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
+    At Type
+  | -- | \(: \forall \alpha. \list(alpha) \times \int \times \alpha \to \list(\alpha)\)
+    SetAt Type
+  | -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \bool\)
+    Elem Type
+  | -- | \(: \list(\int) \to \int\)
+    Sum
+  | -- | \(: \list(\int) \to \int\)
+    Product
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    Min1 Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    Max1 Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    ArgMin Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+    ArgMax Type
+  | -- | \(: \list(\bool) \to \bool\)
+    All
+  | -- | \(: \list(\bool) \to \bool\)
+    Any
+  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    Sorted Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    List Type
+  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
+    Reversed Type
+  | -- | \(: \int \to \list(\int)\)1
+    Range1
+  | -- | \(: \int \times \int \to \list(\int)\)1
+    Range2
+  | -- | \(: \int \times \int \times \int \to \list(\int)\)1
+    Range3
+  | -- tuple functions
+
+    -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_0 \times \dots \times \alpha _ {n - 1}\)
+    Tuple [Type]
+  | -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_i\)
+    Proj [Type] Int
+  | -- comparison
+
+    -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    LessThan Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    LessEqual Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    GreaterThan Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    GreaterEqual Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     Equal Type
-  | NotEqual Type
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+    NotEqual Type
   | -- combinational functions
+
+    -- | \(: \int \to \int\)
     Fact
-  | Choose
-  | Permute
-  | MultiChoose
+  | -- | \(: \int \times \int \to \int\)
+    Choose
+  | -- | \(: \int \times \int \to \int\)
+    Permute
+  | -- | \(: \int \times \int \to \int\)
+    MultiChoose
   deriving (Eq, Ord, Show, Read)
 
 data Literal
   = LitBuiltin Builtin
-  | LitInt Integer
-  | LitBool Bool
+  | -- | \(: \forall \alpha. \int\)
+    LitInt Integer
+  | -- | \(: \forall \alpha. \bool\)
+    LitBool Bool
+  | -- | \(: \forall \alpha. \list(\alpha)\)
+    LitNil Type
   deriving (Eq, Ord, Show, Read)
 
 -- | `Expr` represents the exprs of our core language. This is similar to the `Expr` of GHC Core.
@@ -196,15 +286,19 @@ pattern LamId x t <-
   where
     LamId x t = Lam [(x, t)] (Var x)
 
-data RecKind
-  = NonRec
-  | Rec
-  deriving (Eq, Ord, Show, Read)
-
 -- | `ToplevelExpr` is the toplevel exprs. In our core, "let rec" is allowed only on the toplevel.
+--
+-- \[
+--     \begin{array}{rl}
+--         \mathrm{tle} ::= & e \\
+--         \vert & \mathbf{let}~ x: \tau = e ~\mathbf{in}~ \mathrm{tle} \\
+--         \vert & \mathbf{let~rec}~ x(x: \tau, x: \tau, \dots, x: \tau): \tau = e ~\mathbf{in}~ \mathrm{tle}
+--     \end{array}
+-- \]
 data ToplevelExpr
   = ResultExpr Expr
-  | ToplevelLet RecKind VarName [(VarName, Type)] Type Expr ToplevelExpr
+  | ToplevelLet VarName Type Expr ToplevelExpr
+  | ToplevelLetRec VarName [(VarName, Type)] Type Expr ToplevelExpr
   deriving (Eq, Ord, Show, Read)
 
 type Program = ToplevelExpr

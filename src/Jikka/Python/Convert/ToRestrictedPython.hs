@@ -99,11 +99,12 @@ runCompareExpr e1 ops = runExpr e1 >>= (`go` ops)
     go :: (MonadAlpha m, MonadError Error m) => Y.Expr -> [(X.CmpOp, X.Expr')] -> m Y.Expr
     go e1 = \case
       [] -> return $ Y.Constant (Y.ConstBool True)
-      [(op, e2)] -> Y.Compare e1 op <$> runExpr e2
+      [(op, e2)] -> Y.Compare e1 <$> (Y.CmpOp' op <$> Y.genType) <*> runExpr e2
       (op, e2) : ops -> do
+        t <- Y.genType
         e2 <- runExpr e2
         cont <- go e2 ops
-        return $ Y.BoolOp (Y.Compare e1 op e2) Y.And cont
+        return $ Y.BoolOp (Y.Compare e1 (Y.CmpOp' op t) e2) Y.And cont
 
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Expr
 runExpr e = case value e of
