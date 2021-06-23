@@ -246,15 +246,16 @@ runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Tar
 runForStatement x iter body cont = do
   tx <- Y.genType
   iter <- runExpr iter
+  x' <- Y.genVarName'
   z <- Y.genVarName'
   let (_, X.WriteList w) = X.analyzeStatementsMax body
   ys <- filterM isDefinedVar w
   ts <- replicateM (length ys) Y.genType
   let init = Y.Tuple' ts (map (Y.Var . runVarName) ys)
   let write cont = foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
-  body <- runAssign x (Y.Var z) $ do
+  body <- runAssign x (Y.Var x') $ do
     runStatements (body ++ [X.Return (X.Tuple (map X.Name ys))])
-  let loop init = Y.Foldl' tx (Y.TupleTy ts) (Y.Lam [(z, Y.TupleTy ts)] (write body)) init iter
+  let loop init = Y.Foldl' tx (Y.TupleTy ts) (Y.Lam [(z, Y.TupleTy ts), (x', tx)] (write body)) init iter
   cont <- runStatements cont
   return $ Y.Let z (Y.TupleTy ts) (loop init) (write cont)
 
