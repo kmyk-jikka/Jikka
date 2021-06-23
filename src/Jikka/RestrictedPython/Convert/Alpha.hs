@@ -67,6 +67,17 @@ renameNew x = do
             }
       return y
 
+-- | `renameShadow` renames given variables ignoring the current `Env` and record them to the `Env`.
+renameShadow :: (MonadAlpha m, MonadState Env m) => VarName -> m VarName
+renameShadow x = do
+  env <- get
+  y <- genVarName x
+  put $
+    env
+      { currentMapping = (x, y) : currentMapping env
+      }
+  return y
+
 -- | `renameCompletelyNew` throws errors when given variables already exists in environments.
 renameCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName -> m VarName
 renameCompletelyNew x = do
@@ -88,6 +99,10 @@ renameToplevel x = do
             { currentMapping = (x, x) : currentMapping env
             }
       return x
+
+-- | `renameToplevelArgument` always introduces a new variable.
+renameToplevelArgument :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName -> m VarName
+renameToplevelArgument = renameShadow
 
 popRename :: (MonadState Env m, MonadError Error m) => VarName -> m ()
 popRename x =
@@ -206,7 +221,7 @@ runToplevelStatement = \case
     g <- renameToplevel f
     withToplevelScope $ do
       args <- forM args $ \(x, t) -> do
-        y <- renameToplevel x
+        y <- renameToplevelArgument x
         return (y, t)
       body <- runStatements body
       return $ ToplevelFunctionDef g args ret body
