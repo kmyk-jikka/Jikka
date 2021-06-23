@@ -17,7 +17,7 @@ where
 
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (typecheckProgram')
+import Jikka.Core.Language.Lint
 
 runExpr :: Expr -> Expr
 runExpr = \case
@@ -62,4 +62,5 @@ run' = runToplevelExpr
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.MakeEager" $ do
   prog <- return $ run' prog
-  typecheckProgram' prog
+  ensureWellTyped prog
+  return prog

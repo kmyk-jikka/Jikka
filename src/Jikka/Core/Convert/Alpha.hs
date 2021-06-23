@@ -17,7 +17,6 @@ module Jikka.Core.Convert.Alpha where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (typecheckProgram')
 
 gensym :: MonadAlpha m => m VarName
 gensym = rename' (VarName "") <$> nextCounter
@@ -78,5 +77,4 @@ runProgram = runToplevelExpr []
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.Alpha" $ do
-  prog <- runToplevelExpr [] prog
-  typecheckProgram' prog
+  runToplevelExpr [] prog

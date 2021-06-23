@@ -24,7 +24,7 @@ import Jikka.Common.Error
 import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
-import qualified Jikka.Core.Language.Lint as X
+import qualified Jikka.Core.Language.TypeCheck as X
 
 --------------------------------------------------------------------------------
 -- monad

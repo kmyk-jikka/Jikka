@@ -11,6 +11,8 @@
 -- Portability : portable
 module Jikka.RestrictedPython.Convert.TypeInfer
   ( run,
+
+    -- * internal types and functions
     Equation (..),
     formularizeProgram,
     sortEquations,

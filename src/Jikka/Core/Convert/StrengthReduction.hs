@@ -20,7 +20,7 @@ where
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (typecheckProgram')
+import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Vars
 
 go :: Expr -> Expr
@@ -226,4 +226,5 @@ weakenToplevelExpr e = case e of
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.StrengthReduction" $ do
   prog <- return $ weakenToplevelExpr prog
-  typecheckProgram' prog
+  ensureWellTyped prog
+  return prog

@@ -19,7 +19,8 @@ import Jikka.Common.Error
 import Jikka.Core.Convert.Alpha (gensym)
 import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Lint (TypeEnv, typecheckExpr, typecheckProgram')
+import Jikka.Core.Language.Lint
+import Jikka.Core.Language.TypeCheck
 
 destruct :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m (TypeEnv, Expr -> Expr, Expr)
 destruct env = \case
@@ -86,4 +87,5 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ANormal" $ do
   prog <- Alpha.runProgram prog
   prog <- runToplevelExpr [] prog
-  typecheckProgram' prog
+  ensureWellTyped prog
+  return prog

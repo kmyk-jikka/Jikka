@@ -20,10 +20,12 @@ import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
+import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = do
   prog <- Alpha.run prog
+  prog <- TypeInfer.run prog
   prog <- RemoveUnusedVars.run prog
   StrengthReduction.run prog
