@@ -18,9 +18,12 @@ module Jikka.CPlusPlus.Convert.FromCore
 where
 
 import Data.Char (isAlphaNum)
+import Data.List (intercalate)
+import qualified Jikka.CPlusPlus.Format as Y (formatExpr)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
 import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
@@ -64,23 +67,23 @@ typecheckExpr env = X.typecheckExpr (map (\(x, t, _) -> (x, t)) env)
 lookupVarName :: MonadError Error m => Env -> X.VarName -> m Y.VarName
 lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
   Just y -> return y
-  Nothing -> throwInternalError $ "undefined variable: " ++ show x
+  Nothing -> throwInternalError $ "undefined variable: " ++ X.unVarName x
 
 --------------------------------------------------------------------------------
 -- run
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
-  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ show t
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
   X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
-  t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ show t
+  t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ X.formatType t
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
 runLiteral = \case
-  X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ show builtin
+  X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ X.formatBuiltinIsolated builtin
   X.LitInt n -> return $ Y.Lit (Y.LitInt64 n)
   X.LitBool p -> return $ Y.Lit (Y.LitBool p)
   X.LitNil t -> do
@@ -177,7 +180,7 @@ runAppBuiltin f args = case (f, args) of
   (X.Choose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::choose" []) [e1, e2]
   (X.Permute, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::permute" []) [e1, e2]
   (X.MultiChoose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::multiChoose" []) [e1, e2]
-  _ -> throwInternalError "invalid builtin call"
+  _ -> throwInternalError $ "invalid builtin call: " ++ X.formatBuiltinIsolated f ++ "(" ++ intercalate "," (map (fst . Y.formatExpr) args) ++ ")"
 
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
@@ -270,4 +273,5 @@ runProgram :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 runProgram prog = Y.Program <$> runToplevelExpr [] prog
 
 run :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
-run = runProgram
+run prog = wrapError' "Jikka.CPlusPlus.Convert.FromCore failed" $ do
+  runProgram prog

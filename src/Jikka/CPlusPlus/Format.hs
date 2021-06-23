@@ -13,6 +13,8 @@
 module Jikka.CPlusPlus.Format
   ( run,
     run',
+    Code,
+    formatExpr,
   )
 where
 
