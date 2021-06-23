@@ -18,9 +18,12 @@ module Jikka.CPlusPlus.Convert.FromCore
 where
 
 import Data.Char (isAlphaNum)
+import Data.List (intercalate)
+import qualified Jikka.CPlusPlus.Format as Y (formatExpr)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
 import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
@@ -64,23 +67,23 @@ typecheckExpr env = X.typecheckExpr (map (\(x, t, _) -> (x, t)) env)
 lookupVarName :: MonadError Error m => Env -> X.VarName -> m Y.VarName
 lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
   Just y -> return y
-  Nothing -> throwInternalError $ "undefined variable: " ++ show x
+  Nothing -> throwInternalError $ "undefined variable: " ++ X.unVarName x
 
 --------------------------------------------------------------------------------
 -- run
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
-  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ show t
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
   X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
-  t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ show t
+  X.FunTy ts t -> Y.TyFunction <$> runType t <*> mapM runType ts
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
 runLiteral = \case
-  X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ show builtin
+  X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ X.formatBuiltinIsolated builtin
   X.LitInt n -> return $ Y.Lit (Y.LitInt64 n)
   X.LitBool p -> return $ Y.Lit (Y.LitBool p)
   X.LitNil t -> do
@@ -127,9 +130,20 @@ runAppBuiltin f args = case (f, args) of
   (X.BitLeftShift, [e1, e2]) -> return $ Y.BinOp Y.BitLeftShift e1 e2
   (X.BitRightShift, [e1, e2]) -> return $ Y.BinOp Y.BitRightShift e1 e2
   -- modular functions
-  (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "std::modinv" []) [e1, e2]
-  (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "std::modpow" []) [e1, e2, e3]
+  (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
+  (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
   -- list functions
+  (X.Cons t, [e1, e2]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::cons" [t]) [e1, e2]
+  (X.Foldl t1 t2, [e1, e2, e3]) -> do
+    t1 <- runType t1
+    t2 <- runType t2
+    return $ Y.Call (Y.Function "jikka::foldl" [t1, t2]) [e1, e2, e3]
+  (X.Scanl t1 t2, [e1, e2, e3]) -> do
+    t1 <- runType t1
+    t2 <- runType t2
+    return $ Y.Call (Y.Function "jikka::scanl" [t1, t2]) [e1, e2, e3]
   (X.Len _, [e]) -> return $ Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
   (X.Tabulate t, [n, f]) -> do
     t <- runType t
@@ -137,8 +151,17 @@ runAppBuiltin f args = case (f, args) of
   (X.Map t1 t2, [f, xs]) -> do
     t1 <- runType t1
     t2 <- runType t2
-    return $ Y.Call (Y.Function "jikka::map" [t1, t2]) [f, xs]
+    return $ Y.Call (Y.Function "jikka::fmap" [t1, t2]) [f, xs]
+  (X.Filter t, [f, xs]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::filter" [t]) [f, xs]
   (X.At _, [e1, e2]) -> return $ Y.At e1 e2
+  (X.SetAt t, [e1, e2, e3]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::setat" [t]) [e1, e2, e3]
+  (X.Elem t, [e1, e2]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::elem" [t]) [e1, e2]
   (X.Sum, [e]) -> return $ Y.Call (Y.Function "jikka::sum" []) [e]
   (X.Product, [e]) -> return $ Y.Call (Y.Function "jikka::product" []) [e]
   (X.Min1 t, [e]) -> do
@@ -162,9 +185,14 @@ runAppBuiltin f args = case (f, args) of
   (X.Reversed t, [e]) -> do
     t <- runType t
     return $ Y.Call (Y.Function "jikka::reverse" [t]) [e]
-  (X.Range1, [e]) -> return $ Y.Call (Y.Function "jikka::range" []) [e]
-  (X.Range2, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::range" []) [e1, e2]
-  (X.Range3, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::range" []) [e1, e2, e3]
+  (X.Range1, [e]) -> return $ Y.Call (Y.Function "jikka::range1" []) [e]
+  (X.Range2, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::range2" []) [e1, e2]
+  (X.Range3, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::range3" []) [e1, e2, e3]
+  -- tuple functions
+  (X.Tuple ts, es) -> do
+    ts <- mapM runType ts
+    return $ Y.Call (Y.Function "std::tuple" ts) es
+  (X.Proj _ n, [e]) -> return $ Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
   -- comparison
   (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
   (X.LessEqual _, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2
@@ -176,8 +204,8 @@ runAppBuiltin f args = case (f, args) of
   (X.Fact, [e]) -> return $ Y.Call (Y.Function "jikka::fact" []) [e]
   (X.Choose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::choose" []) [e1, e2]
   (X.Permute, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::permute" []) [e1, e2]
-  (X.MultiChoose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::multiChoose" []) [e1, e2]
-  _ -> throwInternalError "invalid builtin call"
+  (X.MultiChoose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
+  _ -> throwInternalError $ "invalid builtin call: " ++ X.formatBuiltinIsolated f ++ "(" ++ intercalate "," (map (fst . Y.formatExpr) args) ++ ")"
 
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
@@ -238,6 +266,60 @@ runToplevelVarDef env x t e = do
   e <- runExpr env e
   return [Y.VarDef t x e]
 
+runMainRead :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.Statement]
+runMainRead x = \case
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
+  X.IntTy ->
+    return
+      [ Y.Declare Y.TyInt64 x Nothing,
+        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var x))
+      ]
+  X.BoolTy -> do
+    s <- newFreshName LocalNameKind ""
+    return
+      [ Y.Declare Y.TyString s Nothing,
+        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var s)),
+        Y.Declare Y.TyBool x (Just (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "false"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
+      ]
+  X.ListTy _ -> throwInternalError "runMainRead TODO" -- TODO
+  X.TupleTy _ -> throwInternalError "runMainRead TODO" -- TODO
+  t@X.FunTy {} -> throwInternalError $ "cannot print function: " ++ X.formatType t
+
+runMainWrite :: (MonadAlpha m, MonadError Error m) => Y.Expr -> X.Type -> m [Y.Statement]
+runMainWrite e = \case
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
+  X.IntTy -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  X.BoolTy -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  X.ListTy _ -> throwInternalError "runMainWrite TODO" -- TODO
+  X.TupleTy ts -> do
+    let open = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))]
+    stmts <- forM (zip [0 ..] ts) $ \(i, t) -> do
+      let comma = if i == 0 then [] else [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))]
+      stmts <- runMainWrite (Y.Call (Y.Function (Y.FunName ("std::get<" ++ show i ++ ">")) []) [e]) t
+      return $ comma ++ stmts
+    let close = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))]
+    return $ open ++ concat stmts ++ close
+  t@X.FunTy {} -> throwInternalError $ "cannot print function: " ++ X.formatType t
+
+runMain :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.ToplevelStatement]
+runMain solve t = do
+  (body, ans, t) <- case t of
+    X.FunTy ts ret -> do
+      body <- forM ts $ \t -> do
+        x <- newFreshName LocalNameKind ""
+        stmts <- runMainRead x t
+        return (stmts, x)
+      let body' = concatMap fst body
+      ans <- newFreshName LocalNameKind ""
+      let func = Y.Function (Y.FunName (Y.unVarName solve)) []
+      let args = map (Y.Var . snd) body
+      ret' <- runType ret
+      return (body' ++ [Y.Declare ret' ans (Just (Y.Call func args))], ans, ret)
+    _ -> return ([], solve, t)
+  body' <- runMainWrite (Y.Var ans) t
+  let newline = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '\n')))]
+  return [Y.FunDef Y.TyInt (Y.VarName "main") [] (body ++ body' ++ newline)]
+
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case
   X.ResultExpr e -> do
@@ -252,13 +334,25 @@ runToplevelExpr env = \case
         ret <- runType ret
         e <- runExpr env e
         let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
-        return [Y.FunDef ret f args body]
-      _ -> runToplevelVarDef env (Y.VarName "ans") t e
-  X.ToplevelLet x t e cont -> do
-    y <- renameVarName ConstantNameKind x
-    stmt <- runToplevelVarDef env y t e
-    cont <- runToplevelExpr ((x, t, y) : env) cont
-    return $ stmt ++ cont
+        let solve = [Y.FunDef ret f args body]
+        main <- runMain f t
+        return $ solve ++ main
+      _ -> do
+        let x = Y.VarName "ans"
+        ans <- runToplevelVarDef env x t e
+        main <- runMain x t
+        return $ ans ++ main
+  X.ToplevelLet x t e cont -> case (e, t) of
+    (X.Lam args body, X.FunTy _ ret) -> do
+      g <- renameVarName FunctionNameKind x
+      stmt <- runToplevelFunDef ((x, t, g) : env) g args ret body
+      cont <- runToplevelExpr ((x, t, g) : env) cont
+      return $ stmt ++ cont
+    _ -> do
+      y <- renameVarName ConstantNameKind x
+      stmt <- runToplevelVarDef env y t e
+      cont <- runToplevelExpr ((x, t, y) : env) cont
+      return $ stmt ++ cont
   X.ToplevelLetRec f args ret body cont -> do
     g <- renameVarName FunctionNameKind f
     let t = X.FunTy (map snd args) ret
@@ -270,4 +364,5 @@ runProgram :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 runProgram prog = Y.Program <$> runToplevelExpr [] prog
 
 run :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
-run = runProgram
+run prog = wrapError' "Jikka.CPlusPlus.Convert.FromCore failed" $ do
+  runProgram prog

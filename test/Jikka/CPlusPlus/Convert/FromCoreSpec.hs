@@ -58,5 +58,16 @@ spec = describe "run" $ do
             "solve"
             [(Y.TyInt64, "a2")]
             [Y.Return (Y.Call (Y.Callable (Y.Var "f_0")) [Y.Var "a2"])]
-    let expected = Y.Program [expectedF, expectedSolve]
+    let expectedMain =
+          Y.FunDef
+            Y.TyInt
+            "main"
+            []
+            [ Y.Declare Y.TyInt64 "x3" Nothing,
+              Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var "x3")),
+              Y.Declare Y.TyInt64 "x4" (Just (Y.Call (Y.Function "solve" []) [Y.Var "x3"])),
+              Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Var "x4")),
+              Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '\n')))
+            ]
+    let expected = Y.Program [expectedF, expectedSolve, expectedMain]
     run' prog `shouldBe` Right expected

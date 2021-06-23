@@ -30,7 +30,16 @@ spec = describe "run" $ do
             ]
     let formatted =
           unlines
-            [ "int64_t solve(int32_t n) {",
+            [ "#include <algorithm>",
+              "#include <cstdint>",
+              "#include <functional>",
+              "#include <iostream>",
+              "#include <numeric>",
+              "#include <string>",
+              "#include <tuple>",
+              "#include <vector>",
+              "#include \"jikka/all.hpp\"",
+              "int64_t solve(int32_t n) {",
               "    int64_t x = 0;",
               "    for (int32_t i = 0; i < n; ++ i) {",
               "        x += static_cast<int64_t>(i);",

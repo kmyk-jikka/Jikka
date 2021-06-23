@@ -23,17 +23,22 @@ data Type
   = TyAuto
   | TyVoid
   | TyBool
+  | TyInt
   | TyInt32
   | TyInt64
   | TyTuple [Type]
   | TyVector Type
   | TyArray Type Integer
+  | TyString
+  | TyFunction Type [Type]
   deriving (Eq, Ord, Show, Read)
 
 data Literal
   = LitInt32 Integer
   | LitInt64 Integer
   | LitBool Bool
+  | LitChar Char
+  | LitString String
   deriving (Eq, Ord, Show, Read)
 
 data Function

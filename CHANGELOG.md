@@ -1,5 +1,9 @@
 # Changelog for Jikka
 
+## 2021-06-23: v5.0.4.0
+
+Now executable C++ code is generated.
+
 ## 2021-06-23: v5.0.3.0
 
 Now the conversion from restricted Python to core works.

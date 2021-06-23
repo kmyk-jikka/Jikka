@@ -13,6 +13,8 @@
 module Jikka.CPlusPlus.Format
   ( run,
     run',
+    Code,
+    formatExpr,
   )
 where
 
@@ -170,18 +172,23 @@ formatType :: Type -> Code
 formatType = \case
   TyAuto -> "auto"
   TyVoid -> "void"
+  TyInt -> "int"
   TyInt32 -> "int32_t"
   TyInt64 -> "int64_t"
   TyBool -> "bool"
   TyTuple ts -> "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
   TyVector t -> "std::vector<" ++ formatType t ++ ">"
-  TyArray t n -> "std::array[" ++ formatType t ++ ", " ++ show n ++ ">"
+  TyArray t n -> "std::array<" ++ formatType t ++ ", " ++ show n ++ ">"
+  TyString -> "std::string"
+  TyFunction t ts -> "std::function<" ++ formatType t ++ " (" ++ intercalate ", " (map formatType ts) ++ ")>"
 
 formatLiteral :: Literal -> Code
 formatLiteral = \case
   LitInt32 n -> show n
   LitInt64 n -> show n
   LitBool p -> if p then "true" else "false"
+  LitChar c -> show c
+  LitString s -> show s
 
 formatExpr' :: Prec -> Expr -> Code
 formatExpr' prec = resolvePrec prec . formatExpr
@@ -293,7 +300,19 @@ formatToplevelStatement = \case
      in [ret' ++ " " ++ unVarName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
 
 formatProgram :: Program -> [Code]
-formatProgram prog = concatMap formatToplevelStatement (decls prog)
+formatProgram prog = headers ++ concatMap formatToplevelStatement (decls prog)
+  where
+    headers =
+      [ "#include <algorithm>",
+        "#include <cstdint>",
+        "#include <functional>",
+        "#include <iostream>",
+        "#include <numeric>",
+        "#include <string>",
+        "#include <tuple>",
+        "#include <vector>",
+        "#include \"jikka/all.hpp\""
+      ]
 
 run' :: Program -> String
 run' = unlines . makeIndentFromBraces 4 . formatProgram
