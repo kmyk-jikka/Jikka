@@ -30,8 +30,8 @@ import Data.Bits
 import Data.List (sort)
 import qualified Data.Vector as V
 import Jikka.Common.Error
-import Jikka.Core.Convert.TypeInfer (builtinToType)
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.TypeCheck (builtinToType)
 import Jikka.Core.Language.Value
 import Text.Read (readEither)
 

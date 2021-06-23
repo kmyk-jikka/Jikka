@@ -4,8 +4,91 @@
 module Jikka.Core.Language.TypeCheck where
 
 import Jikka.Common.Error
-import Jikka.Core.Convert.TypeInfer (literalToType)
 import Jikka.Core.Language.Expr
+
+builtinToType :: Builtin -> Type
+builtinToType = \case
+  -- arithmetical functions
+  Negate -> Fun1Ty IntTy
+  Plus -> Fun2Ty IntTy
+  Minus -> Fun2Ty IntTy
+  Mult -> Fun2Ty IntTy
+  FloorDiv -> Fun2Ty IntTy
+  FloorMod -> Fun2Ty IntTy
+  CeilDiv -> Fun2Ty IntTy
+  CeilMod -> Fun2Ty IntTy
+  Pow -> Fun2Ty IntTy
+  -- induction functions
+  NatInd t -> FunTy [t, FunTy [IntTy, t] t, IntTy] t
+  -- advanced arithmetical functions
+  Abs -> Fun1Ty IntTy
+  Gcd -> Fun2Ty IntTy
+  Lcm -> Fun2Ty IntTy
+  Min2 t -> Fun2Ty t
+  Max2 t -> Fun2Ty t
+  -- logical functions
+  Not -> Fun1Ty BoolTy
+  And -> Fun2Ty BoolTy
+  Or -> Fun2Ty BoolTy
+  Implies -> Fun2Ty BoolTy
+  If t -> FunTy [BoolTy, t, t] t
+  -- bitwise functions
+  BitNot -> Fun1Ty IntTy
+  BitAnd -> Fun2Ty IntTy
+  BitOr -> Fun2Ty IntTy
+  BitXor -> Fun2Ty IntTy
+  BitLeftShift -> Fun2Ty IntTy
+  BitRightShift -> Fun2Ty IntTy
+  -- modular functions
+  ModInv -> Fun2Ty IntTy
+  ModPow -> Fun3Ty IntTy
+  -- list functions
+  Cons t -> FunTy [t, ListTy t] (ListTy t)
+  Foldl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] t2
+  Scanl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] (ListTy t2)
+  Len t -> FunTy [ListTy t] IntTy
+  Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)
+  Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)
+  Filter t -> FunTy [FunTy [t] BoolTy, ListTy t] (ListTy t)
+  At t -> FunTy [ListTy t, IntTy] t
+  SetAt t -> FunTy [ListTy t, IntTy, t] (ListTy t)
+  Elem t -> FunTy [t, ListTy t] BoolTy
+  Sum -> FunLTy IntTy
+  Product -> FunLTy IntTy
+  Min1 t -> FunLTy t
+  Max1 t -> FunLTy t
+  ArgMin t -> FunTy [ListTy t] IntTy
+  ArgMax t -> FunTy [ListTy t] IntTy
+  All -> FunLTy BoolTy
+  Any -> FunLTy BoolTy
+  Sorted t -> Fun1Ty (ListTy t)
+  List t -> Fun1Ty (ListTy t)
+  Reversed t -> Fun1Ty (ListTy t)
+  Range1 -> FunTy [IntTy] (ListTy IntTy)
+  Range2 -> FunTy [IntTy, IntTy] (ListTy IntTy)
+  Range3 -> FunTy [IntTy, IntTy, IntTy] (ListTy IntTy)
+  -- tuple functions
+  Tuple ts -> FunTy ts (TupleTy ts)
+  Proj ts n -> FunTy [TupleTy ts] (ts !! n)
+  -- comparison
+  LessThan t -> FunTy [t, t] BoolTy
+  LessEqual t -> FunTy [t, t] BoolTy
+  GreaterThan t -> FunTy [t, t] BoolTy
+  GreaterEqual t -> FunTy [t, t] BoolTy
+  Equal t -> FunTy [t, t] BoolTy
+  NotEqual t -> FunTy [t, t] BoolTy
+  -- combinational functions
+  Fact -> Fun1Ty IntTy
+  Choose -> Fun2Ty IntTy
+  Permute -> Fun2Ty IntTy
+  MultiChoose -> Fun2Ty IntTy
+
+literalToType :: Literal -> Type
+literalToType = \case
+  LitBuiltin builtin -> builtinToType builtin
+  LitInt _ -> IntTy
+  LitBool _ -> BoolTy
+  LitNil t -> ListTy t
 
 type TypeEnv = [(VarName, Type)]
 
@@ -45,5 +128,5 @@ typecheckToplevelExpr env = \case
     typecheckToplevelExpr ((x, t) : env) cont
 
 typecheckProgram :: MonadError Error m => Program -> m Type
-typecheckProgram prog = wrapError' "Jikka.Core.Convert.TypeInfer.typecheckProgram" $ do
+typecheckProgram prog = wrapError' "Jikka.Core.Language.TypeCheck.typecheckProgram" $ do
   typecheckToplevelExpr [] prog
