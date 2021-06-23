@@ -172,12 +172,14 @@ formatType :: Type -> Code
 formatType = \case
   TyAuto -> "auto"
   TyVoid -> "void"
+  TyInt -> "int"
   TyInt32 -> "int32_t"
   TyInt64 -> "int64_t"
   TyBool -> "bool"
   TyTuple ts -> "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
   TyVector t -> "std::vector<" ++ formatType t ++ ">"
   TyArray t n -> "std::array<" ++ formatType t ++ ", " ++ show n ++ ">"
+  TyString -> "std::string"
   TyFunction t ts -> "std::function<" ++ formatType t ++ " (" ++ intercalate ", " (map formatType ts) ++ ")>"
 
 formatLiteral :: Literal -> Code
@@ -185,6 +187,8 @@ formatLiteral = \case
   LitInt32 n -> show n
   LitInt64 n -> show n
   LitBool p -> if p then "true" else "false"
+  LitChar c -> show c
+  LitString s -> show s
 
 formatExpr' :: Prec -> Expr -> Code
 formatExpr' prec = resolvePrec prec . formatExpr
@@ -304,6 +308,7 @@ formatProgram prog = headers ++ concatMap formatToplevelStatement (decls prog)
         "#include <functional>",
         "#include <iostream>",
         "#include <numeric>",
+        "#include <string>",
         "#include <tuple>",
         "#include <vector>",
         "#include \"jikka/all.hpp\""

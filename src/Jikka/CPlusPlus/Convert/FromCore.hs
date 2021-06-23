@@ -266,6 +266,60 @@ runToplevelVarDef env x t e = do
   e <- runExpr env e
   return [Y.VarDef t x e]
 
+runMainRead :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.Statement]
+runMainRead x = \case
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
+  X.IntTy ->
+    return
+      [ Y.Declare Y.TyInt64 x Nothing,
+        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var x))
+      ]
+  X.BoolTy -> do
+    s <- newFreshName LocalNameKind ""
+    return
+      [ Y.Declare Y.TyString s Nothing,
+        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var s)),
+        Y.Declare Y.TyBool x (Just (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "false"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
+      ]
+  X.ListTy _ -> throwInternalError "runMainRead TODO" -- TODO
+  X.TupleTy _ -> throwInternalError "runMainRead TODO" -- TODO
+  t@X.FunTy {} -> throwInternalError $ "cannot print function: " ++ X.formatType t
+
+runMainWrite :: (MonadAlpha m, MonadError Error m) => Y.Expr -> X.Type -> m [Y.Statement]
+runMainWrite e = \case
+  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
+  X.IntTy -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  X.BoolTy -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  X.ListTy _ -> throwInternalError "runMainWrite TODO" -- TODO
+  X.TupleTy ts -> do
+    let open = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))]
+    stmts <- forM (zip [0 ..] ts) $ \(i, t) -> do
+      let comma = if i == 0 then [] else [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))]
+      stmts <- runMainWrite (Y.Call (Y.Function (Y.FunName ("std::get<" ++ show i ++ ">")) []) [e]) t
+      return $ comma ++ stmts
+    let close = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))]
+    return $ open ++ concat stmts ++ close
+  t@X.FunTy {} -> throwInternalError $ "cannot print function: " ++ X.formatType t
+
+runMain :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.ToplevelStatement]
+runMain solve t = do
+  (body, ans, t) <- case t of
+    X.FunTy ts ret -> do
+      body <- forM ts $ \t -> do
+        x <- newFreshName LocalNameKind ""
+        stmts <- runMainRead x t
+        return (stmts, x)
+      let body' = concatMap fst body
+      ans <- newFreshName LocalNameKind ""
+      let func = Y.Function (Y.FunName (Y.unVarName solve)) []
+      let args = map (Y.Var . snd) body
+      ret' <- runType ret
+      return (body' ++ [Y.Declare ret' ans (Just (Y.Call func args))], ans, ret)
+    _ -> return ([], solve, t)
+  body' <- runMainWrite (Y.Var ans) t
+  let newline = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '\n')))]
+  return [Y.FunDef Y.TyInt (Y.VarName "main") [] (body ++ body' ++ newline)]
+
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case
   X.ResultExpr e -> do
@@ -280,13 +334,25 @@ runToplevelExpr env = \case
         ret <- runType ret
         e <- runExpr env e
         let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
-        return [Y.FunDef ret f args body]
-      _ -> runToplevelVarDef env (Y.VarName "ans") t e
-  X.ToplevelLet x t e cont -> do
-    y <- renameVarName ConstantNameKind x
-    stmt <- runToplevelVarDef env y t e
-    cont <- runToplevelExpr ((x, t, y) : env) cont
-    return $ stmt ++ cont
+        let solve = [Y.FunDef ret f args body]
+        main <- runMain f t
+        return $ solve ++ main
+      _ -> do
+        let x = Y.VarName "ans"
+        ans <- runToplevelVarDef env x t e
+        main <- runMain x t
+        return $ ans ++ main
+  X.ToplevelLet x t e cont -> case (e, t) of
+    (X.Lam args body, X.FunTy _ ret) -> do
+      g <- renameVarName FunctionNameKind x
+      stmt <- runToplevelFunDef ((x, t, g) : env) g args ret body
+      cont <- runToplevelExpr ((x, t, g) : env) cont
+      return $ stmt ++ cont
+    _ -> do
+      y <- renameVarName ConstantNameKind x
+      stmt <- runToplevelVarDef env y t e
+      cont <- runToplevelExpr ((x, t, y) : env) cont
+      return $ stmt ++ cont
   X.ToplevelLetRec f args ret body cont -> do
     g <- renameVarName FunctionNameKind f
     let t = X.FunTy (map snd args) ret

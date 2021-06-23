@@ -35,6 +35,7 @@ spec = describe "run" $ do
               "#include <functional>",
               "#include <iostream>",
               "#include <numeric>",
+              "#include <string>",
               "#include <tuple>",
               "#include <vector>",
               "#include \"jikka/all.hpp\"",
