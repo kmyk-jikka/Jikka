@@ -83,6 +83,18 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((f, t) : env) cont
     return $ ToplevelLetRec f args ret body cont
 
+-- | `run` makes a given program A-normal form.
+-- A program is an A-normal form iff assigned exprs of all let-statements are values or function applications.
+-- For example, this converts the following:
+--
+-- > (let x = 1 in x) + ((fun y -> y) 1)
+--
+-- to:
+--
+-- > let x = 1
+-- > in let f = fun y -> y
+-- > in let z = f x
+-- > in z
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ANormal" $ do
   prog <- Alpha.runProgram prog
