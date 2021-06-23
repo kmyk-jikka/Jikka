@@ -95,3 +95,17 @@ mapTypeInBuiltin f = \case
   Choose -> Choose
   Permute -> Permute
   MultiChoose -> MultiChoose
+
+countOccurrences :: VarName -> Expr -> Int
+countOccurrences x = \case
+  Var y -> if x == y then 1 else 0
+  Lit _ -> 0
+  App f args -> sum (map (countOccurrences x) (f : args))
+  Lam args body -> if x `elem` map fst args then 0 else countOccurrences x body
+  Let y _ e1 e2 -> countOccurrences x e1 + (if x == y then 0 else countOccurrences x e2)
+
+countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
+countOccurrencesToplevelExpr x = \case
+  ResultExpr e -> countOccurrences x e
+  ToplevelLet y _ e cont -> countOccurrences x e + (if x == y then 0 else countOccurrencesToplevelExpr x cont)
+  ToplevelLetRec f args _ body cont -> if x == f then 0 else countOccurrencesToplevelExpr x cont + (if x `elem` map fst args then 0 else countOccurrences x body)

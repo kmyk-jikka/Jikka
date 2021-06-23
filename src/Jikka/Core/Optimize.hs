@@ -22,6 +22,7 @@ import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
+import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
 
@@ -31,5 +32,6 @@ run prog = do
   prog <- TypeInfer.run prog
   prog <- RemoveUnusedVars.run prog
   prog <- ANormal.run prog
+  prog <- TrivialLetElimination.run prog
   prog <- ConstantPropagation.run prog
   StrengthReduction.run prog
