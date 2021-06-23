@@ -41,6 +41,16 @@ inline int64_t pow(int64_t x, int64_t k) {
   return y;
 }
 
+template <class T> inline T natind(T x, std::function<T(T)> f, int64_t n) {
+  if (n < 0) {
+    return x;
+  }
+  while (n--) {
+    x = f(x);
+  }
+  return x;
+}
+
 inline int64_t modinv(int64_t value, int64_t MOD) {
   assert(0 < value and value < MOD);
   int64_t a = value, b = MOD;

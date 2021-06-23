@@ -21,7 +21,7 @@ builtinToType = \case
   CeilMod -> Fun2Ty IntTy
   Pow -> Fun2Ty IntTy
   -- induction functions
-  NatInd t -> FunTy [t, FunTy [IntTy, t] t, IntTy] t
+  NatInd t -> FunTy [t, FunTy [t] t, IntTy] t
   -- advanced arithmetical functions
   Abs -> Fun1Ty IntTy
   Gcd -> Fun2Ty IntTy

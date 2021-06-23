@@ -175,6 +175,7 @@ reduceFoldMap = \case
 
 reduceFoldBuild :: Expr -> Expr
 reduceFoldBuild = \case
+  Foldl' _ t (Lam [(x1, t1), (x2, _)] body) x (Range1' n) | x2 `isUnusedVar` body -> NatInd' t x (Lam [(x1, t1)] body) n
   Len' _ (Range1' n) -> n
   At' _ (Range1' _) i -> i
   Sum' (Range1' n) -> go $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2

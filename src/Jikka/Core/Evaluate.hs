@@ -31,7 +31,7 @@ import Data.List (intercalate, sort)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.MakeEager as MakeEager
-import Jikka.Core.Format (formatBuiltinIsolated)
+import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.TypeCheck (builtinToType)
 import Jikka.Core.Language.Value
@@ -114,7 +114,7 @@ natind _ _ n | n < 0 = throwRuntimeError $ "negative number for mathematical ind
 natind base _ 0 = return base
 natind base step n = do
   val <- natind base step (n - 1)
-  callValue step [val, ValInt (n - 1)]
+  callValue step [val]
 
 minimumEither :: (MonadError Error m, Ord a) => [a] -> m a
 minimumEither [] = throwRuntimeError "there is no minimum for the empty list"
@@ -276,10 +276,13 @@ callBuiltin builtin args = case (builtin, args) of
   _ -> throwInternalError $ "invalid builtin call: " ++ formatBuiltinIsolated builtin ++ "(" ++ intercalate "," (map formatValue args) ++ ")"
 
 callLambda :: MonadError Error m => Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
-callLambda env formalArgs body actualArgs = case (formalArgs, actualArgs) of
-  ([], []) -> evaluateExpr env body
-  ((x, _) : formalArgs, val : actualArgs) -> callLambda ((x, val) : env) formalArgs body actualArgs
-  _ -> throwInternalError "wrong number of arguments for lambda function"
+callLambda env formalArgs body actualArgs =
+  if length formalArgs /= length actualArgs
+    then throwInternalError $ "wrong number of arguments for lambda function: expr = " ++ formatExpr (Lam formalArgs body) ++ ", args = (" ++ intercalate ", " (map formatValue actualArgs) ++ ")"
+    else case (formalArgs, actualArgs) of
+      ([], []) -> evaluateExpr env body
+      ((x, _) : formalArgs, val : actualArgs) -> callLambda ((x, val) : env) formalArgs body actualArgs
+      _ -> throwInternalError "wrong number of arguments for lambda function"
 
 callValue :: MonadError Error m => Value -> [Value] -> m Value
 callValue f args = case f of
