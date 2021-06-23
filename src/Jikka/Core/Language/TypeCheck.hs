@@ -3,7 +3,9 @@
 
 module Jikka.Core.Language.TypeCheck where
 
+import Data.List (intercalate)
 import Jikka.Common.Error
+import Jikka.Core.Format (formatExpr, formatType)
 import Jikka.Core.Language.Expr
 
 builtinToType :: Builtin -> Type
@@ -96,7 +98,7 @@ type TypeEnv = [(VarName, Type)]
 typecheckExpr :: MonadError Error m => TypeEnv -> Expr -> m Type
 typecheckExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwInternalError $ "undefined variable: " ++ show (unVarName x)
+    Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just t -> return t
   Lit lit -> return $ literalToType lit
   App e args -> do
@@ -104,28 +106,30 @@ typecheckExpr env = \case
     ts <- mapM (typecheckExpr env) args
     case t of
       FunTy ts' ret | ts' == ts -> return ret
-      _ -> throwInternalError $ "invalid funcall: " ++ show (App e args, t, ts)
+      _ -> throwInternalError $ "wrong type funcall: expr = " ++ formatExpr (App e args) ++ ", expected type = " ++ intercalate " * " (map formatType ts) ++ " -> ?, actual type = " ++ formatType t
   Lam args e -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
-    if t == t'
-      then typecheckExpr ((x, t) : env) e2
-      else throwInternalError $ "wrong type binding: " ++ show (Let x t e1 e2)
+    when (t /= t') $ do
+      throwInternalError $ "wrong type binding: " ++ formatExpr (Let x t e1 e2)
+    typecheckExpr ((x, t) : env) e2
 
 typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckToplevelExpr env = \case
   ResultExpr e -> typecheckExpr env e
   ToplevelLet x t e cont -> do
     t' <- typecheckExpr env e
-    if t' == t then return () else throwInternalError "assigned type is not correct"
+    when (t' /= t) $ do
+      throwInternalError $ "assigned type is not correct: context = (let " ++ unVarName x ++ ": " ++ formatType t ++ " = " ++ formatExpr e ++ " in ...), expected type = " ++ formatType t ++ ", actual type = " ++ formatType t'
     typecheckToplevelExpr ((x, t) : env) cont
-  ToplevelLetRec x args ret body cont -> do
+  ToplevelLetRec f args ret body cont -> do
     let t = case args of
           [] -> ret
           _ -> FunTy (map snd args) ret
-    ret' <- typecheckExpr (reverse args ++ (x, t) : env) body
-    if ret' == ret then return () else throwInternalError "returned type is not correct"
-    typecheckToplevelExpr ((x, t) : env) cont
+    ret' <- typecheckExpr (reverse args ++ (f, t) : env) body
+    when (ret' /= ret) $ do
+      throwInternalError $ "returned type is not correct: context = (let rec " ++ unVarName f ++ " " ++ unwords (map (\(x, t) -> unVarName x ++ ": " ++ formatType t) args) ++ ": " ++ formatType ret ++ " = " ++ formatExpr body ++ " in ...), expected type = " ++ formatType ret ++ ", actual type = " ++ formatType ret'
+    typecheckToplevelExpr ((f, t) : env) cont
 
 typecheckProgram :: MonadError Error m => Program -> m Type
 typecheckProgram prog = wrapError' "Jikka.Core.Language.TypeCheck.typecheckProgram" $ do
