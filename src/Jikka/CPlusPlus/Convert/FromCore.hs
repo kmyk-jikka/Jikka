@@ -151,7 +151,7 @@ runAppBuiltin f args = case (f, args) of
   (X.Map t1 t2, [f, xs]) -> do
     t1 <- runType t1
     t2 <- runType t2
-    return $ Y.Call (Y.Function "jikka::map" [t1, t2]) [f, xs]
+    return $ Y.Call (Y.Function "jikka::fmap" [t1, t2]) [f, xs]
   (X.Filter t, [f, xs]) -> do
     t <- runType t
     return $ Y.Call (Y.Function "jikka::filter" [t]) [f, xs]
@@ -191,7 +191,7 @@ runAppBuiltin f args = case (f, args) of
   -- tuple functions
   (X.Tuple ts, es) -> do
     ts <- mapM runType ts
-    return $ Y.Call (Y.Function "std::make_tuple" ts) es
+    return $ Y.Call (Y.Function "std::tuple" ts) es
   (X.Proj _ n, [e]) -> return $ Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
   -- comparison
   (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
@@ -204,7 +204,7 @@ runAppBuiltin f args = case (f, args) of
   (X.Fact, [e]) -> return $ Y.Call (Y.Function "jikka::fact" []) [e]
   (X.Choose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::choose" []) [e1, e2]
   (X.Permute, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::permute" []) [e1, e2]
-  (X.MultiChoose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::multiChoose" []) [e1, e2]
+  (X.MultiChoose, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
   _ -> throwInternalError $ "invalid builtin call: " ++ X.formatBuiltinIsolated f ++ "(" ++ intercalate "," (map (fst . Y.formatExpr) args) ++ ")"
 
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr

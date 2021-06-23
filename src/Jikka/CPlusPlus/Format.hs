@@ -296,7 +296,18 @@ formatToplevelStatement = \case
      in [ret' ++ " " ++ unVarName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
 
 formatProgram :: Program -> [Code]
-formatProgram prog = concatMap formatToplevelStatement (decls prog)
+formatProgram prog = headers ++ concatMap formatToplevelStatement (decls prog)
+  where
+    headers =
+      [ "#include <algorithm>",
+        "#include <cstdint>",
+        "#include <functional>",
+        "#include <iostream>",
+        "#include <numeric>",
+        "#include <tuple>",
+        "#include <vector>",
+        "#include \"jikka/all.hpp\""
+      ]
 
 run' :: Program -> String
 run' = unlines . makeIndentFromBraces 4 . formatProgram
