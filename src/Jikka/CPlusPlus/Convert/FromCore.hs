@@ -29,16 +29,32 @@ import qualified Jikka.Core.Language.TypeCheck as X
 --------------------------------------------------------------------------------
 -- monad
 
-newFreshName :: MonadAlpha m => String -> String -> m String
-newFreshName base hint = do
-  i <- nextCounter
-  let suffix = case takeWhile (\c -> isAlphaNum c || c == '_') hint of
-        "" -> ""
-        hint' -> "_" ++ hint'
-  return (base ++ show i ++ suffix)
+data NameKind
+  = LocalNameKind
+  | LocalArgumentNameKind
+  | ConstantNameKind
+  | FunctionNameKind
+  | ArgumentNameKind
+  deriving (Eq, Ord, Show, Read)
 
-renameVarName :: MonadAlpha m => String -> X.VarName -> m Y.VarName
-renameVarName kind x = Y.VarName <$> newFreshName kind (X.unVarName x)
+fromNameKind :: NameKind -> String
+fromNameKind = \case
+  LocalNameKind -> "x"
+  LocalArgumentNameKind -> "b"
+  ConstantNameKind -> "c"
+  FunctionNameKind -> "f"
+  ArgumentNameKind -> "a"
+
+newFreshName :: MonadAlpha m => NameKind -> String -> m Y.VarName
+newFreshName kind hint = do
+  i <- nextCounter
+  let prefix = case takeWhile (\c -> isAlphaNum c || c == '_') hint of
+        "" -> fromNameKind kind
+        hint' -> hint' ++ "_"
+  return (Y.VarName (prefix ++ show i))
+
+renameVarName :: MonadAlpha m => NameKind -> X.VarName -> m Y.VarName
+renameVarName kind x = newFreshName kind (X.unVarName x)
 
 type Env = [(X.VarName, X.Type, Y.VarName)]
 
@@ -176,7 +192,7 @@ runExpr env = \case
         return $ Y.Call (Y.Callable e) args
   X.Lam args e -> do
     args <- forM args $ \(x, t) -> do
-      y <- renameVarName "b" x
+      y <- renameVarName LocalArgumentNameKind x
       return (x, t, y)
     let env' = reverse args ++ env
     args <- forM args $ \(_, t, y) -> do
@@ -190,7 +206,7 @@ runExpr env = \case
 runExprToStatements :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m [Y.Statement]
 runExprToStatements env = \case
   X.Let x t e1 e2 -> do
-    y <- renameVarName "x" x
+    y <- renameVarName LocalNameKind x
     t' <- runType t
     e1 <- runExpr env e1
     e2 <- runExprToStatements ((x, t, y) : env) e2
@@ -208,7 +224,7 @@ runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [
 runToplevelFunDef env f args ret body = do
   ret <- runType ret
   args <- forM args $ \(x, t) -> do
-    y <- renameVarName "a" x
+    y <- renameVarName ArgumentNameKind x
     return (x, t, y)
   body <- runExprToStatements (reverse args ++ env) body
   args <- forM args $ \(_, t, y) -> do
@@ -231,7 +247,7 @@ runToplevelExpr env = \case
         let f = Y.VarName "solve"
         args <- forM ts $ \t -> do
           t <- runType t
-          y <- Y.VarName <$> newFreshName "a" ""
+          y <- newFreshName ArgumentNameKind ""
           return (t, y)
         ret <- runType ret
         e <- runExpr env e
@@ -239,12 +255,12 @@ runToplevelExpr env = \case
         return [Y.FunDef ret f args body]
       _ -> runToplevelVarDef env (Y.VarName "ans") t e
   X.ToplevelLet x t e cont -> do
-    y <- renameVarName "c" x
+    y <- renameVarName ConstantNameKind x
     stmt <- runToplevelVarDef env y t e
     cont <- runToplevelExpr ((x, t, y) : env) cont
     return $ stmt ++ cont
   X.ToplevelLetRec f args ret body cont -> do
-    g <- renameVarName "f" f
+    g <- renameVarName FunctionNameKind f
     let t = X.FunTy (map snd args) ret
     stmt <- runToplevelFunDef ((f, t, g) : env) g args ret body
     cont <- runToplevelExpr ((f, t, g) : env) cont
