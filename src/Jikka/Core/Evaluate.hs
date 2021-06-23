@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : Jikka.Core.Evaluate
@@ -139,6 +140,11 @@ powmod :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 powmod _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for powmod: MOD = " ++ show m
 powmod a b m = return $ (a ^ b) `mod` m
 
+scanM :: Monad m => (a -> b -> m a) -> a -> V.Vector b -> m (V.Vector a)
+scanM f y xs = do
+  (ys, y) <- V.foldM (\(ys, y) x -> (y : ys,) <$> f y x) ([], y) xs
+  return $ V.fromList (reverse (y : ys))
+
 tabulate :: MonadError Error m => Integer -> Value -> m (V.Vector Value)
 tabulate n f = V.fromList <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
 
@@ -149,6 +155,12 @@ atEither :: MonadError Error m => V.Vector a -> Integer -> m a
 atEither xs i = case xs V.!? fromInteger i of
   Just x -> return x
   Nothing -> throwRuntimeError $ "out of bounds: length = " ++ show (V.length xs) ++ ", index = " ++ show i
+
+setAtEither :: MonadError Error m => V.Vector a -> Integer -> a -> m (V.Vector a)
+setAtEither xs i x =
+  if 0 <= i && i < fromIntegral (V.length xs)
+    then return $ xs V.// [(fromInteger i, x)]
+    else throwRuntimeError $ "out of bounds: length = " ++ show (V.length xs) ++ ", index = " ++ show i
 
 sortVector :: Ord a => V.Vector a -> V.Vector a
 sortVector = V.fromList . sort . V.toList
@@ -223,10 +235,15 @@ callBuiltin builtin args = case (builtin, args) of
   (ModPow, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
   -- list functions
   (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
+  (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a
+  (Scanl _ _, [f, x, ValList a]) -> ValList <$> scanM (\x y -> callValue f [x, y]) x a
   (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
   (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
   (Map _ _, [f, ValList a]) -> ValList <$> map' f a
+  (Filter _, [f, ValList a]) -> ValList <$> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) a -- TODO
   (At _, [ValList a, ValInt n]) -> atEither a n
+  (SetAt _, [ValList a, ValInt n, x]) -> ValList <$> setAtEither a n x
+  (Elem _, [x, ValList a]) -> return $ ValBool (x `V.elem` a)
   (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
   (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
   (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
