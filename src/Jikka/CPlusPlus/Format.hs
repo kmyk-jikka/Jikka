@@ -177,7 +177,7 @@ formatType = \case
   TyBool -> "bool"
   TyTuple ts -> "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
   TyVector t -> "std::vector<" ++ formatType t ++ ">"
-  TyArray t n -> "std::array[" ++ formatType t ++ ", " ++ show n ++ ">"
+  TyArray t n -> "std::array<" ++ formatType t ++ ", " ++ show n ++ ">"
 
 formatLiteral :: Literal -> Code
 formatLiteral = \case
