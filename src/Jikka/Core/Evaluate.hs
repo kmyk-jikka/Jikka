@@ -26,10 +26,11 @@ where
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Bits
-import Data.List (sort)
+import Data.List (intercalate, sort)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.MakeEager as MakeEager
+import Jikka.Core.Format (formatBuiltinIsolated)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.TypeCheck (builtinToType)
 import Jikka.Core.Language.Value
@@ -69,7 +70,7 @@ readInputMap ts tokens = case ts of
 
 readInput :: MonadError Error m => Type -> [Token] -> m (Value, [Token])
 readInput t tokens = case (t, tokens) of
-  (VarTy a, _) -> throwInternalError $ "input type is undetermined: " ++ show a
+  (VarTy a, _) -> throwInternalError $ "input type is undetermined: type variable " ++ unTypeName a
   (IntTy, token : tokens) -> do
     n <- readToken token
     return (ValInt n, tokens)
@@ -147,7 +148,7 @@ map' f a = V.fromList <$> mapM (\val -> callValue f [val]) (V.toList a)
 atEither :: MonadError Error m => V.Vector a -> Integer -> m a
 atEither xs i = case xs V.!? fromInteger i of
   Just x -> return x
-  Nothing -> throwRuntimeError $ "out of bounds: " ++ show (V.length xs, i)
+  Nothing -> throwRuntimeError $ "out of bounds: length = " ++ show (V.length xs) ++ ", index = " ++ show i
 
 sortVector :: Ord a => V.Vector a -> V.Vector a
 sortVector = V.fromList . sort . V.toList
@@ -255,7 +256,7 @@ callBuiltin builtin args = case (builtin, args) of
   (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
   (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
   (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
-  _ -> throwInternalError $ "invalid builtin call: " ++ show (builtin, args)
+  _ -> throwInternalError $ "invalid builtin call: " ++ formatBuiltinIsolated builtin ++ "(" ++ intercalate "," (map formatValue args) ++ ")"
 
 callLambda :: MonadError Error m => Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
 callLambda env formalArgs body actualArgs = case (formalArgs, actualArgs) of
@@ -267,12 +268,12 @@ callValue :: MonadError Error m => Value -> [Value] -> m Value
 callValue f args = case f of
   ValBuiltin builtin -> callBuiltin builtin args
   ValLambda env args' body -> callLambda env args' body args
-  _ -> throwInternalError $ "call non-function: " ++ show f
+  _ -> throwInternalError $ "call non-function: " ++ formatValue f
 
 evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
 evaluateExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwRuntimeError $ "Internal Error: undefined variable: " ++ show (unVarName x)
+    Nothing -> throwRuntimeError $ "Internal Error: undefined variable: " ++ unVarName x
     Just val -> return val
   Lit lit -> return $ literalToValue lit
   App f args -> do
@@ -322,7 +323,7 @@ evaluateProgram tokens prog = do
   (val, tokens) <- evaluateToplevelExpr tokens [] prog
   if null tokens
     then return val
-    else throwWrongInputError $ "evaluation succeeds, but unused inputs remain: " ++ show (val, tokens)
+    else throwWrongInputError $ "evaluation succeeds, but unused inputs remain: value = " ++ formatValue val ++ ", tokens = " ++ show tokens
 
 -- -----------------------------------------------------------------------------
 -- run

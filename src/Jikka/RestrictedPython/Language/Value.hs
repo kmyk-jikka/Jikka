@@ -4,6 +4,8 @@
 
 module Jikka.RestrictedPython.Language.Value where
 
+import Data.Char (toLower)
+import Data.List (intercalate)
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
@@ -109,6 +111,16 @@ makeEntryPointIO f global = do
       args <- mapM (readValueIO . snd) args
       return $ Call (Name f) args
     _ -> throwSymbolError $ "not a function: " ++ unVarName f
+
+formatValue :: Value -> String
+formatValue = \case
+  IntVal n -> show n
+  BoolVal p -> map toLower (show p)
+  ListVal xs -> "[" ++ intercalate ", " (map formatValue (V.toList xs)) ++ "]"
+  TupleVal [x] -> "(" ++ formatValue x ++ ",)"
+  TupleVal xs -> "(" ++ intercalate ", " (map formatValue xs) ++ ")"
+  f@ClosureVal {} -> show f
+  BuiltinVal b -> show b
 
 writeValueIO :: Value -> IO ()
 writeValueIO = \case

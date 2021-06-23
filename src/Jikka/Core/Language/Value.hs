@@ -47,7 +47,8 @@ formatValue :: Value -> String
 formatValue = \case
   ValInt n -> show n
   ValBool p -> map toLower (show p)
-  ValList xs -> intercalate "\n" (map formatValue (V.toList xs))
-  ValTuple xs -> intercalate "\n" (map formatValue xs)
+  ValList xs -> "[" ++ intercalate ", " (map formatValue (V.toList xs)) ++ "]"
+  ValTuple [x] -> "(" ++ formatValue x ++ ",)"
+  ValTuple xs -> "(" ++ intercalate ", " (map formatValue xs) ++ ")"
   ValBuiltin builtin -> show builtin
   f@ValLambda {} -> show f

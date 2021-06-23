@@ -13,6 +13,8 @@
 module Jikka.Core.Format
   ( run,
     run',
+    formatBuiltinIsolated,
+    formatBuiltin,
     formatType,
     formatExpr,
   )
@@ -137,26 +139,32 @@ formatTemplate = \case
 formatFunCall :: String -> [Type] -> [Expr] -> String
 formatFunCall f _ args = f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
 
-formatBuiltinIsolated :: Builtin' -> String
-formatBuiltinIsolated = \case
+formatBuiltinIsolated' :: Builtin' -> String
+formatBuiltinIsolated' = \case
   Fun ts name -> name ++ formatTemplate ts
   PrefixOp op -> paren op
   InfixOp ts op -> paren $ op ++ formatTemplate ts
   At' t -> paren $ "at" ++ formatTemplate [t]
   If' t -> paren $ "if-then-else" ++ formatTemplate [t]
 
-formatBuiltin :: Builtin' -> [Expr] -> String
-formatBuiltin builtin args = case (builtin, args) of
+formatBuiltinIsolated :: Builtin -> String
+formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
+
+formatBuiltin' :: Builtin' -> [Expr] -> String
+formatBuiltin' builtin args = case (builtin, args) of
   (Fun ts name, _) -> formatFunCall name ts args
   (PrefixOp op, [e1]) -> paren $ op ++ " " ++ formatExpr e1
   (InfixOp _ op, [e1, e2]) -> paren $ formatExpr e1 ++ " " ++ op ++ " " ++ formatExpr e2
   (At' _, [e1, e2]) -> paren $ formatExpr e1 ++ ")[" ++ formatExpr e2 ++ "]"
   (If' _, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr e1 ++ " then " ++ formatExpr e2 ++ " else " ++ formatExpr e3
-  _ -> formatFunCall (formatBuiltinIsolated builtin) [] args
+  _ -> formatFunCall (formatBuiltinIsolated' builtin) [] args
+
+formatBuiltin :: Builtin -> [Expr] -> String
+formatBuiltin = formatBuiltin' . analyzeBuiltin
 
 formatLiteral :: Literal -> String
 formatLiteral = \case
-  LitBuiltin builtin -> formatBuiltinIsolated (analyzeBuiltin builtin)
+  LitBuiltin builtin -> formatBuiltinIsolated builtin
   LitInt n -> show n
   LitBool p -> map toLower $ show p
   LitNil t -> "nil" ++ formatTemplate [t]
@@ -170,7 +178,7 @@ formatExpr = \case
   Lit lit -> formatLiteral lit
   App f args -> case f of
     Var x -> formatFunCall (unVarName x) [] args
-    Lit (LitBuiltin builtin) -> formatBuiltin (analyzeBuiltin builtin) args
+    Lit (LitBuiltin builtin) -> formatBuiltin builtin args
     _ -> formatFunCall (formatExpr f) [] args
   Lam args e -> paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr e ++ "\n" ++ dedent ++ "\n"
   Let x t e1 e2 -> "let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ formatExpr e1 ++ "\n" ++ dedent ++ "\nin " ++ formatExpr e2
