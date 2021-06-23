@@ -164,12 +164,22 @@ substUnit = \case
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
 
+substBuiltin :: Subst -> Builtin -> Builtin
+substBuiltin sigma = mapTypeInBuiltin (subst' sigma)
+
+substLiteral :: Subst -> Literal -> Literal
+substLiteral sigma = \case
+  LitBuiltin builtin -> LitBuiltin (substBuiltin sigma builtin)
+  LitInt n -> LitInt n
+  LitBool p -> LitBool p
+  LitNil t -> LitNil (subst' sigma t)
+
 substExpr :: Subst -> Expr -> Expr
 substExpr sigma = go
   where
     go = \case
       Var x -> Var x
-      Lit lit -> Lit lit
+      Lit lit -> Lit (substLiteral sigma lit)
       App f args -> App (go f) (map go args)
       Lam args body -> Lam (map (second (subst' sigma)) args) (go body)
       Let x t e1 e2 -> Let x (subst sigma t) (go e1) (go e2)

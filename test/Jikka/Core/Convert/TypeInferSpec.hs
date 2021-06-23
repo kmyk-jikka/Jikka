@@ -77,3 +77,35 @@ spec = describe "run" $ do
             (Var "x")
             (ResultExpr Lit0)
     run' prog `shouldBe` Right expected
+  it "works on fact" $ do
+    let prog =
+          ToplevelLetRec
+            "solve"
+            [("n", IntTy)]
+            IntTy
+            ( If'
+                (VarTy "$0")
+                (Equal' IntTy (Var "n") Lit0)
+                Lit1
+                ( Mult'
+                    (Var "n")
+                    (App (Var "solve") [Minus' (Var "n") Lit1])
+                )
+            )
+            (ResultExpr (Var "solve"))
+    let expected =
+          ToplevelLetRec
+            "solve"
+            [("n", IntTy)]
+            IntTy
+            ( If'
+                IntTy
+                (Equal' IntTy (Var "n") Lit0)
+                Lit1
+                ( Mult'
+                    (Var "n")
+                    (App (Var "solve") [Minus' (Var "n") Lit1])
+                )
+            )
+            (ResultExpr (Var "solve"))
+    run' prog `shouldBe` Right expected
