@@ -17,7 +17,9 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.Alpha as Alpha
+import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
@@ -28,4 +30,6 @@ run prog = do
   prog <- Alpha.run prog
   prog <- TypeInfer.run prog
   prog <- RemoveUnusedVars.run prog
+  prog <- ANormal.run prog
+  prog <- ConstantPropagation.run prog
   StrengthReduction.run prog
