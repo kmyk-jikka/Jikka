@@ -130,9 +130,20 @@ runAppBuiltin f args = case (f, args) of
   (X.BitLeftShift, [e1, e2]) -> return $ Y.BinOp Y.BitLeftShift e1 e2
   (X.BitRightShift, [e1, e2]) -> return $ Y.BinOp Y.BitRightShift e1 e2
   -- modular functions
-  (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "std::modinv" []) [e1, e2]
-  (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "std::modpow" []) [e1, e2, e3]
+  (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
+  (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
   -- list functions
+  (X.Cons t, [e1, e2]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::cons" [t]) [e1, e2]
+  (X.Foldl t1 t2, [e1, e2, e3]) -> do
+    t1 <- runType t1
+    t2 <- runType t2
+    return $ Y.Call (Y.Function "jikka::foldl" [t1, t2]) [e1, e2, e3]
+  (X.Scanl t1 t2, [e1, e2, e3]) -> do
+    t1 <- runType t1
+    t2 <- runType t2
+    return $ Y.Call (Y.Function "jikka::scanl" [t1, t2]) [e1, e2, e3]
   (X.Len _, [e]) -> return $ Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
   (X.Tabulate t, [n, f]) -> do
     t <- runType t
@@ -141,7 +152,16 @@ runAppBuiltin f args = case (f, args) of
     t1 <- runType t1
     t2 <- runType t2
     return $ Y.Call (Y.Function "jikka::map" [t1, t2]) [f, xs]
+  (X.Filter t, [f, xs]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::filter" [t]) [f, xs]
   (X.At _, [e1, e2]) -> return $ Y.At e1 e2
+  (X.SetAt t, [e1, e2, e3]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::setat" [t]) [e1, e2, e3]
+  (X.Elem t, [e1, e2]) -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::elem" [t]) [e1, e2]
   (X.Sum, [e]) -> return $ Y.Call (Y.Function "jikka::sum" []) [e]
   (X.Product, [e]) -> return $ Y.Call (Y.Function "jikka::product" []) [e]
   (X.Min1 t, [e]) -> do
@@ -165,9 +185,14 @@ runAppBuiltin f args = case (f, args) of
   (X.Reversed t, [e]) -> do
     t <- runType t
     return $ Y.Call (Y.Function "jikka::reverse" [t]) [e]
-  (X.Range1, [e]) -> return $ Y.Call (Y.Function "jikka::range" []) [e]
-  (X.Range2, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::range" []) [e1, e2]
-  (X.Range3, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::range" []) [e1, e2, e3]
+  (X.Range1, [e]) -> return $ Y.Call (Y.Function "jikka::range1" []) [e]
+  (X.Range2, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::range2" []) [e1, e2]
+  (X.Range3, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::range3" []) [e1, e2, e3]
+  -- tuple functions
+  (X.Tuple ts, es) -> do
+    ts <- mapM runType ts
+    return $ Y.Call (Y.Function "std::make_tuple" ts) es
+  (X.Proj _ n, [e]) -> return $ Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
   -- comparison
   (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
   (X.LessEqual _, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2
