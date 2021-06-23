@@ -16,22 +16,22 @@ where
 
 import Jikka.Common.Alpha (MonadAlpha)
 import Jikka.Common.Error
-import Jikka.Core.Convert.Alpha (gensym)
 import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck
+import Jikka.Core.Language.Util
 
 destruct :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m (TypeEnv, Expr -> Expr, Expr)
 destruct env = \case
   e@Var {} -> return (env, id, e)
   e@Lit {} -> return (env, id, e)
   e@App {} -> do
-    x <- gensym
+    x <- genVarName'
     t <- typecheckExpr env e
     return ((x, t) : env, Let x t e, Var x)
   e@Lam {} -> do
-    x <- gensym
+    x <- genVarName'
     t <- typecheckExpr env e
     return ((x, t) : env, Let x t e, Var x)
   Let x t e1 e2 -> do

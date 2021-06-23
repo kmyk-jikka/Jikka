@@ -18,19 +18,11 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 
-gensym :: MonadAlpha m => m VarName
-gensym = rename' (VarName "") <$> nextCounter
-
 rename :: MonadAlpha m => VarName -> m VarName
-rename hint = rename' hint <$> nextCounter
-
-rename' :: VarName -> Int -> VarName
-rename' hint i =
-  let base = takeWhile (/= '$') (unVarName hint)
-   in VarName (base ++ "$" ++ show i)
-
--- -----------------------------------------------------------------------------
--- run
+rename x = do
+  let base = takeWhile (/= '$') (unVarName x)
+  i <- nextCounter
+  return $ VarName (base ++ "$" ++ show i)
 
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
 runExpr env = \case
