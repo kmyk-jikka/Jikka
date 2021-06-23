@@ -20,18 +20,40 @@ spec = describe "run" $ do
   it "works" $ do
     let parsed =
           [ ToplevelFunctionDef
-              "solve"
-              [("x", IntTy)]
+              "f"
+              [("n", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y") IntTy (Name "x")
+              [ If
+                  (Compare (Name "n") (CmpOp' Eq' (VarTy "t")) (constIntExp 0))
+                  [ Return (constIntExp 1)
+                  ]
+                  [ Return (BinOp (Name "n") Mult (Call (Name "f") [BinOp (Name "n") Sub (constIntExp 1)]))
+                  ]
+              ],
+            ToplevelFunctionDef
+              "solve"
+              [("n", IntTy)]
+              IntTy
+              [ Return (BinOp (Call (Name "f") [Name "n"]) FloorMod (constIntExp 1000000007))
               ]
           ]
     let expected =
           [ ToplevelFunctionDef
-              "solve"
-              [("x$0", IntTy)]
+              "f"
+              [("n$0", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$1") IntTy (Name "x$0")
+              [ If
+                  (Compare (Name "n$0") (CmpOp' Eq' (VarTy "t")) (constIntExp 0))
+                  [ Return (constIntExp 1)
+                  ]
+                  [ Return (BinOp (Name "n$0") Mult (Call (Name "f") [BinOp (Name "n$0") Sub (constIntExp 1)]))
+                  ]
+              ],
+            ToplevelFunctionDef
+              "solve"
+              [("n$1", IntTy)]
+              IntTy
+              [ Return (BinOp (Call (Name "f") [Name "n$1"]) FloorMod (constIntExp 1000000007))
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -173,36 +195,6 @@ spec = describe "run" $ do
               [("x$0", IntTy)]
               IntTy
               [ Return (Call (Name "f") [Name "x$0"])
-              ]
-          ]
-    run' parsed `shouldBe` Right expected
-  it "works with two toplevel functions" $ do
-    let parsed =
-          [ ToplevelFunctionDef
-              "f"
-              [("x", IntTy)]
-              IntTy
-              [ Return (Call (Name "f") [Name "x"])
-              ],
-            ToplevelFunctionDef
-              "g"
-              [("x", IntTy)]
-              IntTy
-              [ Return (Call (Name "f") [Name "x"])
-              ]
-          ]
-    let expected =
-          [ ToplevelFunctionDef
-              "f"
-              [("x$0", IntTy)]
-              IntTy
-              [ Return (Call (Name "f") [Name "x$0"])
-              ],
-            ToplevelFunctionDef
-              "g"
-              [("x$1", IntTy)]
-              IntTy
-              [ Return (Call (Name "f") [Name "x$1"])
               ]
           ]
     run' parsed `shouldBe` Right expected

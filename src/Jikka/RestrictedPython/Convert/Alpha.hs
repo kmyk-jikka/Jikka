@@ -91,7 +91,10 @@ renameToplevel :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarNam
 renameToplevel x = do
   env <- get
   case lookupName x env of
-    Just _ -> throwSemanticError $ "cannot redefine variable in toplevel: " ++ unVarName x
+    Just _ -> do
+      if x `S.member` builtinNames
+        then throwSemanticError $ "cannot assign to builtin function: " ++ unVarName x
+        else throwSemanticError $ "cannot redefine variable in toplevel: " ++ unVarName x
     Nothing -> do
       when (unVarName x /= "_") $ do
         put $
