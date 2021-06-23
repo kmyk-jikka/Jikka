@@ -78,7 +78,10 @@ runType = \case
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
-  X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
+  X.TupleTy ts ->
+    if not (null ts) && ts == replicate (length ts) (head ts)
+      then Y.TyArray <$> runType (head ts) <*> pure (fromIntegral (length ts))
+      else Y.TyTuple <$> mapM runType ts
   X.FunTy ts t -> Y.TyFunction <$> runType t <*> mapM runType ts
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
@@ -202,8 +205,15 @@ runAppBuiltin f args = case (f, args) of
   -- tuple functions
   (X.Tuple ts, es) -> do
     ts <- mapM runType ts
-    return $ Y.Call (Y.Function "std::tuple" ts) es
-  (X.Proj _ n, [e]) -> return $ Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
+    return $
+      if not (null ts) && ts == replicate (length ts) (head ts)
+        then Y.Call (Y.Function "jikka::make_array" [head ts]) es
+        else Y.Call (Y.Function "std::tuple" ts) es
+  (X.Proj ts n, [e]) ->
+    return $
+      if not (null ts) && ts == replicate (length ts) (head ts)
+        then Y.At e (Y.Lit (Y.LitInt32 (fromIntegral n)))
+        else Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
   -- comparison
   (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
   (X.LessEqual _, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2

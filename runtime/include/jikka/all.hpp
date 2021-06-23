@@ -56,6 +56,11 @@ template <class T> inline T natind(T x, std::function<T(T)> f, int64_t n) {
 template <typename T, size_t H, size_t W>
 using matrix = std::array<std::array<T, W>, H>;
 
+template <class T, class... Args>
+std::array<T, sizeof...(Args)> make_array(Args... args) {
+  return {args...};
+}
+
 template <size_t H, size_t W>
 std::array<int64_t, H> matap(const matrix<int64_t, H, W> &a,
                              const std::array<int64_t, W> &b) {
@@ -93,7 +98,7 @@ matrix<int64_t, H, W> matadd(const matrix<int64_t, H, W> &a,
 template <size_t H, size_t N, size_t W>
 matrix<int64_t, H, W> matmul(const matrix<int64_t, H, N> &a,
                              const matrix<int64_t, N, W> &b) {
-  matrix<int64_t, A, C> c = {};
+  matrix<int64_t, H, W> c = {};
   for (size_t y = 0; y < H; ++y) {
     for (size_t z = 0; z < N; ++z) {
       for (size_t x = 0; x < W; ++x) {
@@ -180,7 +185,7 @@ matrix<int64_t, H, W> modmatadd(const matrix<int64_t, H, W> &a,
 template <size_t H, size_t N, size_t W>
 matrix<int64_t, H, W> modmatmul(const matrix<int64_t, H, N> &a,
                                 const matrix<int64_t, N, W> &b, int64_t MOD) {
-  matrix<int64_t, A, C> c = {};
+  matrix<int64_t, H, W> c = {};
   for (size_t y = 0; y < H; ++y) {
     for (size_t z = 0; z < N; ++z) {
       for (size_t x = 0; x < W; ++x) {
@@ -202,9 +207,9 @@ matrix<int64_t, N, N> modmatpow(matrix<int64_t, N, N> x, int64_t k,
   matrix<int64_t, N, N> y = matone<int64_t, N>();
   for (; k; k >>= 1) {
     if (k & 1) {
-      y = modmatmul(y, x, m);
+      y = modmatmul(y, x, MOD);
     }
-    x = modmatmul(x, x, m);
+    x = modmatmul(x, x, MOD);
   }
   return y;
 }
