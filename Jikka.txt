@@ -5,7 +5,7 @@
 -- | Please see the README on GitHub at
 --   <a>https://github.com/kmyk/Jikka</a>
 @package Jikka
-@version 5.0.3.0
+@version 5.0.4.0
 
 
 -- | <a>Expr</a> module has the basic data types for C++ language. The data
@@ -21,15 +21,20 @@ data Type
 TyAuto :: Type
 TyVoid :: Type
 TyBool :: Type
+TyInt :: Type
 TyInt32 :: Type
 TyInt64 :: Type
 TyTuple :: [Type] -> Type
 TyVector :: Type -> Type
 TyArray :: Type -> Integer -> Type
+TyString :: Type
+TyFunction :: Type -> [Type] -> Type
 data Literal
 LitInt32 :: Integer -> Literal
 LitInt64 :: Integer -> Literal
 LitBool :: Bool -> Literal
+LitChar :: Char -> Literal
+LitString :: String -> Literal
 data Function
 Callable :: Expr -> Function
 Function :: FunName -> [Type] -> Function
@@ -201,6 +206,8 @@ insertIndentDedentFromBraces :: [String] -> [String]
 module Jikka.CPlusPlus.Format
 run :: Applicative m => Program -> m Text
 run' :: Program -> String
+type Code = String
+formatExpr :: Expr -> (Code, Prec)
 instance GHC.Read.Read Jikka.CPlusPlus.Format.Prec
 instance GHC.Show.Show Jikka.CPlusPlus.Format.Prec
 instance GHC.Classes.Ord Jikka.CPlusPlus.Format.Prec
