@@ -79,7 +79,7 @@ runType = \case
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
   X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
-  t@X.FunTy {} -> throwInternalError $ "function type appears at invalid place: " ++ X.formatType t
+  X.FunTy ts t -> Y.TyFunction <$> runType t <*> mapM runType ts
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
 runLiteral = \case

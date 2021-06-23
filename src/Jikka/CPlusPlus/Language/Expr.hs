@@ -28,6 +28,7 @@ data Type
   | TyTuple [Type]
   | TyVector Type
   | TyArray Type Integer
+  | TyFunction Type [Type]
   deriving (Eq, Ord, Show, Read)
 
 data Literal

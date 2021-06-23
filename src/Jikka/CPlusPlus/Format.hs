@@ -178,6 +178,7 @@ formatType = \case
   TyTuple ts -> "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
   TyVector t -> "std::vector<" ++ formatType t ++ ">"
   TyArray t n -> "std::array<" ++ formatType t ++ ", " ++ show n ++ ">"
+  TyFunction t ts -> "std::function<" ++ formatType t ++ " (" ++ intercalate ", " (map formatType ts) ++ ")>"
 
 formatLiteral :: Literal -> Code
 formatLiteral = \case
