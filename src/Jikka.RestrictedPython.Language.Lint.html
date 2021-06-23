@@ -4,92 +4,94 @@
 </span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.RestrictedPython.Language.Lint</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-5"></span><span>
 </span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Writer.Strict</span></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Util.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Util</span></a></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.VariableAnalysis</span></a></span><span>
-</span><span id="line-11"></span><span>
-</span><span id="line-12"></span><span id="local-6989586621679299556"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-type">makeEnsureProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299556"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299556"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-13"></span><span id="makeEnsureProgram"><span class="annot"><span class="annottext">makeEnsureProgram :: (Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var hs-var">makeEnsureProgram</span></a></span></span><span> </span><span id="local-6989586621679299530"><span class="annot"><span class="annottext">Program -&gt; Bool
-</span><a href="#local-6989586621679299530"><span class="hs-identifier hs-var">pred</span></a></span></span><span> </span><span id="local-6989586621679299529"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679299529"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679299528"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299528"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-14"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; m () -&gt; m ()
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">S</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Builtin.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Builtin</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Builtin.html#builtinNames"><span class="hs-identifier">builtinNames</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Util.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Util</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.VariableAnalysis</span></a></span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span id="local-6989586621679309997"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-type">makeEnsureProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309997"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309997"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-15"></span><span id="makeEnsureProgram"><span class="annot"><span class="annottext">makeEnsureProgram :: (Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var hs-var">makeEnsureProgram</span></a></span></span><span> </span><span id="local-6989586621679309965"><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="#local-6989586621679309965"><span class="hs-identifier hs-var">pred</span></a></span></span><span> </span><span id="local-6989586621679309964"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679309964"><span class="hs-identifier hs-var">msg</span></a></span></span><span> </span><span id="local-6989586621679309963"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309963"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-16"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; m () -&gt; m ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; Bool
-</span><a href="#local-6989586621679299530"><span class="hs-identifier hs-var">pred</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299528"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
+</span><a href="#local-6989586621679309965"><span class="hs-identifier hs-var">pred</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309963"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-15"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; m ()
+</span><span id="line-17"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
 </span><a href="Jikka.Common.Error.html#throwSemanticError"><span class="hs-identifier hs-var">throwSemanticError</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679299529"><span class="hs-identifier hs-var">msg</span></a></span><span>
-</span><span id="line-16"></span><span>
-</span><span id="line-17"></span><span class="hs-comment">-- | `hasSubscriptionInLoopCounters` checks that there are `SubscriptTrg` in loop counters of for-loops.</span><span>
-</span><span id="line-18"></span><span class="hs-comment">-- This includes loop counters of `ListComp`.</span><span>
-</span><span id="line-19"></span><span class="hs-comment">-- For example, the followings has such subscriptions.</span><span>
-</span><span id="line-20"></span><span class="hs-comment">--</span><span>
-</span><span id="line-21"></span><span class="hs-comment">-- &gt; for a[0] in range(100):</span><span>
-</span><span id="line-22"></span><span class="hs-comment">-- &gt;     pass</span><span>
-</span><span id="line-23"></span><span class="hs-comment">-- &gt; return a[0]  # =&gt; 99</span><span>
-</span><span id="line-24"></span><span class="hs-comment">--</span><span>
-</span><span id="line-25"></span><span class="hs-comment">-- &gt; a = [0]</span><span>
-</span><span id="line-26"></span><span class="hs-comment">-- &gt; b = [0 for a[0] in range(100)]</span><span>
-</span><span id="line-27"></span><span class="hs-comment">-- &gt; return a[0]  # =&gt; 99</span><span>
-</span><span id="line-28"></span><span class="hs-comment">--</span><span>
-</span><span id="line-29"></span><span class="hs-comment">-- NOTE: This is allowd in the standard Python.</span><span>
-</span><span id="line-30"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasSubscriptionInLoopCounters"><span class="hs-identifier hs-type">hasSubscriptionInLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-31"></span><span id="hasSubscriptionInLoopCounters"><span class="annot"><span class="annottext">hasSubscriptionInLoopCounters :: Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasSubscriptionInLoopCounters"><span class="hs-identifier hs-var hs-var">hasSubscriptionInLoopCounters</span></a></span></span><span> </span><span id="local-6989586621679299524"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299524"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
+</span><a href="#local-6989586621679309964"><span class="hs-identifier hs-var">msg</span></a></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- | `hasSubscriptionInLoopCounters` checks that there are `SubscriptTrg` in loop counters of for-loops.</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- This includes loop counters of `ListComp`.</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- For example, the followings has such subscriptions.</span><span>
+</span><span id="line-22"></span><span class="hs-comment">--</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- &gt; for a[0] in range(100):</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- &gt;     pass</span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- &gt; return a[0]  # =&gt; 99</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- &gt; a = [0]</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- &gt; b = [0 for a[0] in range(100)]</span><span>
+</span><span id="line-29"></span><span class="hs-comment">-- &gt; return a[0]  # =&gt; 99</span><span>
+</span><span id="line-30"></span><span class="hs-comment">--</span><span>
+</span><span id="line-31"></span><span class="hs-comment">-- NOTE: This is allowd in the standard Python.</span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasSubscriptionInLoopCounters"><span class="hs-identifier hs-type">hasSubscriptionInLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-33"></span><span id="hasSubscriptionInLoopCounters"><span class="annot"><span class="annottext">hasSubscriptionInLoopCounters :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasSubscriptionInLoopCounters"><span class="hs-identifier hs-var hs-var">hasSubscriptionInLoopCounters</span></a></span></span><span> </span><span id="local-6989586621679309959"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309959"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Bool
-</span><a href="#local-6989586621679299522"><span class="hs-identifier hs-var">checkStatement</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
+</span><a href="#local-6989586621679309957"><span class="hs-identifier hs-var">checkStatement</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
 </span><a href="Jikka.RestrictedPython.Language.Util.html#listStatements"><span class="hs-identifier hs-var">listStatements</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299524"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679309959"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Bool) -&gt; [Expr] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Bool
-</span><a href="#local-6989586621679299519"><span class="hs-identifier hs-var">checkExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Expr]
+</span><a href="#local-6989586621679309954"><span class="hs-identifier hs-var">checkExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Expr]
 </span><a href="Jikka.RestrictedPython.Language.Util.html#listExprs"><span class="hs-identifier hs-var">listExprs</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299524"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-32"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-33"></span><span>    </span><span id="local-6989586621679299522"><span class="annot"><span class="annottext">checkStatement :: Statement -&gt; Bool
-</span><a href="#local-6989586621679299522"><span class="hs-identifier hs-var hs-var">checkStatement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-34"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span id="local-6989586621679299516"><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299516"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679309959"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621679309957"><span class="annot"><span class="annottext">checkStatement :: Statement -&gt; Bool
+</span><a href="#local-6989586621679309957"><span class="hs-identifier hs-var hs-var">checkStatement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-36"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span id="local-6989586621679309951"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309951"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">[Statement]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#hasSubscriptTrg"><span class="hs-identifier hs-var">hasSubscriptTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299516"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-35"></span><span>      </span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679309951"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-37"></span><span>      </span><span class="annot"><span class="annottext">Statement
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-36"></span><span>    </span><span id="local-6989586621679299519"><span class="annot"><span class="annottext">checkExpr :: Expr -&gt; Bool
-</span><a href="#local-6989586621679299519"><span class="hs-identifier hs-var hs-var">checkExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-37"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#ListComp"><span class="hs-identifier hs-type">ListComp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Comprehension"><span class="hs-identifier hs-type">Comprehension</span></a></span><span> </span><span id="local-6989586621679299512"><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299512"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><span id="line-38"></span><span>    </span><span id="local-6989586621679309954"><span class="annot"><span class="annottext">checkExpr :: Expr -&gt; Bool
+</span><a href="#local-6989586621679309954"><span class="hs-identifier hs-var hs-var">checkExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-39"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#ListComp"><span class="hs-identifier hs-type">ListComp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Comprehension"><span class="hs-identifier hs-type">Comprehension</span></a></span><span> </span><span id="local-6989586621679309947"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309947"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe Expr
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#hasSubscriptTrg"><span class="hs-identifier hs-var">hasSubscriptTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299512"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-38"></span><span>      </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679309947"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-40"></span><span>      </span><span class="annot"><span class="annottext">Expr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-39"></span><span>
-</span><span id="line-40"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-type">doesntHaveSubscriptionInLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-41"></span><span id="doesntHaveSubscriptionInLoopCounters"><span class="annot"><span class="annottext">doesntHaveSubscriptionInLoopCounters :: Program -&gt; Bool
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-type">doesntHaveSubscriptionInLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-43"></span><span id="doesntHaveSubscriptionInLoopCounters"><span class="annot"><span class="annottext">doesntHaveSubscriptionInLoopCounters :: Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-var hs-var">doesntHaveSubscriptionInLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#hasSubscriptionInLoopCounters"><span class="hs-identifier hs-var">hasSubscriptionInLoopCounters</span></a></span><span>
-</span><span id="line-42"></span><span>
-</span><span id="line-43"></span><span id="local-6989586621679299508"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-type">ensureDoesntHaveSubscriptionInLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299508"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299508"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-44"></span><span id="ensureDoesntHaveSubscriptionInLoopCounters"><span class="annot"><span class="annottext">ensureDoesntHaveSubscriptionInLoopCounters :: Program -&gt; m ()
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span id="local-6989586621679309943"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-type">ensureDoesntHaveSubscriptionInLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309943"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309943"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-46"></span><span id="ensureDoesntHaveSubscriptionInLoopCounters"><span class="annot"><span class="annottext">ensureDoesntHaveSubscriptionInLoopCounters :: Program -&gt; m ()
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveSubscriptionInLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
@@ -97,88 +99,88 @@ MonadError Error m =&gt;
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveSubscriptionInLoopCounters"><span class="hs-identifier hs-var">doesntHaveSubscriptionInLoopCounters</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;there must not be subscription in loop counters&quot;</span></span><span>
-</span><span id="line-45"></span><span>
-</span><span id="line-46"></span><span class="hs-comment">-- | `hasNameLeakOfLoopCounters` checks that there are leaks of loop counters of for-loops.</span><span>
-</span><span id="line-47"></span><span class="hs-comment">-- For example, the following has a leak.</span><span>
-</span><span id="line-48"></span><span class="hs-comment">--</span><span>
-</span><span id="line-49"></span><span class="hs-comment">-- &gt; for i in range(100):</span><span>
-</span><span id="line-50"></span><span class="hs-comment">-- &gt;     pass</span><span>
-</span><span id="line-51"></span><span class="hs-comment">-- &gt; return i  # =&gt; 100</span><span>
-</span><span id="line-52"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasNameLeakOfLoopCounters"><span class="hs-identifier hs-type">hasNameLeakOfLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-53"></span><span id="hasNameLeakOfLoopCounters"><span class="annot"><span class="annottext">hasNameLeakOfLoopCounters :: Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasNameLeakOfLoopCounters"><span class="hs-identifier hs-var hs-var">hasNameLeakOfLoopCounters</span></a></span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- | `hasLeakOfLoopCounters` checks that there are leaks of loop counters of for-loops.</span><span>
+</span><span id="line-49"></span><span class="hs-comment">-- For example, the following has a leak.</span><span>
+</span><span id="line-50"></span><span class="hs-comment">--</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- &gt; for i in range(100):</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- &gt;     pass</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- &gt; return i  # =&gt; 100</span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasLeakOfLoopCounters"><span class="hs-identifier hs-type">hasLeakOfLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-55"></span><span id="hasLeakOfLoopCounters"><span class="annot"><span class="annottext">hasLeakOfLoopCounters :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasLeakOfLoopCounters"><span class="hs-identifier hs-var hs-var">hasLeakOfLoopCounters</span></a></span></span><span> </span><span class="annot"><span class="annottext">Program
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-comment">-- TODO</span><span>
-</span><span id="line-54"></span><span>
-</span><span id="line-55"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNameLeakOfLoopCounters"><span class="hs-identifier hs-type">doesntHaveNameLeakOfLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-56"></span><span id="doesntHaveNameLeakOfLoopCounters"><span class="annot"><span class="annottext">doesntHaveNameLeakOfLoopCounters :: Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNameLeakOfLoopCounters"><span class="hs-identifier hs-var hs-var">doesntHaveNameLeakOfLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveLeakOfLoopCounters"><span class="hs-identifier hs-type">doesntHaveLeakOfLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-58"></span><span id="doesntHaveLeakOfLoopCounters"><span class="annot"><span class="annottext">doesntHaveLeakOfLoopCounters :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveLeakOfLoopCounters"><span class="hs-identifier hs-var hs-var">doesntHaveLeakOfLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasNameLeakOfLoopCounters"><span class="hs-identifier hs-var">hasNameLeakOfLoopCounters</span></a></span><span>
-</span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span id="local-6989586621679299504"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveNameLeakOfLoopCounters"><span class="hs-identifier hs-type">ensureDoesntHaveNameLeakOfLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299504"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299504"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-59"></span><span id="ensureDoesntHaveNameLeakOfLoopCounters"><span class="annot"><span class="annottext">ensureDoesntHaveNameLeakOfLoopCounters :: Program -&gt; m ()
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveNameLeakOfLoopCounters"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveNameLeakOfLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasLeakOfLoopCounters"><span class="hs-identifier hs-var">hasLeakOfLoopCounters</span></a></span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span id="local-6989586621679309939"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveLeakOfLoopCounters"><span class="hs-identifier hs-type">ensureDoesntHaveLeakOfLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309939"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309939"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-61"></span><span id="ensureDoesntHaveLeakOfLoopCounters"><span class="annot"><span class="annottext">ensureDoesntHaveLeakOfLoopCounters :: Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveLeakOfLoopCounters"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveLeakOfLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 (Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNameLeakOfLoopCounters"><span class="hs-identifier hs-var">doesntHaveNameLeakOfLoopCounters</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveLeakOfLoopCounters"><span class="hs-identifier hs-var">doesntHaveLeakOfLoopCounters</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;there must not be leaks of loop counters&quot;</span></span><span>
-</span><span id="line-60"></span><span>
-</span><span id="line-61"></span><span class="hs-comment">-- | `hasAssignmentToLoopCounters` checks that there are assignments to loop counters of for-loops.</span><span>
-</span><span id="line-62"></span><span class="hs-comment">-- For example, the following has the assignment.</span><span>
-</span><span id="line-63"></span><span class="hs-comment">--</span><span>
-</span><span id="line-64"></span><span class="hs-comment">-- &gt; for i in range(100):</span><span>
-</span><span id="line-65"></span><span class="hs-comment">-- &gt;     i += 1</span><span>
-</span><span id="line-66"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopCounters"><span class="hs-identifier hs-type">hasAssignmentToLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-67"></span><span id="hasAssignmentToLoopCounters"><span class="annot"><span class="annottext">hasAssignmentToLoopCounters :: Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopCounters"><span class="hs-identifier hs-var hs-var">hasAssignmentToLoopCounters</span></a></span></span><span> </span><span id="local-6989586621679299501"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299501"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- | `hasAssignmentToLoopCounters` checks that there are assignments to loop counters of for-loops.</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- For example, the following has the assignment.</span><span>
+</span><span id="line-65"></span><span class="hs-comment">--</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- &gt; for i in range(100):</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- &gt;     i += 1</span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopCounters"><span class="hs-identifier hs-type">hasAssignmentToLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-69"></span><span id="hasAssignmentToLoopCounters"><span class="annot"><span class="annottext">hasAssignmentToLoopCounters :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopCounters"><span class="hs-identifier hs-var hs-var">hasAssignmentToLoopCounters</span></a></span></span><span> </span><span id="local-6989586621679309936"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309936"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Bool
-</span><a href="#local-6989586621679299500"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
+</span><a href="#local-6989586621679309935"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
 </span><a href="Jikka.RestrictedPython.Language.Util.html#listStatements"><span class="hs-identifier hs-var">listStatements</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299501"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-68"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-69"></span><span>    </span><span id="local-6989586621679299500"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
-</span><a href="#local-6989586621679299500"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-70"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span id="local-6989586621679299499"><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299499"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679299498"><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299498"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-71"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679299497"><span class="annot"><span class="annottext">r :: ReadList
-</span><a href="#local-6989586621679299497"><span class="hs-identifier hs-var hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[VarName] -&gt; ReadList
+</span><a href="#local-6989586621679309936"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-71"></span><span>    </span><span id="local-6989586621679309935"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
+</span><a href="#local-6989586621679309935"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-72"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span id="local-6989586621679309934"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309934"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679309933"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309933"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-73"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679309932"><span class="annot"><span class="annottext">r :: ReadList
+</span><a href="#local-6989586621679309932"><span class="hs-identifier hs-var hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[VarName] -&gt; ReadList
 </span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#ReadList"><span class="hs-identifier hs-var">ReadList</span></a></span><span> </span><span class="annot"><span class="annottext">([VarName] -&gt; ReadList) -&gt; [VarName] -&gt; ReadList
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Target -&gt; [VarName]
 </span><a href="Jikka.RestrictedPython.Language.Util.html#targetVars"><span class="hs-identifier hs-var">targetVars</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299499"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-72"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ReadList
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679299494"><span class="annot"><span class="annottext">WriteList
-</span><a href="#local-6989586621679299494"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; (ReadList, WriteList)
-</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299498"><span class="hs-identifier hs-var">body</span></a></span><span>
-</span><span id="line-73"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">WriteList -&gt; ReadList -&gt; Bool
+</span><a href="#local-6989586621679309934"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-74"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ReadList
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679309929"><span class="annot"><span class="annottext">WriteList
+</span><a href="#local-6989586621679309929"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; (ReadList, WriteList)
+</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#analyzeStatementsMax"><span class="hs-identifier hs-var">analyzeStatementsMax</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309933"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-75"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">WriteList -&gt; ReadList -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#haveWriteReadIntersection"><span class="hs-identifier hs-var">haveWriteReadIntersection</span></a></span><span> </span><span class="annot"><span class="annottext">WriteList
-</span><a href="#local-6989586621679299494"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">ReadList
-</span><a href="#local-6989586621679299497"><span class="hs-identifier hs-var">r</span></a></span><span>
-</span><span id="line-74"></span><span>      </span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679309929"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">ReadList
+</span><a href="#local-6989586621679309932"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">Statement
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-75"></span><span>
-</span><span id="line-76"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-type">doesntHaveAssignmentToLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-77"></span><span id="doesntHaveAssignmentToLoopCounters"><span class="annot"><span class="annottext">doesntHaveAssignmentToLoopCounters :: Program -&gt; Bool
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-type">doesntHaveAssignmentToLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-79"></span><span id="doesntHaveAssignmentToLoopCounters"><span class="annot"><span class="annottext">doesntHaveAssignmentToLoopCounters :: Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-var hs-var">doesntHaveAssignmentToLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopCounters"><span class="hs-identifier hs-var">hasAssignmentToLoopCounters</span></a></span><span>
-</span><span id="line-78"></span><span>
-</span><span id="line-79"></span><span id="local-6989586621679299490"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-type">ensureDoesntHaveAssignmentToLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299490"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299490"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-80"></span><span id="ensureDoesntHaveAssignmentToLoopCounters"><span class="annot"><span class="annottext">ensureDoesntHaveAssignmentToLoopCounters :: Program -&gt; m ()
+</span><span id="line-80"></span><span>
+</span><span id="line-81"></span><span id="local-6989586621679309925"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-type">ensureDoesntHaveAssignmentToLoopCounters</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309925"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309925"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-82"></span><span id="ensureDoesntHaveAssignmentToLoopCounters"><span class="annot"><span class="annottext">ensureDoesntHaveAssignmentToLoopCounters :: Program -&gt; m ()
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveAssignmentToLoopCounters</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
@@ -186,60 +188,60 @@ MonadError Error m =&gt;
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopCounters"><span class="hs-identifier hs-var">doesntHaveAssignmentToLoopCounters</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;there must not be assignments to loop counters&quot;</span></span><span>
-</span><span id="line-81"></span><span>
-</span><span id="line-82"></span><span class="hs-comment">-- | `hasAssignToLoopIterators` checks that there are assignments to loop iterators of for-loops.</span><span>
-</span><span id="line-83"></span><span class="hs-comment">-- For example, the followings have the assignments.</span><span>
-</span><span id="line-84"></span><span class="hs-comment">--</span><span>
-</span><span id="line-85"></span><span class="hs-comment">-- &gt; a = list(range(10))</span><span>
-</span><span id="line-86"></span><span class="hs-comment">-- &gt; for i in a:</span><span>
-</span><span id="line-87"></span><span class="hs-comment">-- &gt;     a[5] = i</span><span>
-</span><span id="line-88"></span><span class="hs-comment">--</span><span>
-</span><span id="line-89"></span><span class="hs-comment">-- &gt; a = 0</span><span>
-</span><span id="line-90"></span><span class="hs-comment">-- &gt; for i in f(a):</span><span>
-</span><span id="line-91"></span><span class="hs-comment">-- &gt;     a += i</span><span>
-</span><span id="line-92"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignToLoopIterators"><span class="hs-identifier hs-type">hasAssignToLoopIterators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-93"></span><span id="hasAssignToLoopIterators"><span class="annot"><span class="annottext">hasAssignToLoopIterators :: Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignToLoopIterators"><span class="hs-identifier hs-var hs-var">hasAssignToLoopIterators</span></a></span></span><span> </span><span id="local-6989586621679299487"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299487"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- | `hasAssignmentToLoopIterators` checks that there are assignments to loop iterators of for-loops.</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- For example, the followings have the assignments.</span><span>
+</span><span id="line-86"></span><span class="hs-comment">--</span><span>
+</span><span id="line-87"></span><span class="hs-comment">-- &gt; a = list(range(10))</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- &gt; for i in a:</span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- &gt;     a[5] = i</span><span>
+</span><span id="line-90"></span><span class="hs-comment">--</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- &gt; a = 0</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- &gt; for i in f(a):</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- &gt;     a += i</span><span>
+</span><span id="line-94"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopIterators"><span class="hs-identifier hs-type">hasAssignmentToLoopIterators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-95"></span><span id="hasAssignmentToLoopIterators"><span class="annot"><span class="annottext">hasAssignmentToLoopIterators :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopIterators"><span class="hs-identifier hs-var hs-var">hasAssignmentToLoopIterators</span></a></span></span><span> </span><span id="local-6989586621679309922"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309922"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Bool
-</span><a href="#local-6989586621679299486"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
+</span><a href="#local-6989586621679309921"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
 </span><a href="Jikka.RestrictedPython.Language.Util.html#listStatements"><span class="hs-identifier hs-var">listStatements</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299487"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-94"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-95"></span><span>    </span><span id="local-6989586621679299486"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
-</span><a href="#local-6989586621679299486"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-96"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679299485"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679299485"><span class="hs-identifier hs-var">iter</span></a></span></span><span> </span><span id="local-6989586621679299484"><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299484"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-97"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679299483"><span class="annot"><span class="annottext">r :: ReadList
-</span><a href="#local-6989586621679299483"><span class="hs-identifier hs-var hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadList
+</span><a href="#local-6989586621679309922"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-97"></span><span>    </span><span id="local-6989586621679309921"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
+</span><a href="#local-6989586621679309921"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-98"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679309920"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679309920"><span class="hs-identifier hs-var">iter</span></a></span></span><span> </span><span id="local-6989586621679309919"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309919"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-99"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679309918"><span class="annot"><span class="annottext">r :: ReadList
+</span><a href="#local-6989586621679309918"><span class="hs-identifier hs-var hs-var">r</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadList
 </span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679299485"><span class="hs-identifier hs-var">iter</span></a></span><span>
-</span><span id="line-98"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ReadList
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679299481"><span class="annot"><span class="annottext">WriteList
-</span><a href="#local-6989586621679299481"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; (ReadList, WriteList)
-</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299484"><span class="hs-identifier hs-var">body</span></a></span><span>
-</span><span id="line-99"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">WriteList -&gt; ReadList -&gt; Bool
+</span><a href="#local-6989586621679309920"><span class="hs-identifier hs-var">iter</span></a></span><span>
+</span><span id="line-100"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ReadList
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679309916"><span class="annot"><span class="annottext">WriteList
+</span><a href="#local-6989586621679309916"><span class="hs-identifier hs-var">w</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; (ReadList, WriteList)
+</span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#analyzeStatementsMax"><span class="hs-identifier hs-var">analyzeStatementsMax</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309919"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-101"></span><span>         </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">WriteList -&gt; ReadList -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.VariableAnalysis.html#haveWriteReadIntersection"><span class="hs-identifier hs-var">haveWriteReadIntersection</span></a></span><span> </span><span class="annot"><span class="annottext">WriteList
-</span><a href="#local-6989586621679299481"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">ReadList
-</span><a href="#local-6989586621679299483"><span class="hs-identifier hs-var">r</span></a></span><span>
-</span><span id="line-100"></span><span>      </span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679309916"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">ReadList
+</span><a href="#local-6989586621679309918"><span class="hs-identifier hs-var">r</span></a></span><span>
+</span><span id="line-102"></span><span>      </span><span class="annot"><span class="annottext">Statement
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-101"></span><span>
-</span><span id="line-102"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-type">doesntHaveAssignmentToLoopIterators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-103"></span><span id="doesntHaveAssignmentToLoopIterators"><span class="annot"><span class="annottext">doesntHaveAssignmentToLoopIterators :: Program -&gt; Bool
+</span><span id="line-103"></span><span>
+</span><span id="line-104"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-type">doesntHaveAssignmentToLoopIterators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-105"></span><span id="doesntHaveAssignmentToLoopIterators"><span class="annot"><span class="annottext">doesntHaveAssignmentToLoopIterators :: Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-var hs-var">doesntHaveAssignmentToLoopIterators</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignToLoopIterators"><span class="hs-identifier hs-var">hasAssignToLoopIterators</span></a></span><span>
-</span><span id="line-104"></span><span>
-</span><span id="line-105"></span><span id="local-6989586621679299479"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-type">ensureDoesntHaveAssignmentToLoopIterators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299479"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299479"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-106"></span><span id="ensureDoesntHaveAssignmentToLoopIterators"><span class="annot"><span class="annottext">ensureDoesntHaveAssignmentToLoopIterators :: Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToLoopIterators"><span class="hs-identifier hs-var">hasAssignmentToLoopIterators</span></a></span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span id="local-6989586621679309914"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-type">ensureDoesntHaveAssignmentToLoopIterators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309914"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309914"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-108"></span><span id="ensureDoesntHaveAssignmentToLoopIterators"><span class="annot"><span class="annottext">ensureDoesntHaveAssignmentToLoopIterators :: Program -&gt; m ()
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveAssignmentToLoopIterators</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
@@ -247,15 +249,15 @@ MonadError Error m =&gt;
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToLoopIterators"><span class="hs-identifier hs-var">doesntHaveAssignmentToLoopIterators</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;there must not be assignments changing loop iterators&quot;</span></span><span>
-</span><span id="line-107"></span><span>
-</span><span id="line-108"></span><span class="hs-comment">-- | `hasReturnInLoops` checks that there are return-statements in for-loops.</span><span>
-</span><span id="line-109"></span><span class="hs-comment">-- For example, the following has such a return-statement.</span><span>
-</span><span id="line-110"></span><span class="hs-comment">--</span><span>
-</span><span id="line-111"></span><span class="hs-comment">-- &gt; a = list(range(10))</span><span>
-</span><span id="line-112"></span><span class="hs-comment">-- &gt; for i in a:</span><span>
-</span><span id="line-113"></span><span class="hs-comment">-- &gt;     return True</span><span>
-</span><span id="line-114"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasReturnInLoops"><span class="hs-identifier hs-type">hasReturnInLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-115"></span><span id="hasReturnInLoops"><span class="annot"><span class="annottext">hasReturnInLoops :: Program -&gt; Bool
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- | `hasReturnInLoops` checks that there are return-statements in for-loops.</span><span>
+</span><span id="line-111"></span><span class="hs-comment">-- For example, the following has such a return-statement.</span><span>
+</span><span id="line-112"></span><span class="hs-comment">--</span><span>
+</span><span id="line-113"></span><span class="hs-comment">-- &gt; a = list(range(10))</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- &gt; for i in a:</span><span>
+</span><span id="line-115"></span><span class="hs-comment">-- &gt;     return True</span><span>
+</span><span id="line-116"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasReturnInLoops"><span class="hs-identifier hs-type">hasReturnInLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-117"></span><span id="hasReturnInLoops"><span class="annot"><span class="annottext">hasReturnInLoops :: Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#hasReturnInLoops"><span class="hs-identifier hs-var hs-var">hasReturnInLoops</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Any -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var">getAny</span></span><span> </span><span class="annot"><span class="annottext">(Any -&gt; Bool) -&gt; (Program -&gt; Any) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
@@ -281,62 +283,62 @@ Monad m =&gt;
 forall (m :: * -&gt; *).
 Monad m =&gt;
 Expr -&gt; [Statement] -&gt; [Statement] -&gt; m [Statement]
-</span><a href="#local-6989586621679299473"><span class="hs-identifier hs-var">fIf</span></a></span><span> </span><span class="annot"><span class="annottext">Target -&gt; Expr -&gt; [Statement] -&gt; WriterT Any Identity [Statement]
+</span><a href="#local-6989586621679309908"><span class="hs-identifier hs-var">fIf</span></a></span><span> </span><span class="annot"><span class="annottext">Target -&gt; Expr -&gt; [Statement] -&gt; WriterT Any Identity [Statement]
 forall (m :: * -&gt; *).
 MonadWriter Any m =&gt;
 Target -&gt; Expr -&gt; [Statement] -&gt; m [Statement]
-</span><a href="#local-6989586621679299472"><span class="hs-identifier hs-var">fFor</span></a></span><span>
-</span><span id="line-116"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-117"></span><span>    </span><span id="local-6989586621679299473"><span class="annot"><span class="annottext">fIf :: Expr -&gt; [Statement] -&gt; [Statement] -&gt; m [Statement]
-</span><a href="#local-6989586621679299473"><span class="hs-identifier hs-var hs-var">fIf</span></a></span></span><span> </span><span id="local-6989586621679299471"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679299471"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679299470"><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299470"><span class="hs-identifier hs-var">body1</span></a></span></span><span> </span><span id="local-6989586621679299469"><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299469"><span class="hs-identifier hs-var">body2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; m [Statement]
+</span><a href="#local-6989586621679309907"><span class="hs-identifier hs-var">fFor</span></a></span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-119"></span><span>    </span><span id="local-6989586621679309908"><span class="annot"><span class="annottext">fIf :: Expr -&gt; [Statement] -&gt; [Statement] -&gt; m [Statement]
+</span><a href="#local-6989586621679309908"><span class="hs-identifier hs-var hs-var">fIf</span></a></span></span><span> </span><span id="local-6989586621679309906"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679309906"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679309905"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309905"><span class="hs-identifier hs-var">body1</span></a></span></span><span> </span><span id="local-6989586621679309904"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309904"><span class="hs-identifier hs-var">body2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; m [Statement]
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expr -&gt; [Statement] -&gt; [Statement] -&gt; Statement
 </span><a href="Jikka.RestrictedPython.Language.Expr.html#If"><span class="hs-identifier hs-var">If</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679299471"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299470"><span class="hs-identifier hs-var">body1</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299469"><span class="hs-identifier hs-var">body2</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-118"></span><span>    </span><span id="local-6989586621679299472"><span class="annot"><span class="annottext">fFor :: Target -&gt; Expr -&gt; [Statement] -&gt; m [Statement]
-</span><a href="#local-6989586621679299472"><span class="hs-identifier hs-var hs-var">fFor</span></a></span></span><span> </span><span id="local-6989586621679299467"><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299467"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679299466"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679299466"><span class="hs-identifier hs-var">iter</span></a></span></span><span> </span><span id="local-6989586621679299465"><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299465"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-119"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; m () -&gt; m ()
+</span><a href="#local-6989586621679309906"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309905"><span class="hs-identifier hs-var">body1</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309904"><span class="hs-identifier hs-var">body2</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-120"></span><span>    </span><span id="local-6989586621679309907"><span class="annot"><span class="annottext">fFor :: Target -&gt; Expr -&gt; [Statement] -&gt; m [Statement]
+</span><a href="#local-6989586621679309907"><span class="hs-identifier hs-var hs-var">fFor</span></a></span></span><span> </span><span id="local-6989586621679309902"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309902"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679309901"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679309901"><span class="hs-identifier hs-var">iter</span></a></span></span><span> </span><span id="local-6989586621679309900"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309900"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-121"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; m () -&gt; m ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#doesPossiblyReturn"><span class="hs-identifier hs-var">doesPossiblyReturn</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299465"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
+</span><a href="#local-6989586621679309900"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-120"></span><span>        </span><span class="annot"><span class="annottext">Any -&gt; m ()
+</span><span id="line-122"></span><span>        </span><span class="annot"><span class="annottext">Any -&gt; m ()
 forall w (m :: * -&gt; *). MonadWriter w m =&gt; w -&gt; m ()
 </span><span class="hs-identifier hs-var">tell</span></span><span> </span><span class="annot"><span class="annottext">(Any -&gt; m ()) -&gt; Any -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Any
 </span><span class="hs-identifier hs-var">Any</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-121"></span><span>      </span><span class="annot"><span class="annottext">[Statement] -&gt; m [Statement]
+</span><span id="line-123"></span><span>      </span><span class="annot"><span class="annottext">[Statement] -&gt; m [Statement]
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Target -&gt; Expr -&gt; [Statement] -&gt; Statement
 </span><a href="Jikka.RestrictedPython.Language.Expr.html#For"><span class="hs-identifier hs-var">For</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299467"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679299466"><span class="hs-identifier hs-var">iter</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><a href="#local-6989586621679299465"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-122"></span><span>
-</span><span id="line-123"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveReturnInLoops"><span class="hs-identifier hs-type">doesntHaveReturnInLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-124"></span><span id="doesntHaveReturnInLoops"><span class="annot"><span class="annottext">doesntHaveReturnInLoops :: Program -&gt; Bool
+</span><a href="#local-6989586621679309902"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679309901"><span class="hs-identifier hs-var">iter</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679309900"><span class="hs-identifier hs-var">body</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-124"></span><span>
+</span><span id="line-125"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveReturnInLoops"><span class="hs-identifier hs-type">doesntHaveReturnInLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-126"></span><span id="doesntHaveReturnInLoops"><span class="annot"><span class="annottext">doesntHaveReturnInLoops :: Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveReturnInLoops"><span class="hs-identifier hs-var hs-var">doesntHaveReturnInLoops</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#hasReturnInLoops"><span class="hs-identifier hs-var">hasReturnInLoops</span></a></span><span>
-</span><span id="line-125"></span><span>
-</span><span id="line-126"></span><span id="local-6989586621679299459"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveReturnInLoops"><span class="hs-identifier hs-type">ensureDoesntHaveReturnInLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299459"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299459"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-127"></span><span id="ensureDoesntHaveReturnInLoops"><span class="annot"><span class="annottext">ensureDoesntHaveReturnInLoops :: Program -&gt; m ()
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span id="local-6989586621679309894"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveReturnInLoops"><span class="hs-identifier hs-type">ensureDoesntHaveReturnInLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309894"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309894"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-129"></span><span id="ensureDoesntHaveReturnInLoops"><span class="annot"><span class="annottext">ensureDoesntHaveReturnInLoops :: Program -&gt; m ()
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveReturnInLoops"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveReturnInLoops</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
@@ -344,57 +346,57 @@ MonadError Error m =&gt;
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveReturnInLoops"><span class="hs-identifier hs-var">doesntHaveReturnInLoops</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;there must not be return-statements in for-loops&quot;</span></span><span>
-</span><span id="line-128"></span><span>
-</span><span id="line-129"></span><span class="hs-comment">-- | `hasMixedAssignment` checks that there are assignments which assign to both of bare variables and subscripted variables.</span><span>
-</span><span id="line-130"></span><span class="hs-comment">-- For example, the following is such an assignment.</span><span>
-</span><span id="line-131"></span><span class="hs-comment">--</span><span>
-</span><span id="line-132"></span><span class="hs-comment">-- &gt; a, b[0] = list(range(10))</span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- | `hasMixedAssignment` checks that there are assignments which assign to both of bare variables and subscripted variables.</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- For example, the following is such an assignment.</span><span>
 </span><span id="line-133"></span><span class="hs-comment">--</span><span>
-</span><span id="line-134"></span><span class="hs-comment">-- NOTE: this doesn't check loop counters of `For` or `ListComp`.</span><span>
-</span><span id="line-135"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasMixedAssignment"><span class="hs-identifier hs-type">hasMixedAssignment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-136"></span><span id="hasMixedAssignment"><span class="annot"><span class="annottext">hasMixedAssignment :: Program -&gt; Bool
-</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasMixedAssignment"><span class="hs-identifier hs-var hs-var">hasMixedAssignment</span></a></span></span><span> </span><span id="local-6989586621679299456"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299456"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
+</span><span id="line-134"></span><span class="hs-comment">-- &gt; a, b[0] = list(range(10))</span><span>
+</span><span id="line-135"></span><span class="hs-comment">--</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- NOTE: this doesn't check loop counters of `For` or `ListComp`.</span><span>
+</span><span id="line-137"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasMixedAssignment"><span class="hs-identifier hs-type">hasMixedAssignment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-138"></span><span id="hasMixedAssignment"><span class="annot"><span class="annottext">hasMixedAssignment :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasMixedAssignment"><span class="hs-identifier hs-var hs-var">hasMixedAssignment</span></a></span></span><span> </span><span id="local-6989586621679309891"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309891"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Bool
-</span><a href="#local-6989586621679299455"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
+</span><a href="#local-6989586621679309890"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
 </span><a href="Jikka.RestrictedPython.Language.Util.html#listStatements"><span class="hs-identifier hs-var">listStatements</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679299456"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-137"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-138"></span><span>    </span><span id="local-6989586621679299455"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
-</span><a href="#local-6989586621679299455"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-139"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AugAssign"><span class="hs-identifier hs-type">AugAssign</span></a></span><span> </span><span id="local-6989586621679299453"><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299453"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="#local-6989586621679309891"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-139"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-140"></span><span>    </span><span id="local-6989586621679309890"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
+</span><a href="#local-6989586621679309890"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-141"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AugAssign"><span class="hs-identifier hs-type">AugAssign</span></a></span><span> </span><span id="local-6989586621679309888"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309888"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Operator
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#hasSubscriptTrg"><span class="hs-identifier hs-var">hasSubscriptTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299453"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679309888"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#hasBareNameTrg"><span class="hs-identifier hs-var">hasBareNameTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299453"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-140"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AnnAssign"><span class="hs-identifier hs-type">AnnAssign</span></a></span><span> </span><span id="local-6989586621679299449"><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299449"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679309888"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-142"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AnnAssign"><span class="hs-identifier hs-type">AnnAssign</span></a></span><span> </span><span id="local-6989586621679309884"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309884"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#hasSubscriptTrg"><span class="hs-identifier hs-var">hasSubscriptTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299449"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679309884"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Util.html#hasBareNameTrg"><span class="hs-identifier hs-var">hasBareNameTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
-</span><a href="#local-6989586621679299449"><span class="hs-identifier hs-var">x</span></a></span><span>
-</span><span id="line-141"></span><span>      </span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679309884"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-143"></span><span>      </span><span class="annot"><span class="annottext">Statement
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-142"></span><span>
-</span><span id="line-143"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveMixedAssignment"><span class="hs-identifier hs-type">doesntHaveMixedAssignment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-144"></span><span id="doesntHaveMixedAssignment"><span class="annot"><span class="annottext">doesntHaveMixedAssignment :: Program -&gt; Bool
+</span><span id="line-144"></span><span>
+</span><span id="line-145"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveMixedAssignment"><span class="hs-identifier hs-type">doesntHaveMixedAssignment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-146"></span><span id="doesntHaveMixedAssignment"><span class="annot"><span class="annottext">doesntHaveMixedAssignment :: Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveMixedAssignment"><span class="hs-identifier hs-var hs-var">doesntHaveMixedAssignment</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
 </span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#hasMixedAssignment"><span class="hs-identifier hs-var">hasMixedAssignment</span></a></span><span>
-</span><span id="line-145"></span><span>
-</span><span id="line-146"></span><span id="local-6989586621679299447"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveMixedAssignment"><span class="hs-identifier hs-type">ensureDoesntHaveMixedAssignment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679299447"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679299447"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
-</span><span id="line-147"></span><span id="ensureDoesntHaveMixedAssignment"><span class="annot"><span class="annottext">ensureDoesntHaveMixedAssignment :: Program -&gt; m ()
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span id="local-6989586621679309882"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveMixedAssignment"><span class="hs-identifier hs-type">ensureDoesntHaveMixedAssignment</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309882"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309882"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-149"></span><span id="ensureDoesntHaveMixedAssignment"><span class="annot"><span class="annottext">ensureDoesntHaveMixedAssignment :: Program -&gt; m ()
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveMixedAssignment"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveMixedAssignment</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
@@ -402,4 +404,212 @@ MonadError Error m =&gt;
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
 </span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveMixedAssignment"><span class="hs-identifier hs-var">doesntHaveMixedAssignment</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;there must not be mixed assignments&quot;</span></span><span>
-</span><span id="line-148"></span></pre></body></html>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- | `hasNonTrivialSubscriptedAssignmentInForLoops` checks that there are assignments with non-trivial subscriptions in for-loops.</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- A trivial subscription is a sequence of subscriptions to a variable with constant indices and at most one trivial loop-counter indices for each loops.</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- A constant index is an expr which has a constant value in the loop.</span><span>
+</span><span id="line-154"></span><span class="hs-comment">-- A trivial loop-counter index is the loop counter from &quot;range(n)&quot;, &quot;range(n, m)&quot; or &quot;enumerate(a)&quot; with optional post-addition with a positive int literal.</span><span>
+</span><span id="line-155"></span><span class="hs-comment">--</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- For example, the followings have such assignments.</span><span>
+</span><span id="line-157"></span><span class="hs-comment">--</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- &gt; x = 0</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- &gt;     x += 1</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- &gt;     a[x] += 1</span><span>
+</span><span id="line-162"></span><span class="hs-comment">--</span><span>
+</span><span id="line-163"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- &gt;     j = i</span><span>
+</span><span id="line-165"></span><span class="hs-comment">-- &gt;     a[j] += 1</span><span>
+</span><span id="line-166"></span><span class="hs-comment">--</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- &gt;     a[2 * i] += 1</span><span>
+</span><span id="line-169"></span><span class="hs-comment">--</span><span>
+</span><span id="line-170"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-171"></span><span class="hs-comment">-- &gt;     a[1 + i] += 1</span><span>
+</span><span id="line-172"></span><span class="hs-comment">--</span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-174"></span><span class="hs-comment">-- &gt;     a[i - 1] += 1</span><span>
+</span><span id="line-175"></span><span class="hs-comment">--</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- &gt; c = 1</span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-178"></span><span class="hs-comment">-- &gt;     a[i + c] += 1</span><span>
+</span><span id="line-179"></span><span class="hs-comment">--</span><span>
+</span><span id="line-180"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-181"></span><span class="hs-comment">-- &gt;     a[i][i] += 1</span><span>
+</span><span id="line-182"></span><span class="hs-comment">--</span><span>
+</span><span id="line-183"></span><span class="hs-comment">-- &gt; for i in [1, 2, 3]:</span><span>
+</span><span id="line-184"></span><span class="hs-comment">-- &gt;     a[i] += 1</span><span>
+</span><span id="line-185"></span><span class="hs-comment">--</span><span>
+</span><span id="line-186"></span><span class="hs-comment">-- &gt; b = range(10)</span><span>
+</span><span id="line-187"></span><span class="hs-comment">-- &gt; for i in b:</span><span>
+</span><span id="line-188"></span><span class="hs-comment">-- &gt;     a[i] += 1</span><span>
+</span><span id="line-189"></span><span class="hs-comment">--</span><span>
+</span><span id="line-190"></span><span class="hs-comment">-- &gt; for i in range(0, 10, 2):</span><span>
+</span><span id="line-191"></span><span class="hs-comment">-- &gt;     a[i] += 1</span><span>
+</span><span id="line-192"></span><span class="hs-comment">--</span><span>
+</span><span id="line-193"></span><span class="hs-comment">-- &gt; for i, b_i in enumerate(b):</span><span>
+</span><span id="line-194"></span><span class="hs-comment">-- &gt;     a[b_i] += i</span><span>
+</span><span id="line-195"></span><span class="hs-comment">--</span><span>
+</span><span id="line-196"></span><span class="hs-comment">-- For example, the followings don't have such assignments.</span><span>
+</span><span id="line-197"></span><span class="hs-comment">--</span><span>
+</span><span id="line-198"></span><span class="hs-comment">-- &gt; c = 0</span><span>
+</span><span id="line-199"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-200"></span><span class="hs-comment">-- &gt;     a[c] += 1</span><span>
+</span><span id="line-201"></span><span class="hs-comment">--</span><span>
+</span><span id="line-202"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- &gt;     a[i] += 1</span><span>
+</span><span id="line-204"></span><span class="hs-comment">--</span><span>
+</span><span id="line-205"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-206"></span><span class="hs-comment">-- &gt;     a[i + 1] += 1</span><span>
+</span><span id="line-207"></span><span class="hs-comment">--</span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- &gt; for i in range(10):</span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- &gt;     for j in range(10):</span><span>
+</span><span id="line-210"></span><span class="hs-comment">-- &gt;         a[i + 1][j] += 1</span><span>
+</span><span id="line-211"></span><span class="hs-comment">--</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- &gt; for i in range(1, 10):</span><span>
+</span><span id="line-213"></span><span class="hs-comment">-- &gt;     a[i] += 1</span><span>
+</span><span id="line-214"></span><span class="hs-comment">--</span><span>
+</span><span id="line-215"></span><span class="hs-comment">-- &gt; for i, b_i in enumerate(b):</span><span>
+</span><span id="line-216"></span><span class="hs-comment">-- &gt;     a[i] += b_i</span><span>
+</span><span id="line-217"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-type">hasNonTrivialSubscriptedAssignmentInForLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-218"></span><span id="hasNonTrivialSubscriptedAssignmentInForLoops"><span class="annot"><span class="annottext">hasNonTrivialSubscriptedAssignmentInForLoops :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-var hs-var">hasNonTrivialSubscriptedAssignmentInForLoops</span></a></span></span><span> </span><span id="local-6989586621679309879"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309879"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; Bool) -&gt; [Statement] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; Bool
+</span><a href="#local-6989586621679309878"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; [Statement]
+</span><a href="Jikka.RestrictedPython.Language.Util.html#listStatements"><span class="hs-identifier hs-var">listStatements</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679309879"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-219"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-220"></span><span>    </span><span id="local-6989586621679309878"><span class="annot"><span class="annottext">check :: Statement -&gt; Bool
+</span><a href="#local-6989586621679309878"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-221"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AugAssign"><span class="hs-identifier hs-type">AugAssign</span></a></span><span> </span><span id="local-6989586621679309877"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309877"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
+</span><a href="#local-6989586621679309876"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309877"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-222"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AnnAssign"><span class="hs-identifier hs-type">AnnAssign</span></a></span><span> </span><span id="local-6989586621679309875"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309875"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
+</span><a href="#local-6989586621679309876"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679309875"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-223"></span><span>      </span><span class="annot"><span class="annottext">Statement
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-224"></span><span>    </span><span id="local-6989586621679309876"><span class="annot"><span class="annottext">go :: Target -&gt; Bool
+</span><a href="#local-6989586621679309876"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-225"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#SubscriptTrg"><span class="hs-identifier hs-type">SubscriptTrg</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-comment">-- TODO</span><span>
+</span><span id="line-226"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#NameTrg"><span class="hs-identifier hs-type">NameTrg</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-227"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#TupleTrg"><span class="hs-identifier hs-type">TupleTrg</span></a></span><span> </span><span id="local-6989586621679309871"><span class="annot"><span class="annottext">[Target]
+</span><a href="#local-6989586621679309871"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Target -&gt; Bool) -&gt; [Target] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Target -&gt; Bool
+</span><a href="#local-6989586621679309876"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">[Target]
+</span><a href="#local-6989586621679309871"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-228"></span><span>
+</span><span id="line-229"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-type">doesntHaveNonTrivialSubscriptedAssignmentInForLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-230"></span><span id="doesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="annot"><span class="annottext">doesntHaveNonTrivialSubscriptedAssignmentInForLoops :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-var hs-var">doesntHaveNonTrivialSubscriptedAssignmentInForLoops</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasMixedAssignment"><span class="hs-identifier hs-var">hasMixedAssignment</span></a></span><span>
+</span><span id="line-231"></span><span>
+</span><span id="line-232"></span><span id="local-6989586621679309869"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-type">ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309869"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309869"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-233"></span><span id="ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="annot"><span class="annottext">ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops :: Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveNonTrivialSubscriptedAssignmentInForLoops</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNonTrivialSubscriptedAssignmentInForLoops"><span class="hs-identifier hs-var">doesntHaveNonTrivialSubscriptedAssignmentInForLoops</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;there must not be assignments with non-trivial subscriptions in for-loops&quot;</span></span><span>
+</span><span id="line-234"></span><span>
+</span><span id="line-235"></span><span class="hs-comment">-- | `hasAssginmentToBuiltin` checks that there are assignments to builtin functions.</span><span>
+</span><span id="line-236"></span><span class="hs-comment">-- For example, the followings have such assignments.</span><span>
+</span><span id="line-237"></span><span class="hs-comment">--</span><span>
+</span><span id="line-238"></span><span class="hs-comment">-- &gt; map = 3</span><span>
+</span><span id="line-239"></span><span class="hs-comment">--</span><span>
+</span><span id="line-240"></span><span class="hs-comment">-- &gt; return [range for range in range(10)]</span><span>
+</span><span id="line-241"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToBuiltin"><span class="hs-identifier hs-type">hasAssignmentToBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-242"></span><span id="hasAssignmentToBuiltin"><span class="annot"><span class="annottext">hasAssignmentToBuiltin :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToBuiltin"><span class="hs-identifier hs-var hs-var">hasAssignmentToBuiltin</span></a></span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-comment">-- TODO</span><span>
+</span><span id="line-243"></span><span>
+</span><span id="line-244"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToBuiltin"><span class="hs-identifier hs-type">doesntHaveAssignmentToBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-245"></span><span id="doesntHaveAssignmentToBuiltin"><span class="annot"><span class="annottext">doesntHaveAssignmentToBuiltin :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToBuiltin"><span class="hs-identifier hs-var hs-var">doesntHaveAssignmentToBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToBuiltin"><span class="hs-identifier hs-var">hasAssignmentToBuiltin</span></a></span><span>
+</span><span id="line-246"></span><span>
+</span><span id="line-247"></span><span id="local-6989586621679309865"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToBuiltin"><span class="hs-identifier hs-type">ensureDoesntHaveAssignmentToBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309865"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309865"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-248"></span><span id="ensureDoesntHaveAssignmentToBuiltin"><span class="annot"><span class="annottext">ensureDoesntHaveAssignmentToBuiltin :: Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveAssignmentToBuiltin"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveAssignmentToBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveAssignmentToBuiltin"><span class="hs-identifier hs-var">doesntHaveAssignmentToBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;there must not be assignments to builtin functions&quot;</span></span><span>
+</span><span id="line-249"></span><span>
+</span><span id="line-250"></span><span class="hs-comment">-- | `hasNonResolvedBuiltin` checks that there are not resolved builtin functions.</span><span>
+</span><span id="line-251"></span><span class="hs-comment">-- This always doesn't hold after `Jikka.RestrictedPython.Language.Convert.ResolveBuiltin`.</span><span>
+</span><span id="line-252"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#hasNonResolvedBuiltin"><span class="hs-identifier hs-type">hasNonResolvedBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-253"></span><span id="hasNonResolvedBuiltin"><span class="annot"><span class="annottext">hasNonResolvedBuiltin :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasNonResolvedBuiltin"><span class="hs-identifier hs-var hs-var">hasNonResolvedBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Bool) -&gt; [Expr] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Bool
+</span><a href="#local-6989586621679309862"><span class="hs-identifier hs-var">check</span></a></span><span> </span><span class="annot"><span class="annottext">([Expr] -&gt; Bool) -&gt; (Program -&gt; [Expr]) -&gt; Program -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; [Expr]
+</span><a href="Jikka.RestrictedPython.Language.Util.html#listExprs"><span class="hs-identifier hs-var">listExprs</span></a></span><span>
+</span><span id="line-254"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-255"></span><span>    </span><span id="local-6989586621679309862"><span class="annot"><span class="annottext">check :: Expr -&gt; Bool
+</span><a href="#local-6989586621679309862"><span class="hs-identifier hs-var hs-var">check</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Bool) -&gt; [Expr] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Bool
+</span><a href="#local-6989586621679309861"><span class="hs-identifier hs-var">check'</span></a></span><span> </span><span class="annot"><span class="annottext">([Expr] -&gt; Bool) -&gt; (Expr -&gt; [Expr]) -&gt; Expr -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr]
+</span><a href="Jikka.RestrictedPython.Language.Util.html#listSubExprs"><span class="hs-identifier hs-var">listSubExprs</span></a></span><span>
+</span><span id="line-256"></span><span>    </span><span id="local-6989586621679309861"><span class="annot"><span class="annottext">check' :: Expr -&gt; Bool
+</span><a href="#local-6989586621679309861"><span class="hs-identifier hs-var hs-var">check'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-257"></span><span>      </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Name"><span class="hs-identifier hs-type">Name</span></a></span><span> </span><span id="local-6989586621679309858"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679309858"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679309858"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Set VarName -&gt; Bool
+forall a. Ord a =&gt; a -&gt; Set a -&gt; Bool
+</span><span class="hs-operator hs-var">`S.member`</span></span><span> </span><span class="annot"><span class="annottext">Set VarName
+</span><a href="Jikka.RestrictedPython.Language.Builtin.html#builtinNames"><span class="hs-identifier hs-var">builtinNames</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span>
+</span><span id="line-258"></span><span>      </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-259"></span><span>
+</span><span id="line-260"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNonResolvedBuiltin"><span class="hs-identifier hs-type">doesntHaveNonResolvedBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-261"></span><span id="doesntHaveNonResolvedBuiltin"><span class="annot"><span class="annottext">doesntHaveNonResolvedBuiltin :: Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNonResolvedBuiltin"><span class="hs-identifier hs-var hs-var">doesntHaveNonResolvedBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">(Bool -&gt; Bool) -&gt; (Program -&gt; Bool) -&gt; Program -&gt; Bool
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#hasAssignmentToBuiltin"><span class="hs-identifier hs-var">hasAssignmentToBuiltin</span></a></span><span>
+</span><span id="line-262"></span><span>
+</span><span id="line-263"></span><span id="local-6989586621679309855"><span class="annot"><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveNonResolvedBuiltin"><span class="hs-identifier hs-type">ensureDoesntHaveNonResolvedBuiltin</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309855"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309855"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-264"></span><span id="ensureDoesntHaveNonResolvedBuiltin"><span class="annot"><span class="annottext">ensureDoesntHaveNonResolvedBuiltin :: Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#ensureDoesntHaveNonResolvedBuiltin"><span class="hs-identifier hs-var hs-var">ensureDoesntHaveNonResolvedBuiltin</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+(Program -&gt; Bool) -&gt; String -&gt; Program -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#makeEnsureProgram"><span class="hs-identifier hs-var">makeEnsureProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Bool
+</span><a href="Jikka.RestrictedPython.Language.Lint.html#doesntHaveNonResolvedBuiltin"><span class="hs-identifier hs-var">doesntHaveNonResolvedBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;there must not be assignments to builtin functions&quot;</span></span><span>
+</span><span id="line-265"></span></pre></body></html>

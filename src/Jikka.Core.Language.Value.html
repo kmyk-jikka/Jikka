@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_5zMOT4iwZsnEu0hvmpFuxh"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Core.Language.Value</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Char</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">toLower</span></span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.List</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">intercalate</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">data</span><span> </span><span id="Value"><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-var">Value</span></a></span></span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="ValInt"><span class="annot"><a href="Jikka.Core.Language.Value.html#ValInt"><span class="hs-identifier hs-var">ValInt</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ValBool"><span class="annot"><a href="Jikka.Core.Language.Value.html#ValBool"><span class="hs-identifier hs-var">ValBool</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ValList"><span class="annot"><a href="Jikka.Core.Language.Value.html#ValList"><span class="hs-identifier hs-var">ValList</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ValTuple"><span class="annot"><a href="Jikka.Core.Language.Value.html#ValTuple"><span class="hs-identifier hs-var">ValTuple</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-17"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ValBuiltin"><span class="annot"><a href="Jikka.Core.Language.Value.html#ValBuiltin"><span class="hs-identifier hs-var">ValBuiltin</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ValLambda"><span class="annot"><a href="Jikka.Core.Language.Value.html#ValLambda"><span class="hs-identifier hs-var">ValLambda</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Env"><span class="hs-identifier hs-type">Env</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679268282"><span id="local-6989586621679268284"><span class="annot"><span class="annottext">Value -&gt; Value -&gt; Bool
+(Value -&gt; Value -&gt; Bool) -&gt; (Value -&gt; Value -&gt; Bool) -&gt; Eq Value
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Value -&gt; Value -&gt; Bool
+$c/= :: Value -&gt; Value -&gt; Bool
+== :: Value -&gt; Value -&gt; Bool
+$c== :: Value -&gt; Value -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268266"><span id="local-6989586621679268268"><span id="local-6989586621679268270"><span id="local-6989586621679268272"><span id="local-6989586621679268274"><span id="local-6989586621679268276"><span id="local-6989586621679268278"><span class="annot"><span class="annottext">Eq Value
+Eq Value
+-&gt; (Value -&gt; Value -&gt; Ordering)
+-&gt; (Value -&gt; Value -&gt; Bool)
+-&gt; (Value -&gt; Value -&gt; Bool)
+-&gt; (Value -&gt; Value -&gt; Bool)
+-&gt; (Value -&gt; Value -&gt; Bool)
+-&gt; (Value -&gt; Value -&gt; Value)
+-&gt; (Value -&gt; Value -&gt; Value)
+-&gt; Ord Value
+Value -&gt; Value -&gt; Bool
+Value -&gt; Value -&gt; Ordering
+Value -&gt; Value -&gt; Value
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Value -&gt; Value -&gt; Value
+$cmin :: Value -&gt; Value -&gt; Value
+max :: Value -&gt; Value -&gt; Value
+$cmax :: Value -&gt; Value -&gt; Value
+&gt;= :: Value -&gt; Value -&gt; Bool
+$c&gt;= :: Value -&gt; Value -&gt; Bool
+&gt; :: Value -&gt; Value -&gt; Bool
+$c&gt; :: Value -&gt; Value -&gt; Bool
+&lt;= :: Value -&gt; Value -&gt; Bool
+$c&lt;= :: Value -&gt; Value -&gt; Bool
+&lt; :: Value -&gt; Value -&gt; Bool
+$c&lt; :: Value -&gt; Value -&gt; Bool
+compare :: Value -&gt; Value -&gt; Ordering
+$ccompare :: Value -&gt; Value -&gt; Ordering
+$cp1Ord :: Eq Value
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268259"><span id="local-6989586621679268261"><span id="local-6989586621679268263"><span class="annot"><span class="annottext">Int -&gt; Value -&gt; ShowS
+[Value] -&gt; ShowS
+Value -&gt; String
+(Int -&gt; Value -&gt; ShowS)
+-&gt; (Value -&gt; String) -&gt; ([Value] -&gt; ShowS) -&gt; Show Value
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Value] -&gt; ShowS
+$cshowList :: [Value] -&gt; ShowS
+show :: Value -&gt; String
+$cshow :: Value -&gt; String
+showsPrec :: Int -&gt; Value -&gt; ShowS
+$cshowsPrec :: Int -&gt; Value -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679268250"><span id="local-6989586621679268252"><span id="local-6989586621679268254"><span id="local-6989586621679268256"><span class="annot"><span class="annottext">ReadPrec [Value]
+ReadPrec Value
+Int -&gt; ReadS Value
+ReadS [Value]
+(Int -&gt; ReadS Value)
+-&gt; ReadS [Value]
+-&gt; ReadPrec Value
+-&gt; ReadPrec [Value]
+-&gt; Read Value
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Value]
+$creadListPrec :: ReadPrec [Value]
+readPrec :: ReadPrec Value
+$creadPrec :: ReadPrec Value
+readList :: ReadS [Value]
+$creadList :: ReadS [Value]
+readsPrec :: Int -&gt; ReadS Value
+$creadsPrec :: Int -&gt; ReadS Value
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">type</span><span> </span><span id="Env"><span class="annot"><a href="Jikka.Core.Language.Value.html#Env"><span class="hs-identifier hs-var">Env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Jikka.Core.Language.Value.html#literalToValue"><span class="hs-identifier hs-type">literalToValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span>
+</span><span id="line-24"></span><span id="literalToValue"><span class="annot"><span class="annottext">literalToValue :: Literal -&gt; Value
+</span><a href="Jikka.Core.Language.Value.html#literalToValue"><span class="hs-identifier hs-var hs-var">literalToValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-25"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBuiltin"><span class="hs-identifier hs-type">LitBuiltin</span></a></span><span> </span><span id="local-6989586621679268246"><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679268246"><span class="hs-identifier hs-var">builtin</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Value
+</span><a href="Jikka.Core.Language.Value.html#ValBuiltin"><span class="hs-identifier hs-var">ValBuiltin</span></a></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679268246"><span class="hs-identifier hs-var">builtin</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt"><span class="hs-identifier hs-type">LitInt</span></a></span><span> </span><span id="local-6989586621679268244"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679268244"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Value
+</span><a href="Jikka.Core.Language.Value.html#ValInt"><span class="hs-identifier hs-var">ValInt</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679268244"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool"><span class="hs-identifier hs-type">LitBool</span></a></span><span> </span><span id="local-6989586621679268242"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679268242"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Value
+</span><a href="Jikka.Core.Language.Value.html#ValBool"><span class="hs-identifier hs-var">ValBool</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679268242"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitNil"><span class="hs-identifier hs-type">LitNil</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; Value
+</span><a href="Jikka.Core.Language.Value.html#ValList"><span class="hs-identifier hs-var">ValList</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Value
+forall a. Vector a
+</span><span class="hs-identifier hs-var">V.empty</span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span id="local-6989586621679268308"><span class="annot"><a href="Jikka.Core.Language.Value.html#valueToInt"><span class="hs-identifier hs-type">valueToInt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679268308"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679268308"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span></span><span>
+</span><span id="line-31"></span><span id="valueToInt"><span class="annot"><span class="annottext">valueToInt :: Value -&gt; m Integer
+</span><a href="Jikka.Core.Language.Value.html#valueToInt"><span class="hs-identifier hs-var hs-var">valueToInt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValInt"><span class="hs-identifier hs-type">ValInt</span></a></span><span> </span><span id="local-6989586621679268238"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679268238"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; m Integer
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679268238"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-33"></span><span>  </span><span id="local-6989586621679268237"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268237"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwRuntimeError"><span class="hs-identifier hs-var">throwRuntimeError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Integer) -&gt; String -&gt; m Integer
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Internal Error: not int: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268237"><span class="hs-identifier hs-var">val</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span id="local-6989586621679268234"><span class="annot"><a href="Jikka.Core.Language.Value.html#valueToIntList"><span class="hs-identifier hs-type">valueToIntList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679268234"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679268234"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">]</span></span><span>
+</span><span id="line-36"></span><span id="valueToIntList"><span class="annot"><span class="annottext">valueToIntList :: Vector Value -&gt; m [Integer]
+</span><a href="Jikka.Core.Language.Value.html#valueToIntList"><span class="hs-identifier hs-var hs-var">valueToIntList</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Integer) -&gt; [Value] -&gt; m [Integer]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m Integer
+forall (m :: * -&gt; *). MonadError Error m =&gt; Value -&gt; m Integer
+</span><a href="Jikka.Core.Language.Value.html#valueToInt"><span class="hs-identifier hs-var">valueToInt</span></a></span><span> </span><span class="annot"><span class="annottext">([Value] -&gt; m [Integer])
+-&gt; (Vector Value -&gt; [Value]) -&gt; Vector Value -&gt; m [Integer]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; [Value]
+forall a. Vector a -&gt; [a]
+</span><span class="hs-identifier hs-var">V.toList</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span id="local-6989586621679268301"><span class="annot"><a href="Jikka.Core.Language.Value.html#valueToBool"><span class="hs-identifier hs-type">valueToBool</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679268301"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679268301"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-39"></span><span id="valueToBool"><span class="annot"><span class="annottext">valueToBool :: Value -&gt; m Bool
+</span><a href="Jikka.Core.Language.Value.html#valueToBool"><span class="hs-identifier hs-var hs-var">valueToBool</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValBool"><span class="hs-identifier hs-type">ValBool</span></a></span><span> </span><span id="local-6989586621679268228"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679268228"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; m Bool
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679268228"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span id="local-6989586621679268227"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268227"><span class="hs-identifier hs-var">val</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Bool
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwRuntimeError"><span class="hs-identifier hs-var">throwRuntimeError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Bool) -&gt; String -&gt; m Bool
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Internal Error: not bool: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268227"><span class="hs-identifier hs-var">val</span></a></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span id="local-6989586621679268226"><span class="annot"><a href="Jikka.Core.Language.Value.html#valueToBoolList"><span class="hs-identifier hs-type">valueToBoolList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679268226"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679268226"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">]</span></span><span>
+</span><span id="line-44"></span><span id="valueToBoolList"><span class="annot"><span class="annottext">valueToBoolList :: Vector Value -&gt; m [Bool]
+</span><a href="Jikka.Core.Language.Value.html#valueToBoolList"><span class="hs-identifier hs-var hs-var">valueToBoolList</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Bool) -&gt; [Value] -&gt; m [Bool]
+forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
+(Traversable t, Monad m) =&gt;
+(a -&gt; m b) -&gt; t a -&gt; m (t b)
+</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m Bool
+forall (m :: * -&gt; *). MonadError Error m =&gt; Value -&gt; m Bool
+</span><a href="Jikka.Core.Language.Value.html#valueToBool"><span class="hs-identifier hs-var">valueToBool</span></a></span><span> </span><span class="annot"><span class="annottext">([Value] -&gt; m [Bool])
+-&gt; (Vector Value -&gt; [Value]) -&gt; Vector Value -&gt; m [Bool]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; [Value]
+forall a. Vector a -&gt; [a]
+</span><span class="hs-identifier hs-var">V.toList</span></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Jikka.Core.Language.Value.html#formatValue"><span class="hs-identifier hs-type">formatValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-47"></span><span id="formatValue"><span class="annot"><span class="annottext">formatValue :: Value -&gt; String
+</span><a href="Jikka.Core.Language.Value.html#formatValue"><span class="hs-identifier hs-var hs-var">formatValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-48"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValInt"><span class="hs-identifier hs-type">ValInt</span></a></span><span> </span><span id="local-6989586621679268223"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679268223"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679268223"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValBool"><span class="hs-identifier hs-type">ValBool</span></a></span><span> </span><span id="local-6989586621679268222"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679268222"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; ShowS
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
+</span><span class="hs-identifier hs-var">toLower</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679268222"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValList"><span class="hs-identifier hs-type">ValList</span></a></span><span> </span><span id="local-6989586621679268221"><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679268221"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;[&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Value -&gt; String) -&gt; [Value] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+</span><a href="Jikka.Core.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; [Value]
+forall a. Vector a -&gt; [a]
+</span><span class="hs-identifier hs-var">V.toList</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679268221"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;]&quot;</span></span><span>
+</span><span id="line-51"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValTuple"><span class="hs-identifier hs-type">ValTuple</span></a></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679268220"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268220"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+</span><a href="Jikka.Core.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268220"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;,)&quot;</span></span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValTuple"><span class="hs-identifier hs-type">ValTuple</span></a></span><span> </span><span id="local-6989586621679268219"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679268219"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
+forall a. [a] -&gt; [[a]] -&gt; [a]
+</span><span class="hs-identifier hs-var">intercalate</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;, &quot;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Value -&gt; String) -&gt; [Value] -&gt; [String]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+</span><a href="Jikka.Core.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679268219"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;)&quot;</span></span><span>
+</span><span id="line-53"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValBuiltin"><span class="hs-identifier hs-type">ValBuiltin</span></a></span><span> </span><span id="local-6989586621679268218"><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679268218"><span class="hs-identifier hs-var">builtin</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679268218"><span class="hs-identifier hs-var">builtin</span></a></span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679268217"><span class="annot"><span class="annottext">f :: Value
+</span><a href="#local-6989586621679268217"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.Core.Language.Value.html#ValLambda"><span class="hs-identifier hs-type">ValLambda</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679268217"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-55"></span></pre></body></html>
