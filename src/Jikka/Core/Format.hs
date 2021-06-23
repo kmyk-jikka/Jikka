@@ -87,9 +87,20 @@ analyzeBuiltin = \case
   BitXor -> infixOp "^"
   BitLeftShift -> infixOp "<<"
   BitRightShift -> infixOp ">>"
+  -- matrix functions
+  MatAp _ _ -> fun "matap"
+  MatZero _ -> fun "matzero"
+  MatOne _ -> fun "matone"
+  MatAdd _ _ -> fun "matadd"
+  MatMul _ _ _ -> fun "matmul"
+  MatPow _ -> fun "matpow"
   -- modular functions
   ModInv -> fun "modinv"
   ModPow -> fun "modpow"
+  ModMatAp _ _ -> fun "modmatap"
+  ModMatAdd _ _ -> fun "modmatadd"
+  ModMatMul _ _ _ -> fun "modmatmul"
+  ModMatPow _ -> fun "modmatpow"
   -- list functions
   Cons t -> Fun [t] "cons"
   Foldl t1 t2 -> Fun [t1, t2] "foldl"

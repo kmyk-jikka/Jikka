@@ -41,9 +41,20 @@ builtinToType = \case
   BitXor -> Fun2Ty IntTy
   BitLeftShift -> Fun2Ty IntTy
   BitRightShift -> Fun2Ty IntTy
+  -- matrix functions
+  MatAp h w -> FunTy [matrixTy h w, vectorTy w] (vectorTy h)
+  MatZero n -> FunTy [] (matrixTy n n)
+  MatOne n -> FunTy [] (matrixTy n n)
+  MatAdd h w -> FunTy [matrixTy h w, matrixTy h w] (matrixTy h w)
+  MatMul h n w -> FunTy [matrixTy h n, matrixTy n w] (matrixTy h w)
+  MatPow n -> FunTy [matrixTy n n, IntTy] (matrixTy n n)
   -- modular functions
   ModInv -> Fun2Ty IntTy
   ModPow -> Fun3Ty IntTy
+  ModMatAp h w -> FunTy [matrixTy h w, vectorTy w, IntTy] (vectorTy h)
+  ModMatAdd h w -> FunTy [matrixTy h w, matrixTy h w, IntTy] (matrixTy h w)
+  ModMatMul h n w -> FunTy [matrixTy h n, matrixTy n w, IntTy] (matrixTy h w)
+  ModMatPow n -> FunTy [matrixTy n n, IntTy, IntTy] (matrixTy n n)
   -- list functions
   Cons t -> FunTy [t, ListTy t] (ListTy t)
   Foldl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] t2

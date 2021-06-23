@@ -30,6 +30,7 @@ import Data.Bits
 import Data.List (intercalate, sort)
 import qualified Data.Vector as V
 import Jikka.Common.Error
+import Jikka.Common.Matrix
 import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
 import Jikka.Core.Language.Expr
@@ -132,13 +133,23 @@ argmaxEither :: (MonadError Error m, Ord a) => [a] -> m Integer
 argmaxEither [] = throwRuntimeError "there is no maximum for the empty list"
 argmaxEither a = return $ snd (maximum (zip a [0 ..]))
 
-inv :: MonadError Error m => Integer -> Integer -> m Integer
-inv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
-inv _ _ = throwInternalError "TODO: implement inv()"
+modinv :: MonadError Error m => Integer -> Integer -> m Integer
+modinv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
+modinv _ _ = throwInternalError "TODO: implement inv()"
 
-powmod :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
-powmod _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for powmod: MOD = " ++ show m
-powmod a b m = return $ (a ^ b) `mod` m
+modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
+modpow _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for modpow: MOD = " ++ show m
+modpow a b m = return $ (a ^ b) `mod` m
+
+modvec :: MonadError Error m => V.Vector Integer -> Integer -> m (V.Vector Integer)
+modvec _ m | m <= 0 = throwRuntimeError $ "invalid argument for modvec: MOD = " ++ show m
+modvec x m = return $ V.map (`mod` m) x
+
+modmat :: MonadError Error m => Matrix Integer -> Integer -> m (Matrix Integer)
+modmat _ m | m <= 0 = throwRuntimeError $ "invalid argument for modmat: MOD = " ++ show m
+modmat f m = case makeMatrix (V.map (V.map (`mod` m)) (unMatrix f)) of
+  Nothing -> throwRuntimeError "modmat: something wrong"
+  Just f -> return f
 
 scanM :: Monad m => (a -> b -> m a) -> a -> V.Vector b -> m (V.Vector a)
 scanM f y xs = do
@@ -230,9 +241,20 @@ callBuiltin builtin args = case (builtin, args) of
   (BitXor, [ValInt a, ValInt b]) -> return $ ValInt (a `xor` b)
   (BitLeftShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger b)
   (BitRightShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger (- b))
+  -- matrix functions
+  (MatAp _ _, [f, x]) -> valueFromVector <$> (matap <$> valueToMatrix f <*> valueToVector x)
+  (MatZero n, []) -> return $ valueFromMatrix (matzero n)
+  (MatOne n, []) -> return $ valueFromMatrix (matone n)
+  (MatAdd _ _, [f, g]) -> valueFromMatrix <$> (matadd <$> valueToMatrix f <*> valueToMatrix g)
+  (MatMul _ _ _, [f, g]) -> valueFromMatrix <$> (matmul <$> valueToMatrix f <*> valueToMatrix g)
+  (MatPow _, [f, ValInt k]) -> valueFromMatrix <$> (matpow <$> valueToMatrix f <*> pure k)
   -- modular functions
-  (ModInv, [ValInt a, ValInt b]) -> ValInt <$> inv a b
-  (ModPow, [ValInt a, ValInt b, ValInt c]) -> ValInt <$> powmod a b c
+  (ModInv, [ValInt x, ValInt m]) -> ValInt <$> modinv x m
+  (ModPow, [ValInt x, ValInt k, ValInt m]) -> ValInt <$> modpow x k m
+  (ModMatAp _ _, [f, x, ValInt m]) -> valueFromVector <$> (flip modvec m =<< (matap <$> valueToMatrix f <*> valueToVector x))
+  (ModMatAdd _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matadd <$> valueToMatrix f <*> valueToMatrix g))
+  (ModMatMul _ _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matmul <$> valueToMatrix f <*> valueToMatrix g))
+  (ModMatPow _, [f, ValInt k, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matpow <$> valueToMatrix f <*> pure k))
   -- list functions
   (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
   (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a

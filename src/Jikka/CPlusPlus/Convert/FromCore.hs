@@ -129,9 +129,20 @@ runAppBuiltin f args = case (f, args) of
   (X.BitXor, [e1, e2]) -> return $ Y.BinOp Y.BitXor e1 e2
   (X.BitLeftShift, [e1, e2]) -> return $ Y.BinOp Y.BitLeftShift e1 e2
   (X.BitRightShift, [e1, e2]) -> return $ Y.BinOp Y.BitRightShift e1 e2
+  -- matrix functions
+  (X.MatAp h w, [f, x]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matap<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, x]
+  (X.MatZero n, []) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matzero<" ++ show n ++ ">")) []) []
+  (X.MatOne n, []) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matone<" ++ show n ++ ">")) []) []
+  (X.MatAdd h w, [f, g]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matadd<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, g]
+  (X.MatMul h n w, [f, g]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matmul<" ++ show h ++ ", " ++ show n ++ ", " ++ show w ++ ">")) []) [f, g]
+  (X.MatPow n, [f, k]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matpow<" ++ show n ++ ">")) []) [f, k]
   -- modular functions
   (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
   (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
+  (X.ModMatAp h w, [f, x, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatap<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, x, m]
+  (X.ModMatAdd h w, [f, g, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatadd<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, g, m]
+  (X.ModMatMul h n w, [f, g, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatmul<" ++ show h ++ ", " ++ show n ++ ", " ++ show w ++ ">")) []) [f, g, m]
+  (X.ModMatPow n, [f, k, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatpow<" ++ show n ++ ">")) []) [f, k, m]
   -- list functions
   (X.Cons t, [e1, e2]) -> do
     t <- runType t

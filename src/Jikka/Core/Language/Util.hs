@@ -52,9 +52,20 @@ mapTypeInBuiltin f = \case
   BitXor -> BitXor
   BitLeftShift -> BitLeftShift
   BitRightShift -> BitRightShift
+  -- matrix functions
+  MatAp h w -> MatAp h w
+  MatZero n -> MatZero n
+  MatOne n -> MatOne n
+  MatAdd h w -> MatAdd h w
+  MatMul h n w -> MatMul h n w
+  MatPow n -> MatPow n
   -- modular functionsmodular
   ModInv -> ModInv
   ModPow -> ModPow
+  ModMatAp h w -> ModMatAp h w
+  ModMatAdd h w -> ModMatAdd h w
+  ModMatMul h n w -> ModMatMul h n w
+  ModMatPow n -> ModMatPow n
   -- list functionslist
   Cons t -> Cons (f t)
   Foldl t1 t2 -> Foldl (f t1) (f t2)
