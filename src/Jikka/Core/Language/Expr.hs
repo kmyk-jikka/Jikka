@@ -259,6 +259,8 @@ pattern FunLTy t <-
   where
     FunLTy t = FunTy [ListTy t] t
 
+pattern LitInt' n = Lit (LitInt n)
+
 pattern Lit0 = Lit (LitInt 0)
 
 pattern Lit1 = Lit (LitInt 1)

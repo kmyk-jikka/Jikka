@@ -20,6 +20,7 @@ import Jikka.Common.Error
 import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
+import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
@@ -33,5 +34,6 @@ run prog = do
   prog <- RemoveUnusedVars.run prog
   prog <- ANormal.run prog
   prog <- TrivialLetElimination.run prog
+  prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   StrengthReduction.run prog
