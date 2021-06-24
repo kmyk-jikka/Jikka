@@ -67,12 +67,12 @@ matadd (Matrix a) (Matrix b) =
 -- This assumes sizes of inputs match.
 matmul :: Num a => Matrix a -> Matrix a -> Matrix a
 matmul (Matrix a) (Matrix b) = runST $ do
-  let (h, w) = matsize' a
-  let (_, w') = matsize' b
-  c <- MV.replicateM h (MV.replicate w' 0)
-  forM_ [0 .. h] $ \y -> do
-    forM_ [0 .. w] $ \z -> do
-      forM_ [0 .. w'] $ \x -> do
+  let (h, n) = matsize' a
+  let (_, w) = matsize' b
+  c <- MV.replicateM h (MV.replicate w 0)
+  forM_ [0 .. h - 1] $ \y -> do
+    forM_ [0 .. n - 1] $ \z -> do
+      forM_ [0 .. w - 1] $ \x -> do
         let delta = (a V.! y V.! z) * (b V.! z V.! x)
         row <- MV.read c y
         MV.modify row (+ delta) x
@@ -84,8 +84,8 @@ matap :: Num a => Matrix a -> V.Vector a -> V.Vector a
 matap (Matrix a) b = runST $ do
   let (h, w) = matsize' a
   c <- MV.replicate h 0
-  forM_ [0 .. h] $ \y -> do
-    forM_ [0 .. w] $ \x -> do
+  forM_ [0 .. h - 1] $ \y -> do
+    forM_ [0 .. w - 1] $ \x -> do
       let delta = (a V.! y V.! x) * (b V.! x)
       MV.modify c (+ delta) y
   V.freeze c
@@ -96,10 +96,10 @@ matscalar a (Matrix b) = Matrix $ V.map (V.map (a *)) b
 -- | `matpow` calculates the power \(A^k\) of a matrix \(A\) and a natural number \(k\).
 -- This assumes inputs are square matrices.
 -- This fails for \(k \lt 0\).
-matpow :: Num a => Matrix a -> Integer -> Matrix a
+matpow :: (Show a, Num a) => Matrix a -> Integer -> Matrix a
 matpow _ k | k < 0 = error "cannot calculate a negative power for a monoid"
 matpow x k = go unit x k
   where
     unit = let (h, _) = matsize x in matone h
     go y _ 0 = y
-    go y x k = go (if k `mod` 2 == 1 then matmul y x else x) (matmul x x) (k `div` 2)
+    go y x k = go (if k `mod` 2 == 1 then matmul y x else y) (matmul x x) (k `div` 2)
