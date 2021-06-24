@@ -1,7 +1,10 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module Jikka.Common.Matrix
   ( Matrix,
     unMatrix,
     makeMatrix,
+    makeMatrix',
     matsize,
     matsize',
     matcheck,
@@ -23,7 +26,7 @@ import qualified Data.Vector.Mutable as MV
 -- | `Matrix` is data for matrices.
 -- It is guaranteed that internal arrays are not jagged arrays.
 newtype Matrix a = Matrix (V.Vector (V.Vector a))
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Functor)
 
 unMatrix :: Matrix a -> V.Vector (V.Vector a)
 unMatrix (Matrix a) = a
@@ -49,6 +52,11 @@ matcheck a =
 
 makeMatrix :: V.Vector (V.Vector a) -> Maybe (Matrix a)
 makeMatrix a = if matcheck a then Just (Matrix a) else Nothing
+
+makeMatrix' :: V.Vector (V.Vector a) -> Matrix a
+makeMatrix' a = case makeMatrix a of
+  Nothing -> error "Jikka.Common.Matrix.makeMatrix': the input is not a matrix"
+  Just a -> a
 
 matzero :: Num a => Int -> Matrix a
 matzero n = Matrix $ V.replicate n (V.replicate n 0)

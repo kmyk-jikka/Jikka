@@ -111,7 +111,7 @@ matrix<int64_t, H, W> matmul(const matrix<int64_t, H, N> &a,
 
 template <size_t N>
 matrix<int64_t, N, N> matpow(matrix<int64_t, N, N> x, int64_t k) {
-  matrix<int64_t, N, N> y = matone<int64_t, N>();
+  matrix<int64_t, N, N> y = matone<N>();
   for (; k; k >>= 1) {
     if (k & 1) {
       y = matmul(y, x);
@@ -204,7 +204,7 @@ matrix<int64_t, H, W> modmatmul(const matrix<int64_t, H, N> &a,
 template <size_t N>
 matrix<int64_t, N, N> modmatpow(matrix<int64_t, N, N> x, int64_t k,
                                 int64_t MOD) {
-  matrix<int64_t, N, N> y = matone<int64_t, N>();
+  matrix<int64_t, N, N> y = matone<N>();
   for (; k; k >>= 1) {
     if (k & 1) {
       y = modmatmul(y, x, MOD);

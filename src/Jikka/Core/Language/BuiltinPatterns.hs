@@ -91,13 +91,13 @@ pattern ModInv' e1 e2 = AppBuiltin ModInv [e1, e2]
 
 pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
 
-pattern ModMatAp' h w e1 e2 = AppBuiltin (ModMatAp h w) [e1, e2]
+pattern ModMatAp' h w e1 e2 e3 = AppBuiltin (ModMatAp h w) [e1, e2, e3]
 
-pattern ModMatAdd' h w e1 e2 = AppBuiltin (ModMatAdd h w) [e1, e2]
+pattern ModMatAdd' h w e1 e2 e3 = AppBuiltin (ModMatAdd h w) [e1, e2, e3]
 
-pattern ModMatMul' h n w e1 e2 = AppBuiltin (ModMatMul h n w) [e1, e2]
+pattern ModMatMul' h n w e1 e2 e3 = AppBuiltin (ModMatMul h n w) [e1, e2, e3]
 
-pattern ModMatPow' n e1 e2 = AppBuiltin (ModMatPow n) [e1, e2]
+pattern ModMatPow' n e1 e2 e3 = AppBuiltin (ModMatPow n) [e1, e2, e3]
 
 -- list functions
 pattern Cons' t e1 e2 = AppBuiltin (Cons t) [e1, e2]
