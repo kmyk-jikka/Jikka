@@ -72,10 +72,32 @@ pattern BitLeftShift' e1 e2 = AppBuiltin BitLeftShift [e1, e2]
 
 pattern BitRightShift' e1 e2 = AppBuiltin BitRightShift [e1, e2]
 
+-- matrix functions
+
+pattern MatAp' h w e1 e2 = AppBuiltin (MatAp h w) [e1, e2]
+
+pattern MatZero' n = AppBuiltin (MatZero n) []
+
+pattern MatOne' n = AppBuiltin (MatOne n) []
+
+pattern MatAdd' h w e1 e2 = AppBuiltin (MatAdd h w) [e1, e2]
+
+pattern MatMul' h n w e1 e2 = AppBuiltin (MatMul h n w) [e1, e2]
+
+pattern MatPow' n e1 e2 = AppBuiltin (MatPow n) [e1, e2]
+
 -- modular functions
 pattern ModInv' e1 e2 = AppBuiltin ModInv [e1, e2]
 
 pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
+
+pattern ModMatAp' h w e1 e2 = AppBuiltin (ModMatAp h w) [e1, e2]
+
+pattern ModMatAdd' h w e1 e2 = AppBuiltin (ModMatAdd h w) [e1, e2]
+
+pattern ModMatMul' h n w e1 e2 = AppBuiltin (ModMatMul h n w) [e1, e2]
+
+pattern ModMatPow' n e1 e2 = AppBuiltin (ModMatPow n) [e1, e2]
 
 -- list functions
 pattern Cons' t e1 e2 = AppBuiltin (Cons t) [e1, e2]
