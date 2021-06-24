@@ -8,6 +8,7 @@ import Data.List (intercalate)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
+import Jikka.Common.ModInt
 import Jikka.Core.Language.Expr
 
 data Value
@@ -65,6 +66,18 @@ valueFromVector x = ValTuple (map ValInt (V.toList x))
 
 valueFromMatrix :: Matrix Integer -> Value
 valueFromMatrix f = ValTuple (map (ValTuple . map ValInt . V.toList) (V.toList (unMatrix f)))
+
+valueToModVector :: MonadError Error m => Integer -> Value -> m (V.Vector ModInt)
+valueToModVector m x = V.map (`toModInt` m) <$> valueToVector x
+
+valueToModMatrix :: MonadError Error m => Integer -> Value -> m (Matrix ModInt)
+valueToModMatrix m f = fmap (`toModInt` m) <$> valueToMatrix f
+
+valueFromModVector :: V.Vector ModInt -> Value
+valueFromModVector = valueFromVector . V.map fromModInt
+
+valueFromModMatrix :: Matrix ModInt -> Value
+valueFromModMatrix = valueFromMatrix . fmap fromModInt
 
 formatValue :: Value -> String
 formatValue = \case

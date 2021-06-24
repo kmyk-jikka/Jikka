@@ -188,8 +188,13 @@ reduceFoldBuild = \case
   ArgMin' _ (Range1' _) -> Lit0
   e -> e
 
+reduceFold :: Expr -> Expr
+reduceFold = \case
+  NatInd' _ v (Lam [(x, _)] (MatAp' n _ f (Var x'))) k | x `isUnusedVar` f && x == x' -> MatAp' n n (MatPow' n f k) v
+  e -> e
+
 reduceList :: Expr -> Expr
-reduceList = reduceFoldBuild . reduceFoldMap . reduceMapMap . reduceBuild
+reduceList = reduceFold . reduceFoldBuild . reduceFoldMap . reduceMapMap . reduceBuild
 
 misc :: Expr -> Expr
 misc = \case

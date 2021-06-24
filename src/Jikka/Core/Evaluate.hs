@@ -141,16 +141,6 @@ modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 modpow _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for modpow: MOD = " ++ show m
 modpow a b m = return $ (a ^ b) `mod` m
 
-modvec :: MonadError Error m => V.Vector Integer -> Integer -> m (V.Vector Integer)
-modvec _ m | m <= 0 = throwRuntimeError $ "invalid argument for modvec: MOD = " ++ show m
-modvec x m = return $ V.map (`mod` m) x
-
-modmat :: MonadError Error m => Matrix Integer -> Integer -> m (Matrix Integer)
-modmat _ m | m <= 0 = throwRuntimeError $ "invalid argument for modmat: MOD = " ++ show m
-modmat f m = case makeMatrix (V.map (V.map (`mod` m)) (unMatrix f)) of
-  Nothing -> throwRuntimeError "modmat: something wrong"
-  Just f -> return f
-
 scanM :: Monad m => (a -> b -> m a) -> a -> V.Vector b -> m (V.Vector a)
 scanM f y xs = do
   (ys, y) <- V.foldM (\(ys, y) x -> (y : ys,) <$> f y x) ([], y) xs
@@ -252,10 +242,10 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     -- modular functions
     (ModInv, [ValInt x, ValInt m]) -> ValInt <$> modinv x m
     (ModPow, [ValInt x, ValInt k, ValInt m]) -> ValInt <$> modpow x k m
-    (ModMatAp _ _, [f, x, ValInt m]) -> valueFromVector <$> (flip modvec m =<< (matap <$> valueToMatrix f <*> valueToVector x))
-    (ModMatAdd _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matadd <$> valueToMatrix f <*> valueToMatrix g))
-    (ModMatMul _ _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matmul <$> valueToMatrix f <*> valueToMatrix g))
-    (ModMatPow _, [f, ValInt k, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matpow <$> valueToMatrix f <*> pure k))
+    (ModMatAp _ _, [f, x, ValInt m]) -> valueFromModVector <$> (matap <$> valueToModMatrix m f <*> valueToModVector m x)
+    (ModMatAdd _ _, [f, g, ValInt m]) -> valueFromModMatrix <$> (matadd <$> valueToModMatrix m f <*> valueToModMatrix m g)
+    (ModMatMul _ _ _, [f, g, ValInt m]) -> valueFromModMatrix <$> (matmul <$> valueToModMatrix m f <*> valueToModMatrix m g)
+    (ModMatPow _, [f, ValInt k, ValInt m]) -> valueFromModMatrix <$> (matpow <$> valueToModMatrix m f <*> pure k)
     -- list functions
     (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
     (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a
