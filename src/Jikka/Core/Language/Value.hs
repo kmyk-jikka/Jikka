@@ -16,7 +16,7 @@ data Value
   | ValList (V.Vector Value)
   | ValTuple [Value]
   | ValBuiltin Builtin
-  | ValLambda Env [(VarName, Type)] Expr
+  | ValLambda (Maybe VarName) Env [(VarName, Type)] Expr
   deriving (Eq, Ord, Show, Read)
 
 type Env = [(VarName, Value)]

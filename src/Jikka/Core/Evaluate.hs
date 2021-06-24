@@ -209,107 +209,108 @@ multichoose n r = choose (n + r - 1) r
 -- evaluator
 
 callBuiltin :: MonadError Error m => Builtin -> [Value] -> m Value
-callBuiltin builtin args = case (builtin, args) of
-  -- arithmetical functions
-  (Negate, [ValInt n]) -> return $ ValInt (- n)
-  (Plus, [ValInt a, ValInt b]) -> return $ ValInt (a + b)
-  (Minus, [ValInt a, ValInt b]) -> return $ ValInt (a - b)
-  (Mult, [ValInt a, ValInt b]) -> return $ ValInt (a * b)
-  (FloorDiv, [ValInt a, ValInt b]) -> ValInt <$> floorDiv a b
-  (FloorMod, [ValInt a, ValInt b]) -> ValInt <$> floorMod a b
-  (CeilDiv, [ValInt a, ValInt b]) -> ValInt <$> ceilDiv a b
-  (CeilMod, [ValInt a, ValInt b]) -> ValInt <$> ceilMod a b
-  (Pow, [ValInt a, ValInt b]) -> return $ ValInt (a ^ b)
-  -- induction functions
-  (NatInd _, [base, step, ValInt n]) -> natind base step n
-  -- advanced arithmetical functions
-  (Abs, [ValInt n]) -> return $ ValInt (abs n)
-  (Gcd, [ValInt a, ValInt b]) -> return $ ValInt (gcd a b)
-  (Lcm, [ValInt a, ValInt b]) -> return $ ValInt (lcm a b)
-  (Min2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (min a b) -- TODO: allow non-integers
-  (Max2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (max a b) -- TODO: allow non-integers
-  -- logical functions
-  (Not, [ValBool p]) -> return $ ValBool (not p)
-  (And, [ValBool p, ValBool q]) -> return $ ValBool (p && q)
-  (Or, [ValBool p, ValBool q]) -> return $ ValBool (p || q)
-  (Implies, [ValBool p, ValBool q]) -> return $ ValBool (not p || q)
-  (If _, [ValBool p, a, b]) -> return $ if p then a else b
-  -- bitwise functions
-  (BitNot, [ValInt a]) -> return $ ValInt (complement a)
-  (BitAnd, [ValInt a, ValInt b]) -> return $ ValInt (a .&. b)
-  (BitOr, [ValInt a, ValInt b]) -> return $ ValInt (a .|. b)
-  (BitXor, [ValInt a, ValInt b]) -> return $ ValInt (a `xor` b)
-  (BitLeftShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger b)
-  (BitRightShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger (- b))
-  -- matrix functions
-  (MatAp _ _, [f, x]) -> valueFromVector <$> (matap <$> valueToMatrix f <*> valueToVector x)
-  (MatZero n, []) -> return $ valueFromMatrix (matzero n)
-  (MatOne n, []) -> return $ valueFromMatrix (matone n)
-  (MatAdd _ _, [f, g]) -> valueFromMatrix <$> (matadd <$> valueToMatrix f <*> valueToMatrix g)
-  (MatMul _ _ _, [f, g]) -> valueFromMatrix <$> (matmul <$> valueToMatrix f <*> valueToMatrix g)
-  (MatPow _, [f, ValInt k]) -> valueFromMatrix <$> (matpow <$> valueToMatrix f <*> pure k)
-  -- modular functions
-  (ModInv, [ValInt x, ValInt m]) -> ValInt <$> modinv x m
-  (ModPow, [ValInt x, ValInt k, ValInt m]) -> ValInt <$> modpow x k m
-  (ModMatAp _ _, [f, x, ValInt m]) -> valueFromVector <$> (flip modvec m =<< (matap <$> valueToMatrix f <*> valueToVector x))
-  (ModMatAdd _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matadd <$> valueToMatrix f <*> valueToMatrix g))
-  (ModMatMul _ _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matmul <$> valueToMatrix f <*> valueToMatrix g))
-  (ModMatPow _, [f, ValInt k, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matpow <$> valueToMatrix f <*> pure k))
-  -- list functions
-  (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
-  (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a
-  (Scanl _ _, [f, x, ValList a]) -> ValList <$> scanM (\x y -> callValue f [x, y]) x a
-  (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
-  (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
-  (Map _ _, [f, ValList a]) -> ValList <$> map' f a
-  (Filter _, [f, ValList a]) -> ValList <$> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) a -- TODO
-  (At _, [ValList a, ValInt n]) -> atEither a n
-  (SetAt _, [ValList a, ValInt n, x]) -> ValList <$> setAtEither a n x
-  (Elem _, [x, ValList a]) -> return $ ValBool (x `V.elem` a)
-  (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
-  (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
-  (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
-  (Max1 IntTy, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a) -- TODO: allow non-integers
-  (ArgMin IntTy, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a) -- TODO: allow non-integers
-  (ArgMax IntTy, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a) -- TODO: allow non-integers
-  (All, [ValList a]) -> ValBool . and <$> valueToBoolList a
-  (Any, [ValList a]) -> ValBool . or <$> valueToBoolList a
-  (Sorted _, [ValList a]) -> return $ ValList (sortVector a)
-  (List _, [ValList a]) -> return $ ValList a
-  (Reversed _, [ValList a]) -> return $ ValList (V.reverse a)
-  (Range1, [ValInt n]) -> ValList <$> range1 n
-  (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
-  (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
-  -- tuple functions
-  (Tuple _, xs) -> return $ ValTuple xs
-  (Proj _ n, [ValTuple xs]) -> return $ xs !! n
-  -- comparison
-  (LessThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a < b) -- TODO: allow non-integers
-  (LessEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a <= b) -- TODO: allow non-integers
-  (GreaterThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a > b) -- TODO: allow non-integers
-  (GreaterEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a >= b) -- TODO: allow non-integers
-  (Equal _, [a, b]) -> return $ ValBool (a == b)
-  (NotEqual _, [a, b]) -> return $ ValBool (a /= b)
-  -- combinational functions
-  (Fact, [ValInt n]) -> ValInt <$> fact n
-  (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
-  (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
-  (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
-  _ -> throwInternalError $ "invalid builtin call: " ++ formatBuiltinIsolated builtin ++ "(" ++ intercalate "," (map formatValue args) ++ ")"
+callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltinIsolated builtin) $ do
+  case (builtin, args) of
+    -- arithmetical functions
+    (Negate, [ValInt n]) -> return $ ValInt (- n)
+    (Plus, [ValInt a, ValInt b]) -> return $ ValInt (a + b)
+    (Minus, [ValInt a, ValInt b]) -> return $ ValInt (a - b)
+    (Mult, [ValInt a, ValInt b]) -> return $ ValInt (a * b)
+    (FloorDiv, [ValInt a, ValInt b]) -> ValInt <$> floorDiv a b
+    (FloorMod, [ValInt a, ValInt b]) -> ValInt <$> floorMod a b
+    (CeilDiv, [ValInt a, ValInt b]) -> ValInt <$> ceilDiv a b
+    (CeilMod, [ValInt a, ValInt b]) -> ValInt <$> ceilMod a b
+    (Pow, [ValInt a, ValInt b]) -> return $ ValInt (a ^ b)
+    -- induction functions
+    (NatInd _, [base, step, ValInt n]) -> natind base step n
+    -- advanced arithmetical functions
+    (Abs, [ValInt n]) -> return $ ValInt (abs n)
+    (Gcd, [ValInt a, ValInt b]) -> return $ ValInt (gcd a b)
+    (Lcm, [ValInt a, ValInt b]) -> return $ ValInt (lcm a b)
+    (Min2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (min a b) -- TODO: allow non-integers
+    (Max2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (max a b) -- TODO: allow non-integers
+    -- logical functions
+    (Not, [ValBool p]) -> return $ ValBool (not p)
+    (And, [ValBool p, ValBool q]) -> return $ ValBool (p && q)
+    (Or, [ValBool p, ValBool q]) -> return $ ValBool (p || q)
+    (Implies, [ValBool p, ValBool q]) -> return $ ValBool (not p || q)
+    (If _, [ValBool p, a, b]) -> return $ if p then a else b
+    -- bitwise functions
+    (BitNot, [ValInt a]) -> return $ ValInt (complement a)
+    (BitAnd, [ValInt a, ValInt b]) -> return $ ValInt (a .&. b)
+    (BitOr, [ValInt a, ValInt b]) -> return $ ValInt (a .|. b)
+    (BitXor, [ValInt a, ValInt b]) -> return $ ValInt (a `xor` b)
+    (BitLeftShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger b)
+    (BitRightShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger (- b))
+    -- matrix functions
+    (MatAp _ _, [f, x]) -> valueFromVector <$> (matap <$> valueToMatrix f <*> valueToVector x)
+    (MatZero n, []) -> return $ valueFromMatrix (matzero n)
+    (MatOne n, []) -> return $ valueFromMatrix (matone n)
+    (MatAdd _ _, [f, g]) -> valueFromMatrix <$> (matadd <$> valueToMatrix f <*> valueToMatrix g)
+    (MatMul _ _ _, [f, g]) -> valueFromMatrix <$> (matmul <$> valueToMatrix f <*> valueToMatrix g)
+    (MatPow _, [f, ValInt k]) -> valueFromMatrix <$> (matpow <$> valueToMatrix f <*> pure k)
+    -- modular functions
+    (ModInv, [ValInt x, ValInt m]) -> ValInt <$> modinv x m
+    (ModPow, [ValInt x, ValInt k, ValInt m]) -> ValInt <$> modpow x k m
+    (ModMatAp _ _, [f, x, ValInt m]) -> valueFromVector <$> (flip modvec m =<< (matap <$> valueToMatrix f <*> valueToVector x))
+    (ModMatAdd _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matadd <$> valueToMatrix f <*> valueToMatrix g))
+    (ModMatMul _ _ _, [f, g, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matmul <$> valueToMatrix f <*> valueToMatrix g))
+    (ModMatPow _, [f, ValInt k, ValInt m]) -> valueFromMatrix <$> (flip modmat m =<< (matpow <$> valueToMatrix f <*> pure k))
+    -- list functions
+    (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
+    (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a
+    (Scanl _ _, [f, x, ValList a]) -> ValList <$> scanM (\x y -> callValue f [x, y]) x a
+    (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
+    (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
+    (Map _ _, [f, ValList a]) -> ValList <$> map' f a
+    (Filter _, [f, ValList a]) -> ValList <$> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) a -- TODO
+    (At _, [ValList a, ValInt n]) -> atEither a n
+    (SetAt _, [ValList a, ValInt n, x]) -> ValList <$> setAtEither a n x
+    (Elem _, [x, ValList a]) -> return $ ValBool (x `V.elem` a)
+    (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
+    (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
+    (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
+    (Max1 IntTy, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a) -- TODO: allow non-integers
+    (ArgMin IntTy, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a) -- TODO: allow non-integers
+    (ArgMax IntTy, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a) -- TODO: allow non-integers
+    (All, [ValList a]) -> ValBool . and <$> valueToBoolList a
+    (Any, [ValList a]) -> ValBool . or <$> valueToBoolList a
+    (Sorted _, [ValList a]) -> return $ ValList (sortVector a)
+    (List _, [ValList a]) -> return $ ValList a
+    (Reversed _, [ValList a]) -> return $ ValList (V.reverse a)
+    (Range1, [ValInt n]) -> ValList <$> range1 n
+    (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
+    (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
+    -- tuple functions
+    (Tuple _, xs) -> return $ ValTuple xs
+    (Proj _ n, [ValTuple xs]) -> return $ xs !! n
+    -- comparison
+    (LessThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a < b) -- TODO: allow non-integers
+    (LessEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a <= b) -- TODO: allow non-integers
+    (GreaterThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a > b) -- TODO: allow non-integers
+    (GreaterEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a >= b) -- TODO: allow non-integers
+    (Equal _, [a, b]) -> return $ ValBool (a == b)
+    (NotEqual _, [a, b]) -> return $ ValBool (a /= b)
+    -- combinational functions
+    (Fact, [ValInt n]) -> ValInt <$> fact n
+    (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
+    (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
+    (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
+    _ -> throwInternalError $ "invalid builtin call: " ++ formatBuiltinIsolated builtin ++ "(" ++ intercalate "," (map formatValue args) ++ ")"
 
-callLambda :: MonadError Error m => Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
-callLambda env formalArgs body actualArgs =
+callLambda :: MonadError Error m => Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
+callLambda name env formalArgs body actualArgs = wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ do
   if length formalArgs /= length actualArgs
     then throwInternalError $ "wrong number of arguments for lambda function: expr = " ++ formatExpr (Lam formalArgs body) ++ ", args = (" ++ intercalate ", " (map formatValue actualArgs) ++ ")"
     else case (formalArgs, actualArgs) of
       ([], []) -> evaluateExpr env body
-      ((x, _) : formalArgs, val : actualArgs) -> callLambda ((x, val) : env) formalArgs body actualArgs
+      ((x, _) : formalArgs, val : actualArgs) -> callLambda name ((x, val) : env) formalArgs body actualArgs
       _ -> throwInternalError "wrong number of arguments for lambda function"
 
 callValue :: MonadError Error m => Value -> [Value] -> m Value
 callValue f args = case f of
   ValBuiltin builtin -> callBuiltin builtin args
-  ValLambda env args' body -> callLambda env args' body args
+  ValLambda name env args' body -> callLambda name env args' body args
   _ -> throwInternalError $ "call non-function: " ++ formatValue f
 
 evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
@@ -322,13 +323,13 @@ evaluateExpr env = \case
     f <- evaluateExpr env f
     args <- mapM (evaluateExpr env) args
     callValue f args
-  Lam args body -> return $ ValLambda env args body
+  Lam args body -> return $ ValLambda Nothing env args body
   Let x _ e1 e2 -> do
     v1 <- evaluateExpr env e1
     evaluateExpr ((x, v1) : env) e2
 
 callBuiltinWithTokens :: MonadError Error m => [Token] -> Builtin -> m (Value, [Token])
-callBuiltinWithTokens tokens builtin = do
+callBuiltinWithTokens tokens builtin = wrapError' ("while calling builtin " ++ formatBuiltinIsolated builtin) $ do
   case builtinToType builtin of
     FunTy ts _ -> do
       (args, tokens) <- readInputMap ts tokens
@@ -336,14 +337,16 @@ callBuiltinWithTokens tokens builtin = do
       return (val, tokens)
     _ -> throwInternalError "all builtin must be functions"
 
-callLambdaWithTokens :: MonadError Error m => [Token] -> Env -> [(VarName, Type)] -> Expr -> m (Value, [Token])
-callLambdaWithTokens tokens env args body = case args of
-  ((x, t) : args) -> do
-    (val, tokens) <- readInput t tokens
-    callLambdaWithTokens tokens ((x, val) : env) args body
-  [] -> do
-    val <- evaluateExpr env body
-    return (val, tokens)
+callLambdaWithTokens :: MonadError Error m => [Token] -> Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> m (Value, [Token])
+callLambdaWithTokens tokens name env args body = wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ go tokens env args
+  where
+    go tokens env args = case args of
+      ((x, t) : args) -> do
+        (val, tokens) <- readInput t tokens
+        go tokens ((x, val) : env) args
+      [] -> do
+        val <- evaluateExpr env body
+        return (val, tokens)
 
 evaluateToplevelExpr :: (MonadFix m, MonadError Error m) => [Token] -> Env -> ToplevelExpr -> m (Value, [Token])
 evaluateToplevelExpr tokens env = \case
@@ -357,7 +360,7 @@ evaluateToplevelExpr tokens env = \case
     val <- evaluateExpr env e
     case val of
       ValBuiltin builtin -> callBuiltinWithTokens tokens builtin
-      ValLambda env args body -> callLambdaWithTokens tokens env args body
+      ValLambda name env args body -> callLambdaWithTokens tokens name env args body
       _ -> return (val, tokens)
 
 evaluateProgram :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
