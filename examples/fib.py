@@ -5,7 +5,7 @@ def f(n: int) -> int:
         c = a + b
         a = b
         b = c
-    return a % 1000000007
+    return a
 
 def solve(n: int) -> int:
-    return f(n)
+    return f(n) % 1000000007
