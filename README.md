@@ -28,6 +28,7 @@ for users:
 
 -   [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
 -   [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
+-   blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/)
 
 for developpers:
 
@@ -37,87 +38,50 @@ for developpers:
 -   [Haddock](https://kmyk.github.io/Jikka/)
 
 
-## Examples (`v3.1.0`)
+## Examples (`v5.0.5.0`)
 
-The below are examples of old the version (at `v3.1.0`). The input was a ML code.
+Input, O(N):
 
-### Sum of Max
+``` python
+def f(n: int) -> int:
+    a = 0
+    b = 1
+    for _ in range(n):
+        c = a + b
+        a = b
+        b = c
+    return a
 
-Problem:
-You are given a natural number K and a sequence A = (a₀, a₁, …, aₙ) of length N.
-Compute the value of ∑ᵢ˱ₖ maxⱼ˱ₙ (i + 2 aⱼ).
-
-Input, O(K N):
-
-``` sml
-let K = 100000 in
-let given N : Nat in
-let given A : N -> Nat in
-
-sum K (fun i -> max N (fun j -> i + 2 * A j))
+def solve(n: int) -> int:
+    return f(n) % 1000000007
 ```
 
-Output, O(K + N):
+Output, O(log N):
 
 ``` c++
-int64_t solve(int64_t N, const vector<int64_t> & A) {
-    int64_t K = 100000;
-    int64_t a2 = 0;
-    for (int64_t i2 = 0; i2 < K; ++ i2) {
-        a2 += i2;
-    }
-    int64_t a1 = INT64_MIN;
-    for (int64_t i1 = 0; i1 < N; ++ i1) {
-        a1 = max(a1, 2 * A[i1]);
-    }
-    return a2 + K * a1;
+#include "jikka/all.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <tuple>
+#include <vector>
+int64_t solve(int64_t n_317) {
+  return jikka::modmatap<2, 2>(
+      jikka::modmatpow<2>(jikka::make_array<std::array<int64_t, 2>>(
+                              jikka::make_array<int64_t>(1, 1),
+                              jikka::make_array<int64_t>(1, 0)),
+                          n_317, 1000000007),
+      jikka::make_array<int64_t>(1, 0), 1000000007)[1];
 }
-```
-
-### AtCoder Beginner Contest 134: C - Exception Handling
-
-Problem: <https://atcoder.jp/contests/abc134/tasks/abc134_c>
-
-Input, O(N^2):
-
-``` sml
-let given N : [2, 200001) in
-let given A : N -> 200001 in
-
-let f (i : N) = max N (fun j -> if j = i then 0 else A j) in
-f
-```
-
-Output, O(N): <https://atcoder.jp/contests/abc134/submissions/6526623>
-
-
-## Examples (`v5.0.1.0`)
-
-``` console
-$ cat examples/fact.py
-def f(n: int) -> int:
-    if n == 0:
-        return 1
-    else:
-        return n * f(n - 1)
-
-$ stack run convert examples/fact.py
-int64_t f0_f(int64_t a1_n) {
-    bool x2 = a1_n == 0;
-    if (x2) {
-        return 1;
-    } else {
-        int64_t x3 = - 1;
-        int64_t x4 = x3;
-        int64_t x5 = x4;
-        int64_t x6 = a1_n + x5;
-        int64_t x7 = x6;
-        int64_t x8 = f0_f(x7);
-        return a1_n * x8;
-    }
-}
-int64_t solve(int64_t a9) {
-    return f0_f(a9);
+int main() {
+  int64_t x318;
+  std::cin >> x318;
+  int64_t x319 = solve(x318);
+  std::cout << x319;
+  std::cout << '\n';
 }
 ```
 

@@ -175,6 +175,7 @@ reduceFoldMap = \case
 
 reduceFoldBuild :: Expr -> Expr
 reduceFoldBuild = \case
+  Foldl' _ t (Lam [(x1, t1), (x2, _)] body) x (Range1' n) | x2 `isUnusedVar` body -> NatInd' t x (Lam [(x1, t1)] body) n
   Len' _ (Range1' n) -> n
   At' _ (Range1' _) i -> i
   Sum' (Range1' n) -> go $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
@@ -187,8 +188,13 @@ reduceFoldBuild = \case
   ArgMin' _ (Range1' _) -> Lit0
   e -> e
 
+reduceFold :: Expr -> Expr
+reduceFold = \case
+  NatInd' _ v (Lam [(x, _)] (MatAp' n _ f (Var x'))) k | x `isUnusedVar` f && x == x' -> MatAp' n n (MatPow' n f k) v
+  e -> e
+
 reduceList :: Expr -> Expr
-reduceList = reduceFoldBuild . reduceFoldMap . reduceMapMap . reduceBuild
+reduceList = reduceFold . reduceFoldBuild . reduceFoldMap . reduceMapMap . reduceBuild
 
 misc :: Expr -> Expr
 misc = \case

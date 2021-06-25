@@ -1,5 +1,55 @@
 # Changelog for Jikka
 
+## 2021-06-25: v5.0.5.0
+
+Some optimizations are implemented.
+Now it can convert a O(N) Python code for fibonacci to O(log N) C++ code.
+
+Input, O(N):
+
+``` python
+def f(n: int) -> int:
+    a = 0
+    b = 1
+    for _ in range(n):
+        c = a + b
+        a = b
+        b = c
+    return a
+
+def solve(n: int) -> int:
+    return f(n) % 1000000007
+```
+
+Output, O(log N):
+
+``` c++
+#include "jikka/all.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <tuple>
+#include <vector>
+int64_t solve(int64_t n_317) {
+  return jikka::modmatap<2, 2>(
+      jikka::modmatpow<2>(jikka::make_array<std::array<int64_t, 2>>(
+                              jikka::make_array<int64_t>(1, 1),
+                              jikka::make_array<int64_t>(1, 0)),
+                          n_317, 1000000007),
+      jikka::make_array<int64_t>(1, 0), 1000000007)[1];
+}
+int main() {
+  int64_t x318;
+  std::cin >> x318;
+  int64_t x319 = solve(x318);
+  std::cout << x319;
+  std::cout << '\n';
+}
+```
+
 ## 2021-06-23: v5.0.4.0
 
 Now executable C++ code is generated.

@@ -7,6 +7,8 @@ import Data.Char (toLower)
 import Data.List (intercalate)
 import qualified Data.Vector as V
 import Jikka.Common.Error
+import Jikka.Common.Matrix
+import Jikka.Common.ModInt
 import Jikka.Core.Language.Expr
 
 data Value
@@ -15,7 +17,7 @@ data Value
   | ValList (V.Vector Value)
   | ValTuple [Value]
   | ValBuiltin Builtin
-  | ValLambda Env [(VarName, Type)] Expr
+  | ValLambda (Maybe VarName) Env [(VarName, Type)] Expr
   deriving (Eq, Ord, Show, Read)
 
 type Env = [(VarName, Value)]
@@ -35,6 +37,10 @@ valueToInt = \case
 valueToIntList :: MonadError Error m => V.Vector Value -> m [Integer]
 valueToIntList = mapM valueToInt . V.toList
 
+valueToIntList' :: MonadError Error m => Value -> m [Integer]
+valueToIntList' (ValList xs) = valueToIntList xs
+valueToIntList' _ = throwRuntimeError "Internal Error: type error"
+
 valueToBool :: MonadError Error m => Value -> m Bool
 valueToBool = \case
   ValBool p -> return p
@@ -42,6 +48,36 @@ valueToBool = \case
 
 valueToBoolList :: MonadError Error m => V.Vector Value -> m [Bool]
 valueToBoolList = mapM valueToBool . V.toList
+
+valueToVector :: MonadError Error m => Value -> m (V.Vector Integer)
+valueToVector (ValTuple x) = V.fromList <$> mapM valueToInt x
+valueToVector _ = throwRuntimeError "Internal Error: value is not a vector"
+
+valueToMatrix :: MonadError Error m => Value -> m (Matrix Integer)
+valueToMatrix (ValTuple f) = do
+  f <- V.fromList <$> mapM valueToVector f
+  case makeMatrix f of
+    Nothing -> throwRuntimeError "Internal Error: value is not a matrix"
+    Just f -> return f
+valueToMatrix _ = throwRuntimeError "Internal Error: value is not a matrix"
+
+valueFromVector :: V.Vector Integer -> Value
+valueFromVector x = ValTuple (map ValInt (V.toList x))
+
+valueFromMatrix :: Matrix Integer -> Value
+valueFromMatrix f = ValTuple (map (ValTuple . map ValInt . V.toList) (V.toList (unMatrix f)))
+
+valueToModVector :: MonadError Error m => Integer -> Value -> m (V.Vector ModInt)
+valueToModVector m x = V.map (`toModInt` m) <$> valueToVector x
+
+valueToModMatrix :: MonadError Error m => Integer -> Value -> m (Matrix ModInt)
+valueToModMatrix m f = fmap (`toModInt` m) <$> valueToMatrix f
+
+valueFromModVector :: V.Vector ModInt -> Value
+valueFromModVector = valueFromVector . V.map fromModInt
+
+valueFromModMatrix :: Matrix ModInt -> Value
+valueFromModMatrix = valueFromMatrix . fmap fromModInt
 
 formatValue :: Value -> String
 formatValue = \case

@@ -118,12 +118,34 @@ data Builtin
     BitLeftShift
   | -- | \(: \int \times \int \to \int\)
     BitRightShift
+  | -- matrix functions
+
+    -- | matrix application \(: \int^{H \times W} \times \int^W \to \int^H\)
+    MatAp Int Int
+  | -- | zero matrix \(: \to \int^{n \times n}\)
+    MatZero Int
+  | -- | unit matrix \(: \to \int^{n \times n}\)
+    MatOne Int
+  | -- | matrix addition \(: \int^{H \times W} \times \int^{H \times W} \to \int^{H \times W}\)
+    MatAdd Int Int
+  | -- | matrix multiplication \(: \int^{H \times n} \times \int^{n \times W} \to \int^{H \times W}\)
+    MatMul Int Int Int
+  | -- | matrix power \(: \int^{n \times n} \times \int \to \int^{n \times n}\)
+    MatPow Int
   | -- modular functions
 
     -- | \(: \int \times \int \to \int\)
     ModInv
   | -- | \(: \int \times \int \times \int \to \int\)
     ModPow
+  | -- | matrix application \(: \int^{H \times W} \times \int^W \times \int \to \int^H\)
+    ModMatAp Int Int
+  | -- | matrix addition \(: \int^{H \times W} \times \int^{H \times W} \times \int \to \int^{H \times W}\)
+    ModMatAdd Int Int
+  | -- | matrix multiplication \(: \int^{H \times n} \times \int^{n \times W} \times \int \to \int^{H \times W}\)
+    ModMatMul Int Int Int
+  | -- | matrix power \(: \int^{n \times n} \times \int \to \int^{n \times n}\)
+    ModMatPow Int
   | -- list functions
 
     -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \list(\alpha)\)
@@ -259,6 +281,14 @@ pattern FunLTy t <-
   where
     FunLTy t = FunTy [ListTy t] t
 
+vectorTy :: Int -> Type
+vectorTy n = TupleTy (replicate n IntTy)
+
+matrixTy :: Int -> Int -> Type
+matrixTy h w = TupleTy (replicate h (TupleTy (replicate w IntTy)))
+
+pattern LitInt' n = Lit (LitInt n)
+
 pattern Lit0 = Lit (LitInt 0)
 
 pattern Lit1 = Lit (LitInt 1)
@@ -266,6 +296,8 @@ pattern Lit1 = Lit (LitInt 1)
 pattern Lit2 = Lit (LitInt 2)
 
 pattern LitMinus1 = Lit (LitInt (-1))
+
+pattern LitBool' p = Lit (LitBool p)
 
 pattern LitTrue = Lit (LitBool True)
 

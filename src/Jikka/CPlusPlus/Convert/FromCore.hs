@@ -78,7 +78,10 @@ runType = \case
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
-  X.TupleTy ts -> Y.TyTuple <$> mapM runType ts
+  X.TupleTy ts ->
+    if not (null ts) && ts == replicate (length ts) (head ts)
+      then Y.TyArray <$> runType (head ts) <*> pure (fromIntegral (length ts))
+      else Y.TyTuple <$> mapM runType ts
   X.FunTy ts t -> Y.TyFunction <$> runType t <*> mapM runType ts
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
@@ -129,9 +132,20 @@ runAppBuiltin f args = case (f, args) of
   (X.BitXor, [e1, e2]) -> return $ Y.BinOp Y.BitXor e1 e2
   (X.BitLeftShift, [e1, e2]) -> return $ Y.BinOp Y.BitLeftShift e1 e2
   (X.BitRightShift, [e1, e2]) -> return $ Y.BinOp Y.BitRightShift e1 e2
+  -- matrix functions
+  (X.MatAp h w, [f, x]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matap<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, x]
+  (X.MatZero n, []) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matzero<" ++ show n ++ ">")) []) []
+  (X.MatOne n, []) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matone<" ++ show n ++ ">")) []) []
+  (X.MatAdd h w, [f, g]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matadd<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, g]
+  (X.MatMul h n w, [f, g]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matmul<" ++ show h ++ ", " ++ show n ++ ", " ++ show w ++ ">")) []) [f, g]
+  (X.MatPow n, [f, k]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matpow<" ++ show n ++ ">")) []) [f, k]
   -- modular functions
   (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
   (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
+  (X.ModMatAp h w, [f, x, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatap<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, x, m]
+  (X.ModMatAdd h w, [f, g, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatadd<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, g, m]
+  (X.ModMatMul h n w, [f, g, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatmul<" ++ show h ++ ", " ++ show n ++ ", " ++ show w ++ ">")) []) [f, g, m]
+  (X.ModMatPow n, [f, k, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatpow<" ++ show n ++ ">")) []) [f, k, m]
   -- list functions
   (X.Cons t, [e1, e2]) -> do
     t <- runType t
@@ -191,8 +205,15 @@ runAppBuiltin f args = case (f, args) of
   -- tuple functions
   (X.Tuple ts, es) -> do
     ts <- mapM runType ts
-    return $ Y.Call (Y.Function "std::tuple" ts) es
-  (X.Proj _ n, [e]) -> return $ Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
+    return $
+      if not (null ts) && ts == replicate (length ts) (head ts)
+        then Y.Call (Y.Function "jikka::make_array" [head ts]) es
+        else Y.Call (Y.Function "std::tuple" ts) es
+  (X.Proj ts n, [e]) ->
+    return $
+      if not (null ts) && ts == replicate (length ts) (head ts)
+        then Y.At e (Y.Lit (Y.LitInt32 (fromIntegral n)))
+        else Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
   -- comparison
   (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
   (X.LessEqual _, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2
@@ -327,13 +348,28 @@ runToplevelExpr env = \case
     case t of
       X.FunTy ts ret -> do
         let f = Y.VarName "solve"
-        args <- forM ts $ \t -> do
-          t <- runType t
-          y <- newFreshName ArgumentNameKind ""
-          return (t, y)
+        (args, body) <- case e of
+          X.Lam args body -> do
+            when (map snd args /= ts) $ do
+              throwInternalError "type error"
+            args <- forM args $ \(x, t) -> do
+              y <- renameVarName ArgumentNameKind x
+              return (x, t, y)
+            e <- runExpr (reverse args ++ env) body
+            let body = [Y.Return e]
+            args' <- forM args $ \(_, t, y) -> do
+              t <- runType t
+              return (t, y)
+            return (args', body)
+          _ -> do
+            args <- forM ts $ \t -> do
+              t <- runType t
+              y <- newFreshName ArgumentNameKind ""
+              return (t, y)
+            e <- runExpr env e
+            let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
+            return (args, body)
         ret <- runType ret
-        e <- runExpr env e
-        let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
         let solve = [Y.FunDef ret f args body]
         main <- runMain f t
         return $ solve ++ main

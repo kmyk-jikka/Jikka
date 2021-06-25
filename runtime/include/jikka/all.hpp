@@ -1,8 +1,10 @@
 #ifndef JIKKA_ALL_HPP
 #define JIKKA_ALL_HPP
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <numeric>
 #include <vector>
 
@@ -41,6 +43,84 @@ inline int64_t pow(int64_t x, int64_t k) {
   return y;
 }
 
+template <class T> inline T natind(T x, std::function<T(T)> f, int64_t n) {
+  if (n < 0) {
+    return x;
+  }
+  while (n--) {
+    x = f(x);
+  }
+  return x;
+}
+
+template <typename T, size_t H, size_t W>
+using matrix = std::array<std::array<T, W>, H>;
+
+template <class T, class... Args>
+std::array<T, sizeof...(Args)> make_array(Args... args) {
+  return {args...};
+}
+
+template <size_t H, size_t W>
+std::array<int64_t, H> matap(const matrix<int64_t, H, W> &a,
+                             const std::array<int64_t, W> &b) {
+  std::array<int64_t, H> c = {};
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t x = 0; x < W; ++x) {
+      c[y] += a[y][x] * b[x];
+    }
+  }
+  return c;
+}
+
+template <size_t N> matrix<int64_t, N, N> matzero() { return {}; }
+
+template <size_t N> matrix<int64_t, N, N> matone() {
+  matrix<int64_t, N, N> a = {};
+  for (size_t i = 0; i < N; ++i) {
+    a[i][i] = 1;
+  }
+  return a;
+}
+
+template <size_t H, size_t W>
+matrix<int64_t, H, W> matadd(const matrix<int64_t, H, W> &a,
+                             const matrix<int64_t, H, W> &b) {
+  matrix<int64_t, H, W> c;
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t x = 0; x < W; ++x) {
+      c[y][x] = a[y][x] + b[y][x];
+    }
+  }
+  return c;
+}
+
+template <size_t H, size_t N, size_t W>
+matrix<int64_t, H, W> matmul(const matrix<int64_t, H, N> &a,
+                             const matrix<int64_t, N, W> &b) {
+  matrix<int64_t, H, W> c = {};
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t z = 0; z < N; ++z) {
+      for (size_t x = 0; x < W; ++x) {
+        c[y][x] += a[y][z] * b[z][x];
+      }
+    }
+  }
+  return c;
+}
+
+template <size_t N>
+matrix<int64_t, N, N> matpow(matrix<int64_t, N, N> x, int64_t k) {
+  matrix<int64_t, N, N> y = matone<N>();
+  for (; k; k >>= 1) {
+    if (k & 1) {
+      y = matmul(y, x);
+    }
+    x = matmul(x, x);
+  }
+  return y;
+}
+
 inline int64_t modinv(int64_t value, int64_t MOD) {
   assert(0 < value and value < MOD);
   int64_t a = value, b = MOD;
@@ -73,6 +153,63 @@ inline int64_t modpow(int64_t x, int64_t k, int64_t MOD) {
   }
   if (y < 0) {
     y += MOD;
+  }
+  return y;
+}
+
+template <size_t H, size_t W>
+std::array<int64_t, H> modmatap(const matrix<int64_t, H, W> &a,
+                                const std::array<int64_t, W> &b, int64_t MOD) {
+  std::array<int64_t, H> c = {};
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t x = 0; x < W; ++x) {
+      c[y] += a[y][x] * b[x] % MOD;
+    }
+    c[y] = floormod(c[y], MOD);
+  }
+  return c;
+}
+
+template <size_t H, size_t W>
+matrix<int64_t, H, W> modmatadd(const matrix<int64_t, H, W> &a,
+                                const matrix<int64_t, H, W> &b, int64_t MOD) {
+  matrix<int64_t, H, W> c;
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t x = 0; x < W; ++x) {
+      c[y][x] = floormod(a[y][x] + b[y][x], MOD);
+    }
+  }
+  return c;
+}
+
+template <size_t H, size_t N, size_t W>
+matrix<int64_t, H, W> modmatmul(const matrix<int64_t, H, N> &a,
+                                const matrix<int64_t, N, W> &b, int64_t MOD) {
+  matrix<int64_t, H, W> c = {};
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t z = 0; z < N; ++z) {
+      for (size_t x = 0; x < W; ++x) {
+        c[y][x] += a[y][z] * b[z][x] % MOD;
+      }
+    }
+  }
+  for (size_t y = 0; y < H; ++y) {
+    for (size_t x = 0; x < W; ++x) {
+      c[y][x] = floormod(c[y][x], MOD);
+    }
+  }
+  return c;
+}
+
+template <size_t N>
+matrix<int64_t, N, N> modmatpow(matrix<int64_t, N, N> x, int64_t k,
+                                int64_t MOD) {
+  matrix<int64_t, N, N> y = matone<N>();
+  for (; k; k >>= 1) {
+    if (k & 1) {
+      y = modmatmul(y, x, MOD);
+    }
+    x = modmatmul(x, x, MOD);
   }
   return y;
 }
