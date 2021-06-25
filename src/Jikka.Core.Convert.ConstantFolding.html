@@ -1,0 +1,546 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Core.Convert.ConstantFolding</span><span>
+</span><span id="line-5"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.Core.Convert.ConstantFolding.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Bits</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html"><span class="hs-identifier">Jikka.Core.Language.BuiltinPatterns</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Lint.html"><span class="hs-identifier">Jikka.Core.Language.Lint</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Runtime.html"><span class="hs-identifier">Jikka.Core.Language.Runtime</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Util.html"><span class="hs-identifier">Jikka.Core.Language.Util</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679277673"><span class="annot"><a href="Jikka.Core.Convert.ConstantFolding.html#runExpr"><span class="hs-identifier hs-type">runExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277673"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277673"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
+</span><span id="line-18"></span><span id="runExpr"><span class="annot"><span class="annottext">runExpr :: [(VarName, Type)] -&gt; Expr -&gt; m Expr
+</span><a href="Jikka.Core.Convert.ConstantFolding.html#runExpr"><span class="hs-identifier hs-var hs-var">runExpr</span></a></span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-19"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Negate%27"><span class="hs-identifier hs-type">Negate'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277662"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277662"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277662"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Plus%27"><span class="hs-identifier hs-type">Plus'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277660"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277660"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277659"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277659"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277660"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277659"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Minus%27"><span class="hs-identifier hs-type">Minus'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277656"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277656"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277655"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277655"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277656"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277655"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-22"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Mult%27"><span class="hs-identifier hs-type">Mult'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277653"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277653"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277652"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277652"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277653"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277652"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-23"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorDiv%27"><span class="hs-identifier hs-type">FloorDiv'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277649"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277649"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277648"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277648"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277648"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; Expr) -&gt; m Integer -&gt; m Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+Integer -&gt; Integer -&gt; m Integer
+</span><a href="Jikka.Core.Language.Runtime.html#floorDiv"><span class="hs-identifier hs-var">floorDiv</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277649"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277648"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-24"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-type">FloorMod'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277643"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277643"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277642"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277642"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277642"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; Expr) -&gt; m Integer -&gt; m Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+Integer -&gt; Integer -&gt; m Integer
+</span><a href="Jikka.Core.Language.Runtime.html#floorMod"><span class="hs-identifier hs-var">floorMod</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277643"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277642"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-25"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#CeilDiv%27"><span class="hs-identifier hs-type">CeilDiv'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277639"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277639"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277638"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277638"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277638"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; Expr) -&gt; m Integer -&gt; m Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+Integer -&gt; Integer -&gt; m Integer
+</span><a href="Jikka.Core.Language.Runtime.html#ceilDiv"><span class="hs-identifier hs-var">ceilDiv</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277639"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277638"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#CeilMod%27"><span class="hs-identifier hs-type">CeilMod'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277635"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277635"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277634"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277634"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277634"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="annot"><span class="annottext">(Integer -&gt; Expr) -&gt; m Integer -&gt; m Expr
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; m Integer
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+Integer -&gt; Integer -&gt; m Integer
+</span><a href="Jikka.Core.Language.Runtime.html#ceilMod"><span class="hs-identifier hs-var">ceilMod</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277635"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277634"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Pow%27"><span class="hs-identifier hs-type">Pow'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277631"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277631"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277630"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277630"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277630"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Double
+forall a. Num a =&gt; Integer -&gt; a
+</span><span class="hs-identifier hs-var">fromInteger</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277630"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double
+forall a. Floating a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">log</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">abs</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Double
+forall a. Num a =&gt; Integer -&gt; a
+</span><span class="hs-identifier hs-var">fromInteger</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277631"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Double
+</span><span class="hs-number">100</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277631"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a b. (Num a, Integral b) =&gt; a -&gt; b -&gt; a
+</span><span class="hs-operator hs-var">^</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277630"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Abs%27"><span class="hs-identifier hs-type">Abs'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277623"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277623"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer
+forall a. Num a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">abs</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277623"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Gcd%27"><span class="hs-identifier hs-type">Gcd'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277621"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277621"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277620"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277620"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">gcd</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277621"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277620"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Lcm%27"><span class="hs-identifier hs-type">Lcm'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277617"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277617"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277616"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277616"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">lcm</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277617"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277616"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Min2%27"><span class="hs-identifier hs-type">Min2'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277613"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277613"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277612"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277612"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">min</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277613"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277612"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Max2%27"><span class="hs-identifier hs-type">Max2'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277609"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277609"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277608"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277608"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Ord a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">max</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277609"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277608"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Not%27"><span class="hs-identifier hs-type">Not'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277604"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277604"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277604"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#And%27"><span class="hs-identifier hs-type">And'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277601"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277601"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277600"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277600"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277601"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277600"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Or%27"><span class="hs-identifier hs-type">Or'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277598"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277598"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277597"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277597"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277598"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277597"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Implies%27"><span class="hs-identifier hs-type">Implies'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277594"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277594"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277593"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277593"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; Bool
+</span><span class="hs-identifier hs-var">not</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277594"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277593"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#If%27"><span class="hs-identifier hs-type">If'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277591"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277591"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679277590"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679277590"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679277589"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679277589"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277591"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679277590"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679277589"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#BitNot%27"><span class="hs-identifier hs-type">BitNot'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277587"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277587"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer -&gt; Integer
+forall a. Bits a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">complement</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277587"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#BitAnd%27"><span class="hs-identifier hs-type">BitAnd'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277584"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277584"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277583"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277583"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277584"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.&amp;.</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277583"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#BitOr%27"><span class="hs-identifier hs-type">BitOr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277580"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277580"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277579"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277579"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277580"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">.|.</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277579"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#BitXor%27"><span class="hs-identifier hs-type">BitXor'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277576"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277576"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277575"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277575"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277576"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Integer
+forall a. Bits a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`xor`</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277575"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#BitLeftShift%27"><span class="hs-identifier hs-type">BitLeftShift'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277572"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277572"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277571"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277571"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-glyph">-</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">100</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277571"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277571"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">100</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277572"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Int -&gt; Integer
+forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">`shift`</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Int
+forall a. Num a =&gt; Integer -&gt; a
+</span><span class="hs-identifier hs-var">fromInteger</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277571"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#BitRightShift%27"><span class="hs-identifier hs-type">BitRightShift'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277568"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277568"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277567"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277567"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-glyph">-</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">100</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277567"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277567"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-number">100</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-var">LitInt'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277568"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Int -&gt; Integer
+forall a. Bits a =&gt; a -&gt; Int -&gt; a
+</span><span class="hs-operator hs-var">`shift`</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Int
+forall a. Num a =&gt; Integer -&gt; a
+</span><span class="hs-identifier hs-var">fromInteger</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277567"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#LessThan%27"><span class="hs-identifier hs-type">LessThan'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277565"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277565"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277564"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277564"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277565"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277564"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#LessEqual%27"><span class="hs-identifier hs-type">LessEqual'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277562"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277562"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277561"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277561"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277562"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277561"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#LessEqual%27"><span class="hs-identifier hs-type">LessEqual'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277559"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277559"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277558"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277558"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277559"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277558"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#GreaterThan%27"><span class="hs-identifier hs-type">GreaterThan'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277556"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277556"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277555"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277555"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277556"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277555"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#GreaterThan%27"><span class="hs-identifier hs-type">GreaterThan'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277553"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277553"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277552"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277552"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277553"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277552"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#GreaterEqual%27"><span class="hs-identifier hs-type">GreaterEqual'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277550"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277550"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277549"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277549"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277550"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277549"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Equal%27"><span class="hs-identifier hs-type">Equal'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277547"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277547"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277546"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277546"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277547"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277546"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Equal%27"><span class="hs-identifier hs-type">Equal'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277545"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277545"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277544"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277544"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277545"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277544"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#NotEqual%27"><span class="hs-identifier hs-type">NotEqual'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277542"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277542"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitInt%27"><span class="hs-identifier hs-type">LitInt'</span></a></span><span> </span><span id="local-6989586621679277541"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277541"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277542"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679277541"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#NotEqual%27"><span class="hs-identifier hs-type">NotEqual'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277540"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277540"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-type">LitBool'</span></a></span><span> </span><span id="local-6989586621679277539"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277539"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#LitBool%27"><span class="hs-identifier hs-var">LitBool'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277540"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679277539"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span>  </span><span id="local-6989586621679277538"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679277538"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679277538"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span id="local-6989586621679277668"><span class="annot"><a href="Jikka.Core.Convert.ConstantFolding.html#runProgram"><span class="hs-identifier hs-type">runProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277668"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277668"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-57"></span><span id="runProgram"><span class="annot"><span class="annottext">runProgram :: Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.ConstantFolding.html#runProgram"><span class="hs-identifier hs-var hs-var">runProgram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([(VarName, Type)] -&gt; Expr -&gt; m Expr) -&gt; Program -&gt; m Program
+forall (m :: * -&gt; *).
+Monad m =&gt;
+([(VarName, Type)] -&gt; Expr -&gt; m Expr) -&gt; Program -&gt; m Program
+</span><a href="Jikka.Core.Language.Util.html#mapExprProgramM"><span class="hs-identifier hs-var">mapExprProgramM</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+[(VarName, Type)] -&gt; Expr -&gt; m Expr
+</span><a href="Jikka.Core.Convert.ConstantFolding.html#runExpr"><span class="hs-identifier hs-var">runExpr</span></a></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- | `run` folds constants in given programs.</span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- For example, this converts the following:</span><span>
+</span><span id="line-61"></span><span class="hs-comment">--</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-- &gt; 3 x + 2 + 1</span><span>
+</span><span id="line-63"></span><span class="hs-comment">--</span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- to the follwoing:</span><span>
+</span><span id="line-65"></span><span class="hs-comment">--</span><span>
+</span><span id="line-66"></span><span class="hs-comment">-- &gt; 3 x + 3</span><span>
+</span><span id="line-67"></span><span id="local-6989586621679277535"><span class="annot"><a href="Jikka.Core.Convert.ConstantFolding.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679277535"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679277535"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-68"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.ConstantFolding.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679277534"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679277534"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
+</span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Jikka.Core.Convert.ConstantFolding&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-69"></span><span>  </span><span id="local-6989586621679277532"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679277532"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.ConstantFolding.html#runProgram"><span class="hs-identifier hs-var">runProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679277534"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-70"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m ()
+forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
+</span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679277532"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-71"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679277532"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-72"></span></pre></body></html>

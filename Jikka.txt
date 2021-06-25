@@ -5,7 +5,7 @@
 -- | Please see the README on GitHub at
 --   <a>https://github.com/kmyk/Jikka</a>
 @package Jikka
-@version 5.0.4.0
+@version 5.0.5.0
 
 
 -- | <a>Expr</a> module has the basic data types for C++ language. The data
@@ -384,6 +384,7 @@ module Jikka.Common.Matrix
 data Matrix a
 unMatrix :: Matrix a -> Vector (Vector a)
 makeMatrix :: Vector (Vector a) -> Maybe (Matrix a)
+makeMatrix' :: Vector (Vector a) -> Matrix a
 
 -- | <a>matsize</a> computes the size of a matrix.
 matsize :: Matrix a -> (Int, Int)
@@ -415,10 +416,22 @@ matscalar :: Num a => a -> Matrix a -> Matrix a
 -- | <a>matpow</a> calculates the power &lt;math&gt; of a matrix
 --   &lt;math&gt; and a natural number &lt;math&gt;. This assumes inputs
 --   are square matrices. This fails for &lt;math&gt;.
-matpow :: Num a => Matrix a -> Integer -> Matrix a
+matpow :: (Show a, Num a) => Matrix a -> Integer -> Matrix a
+instance GHC.Base.Functor Jikka.Common.Matrix.Matrix
 instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Matrix.Matrix a)
 instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Matrix.Matrix a)
 instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Matrix.Matrix a)
+
+module Jikka.Common.ModInt
+data ModInt
+toModInt :: Integer -> Integer -> ModInt
+fromModInt :: ModInt -> Integer
+moduloOfModInt :: ModInt -> Maybe Integer
+instance GHC.Show.Show Jikka.Common.ModInt.ModInt
+instance GHC.Read.Read Jikka.Common.ModInt.ModInt
+instance GHC.Classes.Ord Jikka.Common.ModInt.ModInt
+instance GHC.Classes.Eq Jikka.Common.ModInt.ModInt
+instance GHC.Num.Num Jikka.Common.ModInt.ModInt
 
 module Jikka.Common.Parse.JoinLines
 joinLinesWithParens :: forall m a. (MonadError Error m, Show a) => (a -> Bool) -> (a -> Bool) -> (a -> Bool) -> [WithLoc a] -> m [WithLoc a]
@@ -565,11 +578,41 @@ BitLeftShift :: Builtin
 -- | &lt;math&gt;
 BitRightShift :: Builtin
 
+-- | matrix application &lt;math&gt;
+MatAp :: Int -> Int -> Builtin
+
+-- | zero matrix &lt;math&gt;
+MatZero :: Int -> Builtin
+
+-- | unit matrix &lt;math&gt;
+MatOne :: Int -> Builtin
+
+-- | matrix addition &lt;math&gt;
+MatAdd :: Int -> Int -> Builtin
+
+-- | matrix multiplication &lt;math&gt;
+MatMul :: Int -> Int -> Int -> Builtin
+
+-- | matrix power &lt;math&gt;
+MatPow :: Int -> Builtin
+
 -- | &lt;math&gt;
 ModInv :: Builtin
 
 -- | &lt;math&gt;
 ModPow :: Builtin
+
+-- | matrix application &lt;math&gt;
+ModMatAp :: Int -> Int -> Builtin
+
+-- | matrix addition &lt;math&gt;
+ModMatAdd :: Int -> Int -> Builtin
+
+-- | matrix multiplication &lt;math&gt;
+ModMatMul :: Int -> Int -> Int -> Builtin
+
+-- | matrix power &lt;math&gt;
+ModMatPow :: Int -> Builtin
 
 -- | &lt;math&gt;
 Cons :: Type -> Builtin
@@ -711,10 +754,14 @@ pattern Fun1Ty :: Type -> Type
 pattern Fun2Ty :: Type -> Type
 pattern Fun3Ty :: Type -> Type
 pattern FunLTy :: Type -> Type
+vectorTy :: Int -> Type
+matrixTy :: Int -> Int -> Type
+pattern LitInt' :: Integer -> Expr
 pattern Lit0 :: Expr
 pattern Lit1 :: Expr
 pattern Lit2 :: Expr
 pattern LitMinus1 :: Expr
+pattern LitBool' :: Bool -> Expr
 pattern LitTrue :: Expr
 pattern LitFalse :: Expr
 pattern Builtin :: Builtin -> Expr
@@ -796,8 +843,18 @@ pattern BitOr' :: Expr -> Expr -> Expr
 pattern BitXor' :: Expr -> Expr -> Expr
 pattern BitLeftShift' :: Expr -> Expr -> Expr
 pattern BitRightShift' :: Expr -> Expr -> Expr
+pattern MatAp' :: Int -> Int -> Expr -> Expr -> Expr
+pattern MatZero' :: Int -> Expr
+pattern MatOne' :: Int -> Expr
+pattern MatAdd' :: Int -> Int -> Expr -> Expr -> Expr
+pattern MatMul' :: Int -> Int -> Int -> Expr -> Expr -> Expr
+pattern MatPow' :: Int -> Expr -> Expr -> Expr
 pattern ModInv' :: Expr -> Expr -> Expr
 pattern ModPow' :: Expr -> Expr -> Expr -> Expr
+pattern ModMatAp' :: Int -> Int -> Expr -> Expr -> Expr -> Expr
+pattern ModMatAdd' :: Int -> Int -> Expr -> Expr -> Expr -> Expr
+pattern ModMatMul' :: Int -> Int -> Int -> Expr -> Expr -> Expr -> Expr
+pattern ModMatPow' :: Int -> Expr -> Expr -> Expr -> Expr
 pattern Cons' :: Type -> Expr -> Expr -> Expr
 pattern Foldl' :: Type -> Type -> Expr -> Expr -> Expr -> Expr
 pattern Scanl' :: Type -> Type -> Expr -> Expr -> Expr -> Expr
@@ -858,6 +915,22 @@ runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] ->
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
+module Jikka.Core.Language.Runtime
+floorDiv :: MonadError Error m => Integer -> Integer -> m Integer
+floorMod :: MonadError Error m => Integer -> Integer -> m Integer
+ceilDiv :: MonadError Error m => Integer -> Integer -> m Integer
+ceilMod :: MonadError Error m => Integer -> Integer -> m Integer
+minimumEither :: (MonadError Error m, Ord a) => [a] -> m a
+maximumEither :: (MonadError Error m, Ord a) => [a] -> m a
+argminEither :: (MonadError Error m, Ord a) => [a] -> m Integer
+argmaxEither :: (MonadError Error m, Ord a) => [a] -> m Integer
+modinv :: MonadError Error m => Integer -> Integer -> m Integer
+modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
+fact :: MonadError Error m => Integer -> m Integer
+choose :: MonadError Error m => Integer -> Integer -> m Integer
+permute :: MonadError Error m => Integer -> Integer -> m Integer
+multichoose :: MonadError Error m => Integer -> Integer -> m Integer
+
 module Jikka.Core.Language.TypeCheck
 builtinToType :: Builtin -> Type
 literalToType :: Literal -> Type
@@ -907,14 +980,139 @@ module Jikka.Core.Convert.MakeEager
 run :: MonadError Error m => Program -> m Program
 run' :: Program -> Program
 
+module Jikka.Core.Convert.ConstantPropagation
+
+-- | <a>run</a> does constant propagation. This assumes that the program is
+--   alpha-converted.
+--   
+--   For example, this converts the following:
+--   
+--   <pre>
+--   let x = 1
+--   in let f = fun y -&gt; y
+--   in x + x + f(x)
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let f = fun y -&gt; y
+--   in 1 + 1 + f(1)
+--   </pre>
+--   
+--   NOTE: this doesn't constant folding.
+run :: MonadError Error m => Program -> m Program
+run' :: Program -> Program
+
+-- | <a>isSmallExpr</a> checks whether given exprs are suitable to
+--   propagate.
+isSmallExpr :: Expr -> Bool
+
 module Jikka.Core.Language.Util
 genType :: MonadAlpha m => m Type
 genVarName :: MonadAlpha m => VarName -> m VarName
 genVarName' :: MonadAlpha m => m VarName
 mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
+countOccurrences :: VarName -> Expr -> Int
+countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
+mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
+mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
+mapExprToplevelExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
+mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
+
+module Jikka.Core.Convert.TrivialLetElimination
+
+-- | <a>run</a> remove let-exprs whose assigned variables are used only at
+--   most once. This assumes that the program is alpha-converted.
+--   
+--   For example, this converts the following:
+--   
+--   <pre>
+--   let f = fun y -&gt; y
+--   in let x = 1
+--   in f(x + x)
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let x = 1
+--   in (fun y -&gt; y) (x + x)
+--   </pre>
+--   
+--   NOTE: this doesn't constant folding.
+run :: MonadError Error m => Program -> m Program
+run' :: Program -> Program
+
+module Jikka.Core.Convert.PropagateMod
+
+-- | <a>run</a> propagates <a>FloorMod</a> to leaves of exprs. For example,
+--   this converts the following:
+--   
+--   <pre>
+--   mod ((fun x -&gt; x * x + x) y) 1000000007
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y
+--   </pre>
+run :: MonadError Error m => Program -> m Program
+
+module Jikka.Core.Convert.ImmediateAppToLet
+
+-- | <a>run</a> does beta-reductions in given programs. For example, this
+--   converts the following:
+--   
+--   <pre>
+--   (fun x -&gt; x + x) a
+--   </pre>
+--   
+--   to the follwoing:
+--   
+--   <pre>
+--   let x = a in x + x
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+module Jikka.Core.Convert.ConstantFolding
+
+-- | <a>run</a> folds constants in given programs. For example, this
+--   converts the following:
+--   
+--   <pre>
+--   3 x + 2 + 1
+--   </pre>
+--   
+--   to the follwoing:
+--   
+--   <pre>
+--   3 x + 3
+--   </pre>
+run :: MonadError Error m => Program -> m Program
 
 
 module Jikka.Core.Convert.ANormal
+
+-- | <a>run</a> makes a given program A-normal form. A program is an
+--   A-normal form iff assigned exprs of all let-statements are values or
+--   function applications. For example, this converts the following:
+--   
+--   <pre>
+--   (let x = 1 in x) + ((fun y -&gt; y) 1)
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let x = 1
+--   in let f = fun y -&gt; y
+--   in let z = f x
+--   in z
+--   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 module Jikka.Core.Language.Value
@@ -924,13 +1122,22 @@ ValBool :: Bool -> Value
 ValList :: Vector Value -> Value
 ValTuple :: [Value] -> Value
 ValBuiltin :: Builtin -> Value
-ValLambda :: Env -> [(VarName, Type)] -> Expr -> Value
+ValLambda :: Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> Value
 type Env = [(VarName, Value)]
 literalToValue :: Literal -> Value
 valueToInt :: MonadError Error m => Value -> m Integer
 valueToIntList :: MonadError Error m => Vector Value -> m [Integer]
+valueToIntList' :: MonadError Error m => Value -> m [Integer]
 valueToBool :: MonadError Error m => Value -> m Bool
 valueToBoolList :: MonadError Error m => Vector Value -> m [Bool]
+valueToVector :: MonadError Error m => Value -> m (Vector Integer)
+valueToMatrix :: MonadError Error m => Value -> m (Matrix Integer)
+valueFromVector :: Vector Integer -> Value
+valueFromMatrix :: Matrix Integer -> Value
+valueToModVector :: MonadError Error m => Integer -> Value -> m (Vector ModInt)
+valueToModMatrix :: MonadError Error m => Integer -> Value -> m (Matrix ModInt)
+valueFromModVector :: Vector ModInt -> Value
+valueFromModMatrix :: Matrix ModInt -> Value
 formatValue :: Value -> String
 instance GHC.Read.Read Jikka.Core.Language.Value.Value
 instance GHC.Show.Show Jikka.Core.Language.Value.Value
@@ -952,7 +1159,7 @@ ValBool :: Bool -> Value
 ValList :: Vector Value -> Value
 ValTuple :: [Value] -> Value
 ValBuiltin :: Builtin -> Value
-ValLambda :: Env -> [(VarName, Type)] -> Expr -> Value
+ValLambda :: Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> Value
 newtype Token
 Token :: String -> Token
 [unToken] :: Token -> String
@@ -1034,6 +1241,53 @@ instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.FromCore.NameKind
 module Jikka.CPlusPlus.Convert
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
+module Jikka.Core.Language.ArithmeticalExpr
+data ProductExpr
+ProductExpr :: Integer -> [Expr] -> ProductExpr
+[productExprConst] :: ProductExpr -> Integer
+[productExprList] :: ProductExpr -> [Expr]
+data SumExpr
+SumExpr :: [ProductExpr] -> Integer -> SumExpr
+[sumExprList] :: SumExpr -> [ProductExpr]
+[sumExprConst] :: SumExpr -> Integer
+type ArithmeticalExpr = SumExpr
+oneProductExpr :: ProductExpr
+negateProductExpr :: ProductExpr -> ProductExpr
+multProductExpr :: ProductExpr -> ProductExpr -> ProductExpr
+parseProductExpr :: Expr -> ProductExpr
+sumExprFromProductExpr :: ProductExpr -> SumExpr
+sumExprFromInteger :: Integer -> SumExpr
+zeroSumExpr :: SumExpr
+negateSumExpr :: SumExpr -> SumExpr
+plusSumExpr :: SumExpr -> SumExpr -> SumExpr
+multSumExpr :: SumExpr -> SumExpr -> SumExpr
+parseSumExpr :: Expr -> SumExpr
+
+-- | <a>parseArithmeticalExpr</a> converts a given expr to a normal form
+--   &lt;math&gt;. This assumes given exprs have the type &lt;math&gt;.
+parseArithmeticalExpr :: Expr -> ArithmeticalExpr
+formatProductExpr :: ProductExpr -> Expr
+formatSumExpr :: SumExpr -> Expr
+formatArithmeticalExpr :: ArithmeticalExpr -> Expr
+normalizeProductExpr :: ProductExpr -> ProductExpr
+normalizeSumExpr :: SumExpr -> SumExpr
+normalizeArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
+
+-- | <a>makeVectorFromArithmeticalExpr</a> makes a vector &lt;math&gt; and
+--   a expr &lt;math&gt; from a given vector of variables &lt;math&gt; and
+--   a given expr &lt;math&gt; s.t. &lt;math&gt; and &lt;math&gt; don't
+--   have &lt;math&gt; as free variables and &lt;math&gt; holds. This
+--   assumes given variables and exprs have the type &lt;math&gt;.
+makeVectorFromArithmeticalExpr :: Vector VarName -> ArithmeticalExpr -> Maybe (Vector ArithmeticalExpr, ArithmeticalExpr)
+instance GHC.Read.Read Jikka.Core.Language.ArithmeticalExpr.ProductExpr
+instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.ProductExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.ProductExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticalExpr.ProductExpr
+instance GHC.Read.Read Jikka.Core.Language.ArithmeticalExpr.SumExpr
+instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.SumExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.SumExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticalExpr.SumExpr
+
 module Jikka.Core.Convert.TypeInfer
 
 -- | <a>run</a> does type inference. This assumes that program has no name
@@ -1094,9 +1348,27 @@ module Jikka.Core.Convert.RemoveUnusedVars
 run :: MonadError Error m => Program -> m Program
 run' :: Program -> Program
 
+module Jikka.Core.Convert.LinearFunction
 
--- | <a>Optimize</a> is a module to combine other all optimizers.
-module Jikka.Core.Optimize
+-- | <a>run</a> simplifies a functions from tuples of integers to tuples of
+--   integers. For example, this converts the following:
+--   
+--   <pre>
+--   fun xs -&gt; (xs[0] + 2 * xs[1], xs[1])
+--   </pre>
+--   
+--   to the follwoing:
+--   
+--   <pre>
+--   (fun xs -&gt; matap ((1, 2), (0, 1)) xs)
+--   </pre>
+--   
+--   TODO: support affine functions
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+
+-- | <a>Convert</a> is a module to combine other all optimizers.
+module Jikka.Core.Convert
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 module Jikka.Main.Target
