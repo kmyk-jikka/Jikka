@@ -348,13 +348,28 @@ runToplevelExpr env = \case
     case t of
       X.FunTy ts ret -> do
         let f = Y.VarName "solve"
-        args <- forM ts $ \t -> do
-          t <- runType t
-          y <- newFreshName ArgumentNameKind ""
-          return (t, y)
+        (args, body) <- case e of
+          X.Lam args body -> do
+            when (map snd args /= ts) $ do
+              throwInternalError "type error"
+            args <- forM args $ \(x, t) -> do
+              y <- renameVarName ArgumentNameKind x
+              return (x, t, y)
+            e <- runExpr (reverse args ++ env) body
+            let body = [Y.Return e]
+            args' <- forM args $ \(_, t, y) -> do
+              t <- runType t
+              return (t, y)
+            return (args', body)
+          _ -> do
+            args <- forM ts $ \t -> do
+              t <- runType t
+              y <- newFreshName ArgumentNameKind ""
+              return (t, y)
+            e <- runExpr env e
+            let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
+            return (args, body)
         ret <- runType ret
-        e <- runExpr env e
-        let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
         let solve = [Y.FunDef ret f args body]
         main <- runMain f t
         return $ solve ++ main
