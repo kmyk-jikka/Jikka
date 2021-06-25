@@ -17,10 +17,10 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
+import qualified Jikka.Core.Convert.ImmediateAppToLet as ImmediateAppToLet
 import qualified Jikka.Core.Convert.LinearFunction as LinearFunction
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
@@ -34,7 +34,7 @@ run' prog = do
   prog <- Alpha.run prog
   prog <- TypeInfer.run prog
   prog <- RemoveUnusedVars.run prog
-  prog <- ANormal.run prog
+  prog <- ImmediateAppToLet.run prog
   prog <- TrivialLetElimination.run prog
   prog <- LinearFunction.run prog
   prog <- PropagateMod.run prog
