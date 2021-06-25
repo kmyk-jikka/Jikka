@@ -28,13 +28,13 @@ runFloorMod env e m = go e
       MatAp' h w e1 e2 -> ModMatAp' h w <$> go e1 <*> go e2 <*> pure m
       MatAdd' h w e1 e2 -> ModMatAdd' h w <$> go e1 <*> go e2 <*> pure m
       MatMul' h n w e1 e2 -> ModMatMul' h n w <$> go e1 <*> go e2 <*> pure m
-      MatPow' n e1 e2 -> ModMatPow' n <$> go e1 <*> go e2 <*> pure m
+      MatPow' n e1 e2 -> ModMatPow' n <$> go e1 <*> pure e2 <*> pure m
       Proj' ts i e@MatAp' {} -> Proj' ts i <$> go e
       Proj' ts i e@ModMatAp' {} -> Proj' ts i <$> go e
       ModMatAp' h w e1 e2 m' | m == m' -> ModMatAp' h w <$> go e1 <*> go e2 <*> pure m
       ModMatAdd' h w e1 e2 m' | m == m' -> ModMatAdd' h w <$> go e1 <*> go e2 <*> pure m
       ModMatMul' h n w e1 e2 m' | m == m' -> ModMatMul' h n w <$> go e1 <*> go e2 <*> pure m
-      ModMatPow' n e1 e2 m' | m == m' -> ModMatPow' n <$> go e1 <*> go e2 <*> pure m
+      ModMatPow' n e1 e2 m' | m == m' -> ModMatPow' n <$> go e1 <*> pure e2 <*> pure m
       App (Lam args body) es -> App <$> (Lam args <$> runFloorMod (reverse args ++ env) body m) <*> pure es
       Tuple' ts es -> Tuple' ts <$> mapM go es
       FloorMod' e m' ->
