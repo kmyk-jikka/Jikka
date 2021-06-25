@@ -7,9 +7,9 @@ import Control.Monad.Except
 import qualified Data.Text.IO as T (readFile)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert as ConvertCore
 import qualified Jikka.Core.Evaluate as EvaluateCore
 import qualified Jikka.Core.Language.Value as ValueCore
-import qualified Jikka.Core.Optimize as OptimizeCore
 import Jikka.Main.Target
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as FromPython
@@ -37,7 +37,7 @@ runCore path = flip evalAlphaT 0 $ do
   prog <- liftEither $ FromPython.run path prog
   prog <- ToRestrictedPython.run prog
   prog <- ToCore.run prog
-  prog <- OptimizeCore.run prog
+  prog <- ConvertCore.run prog
   value <- EvaluateCore.run prog
   liftIO $ putStrLn (ValueCore.formatValue value)
 

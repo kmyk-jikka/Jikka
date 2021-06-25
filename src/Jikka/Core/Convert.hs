@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- |
--- Module      : Jikka.Core.Optimize
+-- Module      : Jikka.Core.Convert
 -- Description : is a meta module to combine other optimizers.
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
@@ -9,8 +9,8 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- `Jikka.Core.Optimize` is a module to combine other all optimizers.
-module Jikka.Core.Optimize
+-- `Jikka.Core.Convert` is a module to combine other all optimizers.
+module Jikka.Core.Convert
   ( run,
   )
 where

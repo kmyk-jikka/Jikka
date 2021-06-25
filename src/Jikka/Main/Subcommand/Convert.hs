@@ -7,8 +7,8 @@ import qualified Jikka.CPlusPlus.Convert as FromCore
 import qualified Jikka.CPlusPlus.Format as FormatCPlusPlus
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert as Convert
 import qualified Jikka.Core.Format as FormatCore
-import qualified Jikka.Core.Optimize as Optimize
 import Jikka.Main.Target
 import qualified Jikka.Python.Convert.ToRestrictedPython as ToRestrictedPython
 import qualified Jikka.Python.Parse as ParsePython
@@ -32,7 +32,7 @@ runCore path input = flip evalAlphaT 0 $ do
   prog <- ParsePython.run path input
   prog <- ToRestrictedPython.run prog
   prog <- ToCore.run prog
-  prog <- Optimize.run prog
+  prog <- Convert.run prog
   FormatCore.run prog
 
 runCPlusPlus :: FilePath -> Text -> Either Error Text
@@ -40,7 +40,7 @@ runCPlusPlus path input = flip evalAlphaT 0 $ do
   prog <- ParsePython.run path input
   prog <- ToRestrictedPython.run prog
   prog <- ToCore.run prog
-  prog <- Optimize.run prog
+  prog <- Convert.run prog
   prog <- FromCore.run prog
   FormatCPlusPlus.run prog
 
