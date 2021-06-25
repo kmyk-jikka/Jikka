@@ -297,6 +297,8 @@ pattern Lit2 = Lit (LitInt 2)
 
 pattern LitMinus1 = Lit (LitInt (-1))
 
+pattern LitBool' p = Lit (LitBool p)
+
 pattern LitTrue = Lit (LitBool True)
 
 pattern LitFalse = Lit (LitBool False)

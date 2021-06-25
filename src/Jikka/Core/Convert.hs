@@ -19,6 +19,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.ANormal as ANormal
 import qualified Jikka.Core.Convert.Alpha as Alpha
+import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.LinearFunction as LinearFunction
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
@@ -38,6 +39,7 @@ run' prog = do
   prog <- LinearFunction.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
+  prog <- ConstantFolding.run prog
   StrengthReduction.run prog
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program

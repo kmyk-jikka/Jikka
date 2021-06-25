@@ -34,6 +34,7 @@ import Jikka.Common.Matrix
 import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Runtime
 import Jikka.Core.Language.TypeCheck (builtinToType)
 import Jikka.Core.Language.Value
 import Text.Read (readEither)
@@ -94,22 +95,6 @@ readInput t tokens = case (t, tokens) of
 -- -----------------------------------------------------------------------------
 -- builtins
 
-floorDiv :: MonadError Error m => Integer -> Integer -> m Integer
-floorDiv _ 0 = throwRuntimeError "zero div"
-floorDiv a b = return (a `div` b)
-
-floorMod :: MonadError Error m => Integer -> Integer -> m Integer
-floorMod _ 0 = throwRuntimeError "zero div"
-floorMod a b = return (a `mod` b)
-
-ceilDiv :: MonadError Error m => Integer -> Integer -> m Integer
-ceilDiv _ 0 = throwRuntimeError "zero div"
-ceilDiv a b = return ((a + b - 1) `div` b)
-
-ceilMod :: MonadError Error m => Integer -> Integer -> m Integer
-ceilMod _ 0 = throwRuntimeError "zero div"
-ceilMod a b = return (a - ((a + b - 1) `div` b) * b)
-
 natind :: MonadError Error m => Value -> Value -> Integer -> m Value
 natind _ _ n | n < 0 = throwRuntimeError $ "negative number for mathematical induction: " ++ show n
 natind base _ 0 = return base
@@ -117,40 +102,16 @@ natind base step n = do
   val <- natind base step (n - 1)
   callValue step [val]
 
-minimumEither :: (MonadError Error m, Ord a) => [a] -> m a
-minimumEither [] = throwRuntimeError "there is no minimum for the empty list"
-minimumEither a = return $ minimum a
-
-maximumEither :: (MonadError Error m, Ord a) => [a] -> m a
-maximumEither [] = throwRuntimeError "there is no maximum for the empty list"
-maximumEither a = return $ maximum a
-
-argminEither :: (MonadError Error m, Ord a) => [a] -> m Integer
-argminEither [] = throwRuntimeError "there is no minimum for the empty list"
-argminEither a = return $ snd (minimum (zip a [0 ..]))
-
-argmaxEither :: (MonadError Error m, Ord a) => [a] -> m Integer
-argmaxEither [] = throwRuntimeError "there is no maximum for the empty list"
-argmaxEither a = return $ snd (maximum (zip a [0 ..]))
-
-modinv :: MonadError Error m => Integer -> Integer -> m Integer
-modinv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
-modinv _ _ = throwInternalError "TODO: implement inv()"
-
-modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
-modpow _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for modpow: MOD = " ++ show m
-modpow a b m = return $ (a ^ b) `mod` m
-
-scanM :: Monad m => (a -> b -> m a) -> a -> V.Vector b -> m (V.Vector a)
-scanM f y xs = do
-  (ys, y) <- V.foldM (\(ys, y) x -> (y : ys,) <$> f y x) ([], y) xs
-  return $ V.fromList (reverse (y : ys))
-
 tabulate :: MonadError Error m => Integer -> Value -> m (V.Vector Value)
 tabulate n f = V.fromList <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
 
 map' :: MonadError Error m => Value -> V.Vector Value -> m (V.Vector Value)
 map' f a = V.fromList <$> mapM (\val -> callValue f [val]) (V.toList a)
+
+scanM :: Monad m => (a -> b -> m a) -> a -> V.Vector b -> m (V.Vector a)
+scanM f y xs = do
+  (ys, y) <- V.foldM (\(ys, y) x -> (y : ys,) <$> f y x) ([], y) xs
+  return $ V.fromList (reverse (y : ys))
 
 atEither :: MonadError Error m => V.Vector a -> Integer -> m a
 atEither xs i = case xs V.!? fromInteger i of
@@ -177,23 +138,6 @@ range2 l r = return $ V.fromList (map ValInt [l .. r - 1])
 range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (V.Vector Value)
 range3 l r step | not (l <= r && step >= 0) = throwRuntimeError $ "invalid argument for range3: " ++ show (l, r, step)
 range3 l r step = return $ V.fromList (map ValInt [l, l + step .. r])
-
-fact :: MonadError Error m => Integer -> m Integer
-fact n | n < 0 = throwRuntimeError $ "invalid argument for fact: " ++ show n
-fact n = return $ product [1 .. n]
-
-choose :: MonadError Error m => Integer -> Integer -> m Integer
-choose n r | not (0 <= r && r <= n) = throwRuntimeError $ "invalid argument for choose: " ++ show (n, r)
-choose n r = return $ product [n - r + 1 .. n] `div` product [1 .. r]
-
-permute :: MonadError Error m => Integer -> Integer -> m Integer
-permute n r | not (0 <= r && r <= n) = throwRuntimeError $ "invalid argument for choose: " ++ show (n, r)
-permute n r = return $ product [n - r + 1 .. n]
-
-multichoose :: MonadError Error m => Integer -> Integer -> m Integer
-multichoose n r | not (0 <= r && r <= n) = throwRuntimeError $ "invalid argument for multichoose: " ++ show (n, r)
-multichoose 0 0 = return 1
-multichoose n r = choose (n + r - 1) r
 
 -- -----------------------------------------------------------------------------
 -- evaluator
