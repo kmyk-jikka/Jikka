@@ -20,7 +20,9 @@ jobs:
 
     - uses: actions/cache@v2
       with:
-        path: ~/.stack
+        path: |
+          ~/.stack
+          ${{ env.STACK_ROOT }}
         key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
 
     - name: Build dependencies
