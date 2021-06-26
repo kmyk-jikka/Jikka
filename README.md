@@ -28,11 +28,12 @@ for users:
 
 -   [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
 -   [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
--   blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/)
+-   a blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
 
 for developpers:
 
 -   [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
+    -   [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
 -   [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
 -   [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
 -   [Haddock](https://kmyk.github.io/Jikka/)
