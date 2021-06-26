@@ -2,7 +2,7 @@
 
 (The English version of this document: [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md))
 
-## Tools
+## Development process and conventions
 
 ### Tests
 
@@ -43,3 +43,12 @@ $ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)
 ``` console
 $ stack haddock
 ```
+
+### Commit messages
+
+[Conventional Commits](https://www.conventionalcommits.org/ja/v1.0.0/) を使ってください。
+
+### Versioning
+
+受け入れる Python 風言語の仕様を public API と見なしての [Semantic Versioning](https://semver.org/lang/ja/) が使われています。
+ただし [Haskell Package Versioning Policy](https://pvp.haskell.org/) に由来して MAJOR versions をふたつ持っています。

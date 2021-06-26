@@ -2,7 +2,7 @@
 
 (このドキュメントの日本語バージョン: [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md))
 
-## Tools
+## Development process and conventions
 
 ### Tests
 
@@ -42,3 +42,12 @@ Run the following command to generate documents locally.
 ``` console
 $ stack haddock
 ```
+
+### Commit messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/).
+
+### Versioning
+
+[Semantic Versioning](https://semver.org/lang/ja/) is used with regard to the Python-like language as its public API.
+However, it has two MAJOR version that come from [Haskell Package Versioning Policy](https://pvp.haskell.org/).
