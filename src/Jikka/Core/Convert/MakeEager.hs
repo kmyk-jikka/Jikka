@@ -18,25 +18,17 @@ where
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.Util
 
-runExpr :: Expr -> Expr
-runExpr = \case
-  Var x -> Var x
-  Lit lit -> Lit lit
-  App f args -> case (runExpr f, args) of
-    (Builtin (If t), [p, a, b]) -> App (AppBuiltin (If (FunTy [] t)) [runExpr p, Lam [] (runExpr a), Lam [] (runExpr b)]) []
-    (f, _) -> App f (map runExpr args)
-  Lam args e -> Lam args (runExpr e)
-  Let x t e1 e2 -> Let x t (runExpr e1) (runExpr e2)
-
-runToplevelExpr :: ToplevelExpr -> ToplevelExpr
-runToplevelExpr e = case e of
-  ResultExpr e -> ResultExpr $ runExpr e
-  ToplevelLet x t e cont -> ToplevelLet x t (runExpr e) (runToplevelExpr cont)
-  ToplevelLetRec x args ret body cont -> ToplevelLetRec x args ret (runExpr body) (runToplevelExpr cont)
+runExpr :: [(VarName, Type)] -> Expr -> Expr
+runExpr _ = \case
+  App f args -> case (f, args) of
+    (Builtin (If t), [p, a, b]) -> App (AppBuiltin (If (FunTy [] t)) [p, Lam [] a, Lam [] b]) []
+    (f, _) -> App f args
+  e -> e
 
 run' :: Program -> Program
-run' = runToplevelExpr
+run' = mapExprProgram runExpr
 
 -- | `run` wraps some exprs with lambda redundant things from AST.
 -- Specifically, this converts @if p then a else b@ to something like @(if p then (lambda. a) else (lambda. b))()@.
