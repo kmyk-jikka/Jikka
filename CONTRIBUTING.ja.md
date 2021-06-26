@@ -7,7 +7,7 @@
 ### Tests
 
 テストには以下のコマンドを実行してください。
-現在は [Hspec](https://hspec.github.io/) と [Doctest](https://hackage.haskell.org/package/doctest) が有効になっています。
+[Hspec](https://hspec.github.io/) と [Doctest](https://hackage.haskell.org/package/doctest) が有効になっています。
 また [examples/](https://github.com/kmyk/Jikka/tree/master/examples) ディレクトリの中身が検査されます。
 
 ``` console
@@ -20,7 +20,7 @@ $ bash examples/test.sh
 ### Formatting
 
 フォーマットの検査には以下のコマンドを実行してください。
-現在は [Ormolu](https://github.com/tweag/ormolu) と [HLint](https://github.com/ndmitchell/hlint) が有効になっています。
+[Ormolu](https://github.com/tweag/ormolu) と [HLint](https://github.com/ndmitchell/hlint) が有効になっています。
 
 ``` console
 $ stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
