@@ -4,7 +4,11 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
@@ -16,17 +20,19 @@ jobs:
 
     - uses: actions/cache@v2
       with:
-        path: ~/.stack
+        path: |
+          ~/.stack
+          ${{ env.STACK_ROOT }}
         key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
 
     - name: Build dependencies
       run: stack --system-ghc build --test --only-dependencies
 
     - name: Build
-      run: stack --system-ghc build
+      run: stack --system-ghc build --ghc-options=-Werror
 
     - name: Run unit tests
-      run: stack --system-ghc test
+      run: stack --system-ghc test --ghc-options=-Werror
 
     - name: Run integration tests
       run: bash examples/test.sh
