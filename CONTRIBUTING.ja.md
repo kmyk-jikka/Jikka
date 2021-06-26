@@ -2,6 +2,15 @@
 
 (The English version of this document: [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md))
 
+
+## どのようにしてこのプロジェクトに貢献できますか？
+
+いまのところ、以下をしていただけると助かります:
+
+-   自動的に解けそうな競技プログラミングの問題を探し、その問題の愚直解の Python コードを書いて送る。
+    -   送ってもらった Python コードはテストに利用されます。
+
+
 ## Development process and conventions
 
 ### Tests

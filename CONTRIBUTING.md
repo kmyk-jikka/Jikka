@@ -2,6 +2,15 @@
 
 (このドキュメントの日本語バージョン: [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md))
 
+
+## How can I contribute to this project?
+
+Currently, you can help us with the following ways:
+
+-   Finding tasks of competitive programming which are seems to be automatically solved, and sending to us Python codes with stupid algorithms for the tasks.
+    -   The Python codes which you sent are used for testing.
+
+
 ## Development process and conventions
 
 ### Tests
