@@ -7,8 +7,9 @@
 
 いまのところ、以下をしていただけると助かります:
 
--   自動的に解けそうな競技プログラミングの問題を探し、その問題の愚直解の Python コードを書いて送る。
-    -   送ってもらった Python コードはテストに利用されます。
+-   自動的に解けそうな競技プログラミングの問題を探して [issue のコメント欄](https://github.com/kmyk/Jikka/issues/25)で報告してください。
+    -   可能なら、その問題の愚直解の Python コードやテストケースを作って [examples/wip/](https://github.com/kmyk/Jikka/tree/master/examples/wip) ディレクトリに追加するプルリクを出してください。
+    -   見つけてもらった問題や送ってもらった Python コードはテストに利用されます。
 
 
 ## Development process and conventions

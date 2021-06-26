@@ -7,8 +7,9 @@
 
 Currently, you can help us with the following ways:
 
--   Finding tasks of competitive programming which are seems to be automatically solved, and sending to us Python codes with stupid algorithms for the tasks.
-    -   The Python codes which you sent are used for testing.
+-   Please find tasks of competitive programming which are seems to be automatically solved, and reporting them in [comments of an issue](https://github.com/kmyk/Jikka/issues/25).
+    -   If possible, please send to us pull requests which add Python codes with stupid algorithms and test cases for the tasks to [examples/wip/](https://github.com/kmyk/Jikka/tree/master/examples/wip) directory.
+    -   The problems which you found and Python codes which you sent are used for testing.
 
 
 ## Development process and conventions
