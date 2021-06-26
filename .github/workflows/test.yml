@@ -27,10 +27,10 @@ jobs:
       run: stack --system-ghc build --test --only-dependencies
 
     - name: Build
-      run: stack --system-ghc build
+      run: stack --system-ghc build --ghc-options=-Werror
 
     - name: Run unit tests
-      run: stack --system-ghc test
+      run: stack --system-ghc test --ghc-options=-Werror
 
     - name: Run integration tests
       run: bash examples/test.sh
