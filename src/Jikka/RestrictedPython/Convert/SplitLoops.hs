@@ -20,7 +20,7 @@ import Jikka.RestrictedPython.Language.VariableAnalysis
 -- This assumes that `doesntHaveSubscriptionInLoopCounters`, `doesntHaveAssignmentToLoopCounters`, and `doesntHaveAssignmentToLoopIterators` hold.
 --
 -- This function analyzes read-variables and write-variables in statements, and split statements into connected components.
-runForLoop :: Target -> Expr -> [Statement] -> [Statement]
+runForLoop :: Target' -> Expr' -> [Statement] -> [Statement]
 runForLoop x iter body =
   let connected (_, (r, w)) (_, (r', w')) = haveWriteReadIntersection w r' || haveWriteReadIntersection w' r
       go result [] = reverse result

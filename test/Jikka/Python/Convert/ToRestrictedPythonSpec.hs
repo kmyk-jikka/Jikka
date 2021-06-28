@@ -40,7 +40,7 @@ spec = describe "run" $ do
               ("solve" `at'` 6)
               [("x" `at'` 7, Y.VarTy "$0")]
               Y.IntTy
-              [ Y.AnnAssign (Y.NameTrg ("y" `at'` 8)) (Y.VarTy "$1") (Y.Name ("x" `at'` 3))
+              [ Y.AnnAssign (Y.NameTrg ("y" `at'` 8) `at'` 5) (Y.VarTy "$1") (Y.Name ("x" `at'` 3) `at'` 3)
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -60,7 +60,7 @@ spec = describe "run" $ do
               ("f" `at'` 6)
               [("x" `at'` 7, Y.VarTy "$0")]
               (Y.VarTy "$1")
-              [ Y.Return (Y.Call (Y.Name ("f" `at'` 8)) [Y.Name ("x" `at'` 4)])
+              [ Y.Return (Y.Call (Y.Name ("f" `at'` 8) `at'` 5) [Y.Name ("x" `at'` 4) `at'` 4] `at'` 3)
               ]
           ]
     run' parsed `shouldBe` Right expected

@@ -42,9 +42,9 @@ lookupLocal x = do
     Just v -> return v
     Nothing -> maybe id wrapAt (loc' x) . throwRuntimeError $ "undefined variable: " ++ unVarName (value' x)
 
-assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Expr -> Value -> m ()
+assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Expr' -> Value -> m ()
 assignSubscriptedTarget f index v = do
-  let go f indices = case f of
+  let go f indices = maybe id wrapAt (loc' f) $ case value' f of
         SubscriptTrg f index -> go f (index : indices)
         NameTrg x -> return (x, indices)
         TupleTrg _ -> throwRuntimeError "cannot subscript a tuple target"
@@ -62,24 +62,23 @@ assignSubscriptedTarget f index v = do
   f <- go f indices
   assign (value' x) f
 
-assignTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Value -> m ()
-assignTarget trg v = do
-  case trg of
-    SubscriptTrg f index -> do
-      assignSubscriptedTarget f index v
-    NameTrg x -> do
-      assign (value' x) v
-    TupleTrg xs -> do
-      case v of
-        TupleVal vs -> do
-          when (length xs /= length vs) $ do
-            throwRuntimeError "the lengths of tuple are different"
-          forM_ (zip xs vs) $ \(x, v) -> do
-            assignTarget x v
-        _ -> throwRuntimeError "cannot unpack non-tuple value"
+assignTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Value -> m ()
+assignTarget x0 v = maybe id wrapAt (loc' x0) $ case value' x0 of
+  SubscriptTrg f index -> do
+    assignSubscriptedTarget f index v
+  NameTrg x -> do
+    assign (value' x) v
+  TupleTrg xs -> do
+    case v of
+      TupleVal vs -> do
+        when (length xs /= length vs) $ do
+          throwRuntimeError "the lengths of tuple are different"
+        forM_ (zip xs vs) $ \(x, v) -> do
+          assignTarget x v
+      _ -> throwRuntimeError "cannot unpack non-tuple value"
 
-evalTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> m Value
-evalTarget = \case
+evalTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> m Value
+evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
   SubscriptTrg f index -> do
     f <- evalTarget f
     index <- evalExpr index
@@ -170,8 +169,8 @@ evalTarget = \case
 -- === Rules for \(\lbrack e, e, \dots, e \rbrack _ \tau\)
 --
 -- === Rules for \(e \lbrack e? \colon e? \colon e? \rbrack\)
-evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr -> m Value
-evalExpr = \case
+evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> m Value
+evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
   BoolOp e1 op e2 -> do
     v1 <- evalExpr e1
     case (v1, op) of
@@ -264,7 +263,7 @@ evalExpr = \case
           (_, _, _) -> throwRuntimeError "type error"
       _ -> throwRuntimeError "type error"
 
-evalCall :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr -> [Expr] -> m Value
+evalCall :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> [Expr'] -> m Value
 evalCall f args = do
   f <- evalExpr f
   args <- mapM evalExpr args
@@ -469,7 +468,7 @@ execToplevelStatement = \case
     when (v /= BoolVal True) $ do
       throwRuntimeError "assertion failure"
 
-runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
+runWithGlobal :: MonadError Error m => Global -> Expr' -> m Value
 runWithGlobal global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
 
 -- | `makeGlobal` packs toplevel definitions into `Global`.
@@ -479,7 +478,7 @@ makeGlobal prog = do
   ensureDoesntHaveLeakOfLoopCounters prog
   execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
-run :: MonadError Error m => Program -> Expr -> m Value
+run :: MonadError Error m => Program -> Expr' -> m Value
 run prog e = do
   global <- makeGlobal prog
   runWithGlobal global e

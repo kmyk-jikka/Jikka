@@ -36,26 +36,26 @@ import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Util
 
 data Equation
-  = TypeEquation Type Type
+  = TypeEquation Type Type (Maybe Loc)
   | TypeAssertion VarName' Type
   deriving (Eq, Ord, Show, Read)
 
 type Eqns = Dual [Equation]
 
-formularizeType :: MonadWriter Eqns m => Type -> Type -> m ()
-formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
+formularizeType :: MonadWriter Eqns m => Type -> Type -> Maybe Loc -> m ()
+formularizeType t1 t2 location = tell $ Dual [TypeEquation t1 t2 location]
 
 formularizeVarName :: MonadWriter Eqns m => VarName' -> Type -> m ()
 formularizeVarName x t = tell $ Dual [TypeAssertion x t]
 
-formularizeTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target -> m Type
-formularizeTarget = \case
+formularizeTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target' -> m Type
+formularizeTarget x0 = case value' x0 of
   SubscriptTrg f index -> do
     t <- genType
     tf <- formularizeTarget f
-    formularizeType tf (ListTy t)
+    formularizeType tf (ListTy t) (loc' x0)
     tindex <- formularizeExpr index
-    formularizeType tindex IntTy
+    formularizeType tindex IntTy (loc' x0)
     return t
   NameTrg x -> do
     t <- genType
@@ -64,8 +64,13 @@ formularizeTarget = \case
   TupleTrg xs -> do
     TupleTy <$> mapM formularizeTarget xs
 
-formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
-formularizeExpr = \case
+formularizeTarget' :: (MonadWriter Eqns m, MonadAlpha m) => Target' -> Type -> m ()
+formularizeTarget' x0 t = do
+  t' <- formularizeTarget x0
+  formularizeType t t' (loc' x0)
+
+formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr' -> m Type
+formularizeExpr e0 = case value' e0 of
   BoolOp e1 _ e2 -> do
     formularizeExpr' e1 BoolTy
     formularizeExpr' e2 BoolTy
@@ -84,29 +89,22 @@ formularizeExpr = \case
     formularizeExpr body
     return $ CallableTy (map snd args) ret
   IfExp e1 e2 e3 -> do
-    t1 <- formularizeExpr e1
-    t2 <- formularizeExpr e2
-    t3 <- formularizeExpr e3
-    formularizeType t1 BoolTy
-    formularizeType t2 t3
-    return t2
+    formularizeExpr' e1 BoolTy
+    t <- formularizeExpr e2
+    formularizeExpr' e3 t
+    return t
   ListComp e comp -> do
     let Comprehension x iter pred = comp
     te <- formularizeExpr e
     tx <- formularizeTarget x
-    titer <- formularizeExpr iter
-    formularizeType (ListTy tx) titer
+    formularizeExpr' iter (ListTy tx)
     case pred of
       Nothing -> return ()
-      Just pred -> do
-        tpred <- formularizeExpr pred
-        formularizeType tpred BoolTy
+      Just pred -> formularizeExpr' pred BoolTy
     return $ ListTy te
   Compare e1 (CmpOp' op t) e2 -> do
-    t1 <- formularizeExpr e1
-    t2 <- formularizeExpr e2
-    formularizeType t1 t
-    formularizeType t2 (if op == In || op == NotIn then ListTy t else t)
+    formularizeExpr' e1 t
+    formularizeExpr' e2 (if op == In || op == NotIn then ListTy t else t)
     return BoolTy
   Call f args -> do
     ts <- mapM formularizeExpr args
@@ -144,39 +142,32 @@ formularizeExpr = \case
     formularize step
     return t'
 
-formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> Type -> m ()
-formularizeExpr' e t = do
-  t' <- formularizeExpr e
-  formularizeType t t'
+formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr' -> Type -> m ()
+formularizeExpr' e0 t = do
+  t' <- formularizeExpr e0
+  formularizeType t t' (loc' e0)
 
 formularizeStatement :: (MonadWriter Eqns m, MonadAlpha m) => Type -> Statement -> m ()
 formularizeStatement ret = \case
   Return e -> do
     t <- formularizeExpr e
-    formularizeType t ret
+    formularizeType t ret (loc' e)
   AugAssign x _ e -> do
-    t1 <- formularizeTarget x
-    t2 <- formularizeExpr e
-    formularizeType t1 IntTy
-    formularizeType t2 IntTy
+    formularizeTarget' x IntTy
+    formularizeExpr' e IntTy
   AnnAssign x t e -> do
-    t1 <- formularizeTarget x
-    t2 <- formularizeExpr e
-    formularizeType t1 t
-    formularizeType t2 t
+    formularizeTarget' x t
+    formularizeExpr' e t
   For x e body -> do
-    t1 <- formularizeTarget x
-    t2 <- formularizeExpr e
-    formularizeType (ListTy t1) t2
+    t <- formularizeTarget x
+    formularizeExpr' e (ListTy t)
     mapM_ (formularizeStatement ret) body
   If e body1 body2 -> do
-    t <- formularizeExpr e
-    formularizeType t BoolTy
+    formularizeExpr' e BoolTy
     mapM_ (formularizeStatement ret) body1
     mapM_ (formularizeStatement ret) body2
   Assert e -> do
-    t <- formularizeExpr e
-    formularizeType t BoolTy
+    formularizeExpr' e BoolTy
 
 formularizeToplevelStatement :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelStatement -> m ()
 formularizeToplevelStatement = \case
@@ -188,27 +179,26 @@ formularizeToplevelStatement = \case
     formularizeVarName f (CallableTy (map snd args) ret)
     mapM_ (formularizeStatement ret) body
   ToplevelAssert e -> do
-    t <- formularizeExpr e
-    formularizeType t BoolTy
+    formularizeExpr' e BoolTy
 
 formularizeProgram :: MonadAlpha m => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (mapM_ formularizeToplevelStatement prog)
 
-sortEquations :: [Equation] -> ([(Type, Type)], [(VarName', Type)])
+sortEquations :: [Equation] -> ([(Type, Type, Maybe Loc)], [(VarName', Type)])
 sortEquations = go [] []
   where
     go eqns' assertions [] = (eqns', assertions)
     go eqns' assertions (eqn : eqns) = case eqn of
-      TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
+      TypeEquation t1 t2 loc -> go ((t1, t2, loc) : eqns') assertions eqns
       TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
-mergeAssertions :: [(VarName', Type)] -> [(Type, Type)]
+mergeAssertions :: [(VarName', Type)] -> [(Type, Type, Maybe Loc)]
 mergeAssertions = go M.empty []
   where
     go _ eqns [] = eqns
-    go gamma eqns ((x, t) : assertions) = case M.lookup x gamma of
-      Nothing -> go (M.insert x t gamma) eqns assertions
-      Just t' -> go gamma ((t, t') : eqns) assertions
+    go gamma eqns ((x, t) : assertions) = case M.lookup (value' x) gamma of
+      Nothing -> go (M.insert (value' x) t gamma) eqns assertions
+      Just t' -> go gamma ((t, t', loc' x) : eqns) assertions
 
 -- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
 newtype Subst = Subst {unSubst :: M.Map TypeName Type}
@@ -256,9 +246,13 @@ unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t
       unifyType ret1 ret2
     _ -> throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
 
-solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
+solveEquations :: MonadError Error m => [(Type, Type, Maybe Loc)] -> m Subst
 solveEquations eqns = wrapError' "failed to solve type equations" $ do
-  execStateT (mapM_ (uncurry unifyType) eqns) (Subst M.empty)
+  flip execStateT (Subst M.empty) $ do
+    errs <- forM eqns $ \(t1, t2, loc) -> do
+      catchError' . maybe id wrapAt loc $ do
+        unifyType t1 t2
+    reportErrors errs
 
 -- | `substUnit` replaces all undetermined type variables with the unit type.
 substUnit :: Type -> Type
@@ -274,16 +268,16 @@ substUnit = \case
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
 
-substTarget :: Subst -> Target -> Target
-substTarget sigma = \case
+substTarget :: Subst -> Target' -> Target'
+substTarget sigma = fmap $ \case
   SubscriptTrg f index -> SubscriptTrg (substTarget sigma f) (substExpr sigma index)
   NameTrg x -> NameTrg x
   TupleTrg xs -> TupleTrg (map (substTarget sigma) xs)
 
-substExpr :: Subst -> Expr -> Expr
+substExpr :: Subst -> Expr' -> Expr'
 substExpr sigma = go
   where
-    go = \case
+    go = fmap $ \case
       BoolOp e1 op e2 -> BoolOp (go e1) op (go e2)
       BinOp e1 op e2 -> BinOp (go e1) op (go e2)
       UnaryOp op e -> UnaryOp op (go e)

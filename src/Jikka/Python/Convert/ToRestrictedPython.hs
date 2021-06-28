@@ -55,12 +55,13 @@ runTargetName e = case value e of
   X.Name x -> return $ runIdent x
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
 
-runTarget :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Target
-runTarget e = case value e of
-  X.Subscript f index -> Y.SubscriptTrg <$> runTarget f <*> runExpr index
-  X.Name _ -> Y.NameTrg <$> runTargetName e
-  X.Tuple es -> Y.TupleTrg <$> mapM runTarget es
-  _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
+runTarget :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Target'
+runTarget e =
+  WithLoc' (Just (loc e)) <$> case value e of
+    X.Subscript f index -> Y.SubscriptTrg <$> runTarget f <*> runExpr index
+    X.Name _ -> Y.NameTrg <$> runTargetName e
+    X.Tuple es -> Y.TupleTrg <$> mapM runTarget es
+    _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
 
 runTargetIdent :: MonadError Error m => X.Expr' -> m Y.VarName'
 runTargetIdent e = case value e of
@@ -94,37 +95,39 @@ runArguments = \case
   args -> throwSemanticError ("unsupported arguments: " ++ show args)
 
 runCompareExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> [(X.CmpOp, X.Expr')] -> m Y.Expr
-runCompareExpr e1 ops = runExpr e1 >>= (`go` ops)
+runCompareExpr e1 ops = value' <$> (runExpr e1 >>= (`go` ops))
   where
-    go :: (MonadAlpha m, MonadError Error m) => Y.Expr -> [(X.CmpOp, X.Expr')] -> m Y.Expr
+    withLoc = WithLoc' (Just (loc e1))
+    go :: (MonadAlpha m, MonadError Error m) => Y.Expr' -> [(X.CmpOp, X.Expr')] -> m Y.Expr'
     go e1 = \case
-      [] -> return $ Y.Constant (Y.ConstBool True)
-      [(op, e2)] -> Y.Compare e1 <$> (Y.CmpOp' op <$> Y.genType) <*> runExpr e2
+      [] -> return . withLoc $ Y.Constant (Y.ConstBool True)
+      [(op, e2)] -> withLoc <$> (Y.Compare e1 <$> (Y.CmpOp' op <$> Y.genType) <*> runExpr e2)
       (op, e2) : ops -> do
         t <- Y.genType
         e2 <- runExpr e2
         cont <- go e2 ops
-        return $ Y.BoolOp (Y.Compare e1 (Y.CmpOp' op t) e2) Y.And cont
+        return . withLoc $ Y.BoolOp (withLoc (Y.Compare e1 (Y.CmpOp' op t) e2)) Y.And cont
 
-runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Expr
-runExpr e = case value e of
-  X.BoolOp e1 op e2 -> Y.BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
-  X.BinOp e1 op e2 -> Y.BinOp <$> runExpr e1 <*> return op <*> runExpr e2
-  X.UnaryOp op e -> Y.UnaryOp op <$> runExpr e
-  X.Lambda args body -> Y.Lambda <$> runArguments args <*> runExpr body
-  X.IfExp e1 e2 e3 -> Y.IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
-  X.ListComp e comp -> Y.ListComp <$> runExpr e <*> runComprehension comp
-  X.GeneratorExp e comp -> Y.ListComp <$> runExpr e <*> runComprehension comp
-  X.Compare e1 e2 -> runCompareExpr e1 e2
-  X.Call f args [] -> Y.Call <$> runExpr f <*> mapM runExpr args
-  X.Constant const -> Y.Constant <$> runConstant const
-  X.Subscript e1 e2 -> case value e2 of
-    X.Slice from to step -> Y.SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
-    _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2
-  X.Name x -> return $ Y.Name (runIdent x)
-  X.List es -> Y.List <$> Y.genType <*> mapM runExpr es
-  X.Tuple es -> Y.Tuple <$> mapM runExpr es
-  _ -> throwSemanticErrorAt (loc e) ("unsupported expr: " ++ show e)
+runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Expr'
+runExpr e =
+  WithLoc' (Just (loc e)) <$> case value e of
+    X.BoolOp e1 op e2 -> Y.BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
+    X.BinOp e1 op e2 -> Y.BinOp <$> runExpr e1 <*> return op <*> runExpr e2
+    X.UnaryOp op e -> Y.UnaryOp op <$> runExpr e
+    X.Lambda args body -> Y.Lambda <$> runArguments args <*> runExpr body
+    X.IfExp e1 e2 e3 -> Y.IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
+    X.ListComp e comp -> Y.ListComp <$> runExpr e <*> runComprehension comp
+    X.GeneratorExp e comp -> Y.ListComp <$> runExpr e <*> runComprehension comp
+    X.Compare e1 e2 -> runCompareExpr e1 e2
+    X.Call f args [] -> Y.Call <$> runExpr f <*> mapM runExpr args
+    X.Constant const -> Y.Constant <$> runConstant const
+    X.Subscript e1 e2 -> case value e2 of
+      X.Slice from to step -> Y.SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
+      _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2
+    X.Name x -> return $ Y.Name (runIdent x)
+    X.List es -> Y.List <$> Y.genType <*> mapM runExpr es
+    X.Tuple es -> Y.Tuple <$> mapM runExpr es
+    _ -> throwSemanticErrorAt (loc e) ("unsupported expr: " ++ show e)
 
 runStatement :: (MonadAlpha m, MonadError Error m) => X.Statement' -> m [Y.Statement]
 runStatement stmt = wrapAt (loc stmt) $ case value stmt of
@@ -133,7 +136,7 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.ClassDef _ _ _ _ _ -> throwSemanticError "class statement is not allowed in def statement"
   X.Return e -> do
     e <- case e of
-      Nothing -> return $ Y.Constant Y.ConstNone
+      Nothing -> return . WithLoc' (Just (loc stmt)) $ Y.Constant Y.ConstNone
       Just e -> runExpr e
     return [Y.Return e]
   X.Delete _ -> throwSemanticErrorAt (loc stmt) "del statement is not allowed in def statement"
@@ -155,7 +158,7 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
       x <- runTargetIdent x
       t <- runType t
       e <- runExpr e
-      return [Y.AnnAssign (Y.NameTrg x) t e]
+      return [Y.AnnAssign (WithLoc' (loc' x) (Y.NameTrg x)) t e]
   X.For x e body orelse -> do
     x <- runTarget x
     e <- runExpr e

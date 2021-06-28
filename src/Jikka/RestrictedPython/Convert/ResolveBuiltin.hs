@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Jikka.RestrictedPython.Convert.ResolveBuiltin
   ( run,
@@ -13,13 +12,14 @@ import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Util
 
-runExpr :: (MonadAlpha m, MonadError Error m) => Expr -> m Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => Expr' -> m Expr'
 runExpr = mapSubExprM go
   where
-    go = \case
+    go :: (MonadAlpha m, MonadError Error m) => Expr' -> m Expr'
+    go e = case value' e of
       Name x -> resolveUniqueBuiltin x
-      Call (Name f) args -> Call <$> resolveBuiltin f (length args) <*> pure args
-      e -> return e
+      Call (WithLoc' _ (Name f)) args -> WithLoc' (loc' e) <$> (Call <$> resolveBuiltin f (length args) <*> pure args)
+      _ -> return e
 
 -- | `run` resolves types of polymorphic builtin functions.
 -- This assumes there are no assignments to builtin functions, i.e. `doesntHaveAssignmentToBuiltin`.

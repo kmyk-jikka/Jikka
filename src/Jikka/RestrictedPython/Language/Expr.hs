@@ -29,10 +29,12 @@ module Jikka.RestrictedPython.Language.Expr
     module Jikka.Common.Location,
     VarName',
     Expr (..),
+    Expr',
     Comprehension (..),
 
     -- * statements
     Target (..),
+    Target',
     Statement (..),
     ToplevelStatement (..),
     Program,
@@ -179,17 +181,19 @@ data Builtin
 --     \end{array}
 -- \]
 data Target
-  = SubscriptTrg Target Expr
+  = SubscriptTrg Target' Expr'
   | NameTrg VarName'
-  | TupleTrg [Target]
+  | TupleTrg [Target']
   deriving (Eq, Ord, Show, Read)
+
+type Target' = WithLoc' Target
 
 -- | `CmpOp'` is a type for comparision operators.
 -- This is annotated with its type as let-polymorphism.
 data CmpOp' = CmpOp' CmpOp Type
   deriving (Eq, Ord, Show, Read)
 
-data Comprehension = Comprehension Target Expr (Maybe Expr)
+data Comprehension = Comprehension Target' Expr' (Maybe Expr')
   deriving (Eq, Ord, Show, Read)
 
 -- | `Expr` represents the exprs of our restricted Python-like language.
@@ -212,21 +216,23 @@ data Comprehension = Comprehension Target Expr (Maybe Expr)
 --     \end{array}
 -- \]
 data Expr
-  = BoolOp Expr BoolOp Expr
-  | BinOp Expr Operator Expr
-  | UnaryOp UnaryOp Expr
-  | Lambda [(VarName', Type)] Expr
-  | IfExp Expr Expr Expr
-  | ListComp Expr Comprehension
-  | Compare Expr CmpOp' Expr
-  | Call Expr [Expr]
+  = BoolOp Expr' BoolOp Expr'
+  | BinOp Expr' Operator Expr'
+  | UnaryOp UnaryOp Expr'
+  | Lambda [(VarName', Type)] Expr'
+  | IfExp Expr' Expr' Expr'
+  | ListComp Expr' Comprehension
+  | Compare Expr' CmpOp' Expr'
+  | Call Expr' [Expr']
   | Constant Constant
-  | Subscript Expr Expr
+  | Subscript Expr' Expr'
   | Name VarName'
-  | List Type [Expr]
-  | Tuple [Expr]
-  | SubscriptSlice Expr (Maybe Expr) (Maybe Expr) (Maybe Expr)
+  | List Type [Expr']
+  | Tuple [Expr']
+  | SubscriptSlice Expr' (Maybe Expr') (Maybe Expr') (Maybe Expr')
   deriving (Eq, Ord, Show, Read)
+
+type Expr' = WithLoc' Expr
 
 -- | `Statement` represents the statements of our restricted Python-like language.
 -- They appear in bodies of `def`.
@@ -242,12 +248,12 @@ data Expr
 --     \end{array}
 -- \]
 data Statement
-  = Return Expr
-  | AugAssign Target Operator Expr
-  | AnnAssign Target Type Expr
-  | For Target Expr [Statement]
-  | If Expr [Statement] [Statement]
-  | Assert Expr
+  = Return Expr'
+  | AugAssign Target' Operator Expr'
+  | AnnAssign Target' Type Expr'
+  | For Target' Expr' [Statement]
+  | If Expr' [Statement] [Statement]
+  | Assert Expr'
   deriving (Eq, Ord, Show, Read)
 
 -- | `TopLevelStatement` represents the statements of our restricted Python-like language.
@@ -261,9 +267,9 @@ data Statement
 --     \end{array}
 -- \]
 data ToplevelStatement
-  = ToplevelAnnAssign VarName' Type Expr
+  = ToplevelAnnAssign VarName' Type Expr'
   | ToplevelFunctionDef VarName' [(VarName', Type)] Type [Statement]
-  | ToplevelAssert Expr
+  | ToplevelAssert Expr'
   deriving (Eq, Ord, Show, Read)
 
 -- | `Program` represents the programs of our restricted Python-like language.

@@ -9,7 +9,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Convert.Alpha (run)
 import Jikka.RestrictedPython.Language.Expr
-import Jikka.RestrictedPython.Language.Util
+import Jikka.RestrictedPython.Language.WithoutLoc
 import Test.Hspec
 
 run' :: Program -> Either Error Program
@@ -24,17 +24,17 @@ spec = describe "run" $ do
               [("n", IntTy)]
               IntTy
               [ If
-                  (Compare (Name "n") (CmpOp' Eq' (VarTy "t")) (constIntExp 0))
+                  (eqExp (VarTy "t") (name "n") (constIntExp 0))
                   [ Return (constIntExp 1)
                   ]
-                  [ Return (BinOp (Name "n") Mult (Call (Name "f") [BinOp (Name "n") Sub (constIntExp 1)]))
+                  [ Return (multExp (name "n") (call (name "f") [subExp (name "n") (constIntExp 1)]))
                   ]
               ],
             ToplevelFunctionDef
               "solve"
               [("n", IntTy)]
               IntTy
-              [ Return (BinOp (Call (Name "f") [Name "n"]) FloorMod (constIntExp 1000000007))
+              [ Return (binOp (call (name "f") [name "n"]) FloorMod (constIntExp 1000000007))
               ]
           ]
     let expected =
@@ -43,17 +43,17 @@ spec = describe "run" $ do
               [("n$0", IntTy)]
               IntTy
               [ If
-                  (Compare (Name "n$0") (CmpOp' Eq' (VarTy "t")) (constIntExp 0))
+                  (eqExp (VarTy "t") (name "n$0") (constIntExp 0))
                   [ Return (constIntExp 1)
                   ]
-                  [ Return (BinOp (Name "n$0") Mult (Call (Name "f") [BinOp (Name "n$0") Sub (constIntExp 1)]))
+                  [ Return (multExp (name "n$0") (call (name "f") [subExp (name "n$0") (constIntExp 1)]))
                   ]
               ],
             ToplevelFunctionDef
               "solve"
               [("n$1", IntTy)]
               IntTy
-              [ Return (BinOp (Call (Name "f") [Name "n$1"]) FloorMod (constIntExp 1000000007))
+              [ Return (binOp (call (name "f") [name "n$1"]) FloorMod (constIntExp 1000000007))
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -63,7 +63,7 @@ spec = describe "run" $ do
               "solve"
               []
               IntTy
-              [ Return (Name "y")
+              [ Return (name "y")
               ]
           ]
     let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: y"))
@@ -74,7 +74,7 @@ spec = describe "run" $ do
               "solve"
               []
               IntTy
-              [ Return (Name "range")
+              [ Return (name "range")
               ]
           ]
     let expected =
@@ -82,7 +82,7 @@ spec = describe "run" $ do
               "solve"
               []
               IntTy
-              [ Return (Name "range")
+              [ Return (name "range")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -92,13 +92,13 @@ spec = describe "run" $ do
               "foo"
               [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y") IntTy (Name "x")
+              [ AnnAssign (nameTrg "y") IntTy (name "x")
               ],
             ToplevelFunctionDef
               "bar"
               [("x", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y") IntTy (Name "x")
+              [ AnnAssign (nameTrg "y") IntTy (name "x")
               ]
           ]
     let expected =
@@ -106,13 +106,13 @@ spec = describe "run" $ do
               "foo"
               [("x$0", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$1") IntTy (Name "x$0")
+              [ AnnAssign (nameTrg "y$1") IntTy (name "x$0")
               ],
             ToplevelFunctionDef
               "bar"
               [("x$2", IntTy)]
               IntTy
-              [ AnnAssign (NameTrg "y$3") IntTy (Name "x$2")
+              [ AnnAssign (nameTrg "y$3") IntTy (name "x$2")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -123,14 +123,14 @@ spec = describe "run" $ do
               []
               IntTy
               [ For
-                  (NameTrg "i")
-                  (List IntTy [])
-                  [ AnnAssign (NameTrg "x") IntTy (Name "i")
+                  (nameTrg "i")
+                  (list IntTy [])
+                  [ AnnAssign (nameTrg "x") IntTy (name "i")
                   ],
                 For
-                  (NameTrg "i")
-                  (List IntTy [])
-                  [ AnnAssign (NameTrg "x") IntTy (Name "i")
+                  (nameTrg "i")
+                  (list IntTy [])
+                  [ AnnAssign (nameTrg "x") IntTy (name "i")
                   ]
               ]
           ]
@@ -140,14 +140,14 @@ spec = describe "run" $ do
               []
               IntTy
               [ For
-                  (NameTrg "i$0")
-                  (List IntTy [])
-                  [ AnnAssign (NameTrg "x$1") IntTy (Name "i$0")
+                  (nameTrg "i$0")
+                  (list IntTy [])
+                  [ AnnAssign (nameTrg "x$1") IntTy (name "i$0")
                   ],
                 For
-                  (NameTrg "i$2")
-                  (List IntTy [])
-                  [ AnnAssign (NameTrg "x$3") IntTy (Name "i$2")
+                  (nameTrg "i$2")
+                  (list IntTy [])
+                  [ AnnAssign (nameTrg "x$3") IntTy (name "i$2")
                   ]
               ]
           ]
@@ -157,11 +157,11 @@ spec = describe "run" $ do
           [ ToplevelAnnAssign
               "a"
               (ListTy IntTy)
-              ( ListComp
+              ( listComp
                   (constIntExp 0)
                   ( Comprehension
-                      (NameTrg "_")
-                      (Call (Name "range") [constIntExp 10])
+                      (nameTrg "_")
+                      (call (name "range") [constIntExp 10])
                       Nothing
                   )
               )
@@ -170,11 +170,11 @@ spec = describe "run" $ do
           [ ToplevelAnnAssign
               "a"
               (ListTy IntTy)
-              ( ListComp
+              ( listComp
                   (constIntExp 0)
                   ( Comprehension
-                      (NameTrg "$0")
-                      (Call (Name "range") [constIntExp 10])
+                      (nameTrg "$0")
+                      (call (name "range") [constIntExp 10])
                       Nothing
                   )
               )
@@ -186,7 +186,7 @@ spec = describe "run" $ do
               "f"
               [("x", IntTy)]
               IntTy
-              [ Return (Call (Name "f") [Name "x"])
+              [ Return (call (name "f") [name "x"])
               ]
           ]
     let expected =
@@ -194,7 +194,7 @@ spec = describe "run" $ do
               "f"
               [("x$0", IntTy)]
               IntTy
-              [ Return (Call (Name "f") [Name "x$0"])
+              [ Return (call (name "f") [name "x$0"])
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -204,7 +204,7 @@ spec = describe "run" $ do
               "f"
               [("x", VarTy "x")]
               (VarTy "f")
-              [ Return (Call (Name "f") [Name "x"])
+              [ Return (call (name "f") [name "x"])
               ]
           ]
     let expected =
@@ -212,7 +212,7 @@ spec = describe "run" $ do
               "f"
               [("x$0", VarTy "x")]
               (VarTy "f")
-              [ Return (Call (Name "f") [Name "x$0"])
+              [ Return (call (name "f") [name "x$0"])
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -222,12 +222,12 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x")
+              [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x")
               ]
           ]
     let expected =
@@ -235,12 +235,12 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$0") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
-                AnnAssign (NameTrg "x$2") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$3") IntTy (Name "x$2"),
-                AnnAssign (NameTrg "x$4") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$5") IntTy (Name "x$4")
+              [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$1") IntTy (name "x$0"),
+                AnnAssign (nameTrg "x$2") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$3") IntTy (name "x$2"),
+                AnnAssign (nameTrg "x$4") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$5") IntTy (name "x$4")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -250,12 +250,12 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AugAssign (NameTrg "x") Add (constIntExp 0),
-                AugAssign (NameTrg "x") Add (Name "x"),
-                AugAssign (NameTrg "x") Add (constIntExp 0),
-                AugAssign (NameTrg "x") Add (Name "x")
+              [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AugAssign (nameTrg "x") Add (constIntExp 0),
+                AugAssign (nameTrg "x") Add (name "x"),
+                AugAssign (nameTrg "x") Add (constIntExp 0),
+                AugAssign (nameTrg "x") Add (name "x")
               ]
           ]
     let expected =
@@ -263,12 +263,12 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$0") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
-                AugAssign (NameTrg "x$1") Add (constIntExp 0),
-                AugAssign (NameTrg "x$1") Add (Name "x$1"),
-                AugAssign (NameTrg "x$1") Add (constIntExp 0),
-                AugAssign (NameTrg "x$1") Add (Name "x$1")
+              [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$1") IntTy (name "x$0"),
+                AugAssign (nameTrg "x$1") Add (constIntExp 0),
+                AugAssign (nameTrg "x$1") Add (name "x$1"),
+                AugAssign (nameTrg "x$1") Add (constIntExp 0),
+                AugAssign (nameTrg "x$1") Add (name "x$1")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -279,11 +279,11 @@ spec = describe "run" $ do
               []
               IntTy
               [ For
-                  (NameTrg "i")
-                  (List IntTy [])
-                  [ Return (Name "i")
+                  (nameTrg "i")
+                  (list IntTy [])
+                  [ Return (name "i")
                   ],
-                Return (Name "i")
+                Return (name "i")
               ]
           ]
     let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: i"))
@@ -294,13 +294,13 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "i") IntTy (constIntExp 0),
+              [ AnnAssign (nameTrg "i") IntTy (constIntExp 0),
                 For
-                  (NameTrg "i")
-                  (List IntTy [])
-                  [ Return (Name "i")
+                  (nameTrg "i")
+                  (list IntTy [])
+                  [ Return (name "i")
                   ],
-                Return (Name "i")
+                Return (name "i")
               ]
           ]
     let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SemanticError (Error "cannot redefine variable: i"))
@@ -312,10 +312,10 @@ spec = describe "run" $ do
               []
               IntTy
               [ For
-                  (NameTrg "i")
-                  (List IntTy [])
-                  [ Return (Name "a"),
-                    AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                  (nameTrg "i")
+                  (list IntTy [])
+                  [ Return (name "a"),
+                    AnnAssign (nameTrg "a") IntTy (constIntExp 0)
                   ]
               ]
           ]
@@ -329,10 +329,10 @@ spec = describe "run" $ do
               IntTy
               [ If
                   (constBoolExp True)
-                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                  [ AnnAssign (nameTrg "a") IntTy (constIntExp 0)
                   ]
                   [],
-                Return (Name "a")
+                Return (name "a")
               ]
           ]
     let expected = WithWrapped "Jikka.RestrictedPython.Convert.Alpha" (WithGroup SymbolError (Error "undefined identifier: a"))
@@ -345,11 +345,11 @@ spec = describe "run" $ do
               IntTy
               [ If
                   (constBoolExp True)
-                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 0)
+                  [ AnnAssign (nameTrg "a") IntTy (constIntExp 0)
                   ]
-                  [ AnnAssign (NameTrg "a") IntTy (constIntExp 1)
+                  [ AnnAssign (nameTrg "a") IntTy (constIntExp 1)
                   ],
-                Return (Name "a")
+                Return (name "a")
               ]
           ]
     let expected =
@@ -359,11 +359,11 @@ spec = describe "run" $ do
               IntTy
               [ If
                   (constBoolExp True)
-                  [ AnnAssign (NameTrg "a$0") IntTy (constIntExp 0)
+                  [ AnnAssign (nameTrg "a$0") IntTy (constIntExp 0)
                   ]
-                  [ AnnAssign (NameTrg "a$0") IntTy (constIntExp 1)
+                  [ AnnAssign (nameTrg "a$0") IntTy (constIntExp 1)
                   ],
-                Return (Name "a$0")
+                Return (name "a$0")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -373,9 +373,9 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "i") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "a") (ListTy IntTy) (ListComp (constIntExp 0) (Comprehension (NameTrg "i") (List IntTy []) Nothing)),
-                Return (Name "i")
+              [ AnnAssign (nameTrg "i") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "a") (ListTy IntTy) (listComp (constIntExp 0) (Comprehension (nameTrg "i") (list IntTy []) Nothing)),
+                Return (name "i")
               ]
           ]
     let expected =
@@ -383,9 +383,9 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "i$0") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "a$2") (ListTy IntTy) (ListComp (constIntExp 0) (Comprehension (NameTrg "i$1") (List IntTy []) Nothing)),
-                Return (Name "i$0")
+              [ AnnAssign (nameTrg "i$0") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "a$2") (ListTy IntTy) (listComp (constIntExp 0) (Comprehension (nameTrg "i$1") (list IntTy []) Nothing)),
+                Return (name "i$0")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -395,23 +395,23 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
+              [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
                 If
-                  (Name "x")
-                  [ AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x") IntTy (Name "x"),
-                    AnnAssign (NameTrg "y") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "y") IntTy (Name "y"),
-                    AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x") IntTy (Name "x")
+                  (name "x")
+                  [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x") IntTy (name "x"),
+                    AnnAssign (nameTrg "y") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "y") IntTy (name "y"),
+                    AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x") IntTy (name "x")
                   ]
                   [],
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x")
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x")
               ]
           ]
     let expected =
@@ -419,23 +419,23 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$0") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
-                AnnAssign (NameTrg "x$2") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$3") IntTy (Name "x$2"),
+              [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$1") IntTy (name "x$0"),
+                AnnAssign (nameTrg "x$2") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$3") IntTy (name "x$2"),
                 If
-                  (Name "x$3")
-                  [ AnnAssign (NameTrg "x$3") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3"),
-                    AnnAssign (NameTrg "y$4") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "y$5") IntTy (Name "y$4"),
-                    AnnAssign (NameTrg "x$3") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3")
+                  (name "x$3")
+                  [ AnnAssign (nameTrg "x$3") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x$3") IntTy (name "x$3"),
+                    AnnAssign (nameTrg "y$4") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "y$5") IntTy (name "y$4"),
+                    AnnAssign (nameTrg "x$3") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x$3") IntTy (name "x$3")
                   ]
                   [],
-                AnnAssign (NameTrg "x$6") IntTy (Name "x$3"),
-                AnnAssign (NameTrg "x$7") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$8") IntTy (Name "x$7")
+                AnnAssign (nameTrg "x$6") IntTy (name "x$3"),
+                AnnAssign (nameTrg "x$7") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$8") IntTy (name "x$7")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -445,23 +445,23 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
+              [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
                 For
-                  (NameTrg "i")
-                  (List IntTy [])
-                  [ AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x") IntTy (Name "x"),
-                    AnnAssign (NameTrg "y") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "y") IntTy (Name "y"),
-                    AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x") IntTy (Name "x")
+                  (nameTrg "i")
+                  (list IntTy [])
+                  [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x") IntTy (name "x"),
+                    AnnAssign (nameTrg "y") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "y") IntTy (name "y"),
+                    AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x") IntTy (name "x")
                   ],
-                AnnAssign (NameTrg "x") IntTy (Name "x"),
-                AnnAssign (NameTrg "x") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x") IntTy (Name "x")
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x")
               ]
           ]
     let expected =
@@ -469,23 +469,23 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "x$0") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$1") IntTy (Name "x$0"),
-                AnnAssign (NameTrg "x$2") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$3") IntTy (Name "x$2"),
+              [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$1") IntTy (name "x$0"),
+                AnnAssign (nameTrg "x$2") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$3") IntTy (name "x$2"),
                 For
-                  (NameTrg "i$4")
-                  (List IntTy [])
-                  [ AnnAssign (NameTrg "x$3") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3"),
-                    AnnAssign (NameTrg "y$5") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "y$6") IntTy (Name "y$5"),
-                    AnnAssign (NameTrg "x$3") IntTy (constIntExp 0),
-                    AnnAssign (NameTrg "x$3") IntTy (Name "x$3")
+                  (nameTrg "i$4")
+                  (list IntTy [])
+                  [ AnnAssign (nameTrg "x$3") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x$3") IntTy (name "x$3"),
+                    AnnAssign (nameTrg "y$5") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "y$6") IntTy (name "y$5"),
+                    AnnAssign (nameTrg "x$3") IntTy (constIntExp 0),
+                    AnnAssign (nameTrg "x$3") IntTy (name "x$3")
                   ],
-                AnnAssign (NameTrg "x$7") IntTy (Name "x$3"),
-                AnnAssign (NameTrg "x$8") IntTy (constIntExp 0),
-                AnnAssign (NameTrg "x$9") IntTy (Name "x$8")
+                AnnAssign (nameTrg "x$7") IntTy (name "x$3"),
+                AnnAssign (nameTrg "x$8") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$9") IntTy (name "x$8")
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -495,11 +495,11 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "a") (ListTy IntTy) (List IntTy []),
-                AnnAssign (SubscriptTrg (NameTrg "a") (constIntExp 0)) IntTy (Subscript (Name "a") (constIntExp 0)),
-                AnnAssign (SubscriptTrg (NameTrg "a") (constIntExp 0)) IntTy (Subscript (Name "a") (constIntExp 0)),
-                AnnAssign (SubscriptTrg (NameTrg "a") (constIntExp 0)) IntTy (Subscript (Name "a") (constIntExp 0)),
-                AnnAssign (SubscriptTrg (NameTrg "a") (constIntExp 0)) IntTy (Subscript (Name "a") (constIntExp 0))
+              [ AnnAssign (nameTrg "a") (ListTy IntTy) (list IntTy []),
+                AnnAssign (subscriptTrg (nameTrg "a") (constIntExp 0)) IntTy (subscript (name "a") (constIntExp 0)),
+                AnnAssign (subscriptTrg (nameTrg "a") (constIntExp 0)) IntTy (subscript (name "a") (constIntExp 0)),
+                AnnAssign (subscriptTrg (nameTrg "a") (constIntExp 0)) IntTy (subscript (name "a") (constIntExp 0)),
+                AnnAssign (subscriptTrg (nameTrg "a") (constIntExp 0)) IntTy (subscript (name "a") (constIntExp 0))
               ]
           ]
     let expected =
@@ -507,11 +507,11 @@ spec = describe "run" $ do
               "main"
               []
               IntTy
-              [ AnnAssign (NameTrg "a$0") (ListTy IntTy) (List IntTy []),
-                AnnAssign (SubscriptTrg (NameTrg "a$0") (constIntExp 0)) IntTy (Subscript (Name "a$0") (constIntExp 0)),
-                AnnAssign (SubscriptTrg (NameTrg "a$0") (constIntExp 0)) IntTy (Subscript (Name "a$0") (constIntExp 0)),
-                AnnAssign (SubscriptTrg (NameTrg "a$0") (constIntExp 0)) IntTy (Subscript (Name "a$0") (constIntExp 0)),
-                AnnAssign (SubscriptTrg (NameTrg "a$0") (constIntExp 0)) IntTy (Subscript (Name "a$0") (constIntExp 0))
+              [ AnnAssign (nameTrg "a$0") (ListTy IntTy) (list IntTy []),
+                AnnAssign (subscriptTrg (nameTrg "a$0") (constIntExp 0)) IntTy (subscript (name "a$0") (constIntExp 0)),
+                AnnAssign (subscriptTrg (nameTrg "a$0") (constIntExp 0)) IntTy (subscript (name "a$0") (constIntExp 0)),
+                AnnAssign (subscriptTrg (nameTrg "a$0") (constIntExp 0)) IntTy (subscript (name "a$0") (constIntExp 0)),
+                AnnAssign (subscriptTrg (nameTrg "a$0") (constIntExp 0)) IntTy (subscript (name "a$0") (constIntExp 0))
               ]
           ]
     run' parsed `shouldBe` Right expected

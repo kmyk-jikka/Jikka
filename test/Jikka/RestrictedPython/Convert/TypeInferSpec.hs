@@ -7,6 +7,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Convert.TypeInfer
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.WithoutLoc
 import Test.Hspec
 
 run' :: Program -> Either Error Program
@@ -25,7 +26,7 @@ spec = do
                 "solve"
                 [("x", VarTy "t1")]
                 (VarTy "t2")
-                [ Return (BinOp (Name "x") Add (Name "x"))
+                [ Return (binOp (name "x") Add (name "x"))
                 ]
             ]
       let expected =
@@ -33,7 +34,7 @@ spec = do
                 "solve"
                 [("x", IntTy)]
                 IntTy
-                [ Return (BinOp (Name "x") Add (Name "x"))
+                [ Return (binOp (name "x") Add (name "x"))
                 ]
             ]
       run' parsed `shouldBe` Right expected
@@ -43,7 +44,7 @@ spec = do
                 "solve"
                 [("x", VarTy "t1")]
                 (VarTy "t2")
-                [ Return (Name "x")
+                [ Return (name "x")
                 ]
             ]
       let expected =
@@ -51,7 +52,7 @@ spec = do
                 "solve"
                 [("x", TupleTy [])]
                 (TupleTy [])
-                [ Return (Name "x")
+                [ Return (name "x")
                 ]
             ]
       run' parsed `shouldBe` Right expected

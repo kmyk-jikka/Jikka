@@ -9,7 +9,7 @@ import qualified Jikka.Core.Language.BuiltinPatterns as Y
 import qualified Jikka.Core.Language.Expr as Y
 import Jikka.RestrictedPython.Convert.ToCore (run)
 import qualified Jikka.RestrictedPython.Language.Expr as X
-import qualified Jikka.RestrictedPython.Language.Util as X
+import qualified Jikka.RestrictedPython.Language.WithoutLoc as X
 import Test.Hspec
 
 run' :: X.Program -> Either Error Y.Program
@@ -24,10 +24,10 @@ spec = describe "run" $ do
               [("n", X.IntTy)]
               X.IntTy
               [ X.If
-                  (X.Compare (X.Name "n") (X.CmpOp' X.Eq' X.IntTy) (X.constIntExp 0))
+                  (X.eqExp X.IntTy (X.name "n") (X.constIntExp 0))
                   [ X.Return (X.constIntExp 1)
                   ]
-                  [ X.Return (X.BinOp (X.Name "n") X.Mult (X.Call (X.Name "solve") [X.BinOp (X.Name "n") X.Sub (X.constIntExp 1)]))
+                  [ X.Return (X.binOp (X.name "n") X.Mult (X.call (X.name "solve") [X.binOp (X.name "n") X.Sub (X.constIntExp 1)]))
                   ]
               ]
           ]
@@ -53,16 +53,16 @@ spec = describe "run" $ do
               "solve"
               [("n", X.IntTy)]
               X.IntTy
-              [ X.AnnAssign (X.NameTrg "a") X.IntTy (X.constIntExp 0),
-                X.AnnAssign (X.NameTrg "b") X.IntTy (X.constIntExp 1),
+              [ X.AnnAssign (X.nameTrg "a") X.IntTy (X.constIntExp 0),
+                X.AnnAssign (X.nameTrg "b") X.IntTy (X.constIntExp 1),
                 X.For
-                  (X.NameTrg "i")
-                  (X.Call (X.Constant $ X.ConstBuiltin X.BuiltinRange1) [X.Name "n"])
-                  [ X.AnnAssign (X.NameTrg "c") X.IntTy (X.BinOp (X.Name "a") X.Add (X.Name "b")),
-                    X.AnnAssign (X.NameTrg "a") X.IntTy (X.Name "b"),
-                    X.AnnAssign (X.NameTrg "b") X.IntTy (X.Name "c")
+                  (X.nameTrg "i")
+                  (X.call (X.constBuiltinExp X.BuiltinRange1) [X.name "n"])
+                  [ X.AnnAssign (X.nameTrg "c") X.IntTy (X.binOp (X.name "a") X.Add (X.name "b")),
+                    X.AnnAssign (X.nameTrg "a") X.IntTy (X.name "b"),
+                    X.AnnAssign (X.nameTrg "b") X.IntTy (X.name "c")
                   ],
-                X.Return (X.Name "a")
+                X.Return (X.name "a")
               ]
           ]
     let expected =
@@ -105,11 +105,11 @@ spec = describe "run" $ do
               X.IntTy
               [ X.If
                   (X.constBoolExp True)
-                  [ X.AnnAssign (X.NameTrg "x") X.IntTy (X.constIntExp 1)
+                  [ X.AnnAssign (X.nameTrg "x") X.IntTy (X.constIntExp 1)
                   ]
-                  [ X.AnnAssign (X.NameTrg "x") X.IntTy (X.constIntExp 0)
+                  [ X.AnnAssign (X.nameTrg "x") X.IntTy (X.constIntExp 0)
                   ],
-                X.Return (X.Name "x")
+                X.Return (X.name "x")
               ]
           ]
     let expected =

@@ -93,8 +93,8 @@ formatComprehension (Comprehension x iter ifs) =
         Just ifs -> " if " ++ formatExpr ifs
    in body ++ ifs'
 
-formatTarget :: Target -> String
-formatTarget = \case
+formatTarget :: Target' -> String
+formatTarget (WithLoc' _ x) = case x of
   SubscriptTrg x e -> formatTarget x ++ "[" ++ formatExpr e ++ "]"
   NameTrg x -> unVarName (value' x)
   TupleTrg xs -> case xs of
@@ -102,8 +102,8 @@ formatTarget = \case
     [x] -> "(" ++ formatTarget x ++ ",)"
     _ -> intercalate ", " (map formatTarget xs)
 
-formatExpr :: Expr -> String
-formatExpr = \case
+formatExpr :: Expr' -> String
+formatExpr (WithLoc' _ e0) = case e0 of
   BoolOp e1 op e2 -> formatExpr e1 ++ " " ++ formatBoolOp op ++ " " ++ formatExpr e2
   BinOp e1 op e2 -> formatExpr e1 ++ " " ++ formatOperator op ++ " " ++ formatExpr e2
   UnaryOp op e -> formatUnaryOp op ++ " " ++ formatExpr e
@@ -114,7 +114,7 @@ formatExpr = \case
   ListComp e comp -> "[" ++ formatExpr e ++ " " ++ formatComprehension comp ++ "]"
   Compare e1 op e2 -> formatExpr e1 ++ " " ++ formatCmpOp op ++ " " ++ formatExpr e2
   Call f args -> case args of
-    [ListComp e comp] -> formatExpr f ++ "(" ++ formatExpr e ++ " " ++ formatComprehension comp ++ ")"
+    [WithLoc' _ (ListComp e comp)] -> formatExpr f ++ "(" ++ formatExpr e ++ " " ++ formatComprehension comp ++ ")"
     _ -> formatExpr f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
   Constant const -> formatConstant const
   Subscript e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"

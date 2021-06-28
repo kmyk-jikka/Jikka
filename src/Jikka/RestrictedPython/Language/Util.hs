@@ -6,11 +6,6 @@ module Jikka.RestrictedPython.Language.Util
     genType,
     genVarName,
 
-    -- * constants
-    constIntExp,
-    constBoolExp,
-    constBuiltinExp,
-
     -- * free variables
     freeTyVars,
     freeVars,
@@ -65,6 +60,7 @@ import Data.List (delete, nub)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.IO
+import Jikka.Common.Location
 import Jikka.RestrictedPython.Language.Expr
 
 genType :: MonadAlpha m => m Type
@@ -78,15 +74,6 @@ genVarName x = do
   let base = if unVarName (value' x) == "_" then "" else takeWhile (/= '$') (unVarName (value' x))
   return $ WithLoc' (loc' x) (VarName (base ++ '$' : show i))
 
-constIntExp :: Integer -> Expr
-constIntExp = Constant . ConstInt
-
-constBoolExp :: Bool -> Expr
-constBoolExp = Constant . ConstBool
-
-constBuiltinExp :: Builtin -> Expr
-constBuiltinExp = Constant . ConstBuiltin
-
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
   where
@@ -99,13 +86,13 @@ freeTyVars = nub . go
       CallableTy ts ret -> concat $ mapM go (ret : ts)
 
 -- | `freeVars'` reports all free variables.
-freeVars :: Expr -> [VarName]
+freeVars :: Expr' -> [VarName]
 freeVars = nub . map value' . freeVars'
 
 -- | `freeVars'` reports all free variables with their locations, i.e. occurrences.
 -- For examples, @x + x@ and @x@ have the same free variables @x@ but they have different sets of occurrences of free variable.
-freeVars' :: Expr -> [VarName']
-freeVars' = \case
+freeVars' :: Expr' -> [VarName']
+freeVars' (WithLoc' _ e0) = case e0 of
   BoolOp e1 _ e2 -> freeVars' e1 ++ freeVars' e2
   BinOp e1 _ e2 -> freeVars' e1 ++ freeVars' e2
   UnaryOp _ e -> freeVars' e
@@ -121,11 +108,11 @@ freeVars' = \case
   Tuple es -> concatMap freeVars' es
   SubscriptSlice e from to step -> freeVars' e ++ concatMap freeVars' from ++ concatMap freeVars' to ++ concatMap freeVars' step
 
-freeVarsTarget :: Target -> [VarName]
+freeVarsTarget :: Target' -> [VarName]
 freeVarsTarget = nub . map value' . freeVarsTarget'
 
-freeVarsTarget' :: Target -> [VarName']
-freeVarsTarget' = \case
+freeVarsTarget' :: Target' -> [VarName']
+freeVarsTarget' (WithLoc' _ x) = case x of
   SubscriptTrg _ e -> freeVars' e
   NameTrg _ -> []
   TupleTrg xs -> concatMap freeVarsTarget' xs
@@ -150,43 +137,45 @@ doesPossiblyReturn = \case
 
 -- | `mapSubExprM` replaces all exprs in a given expr using a given function.
 -- This may breaks various constraints.
-mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
+mapSubExprM :: Monad m => (Expr' -> m Expr') -> Expr' -> m Expr'
 mapSubExprM f = go
   where
-    go = \case
-      BoolOp e1 op e2 -> f =<< BoolOp <$> go e1 <*> return op <*> go e2
-      BinOp e1 op e2 -> f =<< BinOp <$> go e1 <*> return op <*> go e2
-      UnaryOp op e -> f . UnaryOp op =<< go e
-      Lambda args body -> f . Lambda args =<< go body
-      IfExp e1 e2 e3 -> f =<< IfExp <$> go e1 <*> go e2 <*> go e3
-      ListComp e (Comprehension x iter pred) -> do
-        x <- mapExprTargetM f x
-        iter <- go iter
-        pred <- mapM go pred
-        f $ ListComp e (Comprehension x iter pred)
-      Compare e1 op e2 -> f =<< Compare <$> go e1 <*> return op <*> go e2
-      Call g args -> f =<< Call <$> go g <*> mapM go args
-      Constant const -> f $ Constant const
-      Subscript e1 e2 -> f =<< Subscript <$> go e1 <*> go e2
-      Name x -> f $ Name x
-      List t es -> f . List t =<< mapM go es
-      Tuple es -> f . Tuple =<< mapM go es
-      SubscriptSlice e from to step -> f =<< SubscriptSlice <$> go e <*> mapM go from <*> mapM go to <*> mapM go step
+    go e0 =
+      f . WithLoc' (loc' e0) =<< case value' e0 of
+        BoolOp e1 op e2 -> BoolOp <$> go e1 <*> return op <*> go e2
+        BinOp e1 op e2 -> BinOp <$> go e1 <*> return op <*> go e2
+        UnaryOp op e -> UnaryOp op <$> go e
+        Lambda args body -> Lambda args <$> go body
+        IfExp e1 e2 e3 -> IfExp <$> go e1 <*> go e2 <*> go e3
+        ListComp e (Comprehension x iter pred) -> do
+          x <- mapExprTargetM f x
+          iter <- go iter
+          pred <- mapM go pred
+          return $ ListComp e (Comprehension x iter pred)
+        Compare e1 op e2 -> Compare <$> go e1 <*> return op <*> go e2
+        Call g args -> Call <$> go g <*> mapM go args
+        Constant const -> return $ Constant const
+        Subscript e1 e2 -> Subscript <$> go e1 <*> go e2
+        Name x -> return $ Name x
+        List t es -> List t <$> mapM go es
+        Tuple es -> Tuple <$> mapM go es
+        SubscriptSlice e from to step -> SubscriptSlice <$> go e <*> mapM go from <*> mapM go to <*> mapM go step
 
-listSubExprs :: Expr -> [Expr]
+listSubExprs :: Expr' -> [Expr']
 listSubExprs = reverse . getDual . execWriter . mapSubExprM go
   where
     go e = do
       tell $ Dual [e]
       return e
 
-mapExprTargetM :: Monad m => (Expr -> m Expr) -> Target -> m Target
-mapExprTargetM f = \case
-  SubscriptTrg x e -> SubscriptTrg <$> mapExprTargetM f x <*> f e
-  NameTrg x -> return $ NameTrg x
-  TupleTrg xs -> TupleTrg <$> mapM (mapExprTargetM f) xs
+mapExprTargetM :: Monad m => (Expr' -> m Expr') -> Target' -> m Target'
+mapExprTargetM f x =
+  WithLoc' (loc' x) <$> case value' x of
+    SubscriptTrg x e -> SubscriptTrg <$> mapExprTargetM f x <*> f e
+    NameTrg x -> return $ NameTrg x
+    TupleTrg xs -> TupleTrg <$> mapM (mapExprTargetM f) xs
 
-mapExprStatementM :: Monad m => (Expr -> m Expr) -> Statement -> m Statement
+mapExprStatementM :: Monad m => (Expr' -> m Expr') -> Statement -> m Statement
 mapExprStatementM f = \case
   Return e -> Return <$> f e
   AugAssign x op e -> AugAssign <$> mapExprTargetM f x <*> pure op <*> f e
@@ -195,16 +184,16 @@ mapExprStatementM f = \case
   If e body1 body2 -> If <$> f e <*> mapM (mapExprStatementM f) body1 <*> mapM (mapExprStatementM f) body2
   Assert e -> Assert <$> f e
 
-mapExprToplevelStatementM :: Monad m => (Expr -> m Expr) -> ToplevelStatement -> m ToplevelStatement
+mapExprToplevelStatementM :: Monad m => (Expr' -> m Expr') -> ToplevelStatement -> m ToplevelStatement
 mapExprToplevelStatementM f = \case
   ToplevelAnnAssign x t e -> ToplevelAnnAssign x t <$> f e
   ToplevelFunctionDef g args ret body -> ToplevelFunctionDef g args ret <$> mapM (mapExprStatementM f) body
   ToplevelAssert e -> ToplevelAssert <$> f e
 
-mapExprM :: Monad m => (Expr -> m Expr) -> Program -> m Program
+mapExprM :: Monad m => (Expr' -> m Expr') -> Program -> m Program
 mapExprM f = mapM (mapExprToplevelStatementM f)
 
-listExprs :: Program -> [Expr]
+listExprs :: Program -> [Expr']
 listExprs = reverse . getDual . execWriter . mapExprM go
   where
     go e = do
@@ -241,7 +230,7 @@ mapStatementM f = mapM (mapStatementToplevelStatementM f)
 mapStatement :: (Statement -> [Statement]) -> Program -> Program
 mapStatement f = runIdentity . mapStatementM (return . f)
 
-mapLargeStatementM :: Monad m => (Expr -> [Statement] -> [Statement] -> m [Statement]) -> (Target -> Expr -> [Statement] -> m [Statement]) -> Program -> m Program
+mapLargeStatementM :: Monad m => (Expr' -> [Statement] -> [Statement] -> m [Statement]) -> (Target' -> Expr' -> [Statement] -> m [Statement]) -> Program -> m Program
 mapLargeStatementM fIf fFor = mapStatementM go
   where
     go = \case
@@ -252,7 +241,7 @@ mapLargeStatementM fIf fFor = mapStatementM go
       If e body1 body2 -> fIf e body1 body2
       Assert e -> return [Assert e]
 
-mapLargeStatement :: (Expr -> [Statement] -> [Statement] -> [Statement]) -> (Target -> Expr -> [Statement] -> [Statement]) -> Program -> Program
+mapLargeStatement :: (Expr' -> [Statement] -> [Statement] -> [Statement]) -> (Target' -> Expr' -> [Statement] -> [Statement]) -> Program -> Program
 mapLargeStatement fIf fFor = runIdentity . mapLargeStatementM fIf' fFor'
   where
     fIf' e body1 body2 = return $ fIf e body1 body2
@@ -292,34 +281,34 @@ mapStatementsM f = mapM (mapStatementsToplevelStatementM f)
 mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
 mapStatements f = runIdentity . mapStatementsM (return . f)
 
-hasFunctionCall :: Expr -> Bool
-hasFunctionCall = any check . listSubExprs
+hasFunctionCall :: Expr' -> Bool
+hasFunctionCall = any (check . value') . listSubExprs
   where
     check = \case
       Call _ _ -> True
       _ -> False
 
 -- | `isSmallExpr` is true if the evaluation of a given expr trivially terminates.
-isSmallExpr :: Expr -> Bool
+isSmallExpr :: Expr' -> Bool
 isSmallExpr = not . hasFunctionCall
 
-targetVars :: Target -> [VarName]
+targetVars :: Target' -> [VarName]
 targetVars = nub . map value' . targetVars'
 
-targetVars' :: Target -> [VarName']
-targetVars' = \case
+targetVars' :: Target' -> [VarName']
+targetVars' (WithLoc' _ x) = case x of
   SubscriptTrg x _ -> targetVars' x
   NameTrg x -> [x]
   TupleTrg xs -> concatMap targetVars' xs
 
-hasSubscriptTrg :: Target -> Bool
-hasSubscriptTrg = \case
+hasSubscriptTrg :: Target' -> Bool
+hasSubscriptTrg (WithLoc' _ x) = case x of
   SubscriptTrg _ _ -> True
   NameTrg _ -> False
   TupleTrg xs -> any hasSubscriptTrg xs
 
-hasBareNameTrg :: Target -> Bool
-hasBareNameTrg = \case
+hasBareNameTrg :: Target' -> Bool
+hasBareNameTrg (WithLoc' _ x) = case x of
   SubscriptTrg _ _ -> False
   NameTrg _ -> True
   TupleTrg xs -> any hasSubscriptTrg xs
@@ -327,12 +316,12 @@ hasBareNameTrg = \case
 toplevelMainDef :: [Statement] -> Program
 toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]
 
-readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
+readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr'
 readValueIO = \case
   VarTy _ -> throwRuntimeError "cannot read values of type variables"
   IntTy -> do
     n <- read <$> liftIO getWord
-    return $ Constant (ConstInt n)
+    return . withoutLoc $ Constant (ConstInt n)
   BoolTy -> do
     p <- liftIO getWord
     p <-
@@ -342,10 +331,10 @@ readValueIO = \case
           if p == "No"
             then return False
             else throwRuntimeError $ "boolean must be \"Yes\" or \"No\": " ++ show p
-    return $ Constant (ConstBool p)
+    return . withoutLoc $ Constant (ConstBool p)
   ListTy t -> do
     n <- read <$> liftIO getWord
     xs <- replicateM n (readValueIO t)
-    return $ List t xs
-  TupleTy ts -> Tuple <$> mapM readValueIO ts
+    return . withoutLoc $ List t xs
+  TupleTy ts -> withoutLoc . Tuple <$> mapM readValueIO ts
   CallableTy _ _ -> throwRuntimeError "cannot read functions"

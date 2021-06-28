@@ -15,13 +15,13 @@ newtype WriteList = WriteList [VarName]
 haveWriteReadIntersection :: WriteList -> ReadList -> Bool
 haveWriteReadIntersection (WriteList w) (ReadList r) = not (null (w `intersect` r))
 
-analyzeExpr :: Expr -> ReadList
+analyzeExpr :: Expr' -> ReadList
 analyzeExpr = ReadList . freeVars
 
-analyzeTargetRead :: Target -> ReadList
+analyzeTargetRead :: Target' -> ReadList
 analyzeTargetRead = ReadList . freeVarsTarget
 
-analyzeTargetWrite :: Target -> WriteList
+analyzeTargetWrite :: Target' -> WriteList
 analyzeTargetWrite = WriteList . targetVars
 
 analyzeStatementGeneric :: Bool -> Statement -> (ReadList, WriteList)

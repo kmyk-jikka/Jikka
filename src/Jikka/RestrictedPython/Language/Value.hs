@@ -103,13 +103,13 @@ lookupGlobal x global =
     Just y -> return y
     Nothing -> maybe id wrapAt (loc' x) . throwSymbolError $ "undefined variable: " ++ unVarName (value' x)
 
-makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr
+makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr'
 makeEntryPointIO f global = do
   v <- lookupGlobal f global
-  case v of
+  withoutLoc <$> case v of
     ClosureVal _ args _ -> do
       args <- mapM (readValueIO . snd) args
-      return $ Call (Name f) args
+      return $ Call (withoutLoc (Name f)) args
     _ -> maybe id wrapAt (loc' f) . throwSymbolError $ "not a function: " ++ unVarName (value' f)
 
 formatValue :: Value -> String

@@ -132,57 +132,60 @@ lookupName' x = do
     Nothing -> maybe id wrapAt (loc' x) . throwSymbolError $ "undefined identifier: " ++ unVarName (value' x)
 
 -- | `runAnnTarget` renames targets of annotated assignments.
-runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> m Target
+runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
 runAnnTarget = runTargetGeneric renameNew
 
 -- | `runForTarget` renames targets of for-loops.
-runForTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> m Target
+runForTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
 runForTarget = runTargetGeneric renameCompletelyNew
 
 -- | `runAugTarget` renames targets of augumented assignments.
-runAugTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> m Target
+runAugTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
 runAugTarget = runTargetGeneric lookupName'
 
-runTargetGeneric :: (MonadState Env m, MonadAlpha m, MonadError Error m) => (VarName' -> m VarName') -> Target -> m Target
-runTargetGeneric f = \case
-  SubscriptTrg f index -> SubscriptTrg <$> runAugTarget f <*> runExpr index
-  NameTrg x -> NameTrg <$> f x
-  TupleTrg xs -> TupleTrg <$> mapM (runTargetGeneric f) xs
+runTargetGeneric :: (MonadState Env m, MonadAlpha m, MonadError Error m) => (VarName' -> m VarName') -> Target' -> m Target'
+runTargetGeneric f x =
+  WithLoc' (loc' x) <$> case value' x of
+    SubscriptTrg f index -> SubscriptTrg <$> runAugTarget f <*> runExpr index
+    NameTrg x -> NameTrg <$> f x
+    TupleTrg xs -> TupleTrg <$> mapM (runTargetGeneric f) xs
 
-popTarget :: (MonadState Env m, MonadError Error m) => Target -> m ()
-popTarget = \case
+popTarget :: (MonadState Env m, MonadError Error m) => Target' -> m ()
+popTarget (WithLoc' _ x) = case x of
   SubscriptTrg _ _ -> return ()
   NameTrg x -> popRename x
   TupleTrg xs -> mapM_ popTarget xs
 
-runExpr :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr -> m Expr
-runExpr = \case
-  BoolOp e1 op e2 -> BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
-  BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
-  UnaryOp op e -> UnaryOp op <$> runExpr e
-  Lambda args body ->
-    withToplevelScope $ do
-      args <- forM args $ \(x, t) -> do
-        y <- renameNew x
-        return (y, t)
-      body <- runExpr body
-      return $ Lambda args body
-  IfExp e1 e2 e3 -> IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
-  ListComp e (Comprehension x iter ifs) -> do
-    iter <- runExpr iter
-    y <- runAnnTarget x
-    ifs <- mapM runExpr ifs
-    e <- runExpr e
-    popTarget x
-    return $ ListComp e (Comprehension y iter ifs)
-  Compare e1 op e2 -> Compare <$> runExpr e1 <*> return op <*> runExpr e2
-  Call f args -> Call <$> runExpr f <*> mapM runExpr args
-  Constant const -> return $ Constant const
-  Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
-  Name x -> Name <$> lookupName' x
-  List t es -> List t <$> mapM runExpr es
-  Tuple es -> Tuple <$> mapM runExpr es
-  SubscriptSlice e from to step -> SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
+runExpr :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr' -> m Expr'
+runExpr e0 =
+  maybe id wrapAt (loc' e0) $
+    WithLoc' (loc' e0) <$> case value' e0 of
+      BoolOp e1 op e2 -> BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
+      BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
+      UnaryOp op e -> UnaryOp op <$> runExpr e
+      Lambda args body ->
+        withToplevelScope $ do
+          args <- forM args $ \(x, t) -> do
+            y <- renameNew x
+            return (y, t)
+          body <- runExpr body
+          return $ Lambda args body
+      IfExp e1 e2 e3 -> IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
+      ListComp e (Comprehension x iter ifs) -> do
+        iter <- runExpr iter
+        y <- runAnnTarget x
+        ifs <- mapM runExpr ifs
+        e <- runExpr e
+        popTarget x
+        return $ ListComp e (Comprehension y iter ifs)
+      Compare e1 op e2 -> Compare <$> runExpr e1 <*> return op <*> runExpr e2
+      Call f args -> Call <$> runExpr f <*> mapM runExpr args
+      Constant const -> return $ Constant const
+      Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
+      Name x -> Name <$> lookupName' x
+      List t es -> List t <$> mapM runExpr es
+      Tuple es -> Tuple <$> mapM runExpr es
+      SubscriptSlice e from to step -> SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
 
 runStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Statement -> m Statement
 runStatement = \case

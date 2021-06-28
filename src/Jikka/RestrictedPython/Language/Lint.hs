@@ -35,7 +35,7 @@ hasSubscriptionInLoopCounters prog = any checkStatement (listStatements prog) ||
     checkStatement = \case
       For x _ _ -> hasSubscriptTrg x
       _ -> False
-    checkExpr = \case
+    checkExpr (WithLoc' _ x) = case x of
       ListComp _ (Comprehension x _ _) -> hasSubscriptTrg x
       _ -> False
 
@@ -221,7 +221,7 @@ hasNonTrivialSubscriptedAssignmentInForLoops prog = any check (listStatements pr
       AugAssign x _ _ -> go x
       AnnAssign x _ _ -> go x
       _ -> False
-    go = \case
+    go (WithLoc' _ x) = case x of
       SubscriptTrg _ _ -> False -- TODO
       NameTrg _ -> False
       TupleTrg xs -> any go xs
@@ -253,7 +253,7 @@ hasNonResolvedBuiltin :: Program -> Bool
 hasNonResolvedBuiltin = any check . listExprs
   where
     check = any check' . listSubExprs
-    check' = \case
+    check' (WithLoc' _ e) = case e of
       Name x | value' x `S.member` builtinNames -> True
       _ -> False
 

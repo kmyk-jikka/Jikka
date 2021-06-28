@@ -26,3 +26,6 @@ data WithLoc' a = WithLoc'
 
 instance IsString a => IsString (WithLoc' a) where
   fromString = WithLoc' Nothing . fromString
+
+withoutLoc :: a -> WithLoc' a
+withoutLoc = WithLoc' Nothing
