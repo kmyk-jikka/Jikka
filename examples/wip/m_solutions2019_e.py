@@ -19,7 +19,7 @@ def solve(Q: int, x: List[int], d: List[int], n: List[int]) -> List[int]:
     assert len(n) == Q
     assert all(0 <= n_i < MOD for n_i in n)
 
-    ans = [None for _ in range(Q)]
+    ans = [-1 for _ in range(Q)]
     for i in range(Q):
         ans[i] = solve1(x[i], d[i], n[i])
     return ans
