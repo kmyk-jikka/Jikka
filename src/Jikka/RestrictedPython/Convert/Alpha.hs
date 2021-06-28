@@ -30,27 +30,27 @@ initialEnv =
       parentMappings = [map (\x -> (x, x)) (S.toList builtinNames)]
     }
 
-withToplevelScope :: MonadState Env m => m a -> m a
+withToplevelScope :: (MonadError Error m, MonadState Env m) => m a -> m a
 withToplevelScope f = do
   env <- get
-  x <- f
+  x <- catchError' f
   put env
-  return x
+  liftEither x
 
-withScope :: MonadState Env m => m a -> m a
+withScope :: (MonadError Error m, MonadState Env m) => m a -> m a
 withScope f = do
   modify' $ \env ->
     env
       { currentMapping = [],
         parentMappings = currentMapping env : parentMappings env
       }
-  x <- f
+  x <- catchError' f
   modify' $ \env ->
     env
       { currentMapping = head (parentMappings env),
         parentMappings = tail (parentMappings env)
       }
-  return x
+  liftEither x
 
 -- | `renameNew` renames given variables and record them to the `Env`.
 renameNew :: (MonadAlpha m, MonadState Env m) => VarName' -> m VarName'
@@ -217,7 +217,7 @@ runStatement = \case
   Assert e -> Assert <$> runExpr e
 
 runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [Statement] -> m [Statement]
-runStatements = mapM runStatement
+runStatements stmts = reportErrors =<< mapM (catchError' . runStatement) stmts
 
 runToplevelStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => ToplevelStatement -> m ToplevelStatement
 runToplevelStatement = \case
@@ -236,7 +236,7 @@ runToplevelStatement = \case
   ToplevelAssert e -> ToplevelAssert <$> runExpr e
 
 runProgram :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Program -> m Program
-runProgram = mapM runToplevelStatement
+runProgram prog = reportErrors =<< mapM (catchError' . runToplevelStatement) prog
 
 -- | `run` renames variables.
 -- This assumes `doesntHaveAssignmentToBuiltin`.
