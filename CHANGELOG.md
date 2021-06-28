@@ -1,5 +1,33 @@
 # Changelog for Jikka
 
+## 2021-06-29: v5.0.6.0
+
+Error reporting and error recovery are improved.
+
+Input:
+
+``` python
+def solve(n: int) -> bool:
+    a = n + True  # err
+    b = 2 * n
+    return b  # err
+```
+
+Output:
+
+``` console
+Type Error (line 2 column 13) (user's mistake?): Jikka.RestrictedPython.Convert.TypeInfer: failed to solve type equations: failed to unify type int and type bool: type int is not type bool
+1 |def solve(n: int) -> bool:
+2 |    a = n + True  # err
+               ^^^^
+3 |    b = 2 * n
+
+Type Error (line 4 column 12) (user's mistake?): Jikka.RestrictedPython.Convert.TypeInfer: failed to solve type equations: failed to unify type bool and type int: type bool is not type int
+3 |    b = 2 * n
+4 |    return b  # err
+              ^
+```
+
 ## 2021-06-25: v5.0.5.0
 
 Some optimizations are implemented.

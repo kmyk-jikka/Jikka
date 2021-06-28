@@ -60,11 +60,11 @@ additionalBuiltinNames =
 -- | `resolveUniqueBuiltin` makes a builtin function from a variable name.
 -- However, this doesn't anything for ambiguous builtin functions.
 -- For example, the builtin function "max" is kept as a variable because it may be \(\mathbf{list}(\alpha) \to \alpha\), \(\alpha \times \alpha \to \alpha\), etc. and this function cannot resolve it.
-resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName -> m Expr
-resolveUniqueBuiltin x | x `S.notMember` builtinNames = return $ Name x
+resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> m Expr'
+resolveUniqueBuiltin x | value' x `S.notMember` builtinNames = return $ WithLoc' (loc' x) (Name x)
 resolveUniqueBuiltin x = do
-  let f = return . Constant . ConstBuiltin
-  case x of
+  let f = return . WithLoc' (loc' x) . Constant . ConstBuiltin
+  case value' x of
     "abs" -> f BuiltinAbs
     "all" -> f BuiltinAll
     "any" -> f BuiltinAny
@@ -92,15 +92,15 @@ resolveUniqueBuiltin x = do
     "multichoose" -> f BuiltinMultiChoose
     "permute" -> f BuiltinPermute
     "product" -> f BuiltinProduct
-    _ -> return $ Name x
+    _ -> return $ WithLoc' (loc' x) (Name x)
 
-resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName -> Int -> m Expr
-resolveBuiltin x _ | x `S.notMember` builtinNames = return $ Name x
-resolveBuiltin x n = do
-  let f = return . Constant . ConstBuiltin
+resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> Int -> m Expr'
+resolveBuiltin x _ | value' x `S.notMember` builtinNames = return $ WithLoc' (loc' x) (Name x)
+resolveBuiltin x n = maybe id wrapAt (loc' x) $ do
+  let f = return . WithLoc' (loc' x) . Constant . ConstBuiltin
   when (n < 0) $ do
     throwInternalError "parseBuiltin with negative arity"
-  case x of
+  case value' x of
     "map" -> f =<< (BuiltinMap <$> replicateM (n - 1) genType <*> genType)
     "max" -> case n of
       1 -> f . BuiltinMax1 =<< genType
@@ -119,7 +119,7 @@ resolveBuiltin x n = do
       _ -> throwTypeError $ "range expected 1, 2, or 3 arguments, got " ++ show n
     _ -> do
       e <- resolveUniqueBuiltin x
-      case e of
+      case value' e of
         Constant (ConstBuiltin _) -> return e
         _ -> throwInternalError "resolveBuiltin is not exhaustive"
 

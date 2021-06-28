@@ -7,6 +7,7 @@ where
 
 import Jikka.RestrictedPython.Format
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.WithoutLoc
 import Test.Hspec
 
 spec :: Spec
@@ -17,7 +18,7 @@ spec = describe "run" $ do
               "solve$0"
               [("x$1", IntTy)]
               (VarTy "t$1")
-              [ Return (UnaryOp USub (Name "x$1"))
+              [ Return (unaryOp USub (name "x$1"))
               ]
           ]
     let formatted =

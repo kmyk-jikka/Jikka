@@ -4,7 +4,8 @@ module Jikka.RestrictedPython.Language.LintSpec (spec) where
 
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
-import Jikka.RestrictedPython.Language.Util
+import Jikka.RestrictedPython.Language.Util (toplevelMainDef)
+import Jikka.RestrictedPython.Language.WithoutLoc
 import Test.Hspec
 
 spec :: Spec
@@ -14,8 +15,8 @@ spec = do
       let prog =
             toplevelMainDef
               [ For
-                  (SubscriptTrg (NameTrg "a") (constIntExp 0))
-                  (Call (Name "range") [constIntExp 100])
+                  (subscriptTrg (nameTrg "a") (constIntExp 0))
+                  (call (name "range") [constIntExp 100])
                   []
               ]
       let expected = True
@@ -23,7 +24,7 @@ spec = do
     it "works on for-exprs" $ do
       let prog =
             toplevelMainDef
-              [ Return (ListComp (constIntExp 0) (Comprehension (SubscriptTrg (NameTrg "a") (constIntExp 0)) (Call (Name "range") [constIntExp 100]) Nothing))
+              [ Return (listComp (constIntExp 0) (Comprehension (subscriptTrg (nameTrg "a") (constIntExp 0)) (call (name "range") [constIntExp 100]) Nothing))
               ]
       let expected = True
       hasSubscriptionInLoopCounters prog `shouldBe` expected
@@ -32,9 +33,9 @@ spec = do
       let prog =
             toplevelMainDef
               [ For
-                  (NameTrg "i")
-                  (Call (Name "range") [constIntExp 100])
-                  [ AugAssign (NameTrg "i") Add (constIntExp 1)
+                  (nameTrg "i")
+                  (call (name "range") [constIntExp 100])
+                  [ AugAssign (nameTrg "i") Add (constIntExp 1)
                   ]
               ]
       let expected = True
@@ -43,11 +44,11 @@ spec = do
     it "works" $ do
       let prog =
             toplevelMainDef
-              [ AnnAssign (NameTrg "a") (ListTy IntTy) (Call (Name "range") [constIntExp 100]),
+              [ AnnAssign (nameTrg "a") (ListTy IntTy) (call (name "range") [constIntExp 100]),
                 For
-                  (NameTrg "i")
-                  (Name "a")
-                  [ AnnAssign (SubscriptTrg (NameTrg "a") (constIntExp 5)) IntTy (Name "i")
+                  (nameTrg "i")
+                  (name "a")
+                  [ AnnAssign (subscriptTrg (nameTrg "a") (constIntExp 5)) IntTy (name "i")
                   ]
               ]
       let expected = True
@@ -55,11 +56,11 @@ spec = do
     it "works even if side effects are not trivial" $ do
       let prog =
             toplevelMainDef
-              [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
+              [ AnnAssign (nameTrg "a") IntTy (constIntExp 0),
                 For
-                  (NameTrg "i")
-                  (Call (Name "f") [Name "a"])
-                  [ AugAssign (NameTrg "a") Add (Name "i")
+                  (nameTrg "i")
+                  (call (name "f") [name "a"])
+                  [ AugAssign (nameTrg "a") Add (name "i")
                   ]
               ]
       let expected = True
@@ -68,10 +69,10 @@ spec = do
     it "works" $ do
       let prog =
             toplevelMainDef
-              [ AnnAssign (NameTrg "a") (ListTy IntTy) (Call (Name "range") [constIntExp 10]),
+              [ AnnAssign (nameTrg "a") (ListTy IntTy) (call (name "range") [constIntExp 10]),
                 For
-                  (NameTrg "i")
-                  (Name "a")
+                  (nameTrg "i")
+                  (name "a")
                   [ Return (constIntExp 0)
                   ]
               ]
@@ -81,7 +82,7 @@ spec = do
     it "works" $ do
       let prog =
             toplevelMainDef
-              [ AnnAssign (TupleTrg [NameTrg "a", SubscriptTrg (NameTrg "b") (constIntExp 0)]) (ListTy IntTy) (Call (Name "range") [constIntExp 10])
+              [ AnnAssign (tupleTrg [nameTrg "a", subscriptTrg (nameTrg "b") (constIntExp 0)]) (ListTy IntTy) (call (name "range") [constIntExp 10])
               ]
       let expected = True
       hasMixedAssignment prog `shouldBe` expected

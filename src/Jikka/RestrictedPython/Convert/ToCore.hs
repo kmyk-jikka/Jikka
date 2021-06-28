@@ -15,6 +15,7 @@ import Control.Monad.State.Strict
 import Data.List (intersect)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Common.Location
 import qualified Jikka.Core.Language.BuiltinPatterns as Y
 import qualified Jikka.Core.Language.Expr as Y
 import qualified Jikka.Core.Language.Util as Y
@@ -38,8 +39,8 @@ withScope f = do
   put env
   return x
 
-runVarName :: X.VarName -> Y.VarName
-runVarName (X.VarName x) = Y.VarName x
+runVarName :: X.VarName' -> Y.VarName
+runVarName (X.WithLoc' _ (X.VarName x)) = Y.VarName x
 
 runType :: X.Type -> Y.Type
 runType = \case
@@ -176,14 +177,14 @@ runCmpOp (X.CmpOp' op t) =
 makeList2 :: a -> a -> [a]
 makeList2 x y = [x, y]
 
-runTargetExpr :: (MonadAlpha m, MonadError Error m) => X.Target -> m Y.Expr
-runTargetExpr = \case
+runTargetExpr :: (MonadAlpha m, MonadError Error m) => X.Target' -> m Y.Expr
+runTargetExpr (WithLoc' _ x) = case x of
   X.SubscriptTrg x e -> Y.At' <$> Y.genType <*> runTargetExpr x <*> runExpr e
   X.NameTrg x -> return $ Y.Var (runVarName x)
   X.TupleTrg xs -> Y.Tuple' <$> replicateM (length xs) Y.genType <*> mapM runTargetExpr xs
 
-runAssign :: (MonadAlpha m, MonadError Error m) => X.Target -> Y.Expr -> m Y.Expr -> m Y.Expr
-runAssign x e cont = case x of
+runAssign :: (MonadAlpha m, MonadError Error m) => X.Target' -> Y.Expr -> m Y.Expr -> m Y.Expr
+runAssign (WithLoc' _ x) e cont = case x of
   X.SubscriptTrg x index -> join $ runAssign x <$> (Y.SetAt' <$> Y.genType <*> runTargetExpr x <*> runExpr index <*> pure e) <*> pure cont
   X.NameTrg x -> Y.Let (runVarName x) <$> Y.genType <*> pure e <*> cont
   X.TupleTrg xs -> do
@@ -192,7 +193,7 @@ runAssign x e cont = case x of
     cont <- join $ foldM (\cont (i, x) -> return $ runAssign x (Y.Proj' ts i (Y.Var y)) cont) cont (zip [0 ..] xs)
     return $ Y.Let y (Y.TupleTy ts) e cont
 
-runListComp :: (MonadAlpha m, MonadError Error m) => X.Expr -> X.Comprehension -> m Y.Expr
+runListComp :: (MonadAlpha m, MonadError Error m) => X.Expr' -> X.Comprehension -> m Y.Expr
 runListComp e (X.Comprehension x iter pred) = do
   iter <- runExpr iter
   iter <- case pred of
@@ -204,8 +205,8 @@ runListComp e (X.Comprehension x iter pred) = do
   e <- runExpr e
   Y.Map' t1 t2 <$> (Y.Lam [(y, t1)] <$> runAssign x (Y.Var y) (pure e)) <*> pure iter
 
-runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr -> m Y.Expr
-runExpr = \case
+runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Expr
+runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
   X.BoolOp e1 op e2 -> Y.AppBuiltin (runBoolOp op) <$> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.BinOp e1 op e2 -> Y.AppBuiltin <$> runOperator op <*> (makeList2 <$> runExpr e1 <*> runExpr e2)
   X.UnaryOp op e -> Y.App (runUnaryOp op) . (: []) <$> runExpr e
@@ -242,7 +243,7 @@ runExpr = \case
 --
 -- > let (a, b) = foldl (fun (a, b) i -> (b, a + b)) (a, b) (range n)
 -- > in ...
-runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Target -> X.Expr -> [X.Statement] -> [X.Statement] -> m Y.Expr
+runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Target' -> X.Expr' -> [X.Statement] -> [X.Statement] -> m Y.Expr
 runForStatement x iter body cont = do
   tx <- Y.genType
   iter <- runExpr iter
@@ -251,10 +252,10 @@ runForStatement x iter body cont = do
   let (_, X.WriteList w) = X.analyzeStatementsMax body
   ys <- filterM isDefinedVar w
   ts <- replicateM (length ys) Y.genType
-  let init = Y.Tuple' ts (map (Y.Var . runVarName) ys)
-  let write cont = foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
+  let init = Y.Tuple' ts (map (Y.Var . runVarName . withoutLoc) ys)
+  let write cont = foldr (\(i, y, t) -> Y.Let (runVarName $ X.WithLoc' Nothing y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
   body <- runAssign x (Y.Var x') $ do
-    runStatements (body ++ [X.Return (X.Tuple (map X.Name ys))])
+    runStatements (body ++ [X.Return (withoutLoc (X.Tuple (map (withoutLoc . X.Name . withoutLoc) ys)))])
   let loop init = Y.Foldl' tx (Y.TupleTy ts) (Y.Lam [(z, Y.TupleTy ts), (x', tx)] (write body)) init iter
   cont <- runStatements cont
   return $ Y.Let z (Y.TupleTy ts) (loop init) (write cont)
@@ -275,7 +276,7 @@ runForStatement x iter body cont = do
 --
 -- > let (a, c) = if true then (0, 3) else (1, 10)
 -- > in ...
-runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Expr -> [X.Statement] -> [X.Statement] -> [X.Statement] -> m Y.Expr
+runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Expr' -> [X.Statement] -> [X.Statement] -> [X.Statement] -> m Y.Expr
 runIfStatement e body1 body2 cont = do
   e <- runExpr e
   t <- Y.genType
@@ -284,10 +285,10 @@ runIfStatement e body1 body2 cont = do
       let (_, X.WriteList w1) = X.analyzeStatementsMin body1
       let (_, X.WriteList w2) = X.analyzeStatementsMin body2
       let w = w1 `intersect` w2
-      let read = X.Tuple (map X.Name w)
+      let read = withoutLoc (X.Tuple (map (withoutLoc . X.Name . withoutLoc) w))
       ts <- replicateM (length w) Y.genType
       z <- Y.genVarName'
-      let write value cont = Y.Let z (Y.TupleTy ts) value (foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] w ts))
+      let write value cont = Y.Let z (Y.TupleTy ts) value (foldr (\(i, y, t) -> Y.Let (runVarName (withoutLoc y)) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] w ts))
       body1 <- runStatements (body1 ++ [X.Return read])
       body2 <- runStatements (body2 ++ [X.Return read])
       cont <- runStatements cont
@@ -321,13 +322,13 @@ runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
 runToplevelStatements (stmt : stmts) = case stmt of
   X.ToplevelAnnAssign x t e -> do
     e <- runExpr e
-    defineVar x
+    defineVar (X.value' x)
     cont <- runToplevelStatements stmts
     return $ Y.ToplevelLet (runVarName x) (runType t) e cont
   X.ToplevelFunctionDef f args ret body -> do
-    defineVar f
+    defineVar (X.value' f)
     body <- withScope $ do
-      mapM_ (defineVar . fst) args
+      mapM_ (defineVar . X.value' . fst) args
       runStatements body
     cont <- runToplevelStatements stmts
     return $ Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) body cont

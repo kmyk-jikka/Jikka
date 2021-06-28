@@ -78,7 +78,13 @@ readInput t tokens = case (t, tokens) of
     n <- readToken token
     return (ValInt n, tokens)
   (BoolTy, token : tokens) -> do
-    p <- readToken token
+    p <-
+      if unToken token == "Yes"
+        then return True
+        else
+          if unToken token == "No"
+            then return False
+            else throwRuntimeError $ "boolean must be \"Yes\" or \"No\": " ++ show (unToken token)
     return (ValBool p, tokens)
   (ListTy t, token : tokens) -> do
     n <- readToken token

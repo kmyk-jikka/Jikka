@@ -31,6 +31,8 @@ data Type
   | TyArray Type Integer
   | TyString
   | TyFunction Type [Type]
+  | -- | for template parameters
+    TyIntValue Integer
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -105,6 +107,8 @@ data Expr
 data LeftExpr
   = LeftVar VarName
   | LeftAt LeftExpr Expr
+  | -- | @std::get<n>@
+    LeftGet Integer LeftExpr
   deriving (Eq, Ord, Show, Read)
 
 data AssignExpr

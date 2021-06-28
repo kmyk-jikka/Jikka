@@ -30,157 +30,162 @@ initialEnv =
       parentMappings = [map (\x -> (x, x)) (S.toList builtinNames)]
     }
 
-withToplevelScope :: MonadState Env m => m a -> m a
+withToplevelScope :: (MonadError Error m, MonadState Env m) => m a -> m a
 withToplevelScope f = do
   env <- get
-  x <- f
+  x <- catchError' f
   put env
-  return x
+  liftEither x
 
-withScope :: MonadState Env m => m a -> m a
+withScope :: (MonadError Error m, MonadState Env m) => m a -> m a
 withScope f = do
   modify' $ \env ->
     env
       { currentMapping = [],
         parentMappings = currentMapping env : parentMappings env
       }
-  x <- f
+  x <- catchError' f
   modify' $ \env ->
     env
       { currentMapping = head (parentMappings env),
         parentMappings = tail (parentMappings env)
       }
-  return x
+  liftEither x
 
 -- | `renameNew` renames given variables and record them to the `Env`.
-renameNew :: (MonadAlpha m, MonadState Env m) => VarName -> m VarName
+renameNew :: (MonadAlpha m, MonadState Env m) => VarName' -> m VarName'
 renameNew x = do
   env <- get
   case lookupName x (env {currentMapping = []}) of
     Just y -> return y
     Nothing -> do
       y <- genVarName x
-      when (unVarName x /= "_") $ do
+      when (unVarName (value' x) /= "_") $ do
         put $
           env
-            { currentMapping = (x, y) : currentMapping env
+            { currentMapping = (value' x, value' y) : currentMapping env
             }
       return y
 
 -- | `renameShadow` renames given variables ignoring the current `Env` and record them to the `Env`.
-renameShadow :: (MonadAlpha m, MonadState Env m) => VarName -> m VarName
+renameShadow :: (MonadAlpha m, MonadState Env m) => VarName' -> m VarName'
 renameShadow x = do
   env <- get
   y <- genVarName x
   put $
     env
-      { currentMapping = (x, y) : currentMapping env
+      { currentMapping = (value' x, value' y) : currentMapping env
       }
   return y
 
 -- | `renameCompletelyNew` throws errors when given variables already exists in environments.
-renameCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName -> m VarName
+renameCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName' -> m VarName'
 renameCompletelyNew x = do
   env <- get
   case lookupName x env of
-    Just _ -> throwSemanticError $ "cannot redefine variable: " ++ unVarName x
+    Just _ -> maybe id wrapAt (loc' x) . throwSemanticError $ "cannot redefine variable: " ++ unVarName (value' x)
     Nothing -> renameNew x
 
 -- | `renameToplevel` records given variables to the `Env` without actual renaming.
-renameToplevel :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName -> m VarName
+renameToplevel :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName' -> m VarName'
 renameToplevel x = do
   env <- get
   case lookupName x env of
     Just _ -> do
-      if x `S.member` builtinNames
-        then throwSemanticError $ "cannot assign to builtin function: " ++ unVarName x
-        else throwSemanticError $ "cannot redefine variable in toplevel: " ++ unVarName x
+      let msg =
+            if value' x `S.member` builtinNames
+              then "cannot assign to builtin function: " ++ unVarName (value' x)
+              else "cannot redefine variable in toplevel: " ++ unVarName (value' x)
+      maybe id wrapAt (loc' x) $ throwSemanticError msg
     Nothing -> do
-      when (unVarName x /= "_") $ do
+      when (unVarName (value' x) /= "_") $ do
         put $
           env
-            { currentMapping = (x, x) : currentMapping env
+            { currentMapping = (value' x, value' x) : currentMapping env
             }
       return x
 
 -- | `renameToplevelArgument` always introduces a new variable.
-renameToplevelArgument :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName -> m VarName
+renameToplevelArgument :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName' -> m VarName'
 renameToplevelArgument = renameShadow
 
-popRename :: (MonadState Env m, MonadError Error m) => VarName -> m ()
+popRename :: (MonadState Env m, MonadError Error m) => VarName' -> m ()
 popRename x =
-  when (unVarName x /= "_") $ do
+  when (unVarName (value' x) /= "_") $ do
     y <- lookupName' x
-    modify' $ \env -> env {currentMapping = delete (x, y) (currentMapping env)}
+    modify' $ \env -> env {currentMapping = delete (value' x, value' y) (currentMapping env)}
 
-lookupName :: VarName -> Env -> Maybe VarName
+lookupName :: VarName' -> Env -> Maybe VarName'
 lookupName x env = go (currentMapping env : parentMappings env)
   where
     go [] = Nothing
     go (mapping : mappings) =
-      case lookup x mapping of
-        Just y -> return y
+      case lookup (value' x) mapping of
+        Just y -> return $ WithLoc' (loc' x) y
         Nothing -> go mappings
 
-lookupName' :: (MonadState Env m, MonadError Error m) => VarName -> m VarName
+lookupName' :: (MonadState Env m, MonadError Error m) => VarName' -> m VarName'
 lookupName' x = do
   env <- get
   case lookupName x env of
     Just y -> return y
-    Nothing -> throwSymbolError $ "undefined identifier: " ++ unVarName x
+    Nothing -> maybe id wrapAt (loc' x) . throwSymbolError $ "undefined identifier: " ++ unVarName (value' x)
 
 -- | `runAnnTarget` renames targets of annotated assignments.
-runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> m Target
+runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
 runAnnTarget = runTargetGeneric renameNew
 
 -- | `runForTarget` renames targets of for-loops.
-runForTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> m Target
+runForTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
 runForTarget = runTargetGeneric renameCompletelyNew
 
 -- | `runAugTarget` renames targets of augumented assignments.
-runAugTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> m Target
+runAugTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
 runAugTarget = runTargetGeneric lookupName'
 
-runTargetGeneric :: (MonadState Env m, MonadAlpha m, MonadError Error m) => (VarName -> m VarName) -> Target -> m Target
-runTargetGeneric f = \case
-  SubscriptTrg f index -> SubscriptTrg <$> runAugTarget f <*> runExpr index
-  NameTrg x -> NameTrg <$> f x
-  TupleTrg xs -> TupleTrg <$> mapM (runTargetGeneric f) xs
+runTargetGeneric :: (MonadState Env m, MonadAlpha m, MonadError Error m) => (VarName' -> m VarName') -> Target' -> m Target'
+runTargetGeneric f x =
+  WithLoc' (loc' x) <$> case value' x of
+    SubscriptTrg f index -> SubscriptTrg <$> runAugTarget f <*> runExpr index
+    NameTrg x -> NameTrg <$> f x
+    TupleTrg xs -> TupleTrg <$> mapM (runTargetGeneric f) xs
 
-popTarget :: (MonadState Env m, MonadError Error m) => Target -> m ()
-popTarget = \case
+popTarget :: (MonadState Env m, MonadError Error m) => Target' -> m ()
+popTarget (WithLoc' _ x) = case x of
   SubscriptTrg _ _ -> return ()
   NameTrg x -> popRename x
   TupleTrg xs -> mapM_ popTarget xs
 
-runExpr :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr -> m Expr
-runExpr = \case
-  BoolOp e1 op e2 -> BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
-  BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
-  UnaryOp op e -> UnaryOp op <$> runExpr e
-  Lambda args body ->
-    withToplevelScope $ do
-      args <- forM args $ \(x, t) -> do
-        y <- renameNew x
-        return (y, t)
-      body <- runExpr body
-      return $ Lambda args body
-  IfExp e1 e2 e3 -> IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
-  ListComp e (Comprehension x iter ifs) -> do
-    iter <- runExpr iter
-    y <- runAnnTarget x
-    ifs <- mapM runExpr ifs
-    e <- runExpr e
-    popTarget x
-    return $ ListComp e (Comprehension y iter ifs)
-  Compare e1 op e2 -> Compare <$> runExpr e1 <*> return op <*> runExpr e2
-  Call f args -> Call <$> runExpr f <*> mapM runExpr args
-  Constant const -> return $ Constant const
-  Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
-  Name x -> Name <$> lookupName' x
-  List t es -> List t <$> mapM runExpr es
-  Tuple es -> Tuple <$> mapM runExpr es
-  SubscriptSlice e from to step -> SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
+runExpr :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr' -> m Expr'
+runExpr e0 =
+  maybe id wrapAt (loc' e0) $
+    WithLoc' (loc' e0) <$> case value' e0 of
+      BoolOp e1 op e2 -> BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
+      BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
+      UnaryOp op e -> UnaryOp op <$> runExpr e
+      Lambda args body ->
+        withToplevelScope $ do
+          args <- forM args $ \(x, t) -> do
+            y <- renameNew x
+            return (y, t)
+          body <- runExpr body
+          return $ Lambda args body
+      IfExp e1 e2 e3 -> IfExp <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
+      ListComp e (Comprehension x iter ifs) -> do
+        iter <- runExpr iter
+        y <- runAnnTarget x
+        ifs <- mapM runExpr ifs
+        e <- runExpr e
+        popTarget x
+        return $ ListComp e (Comprehension y iter ifs)
+      Compare e1 op e2 -> Compare <$> runExpr e1 <*> return op <*> runExpr e2
+      Call f args -> Call <$> runExpr f <*> mapM runExpr args
+      Constant const -> return $ Constant const
+      Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
+      Name x -> Name <$> lookupName' x
+      List t es -> List t <$> mapM runExpr es
+      Tuple es -> Tuple <$> mapM runExpr es
+      SubscriptSlice e from to step -> SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
 
 runStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Statement -> m Statement
 runStatement = \case
@@ -203,7 +208,7 @@ runStatement = \case
     e <- runExpr e
     let (_, WriteList w1) = analyzeStatementsMin body1
     let (_, WriteList w2) = analyzeStatementsMin body2
-    mapM_ renameNew (w1 `intersect` w2) -- introduce variables to the parent scope
+    mapM_ (renameNew . WithLoc' Nothing) (w1 `intersect` w2) -- introduce variables to the parent scope
     body1 <- withScope $ do
       runStatements body1
     body2 <- withScope $ do
@@ -212,7 +217,7 @@ runStatement = \case
   Assert e -> Assert <$> runExpr e
 
 runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [Statement] -> m [Statement]
-runStatements = mapM runStatement
+runStatements stmts = reportErrors =<< mapM (catchError' . runStatement) stmts
 
 runToplevelStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => ToplevelStatement -> m ToplevelStatement
 runToplevelStatement = \case
@@ -231,7 +236,7 @@ runToplevelStatement = \case
   ToplevelAssert e -> ToplevelAssert <$> runExpr e
 
 runProgram :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Program -> m Program
-runProgram = mapM runToplevelStatement
+runProgram prog = reportErrors =<< mapM (catchError' . runToplevelStatement) prog
 
 -- | `run` renames variables.
 -- This assumes `doesntHaveAssignmentToBuiltin`.

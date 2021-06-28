@@ -8,6 +8,7 @@ where
 import Jikka.RestrictedPython.Convert.RemoveUnreachable (run)
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Util
+import Jikka.RestrictedPython.Language.WithoutLoc
 import Test.Hspec
 
 spec :: Spec
@@ -15,24 +16,24 @@ spec = describe "run" $ do
   it "works" $ do
     let prog =
           toplevelMainDef
-            [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
+            [ AnnAssign (nameTrg "a") IntTy (constIntExp 0),
               If
                 (constBoolExp True)
-                [ AnnAssign (NameTrg "b") IntTy (constIntExp 0),
-                  Return (Name "a"),
-                  AugAssign (NameTrg "b") Add (Name "1")
+                [ AnnAssign (nameTrg "b") IntTy (constIntExp 0),
+                  Return (name "a"),
+                  AugAssign (nameTrg "b") Add (name "1")
                 ]
                 [ Return (constIntExp 1)
                 ],
-              AugAssign (NameTrg "a") Add (constIntExp 1)
+              AugAssign (nameTrg "a") Add (constIntExp 1)
             ]
     let expected =
           toplevelMainDef
-            [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
+            [ AnnAssign (nameTrg "a") IntTy (constIntExp 0),
               If
                 (constBoolExp True)
-                [ AnnAssign (NameTrg "b") IntTy (constIntExp 0),
-                  Return (Name "a")
+                [ AnnAssign (nameTrg "b") IntTy (constIntExp 0),
+                  Return (name "a")
                 ]
                 [ Return (constIntExp 1)
                 ]

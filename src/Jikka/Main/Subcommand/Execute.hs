@@ -39,7 +39,7 @@ runCore path = flip evalAlphaT 0 $ do
   prog <- ToCore.run prog
   prog <- ConvertCore.run prog
   value <- EvaluateCore.run prog
-  liftIO $ putStrLn (ValueCore.formatValue value)
+  liftIO $ ValueCore.writeValueIO value
 
 runCPlusPlus :: FilePath -> ExceptT Error IO ()
 runCPlusPlus _ = throwCommandLineError "cannot execute C++"

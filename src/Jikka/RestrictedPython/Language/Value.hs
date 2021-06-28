@@ -97,20 +97,20 @@ newtype Global = Global
 initialGlobal :: Global
 initialGlobal = Global M.empty
 
-lookupGlobal :: MonadError Error m => VarName -> Global -> m Value
+lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
 lookupGlobal x global =
-  case M.lookup x (unGlobal global) of
+  case M.lookup (value' x) (unGlobal global) of
     Just y -> return y
-    Nothing -> throwSymbolError $ "undefined variable: " ++ unVarName x
+    Nothing -> maybe id wrapAt (loc' x) . throwSymbolError $ "undefined variable: " ++ unVarName (value' x)
 
-makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName -> Global -> m Expr
+makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr'
 makeEntryPointIO f global = do
   v <- lookupGlobal f global
-  case v of
+  withoutLoc <$> case v of
     ClosureVal _ args _ -> do
       args <- mapM (readValueIO . snd) args
-      return $ Call (Name f) args
-    _ -> throwSymbolError $ "not a function: " ++ unVarName f
+      return $ Call (withoutLoc (Name f)) args
+    _ -> maybe id wrapAt (loc' f) . throwSymbolError $ "not a function: " ++ unVarName (value' f)
 
 formatValue :: Value -> String
 formatValue = \case
@@ -125,8 +125,10 @@ formatValue = \case
 writeValueIO :: Value -> IO ()
 writeValueIO = \case
   IntVal n -> print n
-  BoolVal p -> print p
-  ListVal xs -> mapM_ writeValueIO (V.toList xs)
+  BoolVal p -> putStrLn (if p then "Yes" else "No")
+  ListVal xs -> do
+    print (V.length xs)
+    mapM_ writeValueIO (V.toList xs)
   TupleVal xs -> mapM_ writeValueIO xs
   f@ClosureVal {} -> print f
   BuiltinVal b -> print b

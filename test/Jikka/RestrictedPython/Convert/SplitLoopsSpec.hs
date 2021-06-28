@@ -7,7 +7,8 @@ where
 
 import Jikka.RestrictedPython.Convert.SplitLoops (run')
 import Jikka.RestrictedPython.Language.Expr
-import Jikka.RestrictedPython.Language.Util
+import Jikka.RestrictedPython.Language.Util (toplevelMainDef)
+import Jikka.RestrictedPython.Language.WithoutLoc
 import Test.Hspec
 
 spec :: Spec
@@ -15,30 +16,30 @@ spec = describe "run" $ do
   it "works" $ do
     let prog =
           toplevelMainDef
-            [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
-              AnnAssign (NameTrg "b") IntTy (constIntExp 0),
+            [ AnnAssign (nameTrg "a") IntTy (constIntExp 0),
+              AnnAssign (nameTrg "b") IntTy (constIntExp 0),
               For
-                (NameTrg "i")
-                (Call (Name "range") [constIntExp 10])
-                [ AnnAssign (NameTrg "c") IntTy (Name "b"),
-                  AugAssign (NameTrg "a") Add (Name "i"),
-                  AugAssign (NameTrg "b") Add (Name "c")
+                (nameTrg "i")
+                (call (name "range") [constIntExp 10])
+                [ AnnAssign (nameTrg "c") IntTy (name "b"),
+                  AugAssign (nameTrg "a") Add (name "i"),
+                  AugAssign (nameTrg "b") Add (name "c")
                 ]
             ]
     let expected =
           toplevelMainDef
-            [ AnnAssign (NameTrg "a") IntTy (constIntExp 0),
-              AnnAssign (NameTrg "b") IntTy (constIntExp 0),
+            [ AnnAssign (nameTrg "a") IntTy (constIntExp 0),
+              AnnAssign (nameTrg "b") IntTy (constIntExp 0),
               For
-                (NameTrg "i")
-                (Call (Name "range") [constIntExp 10])
-                [ AnnAssign (NameTrg "c") IntTy (Name "b"),
-                  AugAssign (NameTrg "b") Add (Name "c")
+                (nameTrg "i")
+                (call (name "range") [constIntExp 10])
+                [ AnnAssign (nameTrg "c") IntTy (name "b"),
+                  AugAssign (nameTrg "b") Add (name "c")
                 ],
               For
-                (NameTrg "i")
-                (Call (Name "range") [constIntExp 10])
-                [ AugAssign (NameTrg "a") Add (Name "i")
+                (nameTrg "i")
+                (call (name "range") [constIntExp 10])
+                [ AugAssign (nameTrg "a") Add (name "i")
                 ]
             ]
     run' prog `shouldBe` expected
