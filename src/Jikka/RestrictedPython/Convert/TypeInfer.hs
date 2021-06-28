@@ -31,6 +31,7 @@ import Control.Monad.Writer.Strict
 import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.RestrictedPython.Format (formatType)
 import Jikka.RestrictedPython.Language.Builtin
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Util
@@ -218,12 +219,12 @@ subst sigma = \case
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
   if x `elem` freeTyVars t
-    then throwTypeError $ "looped type equation " ++ show x ++ " = " ++ show t
+    then throwTypeError $ "type equation loops: " ++ formatType (VarTy x) ++ " = " ++ formatType t
     else do
       modify' (Subst . M.insert x t . unSubst) -- This doesn't introduce the loop.
 
 unifyType :: (MonadState Subst m, MonadError Error m) => Type -> Type -> m ()
-unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t2) $ do
+unifyType t1 t2 = do
   sigma <- get
   t1 <- return $ subst sigma t1 -- shadowing
   t2 <- return $ subst sigma t2 -- shadowing
@@ -238,20 +239,23 @@ unifyType t1 t2 = wrapError' ("failed to unify " ++ show t1 ++ " and " ++ show t
     (TupleTy ts1, TupleTy ts2) -> do
       if length ts1 == length ts2
         then mapM_ (uncurry unifyType) (zip ts1 ts2)
-        else throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+        else throwTypeError $ "type " ++ formatType t1 ++ " is not type " ++ formatType t2
     (CallableTy args1 ret1, CallableTy args2 ret2) -> do
       if length args1 == length args2
         then mapM_ (uncurry unifyType) (zip args1 args2)
-        else throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+        else throwTypeError $ "type " ++ formatType t1 ++ " is not type " ++ formatType t2
       unifyType ret1 ret2
-    _ -> throwTypeError $ "different types " ++ show t1 ++ " /= " ++ show t2
+    _ -> throwTypeError $ "type " ++ formatType t1 ++ " is not type " ++ formatType t2
 
 solveEquations :: MonadError Error m => [(Type, Type, Maybe Loc)] -> m Subst
 solveEquations eqns = wrapError' "failed to solve type equations" $ do
   flip execStateT (Subst M.empty) $ do
     errs <- forM eqns $ \(t1, t2, loc) -> do
-      catchError' . maybe id wrapAt loc $ do
-        unifyType t1 t2
+      (Right <$> unifyType t1 t2) `catchError` \err -> do
+        sigma <- get
+        t1 <- return $ subst sigma t1 -- shadowing
+        t2 <- return $ subst sigma t2 -- shadowing
+        return $ Left (maybe id WithLocation loc (WithWrapped ("failed to unify type " ++ formatType t1 ++ " and type " ++ formatType t2) err))
     reportErrors errs
 
 -- | `substUnit` replaces all undetermined type variables with the unit type.

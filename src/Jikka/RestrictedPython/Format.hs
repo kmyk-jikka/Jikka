@@ -13,6 +13,7 @@
 module Jikka.RestrictedPython.Format
   ( run,
     run',
+    formatType,
   )
 where
 
