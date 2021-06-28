@@ -2,10 +2,12 @@
 -- See Hoogle, http://www.haskell.org/hoogle/
 
 
--- | Please see the README on GitHub at
+-- | A transpiler from Python to C++ for competitive programming
+--   
+--   Please see the README on GitHub at
 --   <a>https://github.com/kmyk/Jikka</a>
 @package Jikka
-@version 5.0.5.0
+@version 5.0.6.0
 
 
 -- | <a>Expr</a> module has the basic data types for C++ language. The data
@@ -29,6 +31,9 @@ TyVector :: Type -> Type
 TyArray :: Type -> Integer -> Type
 TyString :: Type
 TyFunction :: Type -> [Type] -> Type
+
+-- | for template parameters
+TyIntValue :: Integer -> Type
 data Literal
 LitInt32 :: Integer -> Literal
 LitInt64 :: Integer -> Literal
@@ -89,6 +94,11 @@ Cast :: Type -> Expr -> Expr
 data LeftExpr
 LeftVar :: VarName -> LeftExpr
 LeftAt :: LeftExpr -> Expr -> LeftExpr
+
+-- | <pre>
+--   std::get<a>n</a>
+--   </pre>
+LeftGet :: Integer -> LeftExpr -> LeftExpr
 data AssignExpr
 AssignExpr :: AssignOp -> LeftExpr -> Expr -> AssignExpr
 AssignIncr :: LeftExpr -> AssignExpr
@@ -169,6 +179,9 @@ instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Program
 
+module Jikka.CPlusPlus.Language.Util
+fromLeftExpr :: LeftExpr -> Expr
+
 
 -- | <a>Alpha</a> provides a monad to run alpha-conversion. This monad has
 --   only a feature to make unique numbers.
@@ -208,6 +221,7 @@ run :: Applicative m => Program -> m Text
 run' :: Program -> String
 type Code = String
 formatExpr :: Expr -> (Code, Prec)
+formatType :: Type -> Code
 instance GHC.Read.Read Jikka.CPlusPlus.Format.Prec
 instance GHC.Show.Show Jikka.CPlusPlus.Format.Prec
 instance GHC.Classes.Ord Jikka.CPlusPlus.Format.Prec
@@ -254,6 +268,11 @@ data WithLoc a
 WithLoc :: !Loc -> !a -> WithLoc a
 [loc] :: WithLoc a -> !Loc
 [value] :: WithLoc a -> !a
+data WithLoc' a
+WithLoc' :: !Maybe Loc -> !a -> WithLoc' a
+[loc'] :: WithLoc' a -> !Maybe Loc
+[value'] :: WithLoc' a -> !a
+withoutLoc :: a -> WithLoc' a
 instance GHC.Read.Read Jikka.Common.Location.Loc
 instance GHC.Show.Show Jikka.Common.Location.Loc
 instance GHC.Classes.Ord Jikka.Common.Location.Loc
@@ -263,6 +282,12 @@ instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc a)
 instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc a)
 instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc a)
 instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc a)
+instance GHC.Base.Functor Jikka.Common.Location.WithLoc'
+instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc' a)
+instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc' a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc' a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc' a)
+instance Data.String.IsString a => Data.String.IsString (Jikka.Common.Location.WithLoc' a)
 
 module Jikka.Common.Format.Location
 prettyLoc :: Loc -> String
@@ -948,38 +973,6 @@ typecheckProgram :: MonadError Error m => Program -> m Type
 module Jikka.Core.Language.Lint
 ensureWellTyped :: MonadError Error m => Program -> m ()
 
-
-module Jikka.Core.Convert.MakeEager
-
--- | <a>run</a> wraps some exprs with lambda redundant things from AST.
---   Specifically, this converts <tt>if p then a else b</tt> to something
---   like <tt>(if p then (lambda. a) else (lambda. b))()</tt>.
---   
---   For example, this converts:
---   
---   <pre>
---   let rec fact n =
---       if n == 0 then
---           1
---       else
---           n * fact (n - 1)
---   in fact 10
---   </pre>
---   
---   to:
---   
---   <pre>
---   let rec fact n =
---       (if n == 0 then
---           fun -&gt; 1
---       else
---           fun -&gt; n * fact (n - 1)
---       )()
---   in fact 10
---   </pre>
-run :: MonadError Error m => Program -> m Program
-run' :: Program -> Program
-
 module Jikka.Core.Convert.ConstantPropagation
 
 -- | <a>run</a> does constant propagation. This assumes that the program is
@@ -1062,6 +1055,38 @@ module Jikka.Core.Convert.PropagateMod
 --   </pre>
 run :: MonadError Error m => Program -> m Program
 
+
+module Jikka.Core.Convert.MakeEager
+
+-- | <a>run</a> wraps some exprs with lambda redundant things from AST.
+--   Specifically, this converts <tt>if p then a else b</tt> to something
+--   like <tt>(if p then (lambda. a) else (lambda. b))()</tt>.
+--   
+--   For example, this converts:
+--   
+--   <pre>
+--   let rec fact n =
+--       if n == 0 then
+--           1
+--       else
+--           n * fact (n - 1)
+--   in fact 10
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let rec fact n =
+--       (if n == 0 then
+--           fun -&gt; 1
+--       else
+--           fun -&gt; n * fact (n - 1)
+--       )()
+--   in fact 10
+--   </pre>
+run :: MonadError Error m => Program -> m Program
+run' :: Program -> Program
+
 module Jikka.Core.Convert.ImmediateAppToLet
 
 -- | <a>run</a> does beta-reductions in given programs. For example, this
@@ -1139,6 +1164,7 @@ valueToModMatrix :: MonadError Error m => Integer -> Value -> m (Matrix ModInt)
 valueFromModVector :: Vector ModInt -> Value
 valueFromModMatrix :: Matrix ModInt -> Value
 formatValue :: Value -> String
+writeValueIO :: Value -> IO ()
 instance GHC.Read.Read Jikka.Core.Language.Value.Value
 instance GHC.Show.Show Jikka.Core.Language.Value.Value
 instance GHC.Classes.Ord Jikka.Core.Language.Value.Value
@@ -1654,6 +1680,16 @@ instance GHC.Classes.Eq Jikka.Python.Language.Expr.Statement
 module Jikka.Python.Language.Util
 constIntExp :: Integer -> Expr
 constBoolExp :: Bool -> Expr
+mapExprArgumentsM :: Monad m => (Expr' -> m Expr') -> Arguments -> m Arguments
+mapExprComprehensionM :: Monad m => (Expr' -> m Expr') -> Comprehension -> m Comprehension
+mapExprComprehensionsM :: Monad m => (Expr' -> m Expr') -> [Comprehension] -> m [Comprehension]
+mapExprKeywordsM :: Monad m => (Expr' -> m Expr') -> [Keyword'] -> m [Keyword']
+mapExprM :: Monad m => (Expr' -> m Expr') -> Expr' -> m Expr'
+mapExprExceptHanderM :: Monad m => (Expr' -> m Expr') -> ExceptHandler' -> m ExceptHandler'
+mapExprStatementM :: Monad m => (Expr' -> m Expr') -> Statement' -> m Statement'
+mapExprStatementsM :: Monad m => (Expr' -> m Expr') -> [Statement'] -> m [Statement']
+mapExprProgramM :: Monad m => (Expr' -> m Expr') -> Program -> m Program
+mapExprProgram :: (Expr' -> Expr') -> Program -> Program
 
 
 module Jikka.Python.Parse.Token
@@ -2006,58 +2042,61 @@ BuiltinModInv :: Builtin
 newtype VarName
 VarName :: String -> VarName
 unVarName :: VarName -> String
+type VarName' = WithLoc' VarName
 
 -- | <a>Expr</a> represents the exprs of our restricted Python-like
 --   language.
 --   
 --   &lt;math&gt;
 data Expr
-BoolOp :: Expr -> BoolOp -> Expr -> Expr
-BinOp :: Expr -> Operator -> Expr -> Expr
-UnaryOp :: UnaryOp -> Expr -> Expr
-Lambda :: [(VarName, Type)] -> Expr -> Expr
-IfExp :: Expr -> Expr -> Expr -> Expr
-ListComp :: Expr -> Comprehension -> Expr
-Compare :: Expr -> CmpOp' -> Expr -> Expr
-Call :: Expr -> [Expr] -> Expr
+BoolOp :: Expr' -> BoolOp -> Expr' -> Expr
+BinOp :: Expr' -> Operator -> Expr' -> Expr
+UnaryOp :: UnaryOp -> Expr' -> Expr
+Lambda :: [(VarName', Type)] -> Expr' -> Expr
+IfExp :: Expr' -> Expr' -> Expr' -> Expr
+ListComp :: Expr' -> Comprehension -> Expr
+Compare :: Expr' -> CmpOp' -> Expr' -> Expr
+Call :: Expr' -> [Expr'] -> Expr
 Constant :: Constant -> Expr
-Subscript :: Expr -> Expr -> Expr
-Name :: VarName -> Expr
-List :: Type -> [Expr] -> Expr
-Tuple :: [Expr] -> Expr
-SubscriptSlice :: Expr -> Maybe Expr -> Maybe Expr -> Maybe Expr -> Expr
+Subscript :: Expr' -> Expr' -> Expr
+Name :: VarName' -> Expr
+List :: Type -> [Expr'] -> Expr
+Tuple :: [Expr'] -> Expr
+SubscriptSlice :: Expr' -> Maybe Expr' -> Maybe Expr' -> Maybe Expr' -> Expr
+type Expr' = WithLoc' Expr
 data Comprehension
-Comprehension :: Target -> Expr -> Maybe Expr -> Comprehension
+Comprehension :: Target' -> Expr' -> Maybe Expr' -> Comprehension
 
 -- | <a>Target</a> represents the lvalue of our restricted Python-like
 --   language.
 --   
 --   &lt;math&gt;
 data Target
-SubscriptTrg :: Target -> Expr -> Target
-NameTrg :: VarName -> Target
-TupleTrg :: [Target] -> Target
+SubscriptTrg :: Target' -> Expr' -> Target
+NameTrg :: VarName' -> Target
+TupleTrg :: [Target'] -> Target
+type Target' = WithLoc' Target
 
 -- | <a>Statement</a> represents the statements of our restricted
 --   Python-like language. They appear in bodies of <tt>def</tt>.
 --   
 --   &lt;math&gt;
 data Statement
-Return :: Expr -> Statement
-AugAssign :: Target -> Operator -> Expr -> Statement
-AnnAssign :: Target -> Type -> Expr -> Statement
-For :: Target -> Expr -> [Statement] -> Statement
-If :: Expr -> [Statement] -> [Statement] -> Statement
-Assert :: Expr -> Statement
+Return :: Expr' -> Statement
+AugAssign :: Target' -> Operator -> Expr' -> Statement
+AnnAssign :: Target' -> Type -> Expr' -> Statement
+For :: Target' -> Expr' -> [Statement] -> Statement
+If :: Expr' -> [Statement] -> [Statement] -> Statement
+Assert :: Expr' -> Statement
 
 -- | <tt>TopLevelStatement</tt> represents the statements of our restricted
 --   Python-like language. They appear in the toplevel of programs.
 --   
 --   &lt;math&gt;
 data ToplevelStatement
-ToplevelAnnAssign :: VarName -> Type -> Expr -> ToplevelStatement
-ToplevelFunctionDef :: VarName -> [(VarName, Type)] -> Type -> [Statement] -> ToplevelStatement
-ToplevelAssert :: Expr -> ToplevelStatement
+ToplevelAnnAssign :: VarName' -> Type -> Expr' -> ToplevelStatement
+ToplevelFunctionDef :: VarName' -> [(VarName', Type)] -> Type -> [Statement] -> ToplevelStatement
+ToplevelAssert :: Expr' -> ToplevelStatement
 
 -- | <a>Program</a> represents the programs of our restricted Python-like
 --   language.
@@ -2113,13 +2152,19 @@ instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.ToplevelStatement
 
 module Jikka.RestrictedPython.Language.Util
 genType :: MonadAlpha m => m Type
-genVarName :: MonadAlpha m => VarName -> m VarName
-constIntExp :: Integer -> Expr
-constBoolExp :: Bool -> Expr
-constBuiltinExp :: Builtin -> Expr
+genVarName :: MonadAlpha m => VarName' -> m VarName'
 freeTyVars :: Type -> [TypeName]
-freeVars :: Expr -> [VarName]
-freeVarsTarget :: Target -> [VarName]
+
+-- | <a>freeVars</a>` reports all free variables.
+freeVars :: Expr' -> [VarName]
+
+-- | <a>freeVars</a>` reports all free variables with their locations, i.e.
+--   occurrences. For examples, <tt>x + x</tt> and <tt>x</tt> have the same
+--   free variables <tt>x</tt> but they have different sets of occurrences
+--   of free variable.
+freeVars' :: Expr' -> [VarName']
+freeVarsTarget :: Target' -> [VarName]
+freeVarsTarget' :: Target' -> [VarName']
 doesAlwaysReturn :: Statement -> Bool
 doesPossiblyReturn :: Statement -> Bool
 mapStatement :: (Statement -> [Statement]) -> Program -> Program
@@ -2127,30 +2172,31 @@ mapStatement :: (Statement -> [Statement]) -> Program -> Program
 -- | <a>mapStatementM</a> replaces all statements in a given program using
 --   a given function. This may breaks various constraints.
 mapStatementM :: Monad m => (Statement -> m [Statement]) -> Program -> m Program
-mapLargeStatement :: (Expr -> [Statement] -> [Statement] -> [Statement]) -> (Target -> Expr -> [Statement] -> [Statement]) -> Program -> Program
-mapLargeStatementM :: Monad m => (Expr -> [Statement] -> [Statement] -> m [Statement]) -> (Target -> Expr -> [Statement] -> m [Statement]) -> Program -> m Program
+mapLargeStatement :: (Expr' -> [Statement] -> [Statement] -> [Statement]) -> (Target' -> Expr' -> [Statement] -> [Statement]) -> Program -> Program
+mapLargeStatementM :: Monad m => (Expr' -> [Statement] -> [Statement] -> m [Statement]) -> (Target' -> Expr' -> [Statement] -> m [Statement]) -> Program -> m Program
 mapStatements :: ([Statement] -> [Statement]) -> Program -> Program
 mapStatementsM :: Monad m => ([Statement] -> m [Statement]) -> Program -> m Program
 listStatements :: Program -> [Statement]
 
 -- | <a>mapSubExprM</a> replaces all exprs in a given expr using a given
 --   function. This may breaks various constraints.
-mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
-listSubExprs :: Expr -> [Expr]
-mapExprTargetM :: Monad m => (Expr -> m Expr) -> Target -> m Target
-mapExprStatementM :: Monad m => (Expr -> m Expr) -> Statement -> m Statement
-mapExprM :: Monad m => (Expr -> m Expr) -> Program -> m Program
-listExprs :: Program -> [Expr]
-hasFunctionCall :: Expr -> Bool
+mapSubExprM :: Monad m => (Expr' -> m Expr') -> Expr' -> m Expr'
+listSubExprs :: Expr' -> [Expr']
+mapExprTargetM :: Monad m => (Expr' -> m Expr') -> Target' -> m Target'
+mapExprStatementM :: Monad m => (Expr' -> m Expr') -> Statement -> m Statement
+mapExprM :: Monad m => (Expr' -> m Expr') -> Program -> m Program
+listExprs :: Program -> [Expr']
+hasFunctionCall :: Expr' -> Bool
 
 -- | <a>isSmallExpr</a> is true if the evaluation of a given expr trivially
 --   terminates.
-isSmallExpr :: Expr -> Bool
-targetVars :: Target -> [VarName]
-hasSubscriptTrg :: Target -> Bool
-hasBareNameTrg :: Target -> Bool
+isSmallExpr :: Expr' -> Bool
+targetVars :: Target' -> [VarName]
+targetVars' :: Target' -> [VarName']
+hasSubscriptTrg :: Target' -> Bool
+hasBareNameTrg :: Target' -> Bool
 toplevelMainDef :: [Statement] -> Program
-readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
+readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr'
 
 module Jikka.RestrictedPython.Language.Builtin
 builtinNames :: Set VarName
@@ -2162,8 +2208,8 @@ additionalBuiltinNames :: Set VarName
 --   For example, the builtin function "max" is kept as a variable because
 --   it may be &lt;math&gt;, &lt;math&gt;, etc. and this function cannot
 --   resolve it.
-resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName -> m Expr
-resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName -> Int -> m Expr
+resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> m Expr'
+resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> Int -> m Expr'
 formatBuiltin :: Builtin -> String
 typeBuiltin :: Builtin -> Type
 
@@ -2171,6 +2217,7 @@ typeBuiltin :: Builtin -> Type
 module Jikka.RestrictedPython.Format
 run :: Applicative m => Program -> m Text
 run' :: Program -> String
+formatType :: Type -> String
 
 
 module Jikka.RestrictedPython.Convert.TypeInfer
@@ -2193,11 +2240,11 @@ module Jikka.RestrictedPython.Convert.TypeInfer
 --   type inference.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 data Equation
-TypeEquation :: Type -> Type -> Equation
-TypeAssertion :: VarName -> Type -> Equation
+TypeEquation :: Type -> Type -> Maybe Loc -> Equation
+TypeAssertion :: VarName' -> Type -> Equation
 formularizeProgram :: MonadAlpha m => Program -> m [Equation]
-sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
-mergeAssertions :: [(VarName, Type)] -> [(Type, Type)]
+sortEquations :: [Equation] -> ([(Type, Type, Maybe Loc)], [(VarName', Type)])
+mergeAssertions :: [(VarName', Type)] -> [(Type, Type, Maybe Loc)]
 
 -- | <a>Subst</a> is type substituion. It's a mapping from type variables
 --   to their actual types.
@@ -2205,7 +2252,7 @@ newtype Subst
 Subst :: Map TypeName Type -> Subst
 [unSubst] :: Subst -> Map TypeName Type
 subst :: Subst -> Type -> Type
-solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
+solveEquations :: MonadError Error m => [(Type, Type, Maybe Loc)] -> m Subst
 substProgram :: Subst -> Program -> Program
 instance GHC.Read.Read Jikka.RestrictedPython.Convert.TypeInfer.Equation
 instance GHC.Show.Show Jikka.RestrictedPython.Convert.TypeInfer.Equation
@@ -2299,8 +2346,8 @@ newtype Global
 Global :: Map VarName Value -> Global
 [unGlobal] :: Global -> Map VarName Value
 initialGlobal :: Global
-lookupGlobal :: MonadError Error m => VarName -> Global -> m Value
-makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName -> Global -> m Expr
+lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
+makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr'
 formatValue :: Value -> String
 writeValueIO :: Value -> IO ()
 instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Value
@@ -2322,39 +2369,19 @@ ReadList :: [VarName] -> ReadList
 newtype WriteList
 WriteList :: [VarName] -> WriteList
 haveWriteReadIntersection :: WriteList -> ReadList -> Bool
-analyzeExpr :: Expr -> ReadList
-analyzeTargetRead :: Target -> ReadList
-analyzeTargetWrite :: Target -> WriteList
+analyzeExpr :: Expr' -> ReadList
+analyzeTargetRead :: Target' -> ReadList
+analyzeTargetWrite :: Target' -> WriteList
 analyzeStatementGeneric :: Bool -> Statement -> (ReadList, WriteList)
 analyzeStatementsGeneric :: Bool -> [Statement] -> (ReadList, WriteList)
 
 -- | <a>analyzeStatementMax</a> returns lists of variables which are
 --   possibly read or written in given statements.
---   
---   <pre>
---   &gt;&gt;&gt; analyzeStatementMax (AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x")))
---   (ReadList [VarName "x"],WriteList [VarName "y"])
---   </pre>
---   
---   <pre>
---   &gt;&gt;&gt; analyzeStatementMax (If (Constant (ConstBool True)) [AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x"))] [])
---   (ReadList [VarName "x"],WriteList [VarName "y"])
---   </pre>
 analyzeStatementMax :: Statement -> (ReadList, WriteList)
 analyzeStatementsMax :: [Statement] -> (ReadList, WriteList)
 
 -- | <a>analyzeStatementMin</a> returns lists of variables which are always
 --   read or written in given statements.
---   
---   <pre>
---   &gt;&gt;&gt; analyzeStatementMin (AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x")))
---   (ReadList [VarName "x"],WriteList [VarName "y"])
---   </pre>
---   
---   <pre>
---   &gt;&gt;&gt; analyzeStatementMin (If (Constant (ConstBool True)) [AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x"))] [])
---   (ReadList [],WriteList [])
---   </pre>
 analyzeStatementMin :: Statement -> (ReadList, WriteList)
 analyzeStatementsMin :: [Statement] -> (ReadList, WriteList)
 instance GHC.Read.Read Jikka.RestrictedPython.Language.VariableAnalysis.ReadList
@@ -2591,12 +2618,12 @@ ensureDoesntHaveNonResolvedBuiltin :: MonadError Error m => Program -> m ()
 
 
 module Jikka.RestrictedPython.Evaluate
-run :: MonadError Error m => Program -> Expr -> m Value
+run :: MonadError Error m => Program -> Expr' -> m Value
 
 -- | <a>makeGlobal</a> packs toplevel definitions into <a>Global</a>. This
 --   assumes <a>doesntHaveLeakOfLoopCounters</a>.
 makeGlobal :: MonadError Error m => Program -> m Global
-runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
+runWithGlobal :: MonadError Error m => Global -> Expr' -> m Value
 
 -- | <a>evalExpr</a> evaluates exprs of our restricted Python-like
 --   language.
@@ -2638,7 +2665,7 @@ runWithGlobal :: MonadError Error m => Global -> Expr -> m Value
 --   <h3>Rules for &lt;math&gt;</h3>
 --   
 --   <h3>Rules for &lt;math&gt;</h3>
-evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr -> m Value
+evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> m Value
 
 -- | <a>evalStatement</a> evaluates statements of our restricted
 --   Python-like language. When a statement is evaluated, it returns a
@@ -2782,7 +2809,7 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 --   let (a, b) = foldl (fun (a, b) i -&gt; (b, a + b)) (a, b) (range n)
 --   in ...
 --   </pre>
-runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target -> Expr -> [Statement] -> [Statement] -> m Expr
+runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> Expr' -> [Statement] -> [Statement] -> m Expr
 
 -- | <a>runIfStatement</a> converts if-loops to if-exprs.
 --   
@@ -2804,7 +2831,7 @@ runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Targe
 --   let (a, c) = if true then (0, 3) else (1, 10)
 --   in ...
 --   </pre>
-runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr -> [Statement] -> [Statement] -> [Statement] -> m Expr
+runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr' -> [Statement] -> [Statement] -> [Statement] -> m Expr
 
 module Jikka.RestrictedPython.Convert.Alpha
 
@@ -2916,7 +2943,7 @@ run' :: Program -> Program
 --   
 --   This function analyzes read-variables and write-variables in
 --   statements, and split statements into connected components.
-runForLoop :: Target -> Expr -> [Statement] -> [Statement]
+runForLoop :: Target' -> Expr' -> [Statement] -> [Statement]
 
 module Jikka.RestrictedPython.Convert
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
@@ -2930,6 +2957,25 @@ run :: FilePath -> ExceptT Error IO ()
 
 module Jikka.Main.Subcommand.Convert
 run :: Target -> FilePath -> Text -> Either Error Text
+
+module Jikka.RestrictedPython.Language.WithoutLoc
+constIntExp :: Integer -> Expr'
+constBoolExp :: Bool -> Expr'
+constBuiltinExp :: Builtin -> Expr'
+binOp :: Expr' -> Operator -> Expr' -> Expr'
+addExp :: Expr' -> Expr' -> Expr'
+subExp :: Expr' -> Expr' -> Expr'
+multExp :: Expr' -> Expr' -> Expr'
+unaryOp :: UnaryOp -> Expr' -> Expr'
+eqExp :: Type -> Expr' -> Expr' -> Expr'
+name :: VarName' -> Expr'
+call :: Expr' -> [Expr'] -> Expr'
+list :: Type -> [Expr'] -> Expr'
+listComp :: Expr' -> Comprehension -> Expr'
+subscript :: Expr' -> Expr' -> Expr'
+nameTrg :: VarName' -> Target'
+subscriptTrg :: Target' -> Expr' -> Target'
+tupleTrg :: [Target'] -> Target'
 
 module Jikka.Main
 data Flag

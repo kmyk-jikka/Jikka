@@ -27,8 +27,8 @@ forall (m :: * -&gt; *) a. MonadError Error m =&gt; FilePath -&gt; m a
 </span><span id="line-22"></span><span>
 </span><span id="line-23"></span><span class="annot"><a href="Jikka.Main.Subcommand.Execute.html#runRestrictedPython"><span class="hs-identifier hs-type">runRestrictedPython</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-24"></span><span id="runRestrictedPython"><span class="annot"><span class="annottext">runRestrictedPython :: FilePath -&gt; ExceptT Error IO ()
-</span><a href="Jikka.Main.Subcommand.Execute.html#runRestrictedPython"><span class="hs-identifier hs-var hs-var">runRestrictedPython</span></a></span></span><span> </span><span id="local-6989586621679322178"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679322178"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (ExceptT Error IO) () -&gt; Int -&gt; ExceptT Error IO ())
+</span><a href="Jikka.Main.Subcommand.Execute.html#runRestrictedPython"><span class="hs-identifier hs-var hs-var">runRestrictedPython</span></a></span></span><span> </span><span id="local-6989586621679325953"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679325953"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (ExceptT Error IO) () -&gt; Int -&gt; ExceptT Error IO ())
 -&gt; Int -&gt; AlphaT (ExceptT Error IO) () -&gt; ExceptT Error IO ()
 forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 </span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">AlphaT (ExceptT Error IO) () -&gt; Int -&gt; ExceptT Error IO ()
@@ -38,17 +38,17 @@ forall (m :: * -&gt; *) a. Functor m =&gt; AlphaT m a -&gt; Int -&gt; m a
 -&gt; AlphaT (ExceptT Error IO) () -&gt; ExceptT Error IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-25"></span><span>  </span><span id="local-6989586621679322175"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679322175"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Text -&gt; AlphaT (ExceptT Error IO) Text
+</span><span id="line-25"></span><span>  </span><span id="local-6989586621679325950"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679325950"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Text -&gt; AlphaT (ExceptT Error IO) Text
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO Text -&gt; AlphaT (ExceptT Error IO) Text)
 -&gt; IO Text -&gt; AlphaT (ExceptT Error IO) Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Text
 </span><span class="hs-identifier hs-var">T.readFile</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679322178"><span class="hs-identifier hs-var">path</span></a></span><span>
-</span><span id="line-26"></span><span>  </span><span id="local-6989586621679322173"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322173"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either Error Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325953"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-26"></span><span>  </span><span id="local-6989586621679325948"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325948"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either Error Program -&gt; AlphaT (ExceptT Error IO) Program
 forall e (m :: * -&gt; *) a. MonadError e m =&gt; Either e a -&gt; m a
 </span><span class="hs-identifier hs-var">liftEither</span></span><span> </span><span class="annot"><span class="annottext">(Either Error Program -&gt; AlphaT (ExceptT Error IO) Program)
 -&gt; Either Error Program -&gt; AlphaT (ExceptT Error IO) Program
@@ -58,43 +58,43 @@ forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 FilePath -&gt; Text -&gt; m Program
 </span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">FromPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679322178"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679322175"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-27"></span><span>  </span><span id="local-6989586621679322170"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322170"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325953"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679325950"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-27"></span><span>  </span><span id="local-6989586621679325945"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325945"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m Program
 </span><a href="Jikka.Python.Convert.ToRestrictedPython.html#run"><span class="hs-identifier hs-var">ToRestrictedPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322173"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-28"></span><span>  </span><span id="local-6989586621679322168"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322168"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325948"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-28"></span><span>  </span><span id="local-6989586621679325943"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325943"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m Program
 </span><a href="Jikka.RestrictedPython.Convert.html#run%27"><span class="hs-identifier hs-var">ToCore.run'</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322170"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-29"></span><span>  </span><span id="local-6989586621679322166"><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679322166"><span class="hs-identifier hs-var">global</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Global
+</span><a href="#local-6989586621679325945"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-29"></span><span>  </span><span id="local-6989586621679325941"><span class="annot"><span class="annottext">Global
+</span><a href="#local-6989586621679325941"><span class="hs-identifier hs-var">global</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Global
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m Global
 </span><a href="Jikka.RestrictedPython.Evaluate.html#makeGlobal"><span class="hs-identifier hs-var">EvaluateRestrictedPython.makeGlobal</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322168"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-30"></span><span>  </span><span id="local-6989586621679322164"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679322164"><span class="hs-identifier hs-var">entrypoint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Global -&gt; AlphaT (ExceptT Error IO) Expr
+</span><a href="#local-6989586621679325943"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-30"></span><span>  </span><span id="local-6989586621679325939"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679325939"><span class="hs-identifier hs-var">entrypoint</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">VarName' -&gt; Global -&gt; AlphaT (ExceptT Error IO) Expr'
 forall (m :: * -&gt; *).
 (MonadIO m, MonadError Error m) =&gt;
-VarName -&gt; Global -&gt; m Expr
-</span><a href="Jikka.RestrictedPython.Language.Value.html#makeEntryPointIO"><span class="hs-identifier hs-var">ValueRestrictedPythong.makeEntryPointIO</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+VarName' -&gt; Global -&gt; m Expr'
+</span><a href="Jikka.RestrictedPython.Language.Value.html#makeEntryPointIO"><span class="hs-identifier hs-var">ValueRestrictedPythong.makeEntryPointIO</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
 </span><span class="hs-string">&quot;solve&quot;</span></span><span> </span><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679322166"><span class="hs-identifier hs-var">global</span></a></span><span>
-</span><span id="line-31"></span><span>  </span><span id="local-6989586621679322162"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679322162"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Global -&gt; Expr -&gt; AlphaT (ExceptT Error IO) Value
+</span><a href="#local-6989586621679325941"><span class="hs-identifier hs-var">global</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span id="local-6989586621679325937"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679325937"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Global -&gt; Expr' -&gt; AlphaT (ExceptT Error IO) Value
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
-Global -&gt; Expr -&gt; m Value
+Global -&gt; Expr' -&gt; m Value
 </span><a href="Jikka.RestrictedPython.Evaluate.html#runWithGlobal"><span class="hs-identifier hs-var">EvaluateRestrictedPython.runWithGlobal</span></a></span><span> </span><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679322166"><span class="hs-identifier hs-var">global</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679322164"><span class="hs-identifier hs-var">entrypoint</span></a></span><span>
+</span><a href="#local-6989586621679325941"><span class="hs-identifier hs-var">global</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679325939"><span class="hs-identifier hs-var">entrypoint</span></a></span><span>
 </span><span id="line-32"></span><span>  </span><span class="annot"><span class="annottext">IO () -&gt; AlphaT (ExceptT Error IO) ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; AlphaT (ExceptT Error IO) ())
@@ -102,12 +102,12 @@ forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; IO ()
 </span><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var">ValueRestrictedPythong.writeValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679322162"><span class="hs-identifier hs-var">value</span></a></span><span>
+</span><a href="#local-6989586621679325937"><span class="hs-identifier hs-var">value</span></a></span><span>
 </span><span id="line-33"></span><span>
 </span><span id="line-34"></span><span class="annot"><a href="Jikka.Main.Subcommand.Execute.html#runCore"><span class="hs-identifier hs-type">runCore</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-35"></span><span id="runCore"><span class="annot"><span class="annottext">runCore :: FilePath -&gt; ExceptT Error IO ()
-</span><a href="Jikka.Main.Subcommand.Execute.html#runCore"><span class="hs-identifier hs-var hs-var">runCore</span></a></span></span><span> </span><span id="local-6989586621679322158"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679322158"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (ExceptT Error IO) () -&gt; Int -&gt; ExceptT Error IO ())
+</span><a href="Jikka.Main.Subcommand.Execute.html#runCore"><span class="hs-identifier hs-var hs-var">runCore</span></a></span></span><span> </span><span id="local-6989586621679325933"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679325933"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (ExceptT Error IO) () -&gt; Int -&gt; ExceptT Error IO ())
 -&gt; Int -&gt; AlphaT (ExceptT Error IO) () -&gt; ExceptT Error IO ()
 forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 </span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">AlphaT (ExceptT Error IO) () -&gt; Int -&gt; ExceptT Error IO ()
@@ -117,17 +117,17 @@ forall (m :: * -&gt; *) a. Functor m =&gt; AlphaT m a -&gt; Int -&gt; m a
 -&gt; AlphaT (ExceptT Error IO) () -&gt; ExceptT Error IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-36"></span><span>  </span><span id="local-6989586621679322157"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679322157"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Text -&gt; AlphaT (ExceptT Error IO) Text
+</span><span id="line-36"></span><span>  </span><span id="local-6989586621679325932"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679325932"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Text -&gt; AlphaT (ExceptT Error IO) Text
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO Text -&gt; AlphaT (ExceptT Error IO) Text)
 -&gt; IO Text -&gt; AlphaT (ExceptT Error IO) Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Text
 </span><span class="hs-identifier hs-var">T.readFile</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679322158"><span class="hs-identifier hs-var">path</span></a></span><span>
-</span><span id="line-37"></span><span>  </span><span id="local-6989586621679322156"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322156"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either Error Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325933"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span id="local-6989586621679325931"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325931"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Either Error Program -&gt; AlphaT (ExceptT Error IO) Program
 forall e (m :: * -&gt; *) a. MonadError e m =&gt; Either e a -&gt; m a
 </span><span class="hs-identifier hs-var">liftEither</span></span><span> </span><span class="annot"><span class="annottext">(Either Error Program -&gt; AlphaT (ExceptT Error IO) Program)
 -&gt; Either Error Program -&gt; AlphaT (ExceptT Error IO) Program
@@ -137,45 +137,44 @@ forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 FilePath -&gt; Text -&gt; m Program
 </span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">FromPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679322158"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679322157"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-38"></span><span>  </span><span id="local-6989586621679322155"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322155"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325933"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679325932"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-38"></span><span>  </span><span id="local-6989586621679325930"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325930"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m Program
 </span><a href="Jikka.Python.Convert.ToRestrictedPython.html#run"><span class="hs-identifier hs-var">ToRestrictedPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322156"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-39"></span><span>  </span><span id="local-6989586621679322154"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322154"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325931"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-39"></span><span>  </span><span id="local-6989586621679325929"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325929"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m Program
 </span><a href="Jikka.RestrictedPython.Convert.html#run"><span class="hs-identifier hs-var">ToCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322155"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-40"></span><span>  </span><span id="local-6989586621679322152"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322152"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
+</span><a href="#local-6989586621679325930"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-40"></span><span>  </span><span id="local-6989586621679325927"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679325927"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.html#run"><span class="hs-identifier hs-var">ConvertCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322154"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-41"></span><span>  </span><span id="local-6989586621679322150"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679322150"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Value
+</span><a href="#local-6989586621679325929"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-41"></span><span>  </span><span id="local-6989586621679325925"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679325925"><span class="hs-identifier hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (ExceptT Error IO) Value
 forall (m :: * -&gt; *).
 (MonadIO m, MonadFix m, MonadError Error m) =&gt;
 Program -&gt; m Value
 </span><a href="Jikka.Core.Evaluate.html#run"><span class="hs-identifier hs-var">EvaluateCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679322152"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><a href="#local-6989586621679325927"><span class="hs-identifier hs-var">prog</span></a></span><span>
 </span><span id="line-42"></span><span>  </span><span class="annot"><span class="annottext">IO () -&gt; AlphaT (ExceptT Error IO) ()
 forall (m :: * -&gt; *) a. MonadIO m =&gt; IO a -&gt; m a
 </span><span class="hs-identifier hs-var">liftIO</span></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; AlphaT (ExceptT Error IO) ())
 -&gt; IO () -&gt; AlphaT (ExceptT Error IO) ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
-</span><span class="hs-identifier hs-var">putStrLn</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Value -&gt; FilePath
-</span><a href="Jikka.Core.Language.Value.html#formatValue"><span class="hs-identifier hs-var">ValueCore.formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679322150"><span class="hs-identifier hs-var">value</span></a></span><span class="hs-special">)</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; IO ()
+</span><a href="Jikka.Core.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var">ValueCore.writeValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679325925"><span class="hs-identifier hs-var">value</span></a></span><span>
 </span><span id="line-43"></span><span>
 </span><span id="line-44"></span><span class="annot"><a href="Jikka.Main.Subcommand.Execute.html#runCPlusPlus"><span class="hs-identifier hs-type">runCPlusPlus</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
 </span><span id="line-45"></span><span id="runCPlusPlus"><span class="annot"><span class="annottext">runCPlusPlus :: FilePath -&gt; ExceptT Error IO ()

@@ -2,23 +2,25 @@
 </span><span id="line-2"></span><span>
 </span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Common.Location</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-4"></span><span>
-</span><span id="line-5"></span><span class="hs-comment">-- | `Loc` represents a location of something in the users' source code. `line` and `column` is 1-based.</span><span>
-</span><span id="line-6"></span><span class="hs-keyword">data</span><span> </span><span id="Loc"><span class="annot"><a href="Jikka.Common.Location.html#Loc"><span class="hs-identifier hs-var">Loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Loc"><span class="annot"><a href="Jikka.Common.Location.html#Loc"><span class="hs-identifier hs-var">Loc</span></a></span></span><span>
-</span><span id="line-7"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="line"><span class="annot"><span class="annottext">Loc -&gt; Int
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IsString</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-6"></span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- | `Loc` represents a location of something in the users' source code. `line` and `column` is 1-based.</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">data</span><span> </span><span id="Loc"><span class="annot"><a href="Jikka.Common.Location.html#Loc"><span class="hs-identifier hs-var">Loc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Loc"><span class="annot"><a href="Jikka.Common.Location.html#Loc"><span class="hs-identifier hs-var">Loc</span></a></span></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="line"><span class="annot"><span class="annottext">Loc -&gt; Int
 </span><a href="Jikka.Common.Location.html#line"><span class="hs-identifier hs-var hs-var">line</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span>
-</span><span id="line-8"></span><span>    </span><span id="column"><span class="annot"><span class="annottext">Loc -&gt; Int
+</span><span id="line-10"></span><span>    </span><span id="column"><span class="annot"><span class="annottext">Loc -&gt; Int
 </span><a href="Jikka.Common.Location.html#column"><span class="hs-identifier hs-var hs-var">column</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span>
-</span><span id="line-9"></span><span>    </span><span id="width"><span class="annot"><span class="annottext">Loc -&gt; Int
+</span><span id="line-11"></span><span>    </span><span id="width"><span class="annot"><span class="annottext">Loc -&gt; Int
 </span><a href="Jikka.Common.Location.html#width"><span class="hs-identifier hs-var hs-var">width</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-10"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-11"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679273685"><span id="local-6989586621679273687"><span class="annot"><span class="annottext">Loc -&gt; Loc -&gt; Bool
+</span><span id="line-12"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679276894"><span id="local-6989586621679276896"><span class="annot"><span class="annottext">Loc -&gt; Loc -&gt; Bool
 (Loc -&gt; Loc -&gt; Bool) -&gt; (Loc -&gt; Loc -&gt; Bool) -&gt; Eq Loc
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Loc -&gt; Loc -&gt; Bool
 $c/= :: Loc -&gt; Loc -&gt; Bool
 == :: Loc -&gt; Loc -&gt; Bool
 $c== :: Loc -&gt; Loc -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273669"><span id="local-6989586621679273671"><span id="local-6989586621679273673"><span id="local-6989586621679273675"><span id="local-6989586621679273677"><span id="local-6989586621679273679"><span id="local-6989586621679273681"><span class="annot"><span class="annottext">Eq Loc
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276878"><span id="local-6989586621679276880"><span id="local-6989586621679276882"><span id="local-6989586621679276884"><span id="local-6989586621679276886"><span id="local-6989586621679276888"><span id="local-6989586621679276890"><span class="annot"><span class="annottext">Eq Loc
 Eq Loc
 -&gt; (Loc -&gt; Loc -&gt; Ordering)
 -&gt; (Loc -&gt; Loc -&gt; Bool)
@@ -56,7 +58,7 @@ $c&lt; :: Loc -&gt; Loc -&gt; Bool
 compare :: Loc -&gt; Loc -&gt; Ordering
 $ccompare :: Loc -&gt; Loc -&gt; Ordering
 $cp1Ord :: Eq Loc
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273662"><span id="local-6989586621679273664"><span id="local-6989586621679273666"><span class="annot"><span class="annottext">Int -&gt; Loc -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276871"><span id="local-6989586621679276873"><span id="local-6989586621679276875"><span class="annot"><span class="annottext">Int -&gt; Loc -&gt; ShowS
 [Loc] -&gt; ShowS
 Loc -&gt; String
 (Int -&gt; Loc -&gt; ShowS)
@@ -69,7 +71,7 @@ show :: Loc -&gt; String
 $cshow :: Loc -&gt; String
 showsPrec :: Int -&gt; Loc -&gt; ShowS
 $cshowsPrec :: Int -&gt; Loc -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273653"><span id="local-6989586621679273655"><span id="local-6989586621679273657"><span id="local-6989586621679273659"><span class="annot"><span class="annottext">ReadPrec [Loc]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276862"><span id="local-6989586621679276864"><span id="local-6989586621679276866"><span id="local-6989586621679276868"><span class="annot"><span class="annottext">ReadPrec [Loc]
 ReadPrec Loc
 Int -&gt; ReadS Loc
 ReadS [Loc]
@@ -87,14 +89,14 @@ $creadList :: ReadS [Loc]
 readsPrec :: Int -&gt; ReadS Loc
 $creadsPrec :: Int -&gt; ReadS Loc
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-12"></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="WithLoc"><span class="annot"><a href="Jikka.Common.Location.html#WithLoc"><span class="hs-identifier hs-var">WithLoc</span></a></span></span><span> </span><span id="local-6989586621679273651"><span class="annot"><a href="#local-6989586621679273651"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="WithLoc"><span class="annot"><a href="Jikka.Common.Location.html#WithLoc"><span class="hs-identifier hs-var">WithLoc</span></a></span></span><span>
-</span><span id="line-14"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="loc"><span class="annot"><span class="annottext">WithLoc a -&gt; Loc
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">data</span><span> </span><span id="WithLoc"><span class="annot"><a href="Jikka.Common.Location.html#WithLoc"><span class="hs-identifier hs-var">WithLoc</span></a></span></span><span> </span><span id="local-6989586621679276860"><span class="annot"><a href="#local-6989586621679276860"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="WithLoc"><span class="annot"><a href="Jikka.Common.Location.html#WithLoc"><span class="hs-identifier hs-var">WithLoc</span></a></span></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="loc"><span class="annot"><span class="annottext">WithLoc a -&gt; Loc
 </span><a href="Jikka.Common.Location.html#loc"><span class="hs-identifier hs-var hs-var">loc</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="Jikka.Common.Location.html#Loc"><span class="hs-identifier hs-type">Loc</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-15"></span><span>    </span><span id="value"><span class="annot"><span class="annottext">WithLoc a -&gt; a
-</span><a href="Jikka.Common.Location.html#value"><span class="hs-identifier hs-var hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679273651"><span class="hs-identifier hs-type">a</span></a></span><span>
-</span><span id="line-16"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-17"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679273644"><span id="local-6989586621679273646"><span class="annot"><span class="annottext">WithLoc a -&gt; WithLoc a -&gt; Bool
+</span><span id="line-17"></span><span>    </span><span id="value"><span class="annot"><span class="annottext">WithLoc a -&gt; a
+</span><a href="Jikka.Common.Location.html#value"><span class="hs-identifier hs-var hs-var">value</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679276860"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-18"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679276853"><span id="local-6989586621679276855"><span class="annot"><span class="annottext">WithLoc a -&gt; WithLoc a -&gt; Bool
 (WithLoc a -&gt; WithLoc a -&gt; Bool)
 -&gt; (WithLoc a -&gt; WithLoc a -&gt; Bool) -&gt; Eq (WithLoc a)
 forall a. Eq a =&gt; WithLoc a -&gt; WithLoc a -&gt; Bool
@@ -103,7 +105,7 @@ forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c/= :: forall a. Eq a =&gt; WithLoc a -&gt; WithLoc a -&gt; Bool
 == :: WithLoc a -&gt; WithLoc a -&gt; Bool
 $c== :: forall a. Eq a =&gt; WithLoc a -&gt; WithLoc a -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273629"><span id="local-6989586621679273631"><span id="local-6989586621679273633"><span id="local-6989586621679273635"><span id="local-6989586621679273637"><span id="local-6989586621679273639"><span id="local-6989586621679273641"><span class="annot"><span class="annottext">Eq (WithLoc a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276838"><span id="local-6989586621679276840"><span id="local-6989586621679276842"><span id="local-6989586621679276844"><span id="local-6989586621679276846"><span id="local-6989586621679276848"><span id="local-6989586621679276850"><span class="annot"><span class="annottext">Eq (WithLoc a)
 Eq (WithLoc a)
 -&gt; (WithLoc a -&gt; WithLoc a -&gt; Ordering)
 -&gt; (WithLoc a -&gt; WithLoc a -&gt; Bool)
@@ -145,7 +147,7 @@ $c&lt; :: forall a. Ord a =&gt; WithLoc a -&gt; WithLoc a -&gt; Bool
 compare :: WithLoc a -&gt; WithLoc a -&gt; Ordering
 $ccompare :: forall a. Ord a =&gt; WithLoc a -&gt; WithLoc a -&gt; Ordering
 $cp1Ord :: forall a. Ord a =&gt; Eq (WithLoc a)
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273623"><span id="local-6989586621679273625"><span id="local-6989586621679273627"><span class="annot"><span class="annottext">Int -&gt; WithLoc a -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276832"><span id="local-6989586621679276834"><span id="local-6989586621679276836"><span class="annot"><span class="annottext">Int -&gt; WithLoc a -&gt; ShowS
 [WithLoc a] -&gt; ShowS
 WithLoc a -&gt; String
 (Int -&gt; WithLoc a -&gt; ShowS)
@@ -163,7 +165,7 @@ show :: WithLoc a -&gt; String
 $cshow :: forall a. Show a =&gt; WithLoc a -&gt; String
 showsPrec :: Int -&gt; WithLoc a -&gt; ShowS
 $cshowsPrec :: forall a. Show a =&gt; Int -&gt; WithLoc a -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273615"><span id="local-6989586621679273617"><span id="local-6989586621679273619"><span id="local-6989586621679273621"><span class="annot"><span class="annottext">ReadPrec [WithLoc a]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276824"><span id="local-6989586621679276826"><span id="local-6989586621679276828"><span id="local-6989586621679276830"><span class="annot"><span class="annottext">ReadPrec [WithLoc a]
 ReadPrec (WithLoc a)
 Int -&gt; ReadS (WithLoc a)
 ReadS [WithLoc a]
@@ -187,7 +189,7 @@ readList :: ReadS [WithLoc a]
 $creadList :: forall a. Read a =&gt; ReadS [WithLoc a]
 readsPrec :: Int -&gt; ReadS (WithLoc a)
 $creadsPrec :: forall a. Read a =&gt; Int -&gt; ReadS (WithLoc a)
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679273611"><span id="local-6989586621679273613"><span class="annot"><span class="annottext">a -&gt; WithLoc b -&gt; WithLoc a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276820"><span id="local-6989586621679276822"><span class="annot"><span class="annottext">a -&gt; WithLoc b -&gt; WithLoc a
 (a -&gt; b) -&gt; WithLoc a -&gt; WithLoc b
 (forall a b. (a -&gt; b) -&gt; WithLoc a -&gt; WithLoc b)
 -&gt; (forall a b. a -&gt; WithLoc b -&gt; WithLoc a) -&gt; Functor WithLoc
@@ -201,4 +203,138 @@ $c&lt;$ :: forall a b. a -&gt; WithLoc b -&gt; WithLoc a
 fmap :: (a -&gt; b) -&gt; WithLoc a -&gt; WithLoc b
 $cfmap :: forall a b. (a -&gt; b) -&gt; WithLoc a -&gt; WithLoc b
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-18"></span></pre></body></html>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">data</span><span> </span><span id="WithLoc%27"><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-var">WithLoc'</span></a></span></span><span> </span><span id="local-6989586621679276907"><span class="annot"><a href="#local-6989586621679276907"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="WithLoc%27"><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-var">WithLoc'</span></a></span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="loc%27"><span class="annot"><span class="annottext">WithLoc' a -&gt; Maybe Loc
+</span><a href="Jikka.Common.Location.html#loc%27"><span class="hs-identifier hs-var hs-var">loc'</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Jikka.Common.Location.html#Loc"><span class="hs-identifier hs-type">Loc</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span id="value%27"><span class="annot"><span class="annottext">WithLoc' a -&gt; a
+</span><a href="Jikka.Common.Location.html#value%27"><span class="hs-identifier hs-var hs-var">value'</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="#local-6989586621679276907"><span class="hs-identifier hs-type">a</span></a></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679276812"><span id="local-6989586621679276814"><span class="annot"><span class="annottext">WithLoc' a -&gt; WithLoc' a -&gt; Bool
+(WithLoc' a -&gt; WithLoc' a -&gt; Bool)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; Bool) -&gt; Eq (WithLoc' a)
+forall a. Eq a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: WithLoc' a -&gt; WithLoc' a -&gt; Bool
+$c/= :: forall a. Eq a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+== :: WithLoc' a -&gt; WithLoc' a -&gt; Bool
+$c== :: forall a. Eq a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276797"><span id="local-6989586621679276799"><span id="local-6989586621679276801"><span id="local-6989586621679276803"><span id="local-6989586621679276805"><span id="local-6989586621679276807"><span id="local-6989586621679276809"><span class="annot"><span class="annottext">Eq (WithLoc' a)
+Eq (WithLoc' a)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; Ordering)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; Bool)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; Bool)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; Bool)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; Bool)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a)
+-&gt; (WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a)
+-&gt; Ord (WithLoc' a)
+WithLoc' a -&gt; WithLoc' a -&gt; Bool
+WithLoc' a -&gt; WithLoc' a -&gt; Ordering
+WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+forall a. Ord a =&gt; Eq (WithLoc' a)
+forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Ordering
+forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a
+min :: WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a
+$cmin :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a
+max :: WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a
+$cmax :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; WithLoc' a
+&gt;= :: WithLoc' a -&gt; WithLoc' a -&gt; Bool
+$c&gt;= :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+&gt; :: WithLoc' a -&gt; WithLoc' a -&gt; Bool
+$c&gt; :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+&lt;= :: WithLoc' a -&gt; WithLoc' a -&gt; Bool
+$c&lt;= :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+&lt; :: WithLoc' a -&gt; WithLoc' a -&gt; Bool
+$c&lt; :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Bool
+compare :: WithLoc' a -&gt; WithLoc' a -&gt; Ordering
+$ccompare :: forall a. Ord a =&gt; WithLoc' a -&gt; WithLoc' a -&gt; Ordering
+$cp1Ord :: forall a. Ord a =&gt; Eq (WithLoc' a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276791"><span id="local-6989586621679276793"><span id="local-6989586621679276795"><span class="annot"><span class="annottext">Int -&gt; WithLoc' a -&gt; ShowS
+[WithLoc' a] -&gt; ShowS
+WithLoc' a -&gt; String
+(Int -&gt; WithLoc' a -&gt; ShowS)
+-&gt; (WithLoc' a -&gt; String)
+-&gt; ([WithLoc' a] -&gt; ShowS)
+-&gt; Show (WithLoc' a)
+forall a. Show a =&gt; Int -&gt; WithLoc' a -&gt; ShowS
+forall a. Show a =&gt; [WithLoc' a] -&gt; ShowS
+forall a. Show a =&gt; WithLoc' a -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [WithLoc' a] -&gt; ShowS
+$cshowList :: forall a. Show a =&gt; [WithLoc' a] -&gt; ShowS
+show :: WithLoc' a -&gt; String
+$cshow :: forall a. Show a =&gt; WithLoc' a -&gt; String
+showsPrec :: Int -&gt; WithLoc' a -&gt; ShowS
+$cshowsPrec :: forall a. Show a =&gt; Int -&gt; WithLoc' a -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276783"><span id="local-6989586621679276785"><span id="local-6989586621679276787"><span id="local-6989586621679276789"><span class="annot"><span class="annottext">ReadPrec [WithLoc' a]
+ReadPrec (WithLoc' a)
+Int -&gt; ReadS (WithLoc' a)
+ReadS [WithLoc' a]
+(Int -&gt; ReadS (WithLoc' a))
+-&gt; ReadS [WithLoc' a]
+-&gt; ReadPrec (WithLoc' a)
+-&gt; ReadPrec [WithLoc' a]
+-&gt; Read (WithLoc' a)
+forall a. Read a =&gt; ReadPrec [WithLoc' a]
+forall a. Read a =&gt; ReadPrec (WithLoc' a)
+forall a. Read a =&gt; Int -&gt; ReadS (WithLoc' a)
+forall a. Read a =&gt; ReadS [WithLoc' a]
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [WithLoc' a]
+$creadListPrec :: forall a. Read a =&gt; ReadPrec [WithLoc' a]
+readPrec :: ReadPrec (WithLoc' a)
+$creadPrec :: forall a. Read a =&gt; ReadPrec (WithLoc' a)
+readList :: ReadS [WithLoc' a]
+$creadList :: forall a. Read a =&gt; ReadS [WithLoc' a]
+readsPrec :: Int -&gt; ReadS (WithLoc' a)
+$creadsPrec :: forall a. Read a =&gt; Int -&gt; ReadS (WithLoc' a)
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679276779"><span id="local-6989586621679276781"><span class="annot"><span class="annottext">a -&gt; WithLoc' b -&gt; WithLoc' a
+(a -&gt; b) -&gt; WithLoc' a -&gt; WithLoc' b
+(forall a b. (a -&gt; b) -&gt; WithLoc' a -&gt; WithLoc' b)
+-&gt; (forall a b. a -&gt; WithLoc' b -&gt; WithLoc' a) -&gt; Functor WithLoc'
+forall a b. a -&gt; WithLoc' b -&gt; WithLoc' a
+forall a b. (a -&gt; b) -&gt; WithLoc' a -&gt; WithLoc' b
+forall (f :: * -&gt; *).
+(forall a b. (a -&gt; b) -&gt; f a -&gt; f b)
+-&gt; (forall a b. a -&gt; f b -&gt; f a) -&gt; Functor f
+&lt;$ :: a -&gt; WithLoc' b -&gt; WithLoc' a
+$c&lt;$ :: forall a b. a -&gt; WithLoc' b -&gt; WithLoc' a
+fmap :: (a -&gt; b) -&gt; WithLoc' a -&gt; WithLoc' b
+$cfmap :: forall a b. (a -&gt; b) -&gt; WithLoc' a -&gt; WithLoc' b
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Functor</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span id="local-6989586621679276778"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621679276778"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-type">WithLoc'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276778"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-28"></span><span>  </span><span id="local-6989586621679276775"><span class="annot"><span class="annottext">fromString :: String -&gt; WithLoc' a
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">fromString</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Loc -&gt; a -&gt; WithLoc' a
+forall a. Maybe Loc -&gt; a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-var">WithLoc'</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Loc
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">(a -&gt; WithLoc' a) -&gt; (String -&gt; a) -&gt; String -&gt; WithLoc' a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; a
+forall a. IsString a =&gt; String -&gt; a
+</span><span class="hs-identifier hs-var">fromString</span></span></span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span id="local-6989586621679276773"><span class="annot"><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-type">withoutLoc</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679276773"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-type">WithLoc'</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679276773"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-31"></span><span id="withoutLoc"><span class="annot"><span class="annottext">withoutLoc :: a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var hs-var">withoutLoc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Loc -&gt; a -&gt; WithLoc' a
+forall a. Maybe Loc -&gt; a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-var">WithLoc'</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Loc
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-32"></span></pre></body></html>

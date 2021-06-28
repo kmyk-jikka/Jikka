@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.CPlusPlus.Language.Util</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html"><span class="hs-identifier">Jikka.CPlusPlus.Language.Expr</span></a></span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.Util.html#fromLeftExpr"><span class="hs-identifier hs-type">fromLeftExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftExpr"><span class="hs-identifier hs-type">LeftExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span>
+</span><span id="line-9"></span><span id="fromLeftExpr"><span class="annot"><span class="annottext">fromLeftExpr :: LeftExpr -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Util.html#fromLeftExpr"><span class="hs-identifier hs-var hs-var">fromLeftExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-10"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftVar"><span class="hs-identifier hs-type">LeftVar</span></a></span><span> </span><span id="local-6989586621679275941"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679275941"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679275941"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftAt"><span class="hs-identifier hs-type">LeftAt</span></a></span><span> </span><span id="local-6989586621679275938"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679275938"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679275937"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679275937"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#At"><span class="hs-identifier hs-var">At</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LeftExpr -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Util.html#fromLeftExpr"><span class="hs-identifier hs-var">fromLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679275938"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679275937"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-12"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftGet"><span class="hs-identifier hs-type">LeftGet</span></a></span><span> </span><span id="local-6989586621679275934"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679275934"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679275933"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679275933"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Function -&gt; [Expr] -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#Call"><span class="hs-identifier hs-var">Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FunName -&gt; [Type] -&gt; Function
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#Function"><span class="hs-identifier hs-var">Function</span></a></span><span> </span><span class="annot"><span class="annottext">FunName
+</span><span class="hs-string">&quot;std::get&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Integer -&gt; Type
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#TyIntValue"><span class="hs-identifier hs-var">TyIntValue</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679275934"><span class="hs-identifier hs-var">n</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">LeftExpr -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Util.html#fromLeftExpr"><span class="hs-identifier hs-var">fromLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679275933"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-13"></span></pre></body></html>

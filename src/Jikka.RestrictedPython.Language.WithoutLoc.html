@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.RestrictedPython.Language.WithoutLoc</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Location.html"><span class="hs-identifier">Jikka.Common.Location</span></a></span><span>
+</span><span id="line-4"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
+</span><span id="line-5"></span><span>
+</span><span id="line-6"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#constIntExp"><span class="hs-identifier hs-type">constIntExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-7"></span><span id="constIntExp"><span class="annot"><span class="annottext">constIntExp :: Integer -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#constIntExp"><span class="hs-identifier hs-var hs-var">constIntExp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; (Integer -&gt; Expr) -&gt; Integer -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Constant -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Constant"><span class="hs-identifier hs-var">Constant</span></a></span><span> </span><span class="annot"><span class="annottext">(Constant -&gt; Expr) -&gt; (Integer -&gt; Constant) -&gt; Integer -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Constant
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#ConstInt"><span class="hs-identifier hs-var">ConstInt</span></a></span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#constBoolExp"><span class="hs-identifier hs-type">constBoolExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-10"></span><span id="constBoolExp"><span class="annot"><span class="annottext">constBoolExp :: Bool -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#constBoolExp"><span class="hs-identifier hs-var hs-var">constBoolExp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; (Bool -&gt; Expr) -&gt; Bool -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Constant -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Constant"><span class="hs-identifier hs-var">Constant</span></a></span><span> </span><span class="annot"><span class="annottext">(Constant -&gt; Expr) -&gt; (Bool -&gt; Constant) -&gt; Bool -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Constant
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#ConstBool"><span class="hs-identifier hs-var">ConstBool</span></a></span><span>
+</span><span id="line-11"></span><span>
+</span><span id="line-12"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#constBuiltinExp"><span class="hs-identifier hs-type">constBuiltinExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-13"></span><span id="constBuiltinExp"><span class="annot"><span class="annottext">constBuiltinExp :: Builtin -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#constBuiltinExp"><span class="hs-identifier hs-var hs-var">constBuiltinExp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; (Builtin -&gt; Expr) -&gt; Builtin -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Constant -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Constant"><span class="hs-identifier hs-var">Constant</span></a></span><span> </span><span class="annot"><span class="annottext">(Constant -&gt; Expr) -&gt; (Builtin -&gt; Constant) -&gt; Builtin -&gt; Expr
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; Constant
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#ConstBuiltin"><span class="hs-identifier hs-var">ConstBuiltin</span></a></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#binOp"><span class="hs-identifier hs-type">binOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Python.Language.Expr.html#Operator"><span class="hs-identifier hs-type">Operator</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-16"></span><span id="binOp"><span class="annot"><span class="annottext">binOp :: Expr' -&gt; Operator -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#binOp"><span class="hs-identifier hs-var hs-var">binOp</span></a></span></span><span> </span><span id="local-6989586621679326163"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326163"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679326162"><span class="annot"><span class="annottext">Operator
+</span><a href="#local-6989586621679326162"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679326161"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326161"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr' -&gt; Operator -&gt; Expr' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#BinOp"><span class="hs-identifier hs-var">BinOp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326163"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="#local-6989586621679326162"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326161"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#addExp"><span class="hs-identifier hs-type">addExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-19"></span><span id="addExp"><span class="annot"><span class="annottext">addExp :: Expr' -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#addExp"><span class="hs-identifier hs-var hs-var">addExp</span></a></span></span><span> </span><span id="local-6989586621679326158"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326158"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679326157"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326157"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' -&gt; Operator -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#binOp"><span class="hs-identifier hs-var">binOp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326158"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="Jikka.Python.Language.Expr.html#Add"><span class="hs-identifier hs-var">Add</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326157"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#subExp"><span class="hs-identifier hs-type">subExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-22"></span><span id="subExp"><span class="annot"><span class="annottext">subExp :: Expr' -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#subExp"><span class="hs-identifier hs-var hs-var">subExp</span></a></span></span><span> </span><span id="local-6989586621679326154"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326154"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679326153"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326153"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' -&gt; Operator -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#binOp"><span class="hs-identifier hs-var">binOp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326154"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="Jikka.Python.Language.Expr.html#Sub"><span class="hs-identifier hs-var">Sub</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326153"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#multExp"><span class="hs-identifier hs-type">multExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-25"></span><span id="multExp"><span class="annot"><span class="annottext">multExp :: Expr' -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#multExp"><span class="hs-identifier hs-var hs-var">multExp</span></a></span></span><span> </span><span id="local-6989586621679326150"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326150"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679326149"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326149"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr' -&gt; Operator -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#binOp"><span class="hs-identifier hs-var">binOp</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326150"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="Jikka.Python.Language.Expr.html#Mult"><span class="hs-identifier hs-var">Mult</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326149"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-26"></span><span>
+</span><span id="line-27"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#unaryOp"><span class="hs-identifier hs-type">unaryOp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Python.Language.Expr.html#UnaryOp"><span class="hs-identifier hs-type">UnaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-28"></span><span id="unaryOp"><span class="annot"><span class="annottext">unaryOp :: UnaryOp -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#unaryOp"><span class="hs-identifier hs-var hs-var">unaryOp</span></a></span></span><span> </span><span id="local-6989586621679326146"><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679326146"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679326145"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326145"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">UnaryOp -&gt; Expr' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#UnaryOp"><span class="hs-identifier hs-var">UnaryOp</span></a></span><span> </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679326146"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326145"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#eqExp"><span class="hs-identifier hs-type">eqExp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-31"></span><span id="eqExp"><span class="annot"><span class="annottext">eqExp :: Type -&gt; Expr' -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#eqExp"><span class="hs-identifier hs-var hs-var">eqExp</span></a></span></span><span> </span><span id="local-6989586621679326142"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679326142"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679326141"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326141"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679326140"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326140"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr' -&gt; CmpOp' -&gt; Expr' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Compare"><span class="hs-identifier hs-var">Compare</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326141"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CmpOp -&gt; Type -&gt; CmpOp'
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#CmpOp%27"><span class="hs-identifier hs-var">CmpOp'</span></a></span><span> </span><span class="annot"><span class="annottext">CmpOp
+</span><a href="Jikka.Python.Language.Expr.html#Eq%27"><span class="hs-identifier hs-var">Eq'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679326142"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326140"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>
+</span><span id="line-33"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#name"><span class="hs-identifier hs-type">name</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName%27"><span class="hs-identifier hs-type">VarName'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-34"></span><span id="name"><span class="annot"><span class="annottext">name :: VarName' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#name"><span class="hs-identifier hs-var hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; (VarName' -&gt; Expr) -&gt; VarName' -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">VarName' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Name"><span class="hs-identifier hs-var">Name</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#call"><span class="hs-identifier hs-type">call</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-37"></span><span id="call"><span class="annot"><span class="annottext">call :: Expr' -&gt; [Expr'] -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#call"><span class="hs-identifier hs-var hs-var">call</span></a></span></span><span> </span><span id="local-6989586621679326133"><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326133"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679326132"><span class="annot"><span class="annottext">[Expr']
+</span><a href="#local-6989586621679326132"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr' -&gt; [Expr'] -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Call"><span class="hs-identifier hs-var">Call</span></a></span><span> </span><span class="annot"><span class="annottext">Expr'
+</span><a href="#local-6989586621679326133"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr']
+</span><a href="#local-6989586621679326132"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#list"><span class="hs-identifier hs-type">list</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-40"></span><span id="list"><span class="annot"><span class="annottext">list :: Type -&gt; [Expr'] -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#list"><span class="hs-identifier hs-var hs-var">list</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; ([Expr'] -&gt; Expr) -&gt; [Expr'] -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(([Expr'] -&gt; Expr) -&gt; [Expr'] -&gt; Expr')
+-&gt; (Type -&gt; [Expr'] -&gt; Expr) -&gt; Type -&gt; [Expr'] -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; [Expr'] -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#List"><span class="hs-identifier hs-var">List</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#listComp"><span class="hs-identifier hs-type">listComp</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Comprehension"><span class="hs-identifier hs-type">Comprehension</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-43"></span><span id="listComp"><span class="annot"><span class="annottext">listComp :: Expr' -&gt; Comprehension -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#listComp"><span class="hs-identifier hs-var hs-var">listComp</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr')
+-&gt; (Comprehension -&gt; Expr) -&gt; Comprehension -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Comprehension -&gt; Expr) -&gt; Comprehension -&gt; Expr')
+-&gt; (Expr' -&gt; Comprehension -&gt; Expr)
+-&gt; Expr'
+-&gt; Comprehension
+-&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Expr' -&gt; Comprehension -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#ListComp"><span class="hs-identifier hs-var">ListComp</span></a></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#subscript"><span class="hs-identifier hs-type">subscript</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span>
+</span><span id="line-46"></span><span id="subscript"><span class="annot"><span class="annottext">subscript :: Expr' -&gt; Expr' -&gt; Expr'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#subscript"><span class="hs-identifier hs-var hs-var">subscript</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; (Expr' -&gt; Expr) -&gt; Expr' -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expr' -&gt; Expr) -&gt; Expr' -&gt; Expr')
+-&gt; (Expr' -&gt; Expr' -&gt; Expr) -&gt; Expr' -&gt; Expr' -&gt; Expr'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Expr' -&gt; Expr' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Subscript"><span class="hs-identifier hs-var">Subscript</span></a></span><span>
+</span><span id="line-47"></span><span>
+</span><span id="line-48"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#nameTrg"><span class="hs-identifier hs-type">nameTrg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName%27"><span class="hs-identifier hs-type">VarName'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Target%27"><span class="hs-identifier hs-type">Target'</span></a></span><span>
+</span><span id="line-49"></span><span id="nameTrg"><span class="annot"><span class="annottext">nameTrg :: VarName' -&gt; Target'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#nameTrg"><span class="hs-identifier hs-var hs-var">nameTrg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Target'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Target -&gt; Target') -&gt; (VarName' -&gt; Target) -&gt; VarName' -&gt; Target'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">VarName' -&gt; Target
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#NameTrg"><span class="hs-identifier hs-var">NameTrg</span></a></span><span>
+</span><span id="line-50"></span><span>
+</span><span id="line-51"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#subscriptTrg"><span class="hs-identifier hs-type">subscriptTrg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Target%27"><span class="hs-identifier hs-type">Target'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Target%27"><span class="hs-identifier hs-type">Target'</span></a></span><span>
+</span><span id="line-52"></span><span id="subscriptTrg"><span class="annot"><span class="annottext">subscriptTrg :: Target' -&gt; Expr' -&gt; Target'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#subscriptTrg"><span class="hs-identifier hs-var hs-var">subscriptTrg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Target -&gt; Target'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Target -&gt; Target') -&gt; (Expr' -&gt; Target) -&gt; Expr' -&gt; Target'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expr' -&gt; Target) -&gt; Expr' -&gt; Target')
+-&gt; (Target' -&gt; Expr' -&gt; Target) -&gt; Target' -&gt; Expr' -&gt; Target'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Target' -&gt; Expr' -&gt; Target
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#SubscriptTrg"><span class="hs-identifier hs-var">SubscriptTrg</span></a></span><span>
+</span><span id="line-53"></span><span>
+</span><span id="line-54"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#tupleTrg"><span class="hs-identifier hs-type">tupleTrg</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Target%27"><span class="hs-identifier hs-type">Target'</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Target%27"><span class="hs-identifier hs-type">Target'</span></a></span><span>
+</span><span id="line-55"></span><span id="tupleTrg"><span class="annot"><span class="annottext">tupleTrg :: [Target'] -&gt; Target'
+</span><a href="Jikka.RestrictedPython.Language.WithoutLoc.html#tupleTrg"><span class="hs-identifier hs-var hs-var">tupleTrg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Target -&gt; Target'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Target -&gt; Target')
+-&gt; ([Target'] -&gt; Target) -&gt; [Target'] -&gt; Target'
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">[Target'] -&gt; Target
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#TupleTrg"><span class="hs-identifier hs-var">TupleTrg</span></a></span><span>
+</span><span id="line-56"></span></pre></body></html>
