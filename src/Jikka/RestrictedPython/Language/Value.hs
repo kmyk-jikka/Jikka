@@ -125,8 +125,10 @@ formatValue = \case
 writeValueIO :: Value -> IO ()
 writeValueIO = \case
   IntVal n -> print n
-  BoolVal p -> print p
-  ListVal xs -> mapM_ writeValueIO (V.toList xs)
+  BoolVal p -> putStrLn (if p then "Yes" else "No")
+  ListVal xs -> do
+    print (V.length xs)
+    mapM_ writeValueIO (V.toList xs)
   TupleVal xs -> mapM_ writeValueIO xs
   f@ClosureVal {} -> print f
   BuiltinVal b -> print b

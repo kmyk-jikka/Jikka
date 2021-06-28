@@ -88,3 +88,14 @@ formatValue = \case
   ValTuple xs -> "(" ++ intercalate ", " (map formatValue xs) ++ ")"
   ValBuiltin builtin -> show builtin
   f@ValLambda {} -> show f
+
+writeValueIO :: Value -> IO ()
+writeValueIO = \case
+  ValInt n -> print n
+  ValBool p -> putStrLn (if p then "Yes" else "No")
+  ValList xs -> do
+    print (V.length xs)
+    mapM_ writeValueIO xs
+  ValTuple xs -> mapM_ writeValueIO xs
+  ValBuiltin builtin -> print builtin
+  f@ValLambda {} -> print f

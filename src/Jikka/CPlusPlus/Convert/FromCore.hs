@@ -294,16 +294,19 @@ runMainRead x t = do
   stmts <- runMainRead' (Y.LeftVar x) t
   return (decl : stmts)
 
+cinStatement :: Y.Expr -> Y.Statement
+cinStatement e = Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") e)
+
 runMainRead' :: (MonadAlpha m, MonadError Error m) => Y.LeftExpr -> Y.Type -> m [Y.Statement]
 runMainRead' x = \case
   Y.TyInt64 -> do
-    return [Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.fromLeftExpr x))]
+    return [cinStatement (Y.fromLeftExpr x)]
   Y.TyBool -> do
     s <- newFreshName LocalNameKind ""
     return
       [ Y.Declare Y.TyString s Nothing,
-        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var s)),
-        Y.Assign (Y.AssignExpr Y.SimpleAssign x (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "false"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
+        cinStatement (Y.Var s),
+        Y.Assign (Y.AssignExpr Y.SimpleAssign x (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "No"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
       ]
   Y.TyVector t -> do
     n <- newFreshName LocalNameKind ""
@@ -311,7 +314,7 @@ runMainRead' x = \case
     body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
     return
       [ Y.Declare Y.TyInt32 n Nothing,
-        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var n)),
+        cinStatement (Y.Var n),
         Y.ExprStatement (Y.Call (Y.Method (Y.fromLeftExpr x) "resize") [Y.Var n]),
         Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Var n)) (Y.AssignIncr (Y.LeftVar i)) body
       ]
@@ -326,34 +329,27 @@ runMainRead' x = \case
       runMainRead' (Y.LeftGet i x) t
   t -> throwInternalError $ "cannot read inputs of type: " ++ Y.formatType t
 
+coutStatement :: Y.Expr -> Y.Statement
+coutStatement e = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e) (Y.Lit (Y.LitChar '\n')))
+
 runMainWrite :: (MonadAlpha m, MonadError Error m) => Y.Expr -> Y.Type -> m [Y.Statement]
 runMainWrite e = \case
-  Y.TyInt64 -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
-  Y.TyBool -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  Y.TyInt64 -> return [coutStatement e]
+  Y.TyBool -> return [coutStatement e]
   Y.TyVector t -> do
-    let open = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '[')))
     i <- newFreshName LocalNameKind ""
-    let comma = Y.If (Y.Var i) [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))] Nothing
+    let size = coutStatement (Y.Call (Y.Method e "size") [])
+    let loop body = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Cast Y.TyInt32 (Y.Call (Y.Method e "size") []))) (Y.AssignIncr (Y.LeftVar i)) body
     body <- runMainWrite (Y.At e (Y.Var i)) t
-    let body' = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Cast Y.TyInt32 (Y.Call (Y.Method e "size") []))) (Y.AssignIncr (Y.LeftVar i)) (comma : body)
-    let close = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ']')))
-    return [open, body', close]
+    return [size, loop body]
   Y.TyArray t n -> do
-    let open = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))
     i <- newFreshName LocalNameKind ""
-    let comma = Y.If (Y.Var i) [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))] Nothing
+    let loop body = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) body
     body <- runMainWrite (Y.At e (Y.Var i)) t
-    let body' = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) (comma : body)
-    let close = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))
-    return [open, body', close]
+    return [loop body]
   Y.TyTuple ts -> do
-    let open = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))
-    stmts <- forM (zip [0 ..] ts) $ \(i, t) -> do
-      let comma = if i == 0 then [] else [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))]
-      stmts <- runMainWrite (Y.Call (Y.Function "std::get" [Y.TyIntValue i]) [e]) t
-      return $ comma ++ stmts
-    let close = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))
-    return $ open : concat stmts ++ [close]
+    fmap concat . forM (zip [0 ..] ts) $ \(i, t) -> do
+      runMainWrite (Y.Call (Y.Function "std::get" [Y.TyIntValue i]) [e]) t
   t -> throwInternalError $ "cannot write outputs of type: " ++ Y.formatType t
 
 runMain :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.ToplevelStatement]
@@ -374,8 +370,7 @@ runMain solve t = do
     _ -> return ([], solve, t)
   t <- runType t
   body' <- runMainWrite (Y.Var ans) t
-  let newline = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '\n')))]
-  return [Y.FunDef Y.TyInt (Y.VarName "main") [] (body ++ body' ++ newline)]
+  return [Y.FunDef Y.TyInt (Y.VarName "main") [] (body ++ body')]
 
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case

@@ -334,7 +334,14 @@ readValueIO = \case
     n <- read <$> liftIO getWord
     return $ Constant (ConstInt n)
   BoolTy -> do
-    p <- read <$> liftIO getWord
+    p <- liftIO getWord
+    p <-
+      if p == "Yes"
+        then return True
+        else
+          if p == "No"
+            then return False
+            else throwRuntimeError $ "boolean must be \"Yes\" or \"No\": " ++ show p
     return $ Constant (ConstBool p)
   ListTy t -> do
     n <- read <$> liftIO getWord

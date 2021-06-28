@@ -66,8 +66,7 @@ spec = describe "run" $ do
             [ Y.Declare Y.TyInt64 "x3" Nothing,
               Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var "x3")),
               Y.Declare Y.TyInt64 "x4" (Just (Y.Call (Y.Function "solve" []) [Y.Var "x3"])),
-              Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Var "x4")),
-              Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '\n')))
+              Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Var "x4")) (Y.Lit (Y.LitChar '\n')))
             ]
     let expected = Y.Program [expectedF, expectedSolve, expectedMain]
     run' prog `shouldBe` Right expected
