@@ -28,6 +28,11 @@ Type Error (line 4 column 12) (user's mistake?): Jikka.RestrictedPython.Convert.
               ^
 ```
 
+contributions:
+
+-   @Koki-Yamaguchi fixed build on macOS ([#28](https://github.com/kmyk/Jikka/pull/28))
+
+
 ## 2021-06-25: v5.0.5.0
 
 Some optimizations are implemented.
