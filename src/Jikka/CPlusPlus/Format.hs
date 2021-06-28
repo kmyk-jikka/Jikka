@@ -15,12 +15,14 @@ module Jikka.CPlusPlus.Format
     run',
     Code,
     formatExpr,
+    formatType,
   )
 where
 
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.CPlusPlus.Language.Expr
+import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Format.AutoIndent (makeIndentFromBraces)
 
 type Code = String
@@ -236,12 +238,7 @@ formatExpr = \case
      in ("static_cast<" ++ t' ++ ">(" ++ e' ++ ")", FunCallPrec)
 
 formatLeftExpr :: LeftExpr -> (Code, Prec)
-formatLeftExpr = \case
-  LeftVar x -> (unVarName x, IdentPrec)
-  LeftAt e1 e2 ->
-    let e1' = resolvePrec FunCallPrec (formatLeftExpr e1)
-        e2' = formatExpr' ParenPrec e2
-     in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
+formatLeftExpr = formatExpr . fromLeftExpr
 
 formatAssignExpr :: AssignExpr -> (Code, Prec)
 formatAssignExpr = \case

@@ -19,8 +19,9 @@ where
 
 import Data.Char (isAlphaNum)
 import Data.List (intercalate)
-import qualified Jikka.CPlusPlus.Format as Y (formatExpr)
+import qualified Jikka.CPlusPlus.Format as Y (formatExpr, formatType)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
+import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
@@ -287,40 +288,73 @@ runToplevelVarDef env x t e = do
   e <- runExpr env e
   return [Y.VarDef t x e]
 
-runMainRead :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.Statement]
-runMainRead x = \case
-  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
-  X.IntTy ->
-    return
-      [ Y.Declare Y.TyInt64 x Nothing,
-        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var x))
-      ]
-  X.BoolTy -> do
+runMainRead :: (MonadAlpha m, MonadError Error m) => Y.VarName -> Y.Type -> m [Y.Statement]
+runMainRead x t = do
+  let decl = Y.Declare t x Nothing
+  stmts <- runMainRead' (Y.LeftVar x) t
+  return (decl : stmts)
+
+runMainRead' :: (MonadAlpha m, MonadError Error m) => Y.LeftExpr -> Y.Type -> m [Y.Statement]
+runMainRead' x = \case
+  Y.TyInt64 -> do
+    return [Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.fromLeftExpr x))]
+  Y.TyBool -> do
     s <- newFreshName LocalNameKind ""
     return
       [ Y.Declare Y.TyString s Nothing,
         Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var s)),
-        Y.Declare Y.TyBool x (Just (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "false"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
+        Y.Assign (Y.AssignExpr Y.SimpleAssign x (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "false"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
       ]
-  X.ListTy _ -> throwInternalError "runMainRead TODO" -- TODO
-  X.TupleTy _ -> throwInternalError "runMainRead TODO" -- TODO
-  t@X.FunTy {} -> throwInternalError $ "cannot print function: " ++ X.formatType t
+  Y.TyVector t -> do
+    n <- newFreshName LocalNameKind ""
+    i <- newFreshName LocalNameKind ""
+    body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
+    return
+      [ Y.Declare Y.TyInt32 n Nothing,
+        Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") (Y.Var n)),
+        Y.ExprStatement (Y.Call (Y.Method (Y.fromLeftExpr x) "resize") [Y.Var n]),
+        Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Var n)) (Y.AssignIncr (Y.LeftVar i)) body
+      ]
+  Y.TyArray t n -> do
+    i <- newFreshName LocalNameKind ""
+    body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
+    return
+      [ Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) body
+      ]
+  Y.TyTuple ts -> do
+    fmap concat . forM (zip [0 ..] ts) $ \(i, t) -> do
+      runMainRead' (Y.LeftGet i x) t
+  t -> throwInternalError $ "cannot read inputs of type: " ++ Y.formatType t
 
-runMainWrite :: (MonadAlpha m, MonadError Error m) => Y.Expr -> X.Type -> m [Y.Statement]
+runMainWrite :: (MonadAlpha m, MonadError Error m) => Y.Expr -> Y.Type -> m [Y.Statement]
 runMainWrite e = \case
-  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
-  X.IntTy -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
-  X.BoolTy -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
-  X.ListTy _ -> throwInternalError "runMainWrite TODO" -- TODO
-  X.TupleTy ts -> do
-    let open = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))]
+  Y.TyInt64 -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  Y.TyBool -> return [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e)]
+  Y.TyVector t -> do
+    let open = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '[')))
+    i <- newFreshName LocalNameKind ""
+    let comma = Y.If (Y.Var i) [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))] Nothing
+    body <- runMainWrite (Y.At e (Y.Var i)) t
+    let body' = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Cast Y.TyInt32 (Y.Call (Y.Method e "size") []))) (Y.AssignIncr (Y.LeftVar i)) (comma : body)
+    let close = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ']')))
+    return [open, body', close]
+  Y.TyArray t n -> do
+    let open = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))
+    i <- newFreshName LocalNameKind ""
+    let comma = Y.If (Y.Var i) [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))] Nothing
+    body <- runMainWrite (Y.At e (Y.Var i)) t
+    let body' = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) (comma : body)
+    let close = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))
+    return [open, body', close]
+  Y.TyTuple ts -> do
+    let open = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))
     stmts <- forM (zip [0 ..] ts) $ \(i, t) -> do
       let comma = if i == 0 then [] else [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))]
       stmts <- runMainWrite (Y.Call (Y.Function "std::get" [Y.TyIntValue i]) [e]) t
       return $ comma ++ stmts
-    let close = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))]
-    return $ open ++ concat stmts ++ close
-  t@X.FunTy {} -> throwInternalError $ "cannot print function: " ++ X.formatType t
+    let close = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))
+    return $ open : concat stmts ++ [close]
+  t -> throwInternalError $ "cannot write outputs of type: " ++ Y.formatType t
 
 runMain :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.ToplevelStatement]
 runMain solve t = do
@@ -328,6 +362,7 @@ runMain solve t = do
     X.FunTy ts ret -> do
       body <- forM ts $ \t -> do
         x <- newFreshName LocalNameKind ""
+        t <- runType t
         stmts <- runMainRead x t
         return (stmts, x)
       let body' = concatMap fst body
@@ -337,6 +372,7 @@ runMain solve t = do
       ret' <- runType ret
       return (body' ++ [Y.Declare ret' ans (Just (Y.Call func args))], ans, ret)
     _ -> return ([], solve, t)
+  t <- runType t
   body' <- runMainWrite (Y.Var ans) t
   let newline = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '\n')))]
   return [Y.FunDef Y.TyInt (Y.VarName "main") [] (body ++ body' ++ newline)]
