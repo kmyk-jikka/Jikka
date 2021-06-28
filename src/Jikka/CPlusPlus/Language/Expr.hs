@@ -31,6 +31,7 @@ data Type
   | TyArray Type Integer
   | TyString
   | TyFunction Type [Type]
+  | TyIntValue Integer
   deriving (Eq, Ord, Show, Read)
 
 data Literal

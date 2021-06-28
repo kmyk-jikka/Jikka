@@ -133,19 +133,19 @@ runAppBuiltin f args = case (f, args) of
   (X.BitLeftShift, [e1, e2]) -> return $ Y.BinOp Y.BitLeftShift e1 e2
   (X.BitRightShift, [e1, e2]) -> return $ Y.BinOp Y.BitRightShift e1 e2
   -- matrix functions
-  (X.MatAp h w, [f, x]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matap<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, x]
-  (X.MatZero n, []) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matzero<" ++ show n ++ ">")) []) []
-  (X.MatOne n, []) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matone<" ++ show n ++ ">")) []) []
-  (X.MatAdd h w, [f, g]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matadd<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, g]
-  (X.MatMul h n w, [f, g]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matmul<" ++ show h ++ ", " ++ show n ++ ", " ++ show w ++ ">")) []) [f, g]
-  (X.MatPow n, [f, k]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::matpow<" ++ show n ++ ">")) []) [f, k]
+  (X.MatAp h w, [f, x]) -> return $ Y.Call (Y.Function "jikka::matap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x]
+  (X.MatZero n, []) -> return $ Y.Call (Y.Function "jikka::matzero" [Y.TyIntValue (fromIntegral n)]) []
+  (X.MatOne n, []) -> return $ Y.Call (Y.Function "jikka::matone" [Y.TyIntValue (fromIntegral n)]) []
+  (X.MatAdd h w, [f, g]) -> return $ Y.Call (Y.Function "jikka::matadd" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g]
+  (X.MatMul h n w, [f, g]) -> return $ Y.Call (Y.Function "jikka::matmul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g]
+  (X.MatPow n, [f, k]) -> return $ Y.Call (Y.Function "jikka::matpow" [Y.TyIntValue (fromIntegral n)]) [f, k]
   -- modular functions
   (X.ModInv, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
   (X.ModPow, [e1, e2, e3]) -> return $ Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
-  (X.ModMatAp h w, [f, x, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatap<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, x, m]
-  (X.ModMatAdd h w, [f, g, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatadd<" ++ show h ++ ", " ++ show w ++ ">")) []) [f, g, m]
-  (X.ModMatMul h n w, [f, g, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatmul<" ++ show h ++ ", " ++ show n ++ ", " ++ show w ++ ">")) []) [f, g, m]
-  (X.ModMatPow n, [f, k, m]) -> return $ Y.Call (Y.Function (Y.FunName ("jikka::modmatpow<" ++ show n ++ ">")) []) [f, k, m]
+  (X.ModMatAp h w, [f, x, m]) -> return $ Y.Call (Y.Function "jikka::modmatap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x, m]
+  (X.ModMatAdd h w, [f, g, m]) -> return $ Y.Call (Y.Function "jikka::modmatadd" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g, m]
+  (X.ModMatMul h n w, [f, g, m]) -> return $ Y.Call (Y.Function "jikka::modmatmul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g, m]
+  (X.ModMatPow n, [f, k, m]) -> return $ Y.Call (Y.Function "jikka::modmatpow" [Y.TyIntValue (fromIntegral n)]) [f, k, m]
   -- list functions
   (X.Cons t, [e1, e2]) -> do
     t <- runType t
@@ -213,7 +213,7 @@ runAppBuiltin f args = case (f, args) of
     return $
       if not (null ts) && ts == replicate (length ts) (head ts)
         then Y.At e (Y.Lit (Y.LitInt32 (fromIntegral n)))
-        else Y.Call (Y.Function (Y.FunName ("std::get<" ++ show n ++ ">")) []) [e]
+        else Y.Call (Y.Function "std::get" [Y.TyIntValue (fromIntegral n)]) [e]
   -- comparison
   (X.LessThan _, [e1, e2]) -> return $ Y.BinOp Y.LessThan e1 e2
   (X.LessEqual _, [e1, e2]) -> return $ Y.BinOp Y.LessEqual e1 e2
@@ -316,7 +316,7 @@ runMainWrite e = \case
     let open = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar '(')))]
     stmts <- forM (zip [0 ..] ts) $ \(i, t) -> do
       let comma = if i == 0 then [] else [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitString ", ")))]
-      stmts <- runMainWrite (Y.Call (Y.Function (Y.FunName ("std::get<" ++ show i ++ ">")) []) [e]) t
+      stmts <- runMainWrite (Y.Call (Y.Function "std::get" [Y.TyIntValue i]) [e]) t
       return $ comma ++ stmts
     let close = [Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") (Y.Lit (Y.LitChar ')')))]
     return $ open ++ concat stmts ++ close

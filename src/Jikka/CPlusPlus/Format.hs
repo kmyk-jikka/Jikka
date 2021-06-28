@@ -181,6 +181,7 @@ formatType = \case
   TyArray t n -> "std::array<" ++ formatType t ++ ", " ++ show n ++ ">"
   TyString -> "std::string"
   TyFunction t ts -> "std::function<" ++ formatType t ++ " (" ++ intercalate ", " (map formatType ts) ++ ")>"
+  TyIntValue n -> show n
 
 formatLiteral :: Literal -> Code
 formatLiteral = \case
