@@ -38,8 +38,8 @@ withScope f = do
   put env
   return x
 
-runVarName :: X.VarName -> Y.VarName
-runVarName (X.VarName x) = Y.VarName x
+runVarName :: X.VarName' -> Y.VarName
+runVarName (X.WithLoc' _ (X.VarName x)) = Y.VarName x
 
 runType :: X.Type -> Y.Type
 runType = \case
@@ -251,10 +251,10 @@ runForStatement x iter body cont = do
   let (_, X.WriteList w) = X.analyzeStatementsMax body
   ys <- filterM isDefinedVar w
   ts <- replicateM (length ys) Y.genType
-  let init = Y.Tuple' ts (map (Y.Var . runVarName) ys)
-  let write cont = foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
+  let init = Y.Tuple' ts (map (Y.Var . runVarName . X.WithLoc' Nothing) ys)
+  let write cont = foldr (\(i, y, t) -> Y.Let (runVarName $ X.WithLoc' Nothing y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
   body <- runAssign x (Y.Var x') $ do
-    runStatements (body ++ [X.Return (X.Tuple (map X.Name ys))])
+    runStatements (body ++ [X.Return (X.Tuple (map (X.Name . X.WithLoc' Nothing) ys))])
   let loop init = Y.Foldl' tx (Y.TupleTy ts) (Y.Lam [(z, Y.TupleTy ts), (x', tx)] (write body)) init iter
   cont <- runStatements cont
   return $ Y.Let z (Y.TupleTy ts) (loop init) (write cont)
@@ -284,10 +284,10 @@ runIfStatement e body1 body2 cont = do
       let (_, X.WriteList w1) = X.analyzeStatementsMin body1
       let (_, X.WriteList w2) = X.analyzeStatementsMin body2
       let w = w1 `intersect` w2
-      let read = X.Tuple (map X.Name w)
+      let read = X.Tuple (map (X.Name . X.WithLoc' Nothing) w)
       ts <- replicateM (length w) Y.genType
       z <- Y.genVarName'
-      let write value cont = Y.Let z (Y.TupleTy ts) value (foldr (\(i, y, t) -> Y.Let (runVarName y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] w ts))
+      let write value cont = Y.Let z (Y.TupleTy ts) value (foldr (\(i, y, t) -> Y.Let (runVarName (X.WithLoc' Nothing y)) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] w ts))
       body1 <- runStatements (body1 ++ [X.Return read])
       body2 <- runStatements (body2 ++ [X.Return read])
       cont <- runStatements cont
@@ -321,13 +321,13 @@ runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
 runToplevelStatements (stmt : stmts) = case stmt of
   X.ToplevelAnnAssign x t e -> do
     e <- runExpr e
-    defineVar x
+    defineVar (X.value' x)
     cont <- runToplevelStatements stmts
     return $ Y.ToplevelLet (runVarName x) (runType t) e cont
   X.ToplevelFunctionDef f args ret body -> do
-    defineVar f
+    defineVar (X.value' f)
     body <- withScope $ do
-      mapM_ (defineVar . fst) args
+      mapM_ (defineVar . X.value' . fst) args
       runStatements body
     cont <- runToplevelStatements stmts
     return $ Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) body cont

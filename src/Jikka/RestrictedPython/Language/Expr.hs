@@ -26,6 +26,8 @@ module Jikka.RestrictedPython.Language.Expr
     -- * exprs
     VarName (..),
     unVarName,
+    module Jikka.Common.Location,
+    VarName',
     Expr (..),
     Comprehension (..),
 
@@ -38,12 +40,15 @@ module Jikka.RestrictedPython.Language.Expr
 where
 
 import Data.String (IsString)
+import Jikka.Common.Location
 import Jikka.Python.Language.Expr (BoolOp (..), CmpOp (..), Operator (..), UnaryOp (..))
 
 newtype VarName = VarName String deriving (Eq, Ord, Show, Read, IsString)
 
 unVarName :: VarName -> String
 unVarName (VarName x) = x
+
+type VarName' = WithLoc' VarName
 
 newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, IsString)
 
@@ -175,7 +180,7 @@ data Builtin
 -- \]
 data Target
   = SubscriptTrg Target Expr
-  | NameTrg VarName
+  | NameTrg VarName'
   | TupleTrg [Target]
   deriving (Eq, Ord, Show, Read)
 
@@ -210,14 +215,14 @@ data Expr
   = BoolOp Expr BoolOp Expr
   | BinOp Expr Operator Expr
   | UnaryOp UnaryOp Expr
-  | Lambda [(VarName, Type)] Expr
+  | Lambda [(VarName', Type)] Expr
   | IfExp Expr Expr Expr
   | ListComp Expr Comprehension
   | Compare Expr CmpOp' Expr
   | Call Expr [Expr]
   | Constant Constant
   | Subscript Expr Expr
-  | Name VarName
+  | Name VarName'
   | List Type [Expr]
   | Tuple [Expr]
   | SubscriptSlice Expr (Maybe Expr) (Maybe Expr) (Maybe Expr)
@@ -256,8 +261,8 @@ data Statement
 --     \end{array}
 -- \]
 data ToplevelStatement
-  = ToplevelAnnAssign VarName Type Expr
-  | ToplevelFunctionDef VarName [(VarName, Type)] Type [Statement]
+  = ToplevelAnnAssign VarName' Type Expr
+  | ToplevelFunctionDef VarName' [(VarName', Type)] Type [Statement]
   | ToplevelAssert Expr
   deriving (Eq, Ord, Show, Read)
 

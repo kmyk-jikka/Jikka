@@ -14,7 +14,9 @@ module Jikka.RestrictedPython.Language.Util
     -- * free variables
     freeTyVars,
     freeVars,
+    freeVars',
     freeVarsTarget,
+    freeVarsTarget',
 
     -- * return-statements
     doesAlwaysReturn,
@@ -45,6 +47,7 @@ module Jikka.RestrictedPython.Language.Util
 
     -- * targets
     targetVars,
+    targetVars',
     hasSubscriptTrg,
     hasBareNameTrg,
 
@@ -69,11 +72,11 @@ genType = do
   i <- nextCounter
   return $ VarTy (TypeName ('$' : show i))
 
-genVarName :: MonadAlpha m => VarName -> m VarName
+genVarName :: MonadAlpha m => VarName' -> m VarName'
 genVarName x = do
   i <- nextCounter
-  let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
-  return $ VarName (base ++ '$' : show i)
+  let base = if unVarName (value' x) == "_" then "" else takeWhile (/= '$') (unVarName (value' x))
+  return $ WithLoc' (loc' x) (VarName (base ++ '$' : show i))
 
 constIntExp :: Integer -> Expr
 constIntExp = Constant . ConstInt
@@ -95,32 +98,37 @@ freeTyVars = nub . go
       TupleTy ts -> concat $ mapM go ts
       CallableTy ts ret -> concat $ mapM go (ret : ts)
 
+-- | `freeVars'` reports all free variables.
 freeVars :: Expr -> [VarName]
-freeVars = nub . go
-  where
-    go = \case
-      BoolOp e1 _ e2 -> go e1 ++ go e2
-      BinOp e1 _ e2 -> go e1 ++ go e2
-      UnaryOp _ e -> go e
-      Lambda args e -> foldl (\vars (x, _) -> delete x vars) (go e) args
-      IfExp e1 e2 e3 -> go e1 ++ go e2 ++ go e3
-      ListComp e (Comprehension x iter pred) -> go iter ++ foldl (\vars x -> delete x vars) (go e ++ concatMap go pred) (targetVars x)
-      Compare e1 _ e2 -> go e1 ++ go e2
-      Call f args -> concatMap go (f : args)
-      Constant _ -> []
-      Subscript e1 e2 -> go e1 ++ go e2
-      Name x -> [x]
-      List _ es -> concatMap go es
-      Tuple es -> concatMap go es
-      SubscriptSlice e from to step -> go e ++ concatMap go from ++ concatMap go to ++ concatMap go step
+freeVars = nub . map value' . freeVars'
+
+-- | `freeVars'` reports all free variables with their locations, i.e. occurrences.
+-- For examples, @x + x@ and @x@ have the same free variables @x@ but they have different sets of occurrences of free variable.
+freeVars' :: Expr -> [VarName']
+freeVars' = \case
+  BoolOp e1 _ e2 -> freeVars' e1 ++ freeVars' e2
+  BinOp e1 _ e2 -> freeVars' e1 ++ freeVars' e2
+  UnaryOp _ e -> freeVars' e
+  Lambda args e -> foldl (\vars (x, _) -> delete x vars) (freeVars' e) args
+  IfExp e1 e2 e3 -> freeVars' e1 ++ freeVars' e2 ++ freeVars' e3
+  ListComp e (Comprehension x iter pred) -> freeVars' iter ++ foldl (\vars x -> delete x vars) (freeVars' e ++ concatMap freeVars' pred) (targetVars' x)
+  Compare e1 _ e2 -> freeVars' e1 ++ freeVars' e2
+  Call f args -> concatMap freeVars' (f : args)
+  Constant _ -> []
+  Subscript e1 e2 -> freeVars' e1 ++ freeVars' e2
+  Name x -> [x]
+  List _ es -> concatMap freeVars' es
+  Tuple es -> concatMap freeVars' es
+  SubscriptSlice e from to step -> freeVars' e ++ concatMap freeVars' from ++ concatMap freeVars' to ++ concatMap freeVars' step
 
 freeVarsTarget :: Target -> [VarName]
-freeVarsTarget = nub . go
-  where
-    go = \case
-      SubscriptTrg _ e -> freeVars e
-      NameTrg _ -> []
-      TupleTrg xs -> concatMap go xs
+freeVarsTarget = nub . map value' . freeVarsTarget'
+
+freeVarsTarget' :: Target -> [VarName']
+freeVarsTarget' = \case
+  SubscriptTrg _ e -> freeVars' e
+  NameTrg _ -> []
+  TupleTrg xs -> concatMap freeVarsTarget' xs
 
 doesAlwaysReturn :: Statement -> Bool
 doesAlwaysReturn = \case
@@ -296,12 +304,13 @@ isSmallExpr :: Expr -> Bool
 isSmallExpr = not . hasFunctionCall
 
 targetVars :: Target -> [VarName]
-targetVars = nub . go
-  where
-    go = \case
-      SubscriptTrg x _ -> go x
-      NameTrg x -> [x]
-      TupleTrg xs -> concatMap go xs
+targetVars = nub . map value' . targetVars'
+
+targetVars' :: Target -> [VarName']
+targetVars' = \case
+  SubscriptTrg x _ -> targetVars' x
+  NameTrg x -> [x]
+  TupleTrg xs -> concatMap targetVars' xs
 
 hasSubscriptTrg :: Target -> Bool
 hasSubscriptTrg = \case
@@ -316,7 +325,7 @@ hasBareNameTrg = \case
   TupleTrg xs -> any hasSubscriptTrg xs
 
 toplevelMainDef :: [Statement] -> Program
-toplevelMainDef body = [ToplevelFunctionDef (VarName "main") [] IntTy body]
+toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]
 
 readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr
 readValueIO = \case

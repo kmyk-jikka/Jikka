@@ -20,6 +20,7 @@ module Jikka.RestrictedPython.Evaluate
   )
 where
 
+import Control.Arrow (first)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Data.Bits
@@ -34,12 +35,12 @@ import Jikka.RestrictedPython.Language.Value
 assign :: MonadState Local m => VarName -> Value -> m ()
 assign x v = modify' (Local . M.insert x v . unLocal)
 
-lookupLocal :: (MonadState Local m, MonadError Error m) => VarName -> m Value
+lookupLocal :: (MonadState Local m, MonadError Error m) => VarName' -> m Value
 lookupLocal x = do
   local <- get
-  case M.lookup x (unLocal local) of
+  case M.lookup (value' x) (unLocal local) of
     Just v -> return v
-    Nothing -> throwRuntimeError $ "undefined variable: " ++ unVarName x
+    Nothing -> maybe id wrapAt (loc' x) . throwRuntimeError $ "undefined variable: " ++ unVarName (value' x)
 
 assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Expr -> Value -> m ()
 assignSubscriptedTarget f index v = do
@@ -59,7 +60,7 @@ assignSubscriptedTarget f index v = do
           return $ ListVal (f V.// [(fromInteger index, v')])
         (_, _) -> throwRuntimeError "type error"
   f <- go f indices
-  assign x f
+  assign (value' x) f
 
 assignTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target -> Value -> m ()
 assignTarget trg v = do
@@ -67,7 +68,7 @@ assignTarget trg v = do
     SubscriptTrg f index -> do
       assignSubscriptedTarget f index v
     NameTrg x -> do
-      assign x v
+      assign (value' x) v
     TupleTrg xs -> do
       case v of
         TupleVal vs -> do
@@ -195,7 +196,7 @@ evalExpr = \case
       (_, _) -> throwRuntimeError "type error"
   Lambda args body -> do
     savedLocal <- get
-    return $ ClosureVal savedLocal args [Return body]
+    return $ ClosureVal savedLocal (map (first value') args) [Return body]
   IfExp e1 e2 e3 -> do
     v1 <- evalExpr e1
     case v1 of
@@ -238,11 +239,11 @@ evalExpr = \case
       _ -> throwRuntimeError "type error"
   Name x -> do
     local <- get
-    case M.lookup x (unLocal local) of
+    case M.lookup (value' x) (unLocal local) of
       Just v -> return v
       Nothing -> do
         global <- ask
-        case M.lookup x (unGlobal global) of
+        case M.lookup (value' x) (unGlobal global) of
           Just v -> return v
           Nothing -> throwRuntimeError $ "undefined variable: " ++ show x
   List _ es -> ListVal . V.fromList <$> mapM evalExpr es
@@ -457,11 +458,11 @@ execToplevelStatement = \case
   ToplevelAnnAssign x _ e -> do
     global <- get
     v <- runWithGlobal global e
-    put $ Global (M.insert x v (unGlobal global))
+    put $ Global (M.insert (value' x) v (unGlobal global))
   ToplevelFunctionDef f args _ body -> do
     global <- get
-    let v = ClosureVal (Local M.empty) args body
-    put $ Global (M.insert f v (unGlobal global))
+    let v = ClosureVal (Local M.empty) (map (first value') args) body
+    put $ Global (M.insert (value' f) v (unGlobal global))
   ToplevelAssert e -> do
     global <- get
     v <- runWithGlobal global e

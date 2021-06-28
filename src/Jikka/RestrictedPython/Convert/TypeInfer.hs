@@ -37,7 +37,7 @@ import Jikka.RestrictedPython.Language.Util
 
 data Equation
   = TypeEquation Type Type
-  | TypeAssertion VarName Type
+  | TypeAssertion VarName' Type
   deriving (Eq, Ord, Show, Read)
 
 type Eqns = Dual [Equation]
@@ -45,7 +45,7 @@ type Eqns = Dual [Equation]
 formularizeType :: MonadWriter Eqns m => Type -> Type -> m ()
 formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
 
-formularizeVarName :: MonadWriter Eqns m => VarName -> Type -> m ()
+formularizeVarName :: MonadWriter Eqns m => VarName' -> Type -> m ()
 formularizeVarName x t = tell $ Dual [TypeAssertion x t]
 
 formularizeTarget :: (MonadWriter Eqns m, MonadAlpha m) => Target -> m Type
@@ -194,7 +194,7 @@ formularizeToplevelStatement = \case
 formularizeProgram :: MonadAlpha m => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (mapM_ formularizeToplevelStatement prog)
 
-sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
+sortEquations :: [Equation] -> ([(Type, Type)], [(VarName', Type)])
 sortEquations = go [] []
   where
     go eqns' assertions [] = (eqns', assertions)
@@ -202,7 +202,7 @@ sortEquations = go [] []
       TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
       TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
-mergeAssertions :: [(VarName, Type)] -> [(Type, Type)]
+mergeAssertions :: [(VarName', Type)] -> [(Type, Type)]
 mergeAssertions = go M.empty []
   where
     go _ eqns [] = eqns

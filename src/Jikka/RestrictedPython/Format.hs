@@ -96,7 +96,7 @@ formatComprehension (Comprehension x iter ifs) =
 formatTarget :: Target -> String
 formatTarget = \case
   SubscriptTrg x e -> formatTarget x ++ "[" ++ formatExpr e ++ "]"
-  NameTrg x -> unVarName x
+  NameTrg x -> unVarName (value' x)
   TupleTrg xs -> case xs of
     [] -> "()"
     [x] -> "(" ++ formatTarget x ++ ",)"
@@ -109,7 +109,7 @@ formatExpr = \case
   UnaryOp op e -> formatUnaryOp op ++ " " ++ formatExpr e
   Lambda args body -> case args of
     [] -> "lambda: " ++ formatExpr body
-    _ -> "lambda " ++ intercalate ", " (map (unVarName . fst) args) ++ ": " ++ formatExpr body
+    _ -> "lambda " ++ intercalate ", " (map (unVarName . value' . fst) args) ++ ": " ++ formatExpr body
   IfExp e1 e2 e3 -> formatExpr e2 ++ " if " ++ formatExpr e1 ++ " else " ++ formatExpr e3
   ListComp e comp -> "[" ++ formatExpr e ++ " " ++ formatComprehension comp ++ "]"
   Compare e1 op e2 -> formatExpr e1 ++ " " ++ formatCmpOp op ++ " " ++ formatExpr e2
@@ -118,7 +118,7 @@ formatExpr = \case
     _ -> formatExpr f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
   Constant const -> formatConstant const
   Subscript e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
-  Name x -> unVarName x
+  Name x -> unVarName (value' x)
   List _ es -> "[" ++ intercalate ", " (map formatExpr es) ++ "]"
   Tuple es -> case es of
     [] -> "()"
@@ -146,8 +146,8 @@ formatStatement = \case
 
 formatToplevelStatement :: ToplevelStatement -> [String]
 formatToplevelStatement = \case
-  ToplevelAnnAssign x t e -> [unVarName x ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
-  ToplevelFunctionDef f args ret body -> ["def " ++ unVarName f ++ "(" ++ intercalate ", " (map (\(x, t) -> unVarName x ++ ": " ++ formatType t) args) ++ ") -> " ++ formatType ret ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
+  ToplevelAnnAssign x t e -> [unVarName (value' x) ++ ": " ++ formatType t ++ " = " ++ formatExpr e]
+  ToplevelFunctionDef f args ret body -> ["def " ++ unVarName (value' f) ++ "(" ++ intercalate ", " (map (\(x, t) -> unVarName (value' x) ++ ": " ++ formatType t) args) ++ ") -> " ++ formatType ret ++ ":", indent] ++ concatMap formatStatement body ++ [dedent]
   ToplevelAssert e -> ["assert " ++ formatExpr e]
 
 formatProgram :: Program -> [String]

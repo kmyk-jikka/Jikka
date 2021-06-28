@@ -254,7 +254,7 @@ hasNonResolvedBuiltin = any check . listExprs
   where
     check = any check' . listSubExprs
     check' = \case
-      Name x | x `S.member` builtinNames -> True
+      Name x | value' x `S.member` builtinNames -> True
       _ -> False
 
 doesntHaveNonResolvedBuiltin :: Program -> Bool

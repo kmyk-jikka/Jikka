@@ -17,8 +17,8 @@ import qualified Jikka.RestrictedPython.Language.Util as Y (genType)
 -- ---------------------------------------------------------------------------
 -- convert AST
 
-runIdent :: X.Ident' -> Y.VarName
-runIdent (WithLoc _ (X.Ident x)) = Y.VarName x
+runIdent :: X.Ident' -> Y.VarName'
+runIdent (WithLoc loc (X.Ident x)) = WithLoc' (Just loc) (Y.VarName x)
 
 runType :: (MonadAlpha m, MonadError Error m) => X.Type' -> m Y.Type
 runType t = wrapAt (loc t) $ case value t of
@@ -50,7 +50,7 @@ runConstant = \case
   X.ConstBool p -> return $ Y.ConstBool p
   e -> throwSemanticError ("unsupported constant: " ++ show e)
 
-runTargetName :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.VarName
+runTargetName :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.VarName'
 runTargetName e = case value e of
   X.Name x -> return $ runIdent x
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
@@ -62,7 +62,7 @@ runTarget e = case value e of
   X.Tuple es -> Y.TupleTrg <$> mapM runTarget es
   _ -> throwSemanticErrorAt (loc e) ("not an assignment target: " ++ show e)
 
-runTargetIdent :: MonadError Error m => X.Expr' -> m Y.VarName
+runTargetIdent :: MonadError Error m => X.Expr' -> m Y.VarName'
 runTargetIdent e = case value e of
   X.Name x -> return $ runIdent x
   _ -> throwSemanticErrorAt (loc e) ("not an simple assignment target: " ++ show e)
@@ -76,7 +76,7 @@ runComprehension = \case
     return $ Y.Comprehension x iter ifs
   comp -> throwSemanticError ("many comprehensions are unsupported: " ++ show comp)
 
-runArguments :: (MonadAlpha m, MonadError Error m) => X.Arguments -> m [(Y.VarName, Y.Type)]
+runArguments :: (MonadAlpha m, MonadError Error m) => X.Arguments -> m [(Y.VarName', Y.Type)]
 runArguments = \case
   X.Arguments
     { X.argsPosonlyargs = [],

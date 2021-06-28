@@ -62,12 +62,6 @@ analyzeStatementsGeneric isMax = go [] []
        in go (r' ++ r) (w' ++ w) stmts
 
 -- | `analyzeStatementMax` returns lists of variables which are possibly read or written in given statements.
---
--- >>> analyzeStatementMax (AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x")))
--- (ReadList [VarName "x"],WriteList [VarName "y"])
---
--- >>> analyzeStatementMax (If (Constant (ConstBool True)) [AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x"))] [])
--- (ReadList [VarName "x"],WriteList [VarName "y"])
 analyzeStatementMax :: Statement -> (ReadList, WriteList)
 analyzeStatementMax = analyzeStatementGeneric True
 
@@ -75,12 +69,6 @@ analyzeStatementsMax :: [Statement] -> (ReadList, WriteList)
 analyzeStatementsMax = analyzeStatementsGeneric True
 
 -- | `analyzeStatementMin` returns lists of variables which are always read or written in given statements.
---
--- >>> analyzeStatementMin (AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x")))
--- (ReadList [VarName "x"],WriteList [VarName "y"])
---
--- >>> analyzeStatementMin (If (Constant (ConstBool True)) [AnnAssign (NameTrg (VarName "y")) IntTy (Name (VarName "x"))] [])
--- (ReadList [],WriteList [])
 analyzeStatementMin :: Statement -> (ReadList, WriteList)
 analyzeStatementMin = analyzeStatementGeneric False
 

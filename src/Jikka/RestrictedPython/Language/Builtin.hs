@@ -60,11 +60,11 @@ additionalBuiltinNames =
 -- | `resolveUniqueBuiltin` makes a builtin function from a variable name.
 -- However, this doesn't anything for ambiguous builtin functions.
 -- For example, the builtin function "max" is kept as a variable because it may be \(\mathbf{list}(\alpha) \to \alpha\), \(\alpha \times \alpha \to \alpha\), etc. and this function cannot resolve it.
-resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName -> m Expr
-resolveUniqueBuiltin x | x `S.notMember` builtinNames = return $ Name x
+resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> m Expr
+resolveUniqueBuiltin x | value' x `S.notMember` builtinNames = return $ Name x
 resolveUniqueBuiltin x = do
   let f = return . Constant . ConstBuiltin
-  case x of
+  case value' x of
     "abs" -> f BuiltinAbs
     "all" -> f BuiltinAll
     "any" -> f BuiltinAny
@@ -94,13 +94,13 @@ resolveUniqueBuiltin x = do
     "product" -> f BuiltinProduct
     _ -> return $ Name x
 
-resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName -> Int -> m Expr
-resolveBuiltin x _ | x `S.notMember` builtinNames = return $ Name x
-resolveBuiltin x n = do
+resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> Int -> m Expr
+resolveBuiltin x _ | value' x `S.notMember` builtinNames = return $ Name x
+resolveBuiltin x n = maybe id wrapAt (loc' x) $ do
   let f = return . Constant . ConstBuiltin
   when (n < 0) $ do
     throwInternalError "parseBuiltin with negative arity"
-  case x of
+  case value' x of
     "map" -> f =<< (BuiltinMap <$> replicateM (n - 1) genType <*> genType)
     "max" -> case n of
       1 -> f . BuiltinMax1 =<< genType

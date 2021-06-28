@@ -16,6 +16,9 @@ import Test.Hspec
 at :: a -> Int -> WithLoc a
 at a x = WithLoc (Loc 0 x (-1)) a
 
+at' :: a -> Int -> WithLoc' a
+at' a x = WithLoc' (Just (Loc 0 x (-1))) a
+
 run' :: X.Program -> Either Error Y.Program
 run' = flip evalAlphaT 0 . run
 
@@ -34,10 +37,10 @@ spec = describe "run" $ do
           ]
     let expected =
           [ Y.ToplevelFunctionDef
-              "solve"
-              [("x", Y.VarTy "$0")]
+              ("solve" `at'` 6)
+              [("x" `at'` 7, Y.VarTy "$0")]
               Y.IntTy
-              [ Y.AnnAssign (Y.NameTrg "y") (Y.VarTy "$1") (Y.Name "x")
+              [ Y.AnnAssign (Y.NameTrg ("y" `at'` 8)) (Y.VarTy "$1") (Y.Name ("x" `at'` 3))
               ]
           ]
     run' parsed `shouldBe` Right expected
@@ -54,10 +57,10 @@ spec = describe "run" $ do
           ]
     let expected =
           [ Y.ToplevelFunctionDef
-              "f"
-              [("x", Y.VarTy "$0")]
+              ("f" `at'` 6)
+              [("x" `at'` 7, Y.VarTy "$0")]
               (Y.VarTy "$1")
-              [ Y.Return (Y.Call (Y.Name "f") [Y.Name "x"])
+              [ Y.Return (Y.Call (Y.Name ("f" `at'` 8)) [Y.Name ("x" `at'` 4)])
               ]
           ]
     run' parsed `shouldBe` Right expected
