@@ -206,6 +206,12 @@ instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Contr
 instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT s m)
 instance (Jikka.Common.Alpha.MonadAlpha m, GHC.Base.Monoid w) => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Writer.Strict.WriterT w m)
 
+module Jikka.Common.Combinatorics
+fact :: Integral a => a -> a
+choose :: Integral a => a -> a -> a
+permute :: Integral a => a -> a -> a
+multichoose :: Integral a => a -> a -> a
+
 module Jikka.Common.Format.AutoIndent
 indent :: String
 dedent :: String
@@ -1192,11 +1198,12 @@ valueToModVector :: MonadError Error m => Integer -> Value -> m (Vector ModInt)
 valueToModMatrix :: MonadError Error m => Integer -> Value -> m (Matrix ModInt)
 valueFromModVector :: Vector ModInt -> Value
 valueFromModMatrix :: Matrix ModInt -> Value
+compareValues :: Value -> Value -> Maybe Ordering
+compareValues' :: Value -> Value -> Ordering
 formatValue :: Value -> String
 writeValueIO :: Value -> IO ()
 instance GHC.Read.Read Jikka.Core.Language.Value.Value
 instance GHC.Show.Show Jikka.Core.Language.Value.Value
-instance GHC.Classes.Ord Jikka.Core.Language.Value.Value
 instance GHC.Classes.Eq Jikka.Core.Language.Value.Value
 
 
@@ -2363,6 +2370,7 @@ BuiltinVal :: Builtin -> Value
 newtype Local
 Local :: Map VarName Value -> Local
 [unLocal] :: Local -> Map VarName Value
+toList :: MonadError Error m => Value -> m (Vector Value)
 toIntList :: Vector Value -> Maybe (Vector Integer)
 toIntList' :: MonadError Error m => Vector Value -> m (Vector Integer)
 toBoolList' :: MonadError Error m => Vector Value -> m (Vector Bool)
@@ -2838,7 +2846,7 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 --   let (a, b) = foldl (fun (a, b) i -&gt; (b, a + b)) (a, b) (range n)
 --   in ...
 --   </pre>
-runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> Expr' -> [Statement] -> [Statement] -> m Expr
+runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> Expr' -> [Statement] -> [Statement] -> [[Statement]] -> m Expr
 
 -- | <a>runIfStatement</a> converts if-loops to if-exprs.
 --   
@@ -2860,7 +2868,7 @@ runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Targe
 --   let (a, c) = if true then (0, 3) else (1, 10)
 --   in ...
 --   </pre>
-runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr' -> [Statement] -> [Statement] -> [Statement] -> m Expr
+runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr' -> [Statement] -> [Statement] -> [Statement] -> [[Statement]] -> m Expr
 
 module Jikka.RestrictedPython.Convert.Alpha
 
