@@ -216,10 +216,28 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
         put savedLocal
         return $ ListVal (V.catMaybes vs)
       _ -> throwRuntimeError "type error"
-  Compare e1 _ e2 -> do
+  Compare e1 op e2 -> do
     v1 <- evalExpr e1
     v2 <- evalExpr e2
-    return $ BoolVal (v1 == v2)
+    case op of
+      CmpOp' In _ -> do
+        v2 <- toList v2
+        return $ BoolVal (v1 `V.elem` v2)
+      CmpOp' NotIn _ -> do
+        v2 <- toList v2
+        return $ BoolVal (v1 `V.elem` v2)
+      CmpOp' op _ -> do
+        ordering <- maybe (throwInternalError "something wrong") return (compareValues v1 v2)
+        BoolVal <$> case op of
+          Eq' -> return $ ordering == EQ
+          NotEq -> return $ ordering /= EQ
+          Lt -> return $ ordering == LT
+          LtE -> return $ ordering /= GT
+          Gt -> return $ ordering == GT
+          GtE -> return $ ordering /= LT
+          Is -> return $ ordering == EQ
+          IsNot -> return $ ordering /= EQ
+          _ -> throwInternalError "something wrong"
   Call f args -> evalCall f args
   Constant const ->
     return $ case const of
