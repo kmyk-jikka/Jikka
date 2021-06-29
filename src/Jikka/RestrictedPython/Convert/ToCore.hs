@@ -12,7 +12,7 @@ where
 
 import Control.Arrow ((***))
 import Control.Monad.State.Strict
-import Data.List (intersect)
+import Data.List (intersect, union)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Location
@@ -243,8 +243,8 @@ runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
 --
 -- > let (a, b) = foldl (fun (a, b) i -> (b, a + b)) (a, b) (range n)
 -- > in ...
-runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Target' -> X.Expr' -> [X.Statement] -> [X.Statement] -> m Y.Expr
-runForStatement x iter body cont = do
+runForStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Target' -> X.Expr' -> [X.Statement] -> [X.Statement] -> [[X.Statement]] -> m Y.Expr
+runForStatement x iter body cont conts = do
   tx <- Y.genType
   iter <- runExpr iter
   x' <- Y.genVarName'
@@ -255,9 +255,9 @@ runForStatement x iter body cont = do
   let init = Y.Tuple' ts (map (Y.Var . runVarName . withoutLoc) ys)
   let write cont = foldr (\(i, y, t) -> Y.Let (runVarName $ X.WithLoc' Nothing y) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] ys ts)
   body <- runAssign x (Y.Var x') $ do
-    runStatements (body ++ [X.Return (withoutLoc (X.Tuple (map (withoutLoc . X.Name . withoutLoc) ys)))])
+    runStatements (body ++ [X.Return (withoutLoc (X.Tuple (map (withoutLoc . X.Name . withoutLoc) ys)))]) (cont : conts)
   let loop init = Y.Foldl' tx (Y.TupleTy ts) (Y.Lam [(z, Y.TupleTy ts), (x', tx)] (write body)) init iter
-  cont <- runStatements cont
+  cont <- runStatements cont conts
   return $ Y.Let z (Y.TupleTy ts) (loop init) (write cont)
 
 -- | `runIfStatement` converts if-loops to if-exprs.
@@ -276,46 +276,47 @@ runForStatement x iter body cont = do
 --
 -- > let (a, c) = if true then (0, 3) else (1, 10)
 -- > in ...
-runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Expr' -> [X.Statement] -> [X.Statement] -> [X.Statement] -> m Y.Expr
-runIfStatement e body1 body2 cont = do
+runIfStatement :: (MonadState Env m, MonadAlpha m, MonadError Error m) => X.Expr' -> [X.Statement] -> [X.Statement] -> [X.Statement] -> [[X.Statement]] -> m Y.Expr
+runIfStatement e body1 body2 cont conts = do
   e <- runExpr e
   t <- Y.genType
   case (any X.doesAlwaysReturn body1, any X.doesAlwaysReturn body2) of
     (False, False) -> do
       let (_, X.WriteList w1) = X.analyzeStatementsMin body1
       let (_, X.WriteList w2) = X.analyzeStatementsMin body2
-      let w = w1 `intersect` w2
+      let (X.ReadList r, _) = X.analyzeStatementsMax (concat (cont : conts))
+      let w = (r `intersect` w1) `union` (r `intersect` w2)
       let read = withoutLoc (X.Tuple (map (withoutLoc . X.Name . withoutLoc) w))
       ts <- replicateM (length w) Y.genType
       z <- Y.genVarName'
       let write value cont = Y.Let z (Y.TupleTy ts) value (foldr (\(i, y, t) -> Y.Let (runVarName (withoutLoc y)) t (Y.Proj' ts i (Y.Var z))) cont (zip3 [0 ..] w ts))
-      body1 <- runStatements (body1 ++ [X.Return read])
-      body2 <- runStatements (body2 ++ [X.Return read])
-      cont <- runStatements cont
+      body1 <- runStatements (body1 ++ [X.Return read]) (cont : conts)
+      body2 <- runStatements (body2 ++ [X.Return read]) (cont : conts)
+      cont <- runStatements cont conts
       return $ write (Y.AppBuiltin (Y.If t) [e, body1, body2]) cont
-    (False, True) -> Y.If' t e <$> runStatements (body1 ++ cont) <*> runStatements body2
-    (True, False) -> Y.If' t e <$> runStatements body1 <*> runStatements (body2 ++ cont)
-    (True, True) -> Y.If' t e <$> runStatements body1 <*> runStatements body2
+    (False, True) -> Y.If' t e <$> runStatements (body1 ++ cont) conts <*> runStatements body2 []
+    (True, False) -> Y.If' t e <$> runStatements body1 [] <*> runStatements (body2 ++ cont) conts
+    (True, True) -> Y.If' t e <$> runStatements body1 [] <*> runStatements body2 []
 
-runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.Statement] -> m Y.Expr
-runStatements [] = throwSemanticError "function may not return"
-runStatements (stmt : stmts) = case stmt of
+runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.Statement] -> [[X.Statement]] -> m Y.Expr
+runStatements [] _ = throwSemanticError "function may not return"
+runStatements (stmt : stmts) cont = case stmt of
   X.Return e -> runExpr e
   X.AugAssign x op e -> do
     y <- runTargetExpr x
     op <- Y.Lit . Y.LitBuiltin <$> runOperator op
     e <- runExpr e
     runAssign x (Y.App op [y, e]) $ do
-      runStatements stmts
+      runStatements stmts cont
   X.AnnAssign x _ e -> do
     e <- runExpr e
     runAssign x e $ do
       withScope $ do
         mapM_ defineVar (X.targetVars x)
-        runStatements stmts
-  X.For x iter body -> runForStatement x iter body stmts
-  X.If e body1 body2 -> runIfStatement e body1 body2 stmts
-  X.Assert _ -> runStatements stmts
+        runStatements stmts cont
+  X.For x iter body -> runForStatement x iter body stmts cont
+  X.If e body1 body2 -> runIfStatement e body1 body2 stmts cont
+  X.Assert _ -> runStatements stmts cont
 
 runToplevelStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
 runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
@@ -329,7 +330,7 @@ runToplevelStatements (stmt : stmts) = case stmt of
     defineVar (X.value' f)
     body <- withScope $ do
       mapM_ (defineVar . X.value' . fst) args
-      runStatements body
+      runStatements body []
     cont <- runToplevelStatements stmts
     return $ Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) body cont
   X.ToplevelAssert _ -> runToplevelStatements stmts -- TOOD: use assertions as hints

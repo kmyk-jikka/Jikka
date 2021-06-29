@@ -389,7 +389,7 @@ spec = describe "run" $ do
               ]
           ]
     run' parsed `shouldBe` Right expected
-  it "works with if-statements" $ do
+  it "works with if-statements without else-clause" $ do
     let parsed =
           [ ToplevelFunctionDef
               "main"
@@ -436,6 +436,88 @@ spec = describe "run" $ do
                 AnnAssign (nameTrg "x$6") IntTy (name "x$3"),
                 AnnAssign (nameTrg "x$7") IntTy (constIntExp 0),
                 AnnAssign (nameTrg "x$8") IntTy (name "x$7")
+              ]
+          ]
+    run' parsed `shouldBe` Right expected
+  it "works with if-statements with else-clause" $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                If
+                  (name "x")
+                  [ AugAssign (nameTrg "x") Add (name "x")
+                  ]
+                  [ AnnAssign (nameTrg "x") IntTy (name "x"),
+                    AnnAssign (nameTrg "x") IntTy (name "x")
+                  ],
+                AnnAssign (nameTrg "x") IntTy (name "x"),
+                AnnAssign (nameTrg "x") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x") IntTy (name "x")
+              ]
+          ]
+    let expected =
+          [ ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$1") IntTy (name "x$0"),
+                If
+                  (name "x$1")
+                  [ AugAssign (nameTrg "x$1") Add (name "x$1")
+                  ]
+                  [ AnnAssign (nameTrg "x$1") IntTy (name "x$1"),
+                    AnnAssign (nameTrg "x$1") IntTy (name "x$1")
+                  ],
+                AnnAssign (nameTrg "x$2") IntTy (name "x$1"),
+                AnnAssign (nameTrg "x$3") IntTy (constIntExp 0),
+                AnnAssign (nameTrg "x$4") IntTy (name "x$3")
+              ]
+          ]
+    run' parsed `shouldBe` Right expected
+  it "isn't confused by conflicts between variables in if-statements and variables in toplevel" $ do
+    let parsed =
+          [ ToplevelFunctionDef
+              "x"
+              []
+              IntTy
+              [ Return (constIntExp 0)
+              ],
+            ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ If
+                  (constBoolExp True)
+                  [ AnnAssign (nameTrg "x") IntTy (constIntExp 0)
+                  ]
+                  [ AnnAssign (nameTrg "x") IntTy (constIntExp 1)
+                  ],
+                AnnAssign (nameTrg "x") IntTy (name "x")
+              ]
+          ]
+    let expected =
+          [ ToplevelFunctionDef
+              "x"
+              []
+              IntTy
+              [ Return (constIntExp 0)
+              ],
+            ToplevelFunctionDef
+              "main"
+              []
+              IntTy
+              [ If
+                  (constBoolExp True)
+                  [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 0)
+                  ]
+                  [ AnnAssign (nameTrg "x$0") IntTy (constIntExp 1)
+                  ],
+                AnnAssign (nameTrg "x$1") IntTy (name "x$0")
               ]
           ]
     run' parsed `shouldBe` Right expected

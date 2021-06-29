@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <numeric>
+#include <unordered_map>
 #include <vector>
 
 namespace jikka {
@@ -353,20 +354,76 @@ inline std::vector<int64_t> range3(int64_t from, int64_t to, int64_t step) {
   return xs;
 }
 
-inline int64_t fact(int64_t n, int64_t r) {
-  assert(false); // TODO
+inline int64_t fact(int64_t n) {
+  assert(0 <= n);
+  int64_t ans = 1;
+  for (int i = 0; i < n; ++i) {
+    ans *= i + 1;
+  }
+  return ans;
 }
 
 inline int64_t choose(int64_t n, int64_t r) {
-  assert(false); // TODO
+  assert(0 <= r and r <= n);
+  int64_t ans = 1;
+  for (int i = 0; i < r; ++i) {
+    ans *= n - i;
+    ans /= i + 1;
+  }
+  return ans;
 }
 
 inline int64_t permute(int64_t n, int64_t r) {
-  assert(false); // TODO
+  assert(0 <= r and r <= n);
+  int64_t ans = 1;
+  for (int i = 0; i < r; ++i) {
+    ans *= n - i;
+  }
+  return ans;
 }
 
 inline int64_t multichoose(int64_t n, int64_t r) {
-  assert(false); // TODO
+  assert(0 <= r and r <= n);
+  if (n == 0 and r == 0) {
+    return 1;
+  }
+  return choose(n + r - 1, r);
+}
+
+inline int64_t modfact(int64_t n, int64_t MOD) {
+  assert(0 <= n);
+  assert(1 <= MOD);
+  static std::unordered_map<int64_t, std::vector<int64_t>> memos;
+  auto &memo = memos[MOD];
+  while (static_cast<int64_t>(memo.size()) <= n) {
+    if (memo.empty()) {
+      memo.push_back(1);
+    }
+    memo.push_back(memo.size() * memo.back() % MOD);
+  }
+  return memo[n];
+}
+
+inline int64_t modchoose(int64_t n, int64_t r, int64_t MOD) {
+  assert(0 <= r and r <= n);
+  assert(1 <= MOD);
+  return modfact(n, MOD) * modinv(modfact(r, MOD), MOD) % MOD;
+}
+
+inline int64_t modpermute(int64_t n, int64_t r, int64_t MOD) {
+  assert(0 <= r and r <= n);
+  assert(1 <= MOD);
+  return modfact(n, MOD) *
+         modinv(modfact(n - r, MOD) * modfact(r, MOD) % MOD, MOD) % MOD;
+}
+
+inline int64_t modmultichoose(int64_t n, int64_t r, int64_t MOD) {
+  assert(0 <= r and r <= n);
+  assert(1 <= MOD);
+  if (n == 0 and r == 0) {
+    return 1;
+  }
+  return modchoose(n + r - 1, r, MOD);
 }
 
 } // namespace jikka

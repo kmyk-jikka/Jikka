@@ -27,7 +27,7 @@ rename x = do
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
 runExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwInternalError $ "undefined variable: " ++ show x
+    Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just y -> return $ Var y
   Lit lit -> return $ Lit lit
   App f args -> App <$> runExpr env f <*> mapM (runExpr env) args

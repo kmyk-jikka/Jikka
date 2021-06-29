@@ -117,8 +117,8 @@ tokens :-
     -- assignment operators
     "+="            { tok (AugOp AugAdd) }
     "-="            { tok (AugOp AugSub) }
-    "@="            { tok (AugOp AugMul) }
-    "*="            { tok (AugOp AugAt) }
+    "*="            { tok (AugOp AugMul) }
+    "@="            { tok (AugOp AugAt) }
     "/="            { tok (AugOp AugDiv) }
     "//="           { tok (AugOp AugFloorDiv) }
     "%="            { tok (AugOp AugFloorMod) }

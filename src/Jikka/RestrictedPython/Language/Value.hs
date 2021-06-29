@@ -41,6 +41,11 @@ newtype Local = Local
   }
   deriving (Eq, Ord, Show, Read)
 
+toList :: MonadError Error m => Value -> m (V.Vector Value)
+toList = \case
+  ListVal xs -> return xs
+  _ -> throwInternalError "type error"
+
 toIntList :: V.Vector Value -> Maybe (V.Vector Integer)
 toIntList xs = mapM go xs
   where

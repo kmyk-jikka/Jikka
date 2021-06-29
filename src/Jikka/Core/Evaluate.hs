@@ -27,7 +27,7 @@ where
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Bits
-import Data.List (intercalate, sort)
+import Data.List (intercalate, sortBy)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
@@ -130,8 +130,8 @@ setAtEither xs i x =
     then return $ xs V.// [(fromInteger i, x)]
     else throwRuntimeError $ "out of bounds: length = " ++ show (V.length xs) ++ ", index = " ++ show i
 
-sortVector :: Ord a => V.Vector a -> V.Vector a
-sortVector = V.fromList . sort . V.toList
+sortVector :: V.Vector Value -> V.Vector Value
+sortVector = V.fromList . sortBy compareValues' . V.toList
 
 range1 :: MonadError Error m => Integer -> m (V.Vector Value)
 range1 n | n < 0 = throwRuntimeError $ "invalid argument for range1: " ++ show n
@@ -225,10 +225,10 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     (Tuple _, xs) -> return $ ValTuple xs
     (Proj _ n, [ValTuple xs]) -> return $ xs !! n
     -- comparison
-    (LessThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a < b) -- TODO: allow non-integers
-    (LessEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a <= b) -- TODO: allow non-integers
-    (GreaterThan IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a > b) -- TODO: allow non-integers
-    (GreaterEqual IntTy, [ValInt a, ValInt b]) -> return $ ValBool (a >= b) -- TODO: allow non-integers
+    (LessThan _, [a, b]) -> return $ ValBool (compareValues a b == Just LT)
+    (LessEqual _, [a, b]) -> return $ ValBool (compareValues a b /= Just GT)
+    (GreaterThan _, [a, b]) -> return $ ValBool (compareValues a b == Just GT)
+    (GreaterEqual _, [a, b]) -> return $ ValBool (compareValues a b /= Just LT)
     (Equal _, [a, b]) -> return $ ValBool (a == b)
     (NotEqual _, [a, b]) -> return $ ValBool (a /= b)
     -- combinational functions
