@@ -30,8 +30,8 @@ runExpr :: MonadAlpha m => [(VarName, Type)] -> Expr -> m Expr
 runExpr env = \case
   orig@(Lam [(x, TupleTy ts)] (Tuple' ts' es)) ->
     (fromMaybe orig <$>) . runMaybeT $ do
-      guard $ not (null ts) && all (== IntTy) ts
-      guard $ not (null ts') && all (== IntTy) ts'
+      guard $ length ts >= 2 && all (== IntTy) ts
+      guard $ length ts' >= 2 && all (== IntTy) ts'
       xs <- V.fromList <$> replicateM (length ts) (lift (genVarName x))
       let indexOfProj = \case
             (Proj' ts'' i (Var x')) | ts'' == ts && x' == x -> Just i
