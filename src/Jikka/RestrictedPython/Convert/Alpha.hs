@@ -8,6 +8,7 @@ where
 
 import Control.Monad.State.Strict
 import Data.List (delete, intersect)
+import Data.Maybe (isNothing)
 import qualified Data.Set as S
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -33,7 +34,7 @@ initialEnv =
 withToplevelScope :: (MonadError Error m, MonadState Env m) => m a -> m a
 withToplevelScope f = do
   env <- get
-  x <- catchError' f
+  x <- catchError' $ withScope f
   put env
   liftEither x
 
@@ -52,11 +53,11 @@ withScope f = do
       }
   liftEither x
 
--- | `renameNew` renames given variables and record them to the `Env`.
-renameNew :: (MonadAlpha m, MonadState Env m) => VarName' -> m VarName'
-renameNew x = do
+-- | `renameLocalNew` renames given variables and record them to the `Env`.
+renameLocalNew :: (MonadAlpha m, MonadState Env m) => VarName' -> m VarName'
+renameLocalNew x = do
   env <- get
-  case lookupName x (env {currentMapping = []}) of
+  case lookupLocalName x (env {currentMapping = []}) of
     Just y -> return y
     Nothing -> do
       y <- genVarName x
@@ -78,13 +79,13 @@ renameShadow x = do
       }
   return y
 
--- | `renameCompletelyNew` throws errors when given variables already exists in environments.
-renameCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName' -> m VarName'
-renameCompletelyNew x = do
+-- | `renameLocalCompletelyNew` throws errors when given variables already exists in environments.
+renameLocalCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName' -> m VarName'
+renameLocalCompletelyNew x = do
   env <- get
-  case lookupName x env of
+  case lookupLocalName x env of
     Just _ -> maybe id wrapAt (loc' x) . throwSemanticError $ "cannot redefine variable: " ++ unVarName (value' x)
-    Nothing -> renameNew x
+    Nothing -> renameLocalNew x
 
 -- | `renameToplevel` records given variables to the `Env` without actual renaming.
 renameToplevel :: (MonadAlpha m, MonadState Env m, MonadError Error m) => VarName' -> m VarName'
@@ -116,13 +117,17 @@ popRename x =
     modify' $ \env -> env {currentMapping = delete (value' x, value' y) (currentMapping env)}
 
 lookupName :: VarName' -> Env -> Maybe VarName'
-lookupName x env = go (currentMapping env : parentMappings env)
-  where
-    go [] = Nothing
-    go (mapping : mappings) =
-      case lookup (value' x) mapping of
-        Just y -> return $ WithLoc' (loc' x) y
-        Nothing -> go mappings
+lookupName x env = lookupNameFromMappings x (currentMapping env : parentMappings env)
+
+lookupLocalName :: VarName' -> Env -> Maybe VarName'
+lookupLocalName x env = lookupNameFromMappings x (reverse (drop 2 (reverse (currentMapping env : parentMappings env))))
+
+lookupNameFromMappings :: VarName' -> [[(VarName, VarName)]] -> Maybe VarName'
+lookupNameFromMappings _ [] = Nothing
+lookupNameFromMappings x (mapping : mappings) =
+  case lookup (value' x) mapping of
+    Just y -> return $ WithLoc' (loc' x) y
+    Nothing -> lookupNameFromMappings x mappings
 
 lookupName' :: (MonadState Env m, MonadError Error m) => VarName' -> m VarName'
 lookupName' x = do
@@ -133,11 +138,11 @@ lookupName' x = do
 
 -- | `runAnnTarget` renames targets of annotated assignments.
 runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
-runAnnTarget = runTargetGeneric renameNew
+runAnnTarget = runTargetGeneric renameLocalNew
 
 -- | `runForTarget` renames targets of for-loops.
 runForTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
-runForTarget = runTargetGeneric renameCompletelyNew
+runForTarget = runTargetGeneric renameLocalCompletelyNew
 
 -- | `runAugTarget` renames targets of augumented assignments.
 runAugTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
@@ -166,7 +171,7 @@ runExpr e0 =
       Lambda args body ->
         withToplevelScope $ do
           args <- forM args $ \(x, t) -> do
-            y <- renameNew x
+            y <- renameLocalNew x
             return (y, t)
           body <- runExpr body
           return $ Lambda args body
@@ -208,7 +213,11 @@ runStatement = \case
     e <- runExpr e
     let (_, WriteList w1) = analyzeStatementsMin body1
     let (_, WriteList w2) = analyzeStatementsMin body2
-    mapM_ (renameNew . WithLoc' Nothing) (w1 `intersect` w2) -- introduce variables to the parent scope
+    forM_ (w1 `intersect` w2) $ \x -> do
+      isLocallyUndefined <- isNothing . lookupLocalName (withoutLoc x) <$> get
+      when isLocallyUndefined $ do
+        renameLocalNew (withoutLoc x) -- introduce variables to the parent scope
+        return ()
     body1 <- withScope $ do
       runStatements body1
     body2 <- withScope $ do
