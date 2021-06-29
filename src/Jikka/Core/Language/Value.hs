@@ -5,6 +5,7 @@ module Jikka.Core.Language.Value where
 
 import Data.Char (toLower)
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
@@ -18,7 +19,7 @@ data Value
   | ValTuple [Value]
   | ValBuiltin Builtin
   | ValLambda (Maybe VarName) Env [(VarName, Type)] Expr
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Show, Read)
 
 type Env = [(VarName, Value)]
 
@@ -78,6 +79,19 @@ valueFromModVector = valueFromVector . V.map fromModInt
 
 valueFromModMatrix :: Matrix ModInt -> Value
 valueFromModMatrix = valueFromMatrix . fmap fromModInt
+
+compareValues :: Value -> Value -> Maybe Ordering
+compareValues a b = case (a, b) of
+  (ValInt a, ValInt b) -> Just (compare a b)
+  (ValBool a, ValBool b) -> Just (compare a b)
+  (ValList a, ValList b) -> case mconcat <$> zipWithM compareValues (V.toList a) (V.toList b) of
+    Just EQ -> Just (compare (V.length a) (V.length b))
+    ordering -> ordering
+  (ValTuple a, ValTuple b) -> mconcat <$> zipWithM compareValues a b
+  (_, _) -> Nothing
+
+compareValues' :: Value -> Value -> Ordering
+compareValues' a b = fromMaybe EQ (compareValues a b)
 
 formatValue :: Value -> String
 formatValue = \case
