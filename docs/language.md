@@ -1,19 +1,26 @@
 # Language Specification
 
-## Overview
+(このドキュメントの日本語バージョン: [language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md))
 
-a very restricted subset of Python + additional builtin functions
+## TL;DR
+
+-   It has syntax the same as Python.  It is basically a subset language of Python.
+-   It has semantics similar to OCaml and Haskell.  It's statically typed and has type inference, and all values are immutable.
+-   It has some builtin functions and operators for competitive programming.  Implementations should optimize programs to reduce computational complexity.
 
 
-## Syntax Overview
+## Syntax
 
 ### Lexical Analysis
 
-It's the almost same to Python.
+It's almost the same as Python.
 
 ### Grammer
 
-It's highly restricted, but basically the same to Python.
+It's basically the same as Python.
+
+There are many restrictions, which usually don't affect usage for competitive programming.
+These restrictions simplify the language and make it easy to optimize.
 
 ### Expression
 
@@ -22,36 +29,38 @@ The followings are available:
 -   literals
     -   `0`, `1`, `2`, ...
     -   `True`, `False`
--   list
+-   lists
     -   `[a, b, c, ...]`
     -   `[... for ... in ...]`
--   generator
+-   generators
     -   `(... for ... in ...)`
--   subscription
+-   subscriptions
     -   `a[i]`
--   call
+-   function call
     -   `f(a, b, c, ...)`
     -   `f(... for ... in ...)`
 -   operators
     -   See the "Standard Library" section.
 -   conditional operator
     -   `... if ... eles ...`
-
-The followings (and the other features) are unavailable:
-
--   list with stars
-    -   `[x, *xs]`
 -   comprehensions with filtering
     -   `... for ... in ... if ...`
 -   slicing
     -   `a[l : r]`
--   attribute reference
-    -   `foo.bar`
--   complicated calls
-    -   `f(foo=a, bar=b)`
-    -   `f(*args)`
 -   lambdas
     -   `lambda x: ...`
+
+The followings are unavailable:
+
+-   list with stars
+    -   `[x, *xs]`
+-   walrus operator
+    -   `x := a`
+-   attribute reference
+    -   `foo.bar`
+-   complicated funcion calls
+    -   `f(foo=a, bar=b)`
+    -   `f(*args)`
 
 
 ### Simple statement
@@ -76,14 +85,13 @@ The followings are available:
     -   `import ...`
     -   `from ... import ...`
 
-The followings (and the other features) are unavailable:
+The followings are unavailable:
 
 -   complicated assignment statement
     -   `x, *xs = a`
     -   `a[l : r] = b`
 -   expression statement
     -   `print("Hello")`
-    -   There are no features which have side-effects, so expression statements are meaningless.
 -   yield
 -   raise
 -   break
@@ -94,7 +102,8 @@ The followings (and the other features) are unavailable:
 
 The followings are available:
 
--   if-else
+-   if
+    -   `if: ...`
     -   `if cond: ... else: ...`
     -   `if cond: ... elif cond: ... else: ...`
 -   for
@@ -103,134 +112,97 @@ The followings are available:
     -   `def f(x): ...`
     -   `def f(x: t) -> t: ...`
 
-The followings (and the other features) are unavailable:
+The followings are unavailable:
 
--   if
-    -   `if: ...`
 -   while
 -   try
 -   with
 -   class
 
 
-## Syntax
+## Semantics (Statements)
 
 ### import
 
-`import` statements have no effects. They are just ignored.
+`import` statement has no effects.
+It's just ignored.
 
 ### def
 
-`def` defines a function. This is available only the toplevel.
-The self-recursion is allowed, but mutual-recursion is not allowed.
+`def` statement defines a function.
 
-The followings cause undefined behaviors:
-
--   name conflicts between global variables and the function itself
--   name conflicts between global variables and local variables
+-   You can use this only on the toplevel.
+-   You can use recursion.
+-   You cannot overwrite functions that are already defined.
+-   In its body, you cannot use identifiers that will be defined in the future. This restriction means you cannot use mutul-recursion.
 
 ### return
 
-`return` declares the result value of `def`.
-All code paths of `def` must contain at least one `return`.
+`return` statement declares the result value of the function, which is defined with `def` statement.
+All code paths of a `def` statement must contain at least one `return` statement.
 
 ### assignment
 
-The assignments `x = a` binds the value `a` to the variable `x`.
-You can use this on toplevel and in `def`.
+The assignment `x = a` statement binds the value `a` to the variable `x`.
 
-You can think this as `let x = a in ...` of ML.
+-   You can use this on toplevel and in `def` statements.
+-   If it's not on the toplevel, you can overwrite variables that are already defined, and change the types of variables.
+-   This statement is similar to `let x = a in ...` of ML.
+-   If its lvalue has subscriptions, this is treated as an augmented assignment.
 
-### if-else
+### augmented assignment
 
-`if-else` branches the execution.
-This is a syntax suger of the combinational operator `... if ... else ...`.
+The augmented assignment `x @= a` statement binds the value `x @ a` to the variable `x`.
 
-It must have the `else:` branch, and all branches must end with `return`.
+-   You can use this only in `def` statements.
 
-TODO: allow more flexible `if` statements?
+### if
+
+`if` statement branches execution.
+
+-   After `if` statement, you cannot use variables that are defined only one of either `if` clause or `else` clause.
 
 ### for
 
-`for` runs loops.
-This is a syntax suger of some list operations.
+`for` statement repeats execution.
 
-There must be declarations of target variables.
-A target variable is a usual variable or a variable which is assigned a list using the special keyword `None`.
-The `for` has the assignments to the target variables.
-When a list target variable is used, the container which `for` runs must be `range(...)` or `enumerate(...)`, and the size of the list target and the size of container must relates.
+-   After `for` statement, you cannot use variables that are newly defined in the `for` statement.
+-   `else` clause is not available.
+-   You cannot use `return` statements in `for` statements.
 
-For example, the below is a valid form of `for`-loop. This is a syntax suger of `a = [f(i) for i in range(N)]; b = sum(sum(1 for j in range(M)) for i in range(N))`.
+### assert
 
-``` python
-    a = [None for _ in range(N)]
-    b = 0
-    for i in range(N):
-        a[i] = f(i)
-        for j in range(M):
-            b += 1
-```
+`assert` statement introduces undefined behaviors.
 
-The below is also a valid form of `for`-loop.
-
-``` python
-    a = [None for _ in range(N + 1)]
-    a[0] = 1
-    for i in range(N):
-        a[i + 1] = a[i] + g(i)
-```
-
-The below is not a valid form of `for`-loop.
-
-``` python
-    b = [3, 5, 8]
-    a = [False for _ in range(10)]
-    for b_i in b:
-        a[b_i] = True
-```
+-   Implementations can use `assert` statements as hints for optimization.
 
 
-## Semantics
+## Semantics (Exprs)
 
-### Python compatibility
-
-This language is compatible with Python.
-This means that, if the execution successfully stops without any undefined behavior on both interpreter of this language and Python, then the result is the same.
+It's basically the same as Python.
 
 
-### types
+## Semantics (Types)
 
-Each terms uniquely belongs its type (Church-style).
-Users can make mistakes about these types. Implementations are responsible for checking these types.
+The types are inductively defined with the following:
 
--   `int` type represents the set of integers.
--   `bool` type represents the set of truth values. It has two values `True` and `False`.
--   For any type `T`, `Sequence[T]` type represents the set of finite or infinite sequences of values in `T`. They are immutable.
--   For any types `T1`, `T2`, ..., and `Tn`, `Tuple[T1, T2, ..., Tn]` is the direct product of `T1`, `T2`, ..., and `Tn`.
-    -   `n` is a non-negative number.
--   For any types `T1`, `T2`, ..., `Tn`, and `R`, `Callable[[T1, T2, ..., Tn], R]` is the set of functions from `T1`, `T2`, ..., `Tn` to `R`.
-    -   `n` is a non-negative number.
-    -   This is used only on documents.
+-   `int` is a type. This type represents the set of integers.
+-   `bool` is a type. This type represents the set of truth values.
+-   For any type `T`, `List[T]` is a type. This type represents the set of finite sequences of values in `T`.
+-   For a non-negative integer `n` and any types `T1`, `T2`, ... and `Tn`, `Tuple[T1, T2, ..., Tn]` is a type. This type represents the direct product of `T1`, `T2`, ..., and `Tn`.
+-   For a non-negative integer `n` and any types `T1`, `T2`, ..., `Tn` and `R`, `Callable[[T1, T2, ..., Tn], R]` is a type. This type represents the set of `n`-ary functions from `T1`, `T2`, ..., `Tn` to `R`.
+-   Only things which are written above are types.
 
+Each expression or each value uniquely belongs to its type, i.e., it's Church-style.
 
-### annotational types
-
-Some terms may have some annotational types (Curry-style).
-Users are responsible to write correctly about these types, or undefined behavior appears. Implementations can use these types as hints.
-
--   For any type `T`, `Optional[T]` is an alias of `T`.
--   For any type `T`, `Iterator[T]` is an alias of `Sequence[T]`.
--   For any type `T`, `List[T]` is an subtype of `Sequence[T]`. This is the set of all finite sequences.
-
-There are the additional rule for `Iterator[T]`. When a variable is annotated as `Iterator[T]`, you cannot use the object twice. For example, `list(xs) == list(xs)` for a variable `xs: Iterator[int]` causes an undefined behavior.
-This means that, implementations of Jikka can entirely ignores the differences of lists and iterators of the standard Python, but we don't think this fact as the incompatibility with Python.
+-   You must take care of the fact that the values of `List[T]` are immutable.
 
 
 ## Standard Library
 
 ### builtin operators from Python
 
-arithmetical functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
+arithmetical operators (`Callable[[int], int]`, `Callable[[int, int], int]`):
 
 -   `-` negation
 -   `+` addition
@@ -241,7 +213,7 @@ arithmetical functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
 -   `%` modulo (always positive)
 -   `**` power
 
-logical functions (`Callable[[bool], bool]`, `Callable[[bool, bool], bool]`):
+logical operators (`Callable[[bool], bool]`, `Callable[[bool, bool], bool]`):
 
 -   `not` not
 -   `and` and
@@ -249,7 +221,7 @@ logical functions (`Callable[[bool], bool]`, `Callable[[bool, bool], bool]`):
 -   `or` or
     -   No short circuit exists.
 
-bitwise functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
+bitwise operators (`Callable[[int], int]`, `Callable[[int, int], int]`):
 
 -   `~` bitwise-not
 -   `&` bitwise-and
@@ -258,119 +230,109 @@ bitwise functions (`Callable[[int], int]`, `Callable[[int, int], int]`):
 -   `<<` left shift
 -   `>>` right shift
 
-arithmetical relations (`Callable[[int, int], bool]`):
+comparators (`Callable[[T, T], bool]`):
 
+-   `==` equal
+-   `!=` not-equal
 -   `<` less-than
-    -   Please note that combinational notations like `a < b < c` are not supported.
 -   `>` greater-than
 -   `<=` less-or-equal
 -   `>=` greater-or-equal
 
-the combinational operator (polymorphic, `Callable[[T, bool, T], T]`):
+the combinational operator (`Callable[[T, bool, T], T]`):
 
 -   `... if ... else ...`
-    -   Short circuits exist.
-
-equality relations (polymorphic, `Callable[[T, T], bool]` only for `int` and `bool`).
-
--   `==` equal
-    -   Please note that combinational notations like `a == b == c` are not supported.
--   `!=` not-equal
+    -   No short circuit exists.
 
 
 ### additional builtin operators
 
-WARNING: these ops breaks compatibility with Python. `from jikka.compat import *` disables them.
-
-arithmetical functions (`Callable[[int, int], int]`):
+arithmetical operators (`Callable[[int, int], int]`):
 
 -   `/^` division (ceil)
-    -   same to `(x + y - 1) // y`
-    -   TODO: is this definition appropriate for negative numbers?
+    -   This is same to `(x + y - 1) // y`.
 -   `%^` modulo (ceil, consistent to `/^`)
     -   It means `(x /^ y) * y + (x %^ y) == x` always holds.
 -   `<?` min
-    -   comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html)
+    -   This comes from [old GCC](https://gcc.gnu.org/onlinedocs/gcc-3.3.2/gcc/Min-and-Max.html).
     -   The operators `<?` and `>?` have the precedence between bit-ops and comparisons.
         They are left-to-right associative.
-        For example, `a ^ 1 <? b == c` is `((a ^ 1) <? b) == c`.
-        `a <? b <? c ?> d <? e` is `((((a <? b) <? c) ?> d) <? e)`.
+        For example, `a ^ 1 <? b == c` is `((a ^ 1) <? b) == c`, and `a <? b <? c ?> d <? e` is `((((a <? b) <? c) ?> d) <? e)`.
 -   `>?` max
     -   same to min
 
-logical functions (`Callable[[bool, bool], bool]`):
+logical operators (`Callable[[bool, bool], bool]`):
 
 -   `implies` implication
     -   No short circuit exists.
     -   The operator `implies` has the precedence between `or`-op and `if`-`else`.
         They are right-to-left associative.
-        For example, `a implies b if c else d implies e` is `(a implies b) if (c) eles (d implies e)`
-        `a implies b implies c` is `a implies (b implies c)`.
+        For example, `a implies b if c else d implies e` is `(a implies b) if (c) eles (d implies e)`, and `a implies b implies c` is `a implies (b implies c)`.
 
-The operators `<?` and `>?` have the precedence between bit ops and comparisons.
-They are left-to-right associative.
-For example, `a ^ 1 <? b == c` is `((a ^ 1) <? b) == c`.
-`a <? b <? c ?> d <? e` is `((((a <? b) <? c) ?> d) <? e)`.
+### builtin functions from Python
 
-### builtin small functions
+integer functions:
 
-From the default Python:
-
--   `abs(x: int) -> nat`
--   `min(x: int, y: int) -> int`
--   `max(x: int, y: int) -> int`
+-   `abs(x: int) -> int`
+-   `min(x: T, y: T) -> T`
+-   `max(x: T, y: T) -> T`
 -   `pow(x: int, y: int) -> int`
--   `pow(x: int, y: int, mod: nat) -> nat`
-    -   WARNING: negative exp is allowed from Python 3.8
-    -   `mod` must be positive
--   `len(xs: List[T]) -> nat`
+-   `pow(x: int, y: int, mod: int) -> int`
 
-Not from the default Python:
+list functions:
+
+-   `len(xs: List[T]) -> int`
+-   `sum(xs: List[int]) -> int`
+-   `min(xs: List[T]) -> T`
+-   `max(xs: List[T]) -> T`
+-   `all(xs: List[bool]) -> bool`
+-   `any(xs: List[bool]) -> bool`
+-   `sorted(xs: List[T]) -> List[T]`
+-   `list(xs: List[T]) -> List[T]`
+-   `reversed(xs: List[T]) -> List[T]`
+-   `range(stop: int) -> List[int]`
+-   `range(start: int, stop: int) -> List[int]`
+-   `range(start: int, stop: int, step: int) -> List[int]`
+
+### additional builtin functions
+
+basic integer functions:
 
 -   `gcd(x: int, y: int) -> int`
-    -   If you want, you can write `from math import *` before using this.
 -   `lcm(x: int, y: int) -> int`
-    -   If you want, you can write `from math import *` before using this.
-    -   WARNING: this is defined from Python 3.9
 -   `floordiv(x: int, y: int) -> int`
-    -   same to `x // y`
+    -   This is same to `x // y`.
+-   `floormod(x: int, y: int) -> int`
+    -   This is same to `x % y`.
 -   `ceildiv(x: int, y: int) -> int`
-    -   same to `(x + y - 1) // y`
-    -   TODO: is this definition appropriate for negative numbers?
--   `fact(x: nat) -> nat`
--   `choose(n: nat, r: nat): nat`
-    -   `n >= r` must be holds
--   `permute(n: nat, r: nat) -> nat`
-    -   `n >= r` must be holds
--   `multichoose(n: nat, r: nat) -> nat`
-    -   `n >= r` must be holds
--   `inv(x: int, mod: nat) -> nat`
-    -   `x` must not be a multiple of `mod`
-    -   `mod` must be positive
+    -   This is same to `(x + y - 1) // y`.
+-   `ceilmod(x: int, y: int) -> int`
 
-
-### builtin big functions
-
-From the default Python:
-
--   `sum(xs: Iterator[int]) -> int`
--   `min(xs: List[int]) -> int`
-    -   `xs` must be non empty
--   `max(xs: List[int]) -> int`
-    -   `xs` must be non empty
--   `all(xs: Iterator[bool]) -> bool`
--   `any(xs: Iterator[bool]) -> bool`
--   `sorted(xs: Iterator[int]) -> List[int]`
--   `list(xs: Iterator[int]) -> List[int]`
--   `reversed(xs: Iterator[int]) -> Iterator[int]`
--   `range(stop: int) -> Iterator[int]`
--   `range(start: int, stop: int) -> Iterator[int]`
--   `range(start: int, stop: int, step: int) -> Iterator[int]`
-
-Not from the default Python:
+list functions:
 
 -   `product(xs: Iterator[int]) -> int`
--   `argmin(xs: List[int]) -> nat`
-    -   `xs` must be non empty
--   `argmax(xs: List[int]) -> nat`
-    -   `xs` must be non empty
+-   `argmin(xs: List[T]) -> int`
+    -   `xs` must be non empty.
+-   `argmax(xs: List[T]) -> int`
+    -   `xs` must be non empty.
+
+combinatorics functions:
+
+-   `fact(x: int) -> int`
+-   `choose(n: int, r: int): int`
+    -   `n >= r` must be holds.
+-   `permute(n: int, r: int) -> int`
+    -   `n >= r` must be holds.
+-   `multichoose(n: int, r: int) -> int`
+    -   `n >= r` must be holds.
+
+modular functions:
+
+-   `modinv(x: int, mod: int) -> int`
+    -   `x` must not be a multiple of `mod`.
+    -   `mod` must be positive.
+
+TODO:
+
+-   matrix functions:
+-   matrix functions on modular arithmetic:
