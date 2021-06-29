@@ -27,6 +27,7 @@ import Data.Bits
 import Data.List (maximumBy, minimumBy, sortBy)
 import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
+import Jikka.Common.Combinatorics
 import Jikka.Common.Error
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
@@ -582,8 +583,6 @@ evalBuiltin b args = case (b, args) of
   (BuiltinCeilDiv, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `div` b)
   (BuiltinCeilMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinCeilMod, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `mod` b)
-  (BuiltinChoose, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
-  (BuiltinFact, [IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinFloorDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinFloorDiv, [IntVal a, IntVal b]) -> return $ IntVal (a `div` b)
   (BuiltinFloorMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
@@ -591,7 +590,21 @@ evalBuiltin b args = case (b, args) of
   (BuiltinGcd, [IntVal a, IntVal b]) -> return $ IntVal (gcd a b)
   (BuiltinModInv, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinLcm, [IntVal a, IntVal b]) -> return $ IntVal (lcm a b)
-  (BuiltinMultiChoose, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
-  (BuiltinPermute, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
   (BuiltinProduct, [ListVal xs]) -> IntVal . product <$> toIntList' xs
+  (BuiltinFact, [IntVal n]) ->
+    if 0 <= n
+      then return (IntVal (fact n))
+      else throwRuntimeError "invalid argument"
+  (BuiltinChoose, [IntVal n, IntVal r]) ->
+    if 0 <= r && r <= n
+      then return (IntVal (choose n r))
+      else throwRuntimeError "invalid argument"
+  (BuiltinPermute, [IntVal n, IntVal r]) ->
+    if 0 <= r && r <= n
+      then return (IntVal (permute n r))
+      else throwRuntimeError "invalid argument"
+  (BuiltinMultiChoose, [IntVal n, IntVal r]) ->
+    if 0 <= r && r <= n
+      then return (IntVal (multichoose n r))
+      else throwRuntimeError "invalid argument"
   _ -> throwRuntimeError "type error on builtin function call"
