@@ -4,7 +4,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import Jikka.Common.Error
-import Jikka.Common.Format.Error (prettyError, prettyErrorWithText)
+import Jikka.Common.Format.Error (hPrintError, hPrintErrorWithText)
 import qualified Jikka.Main.Subcommand.Convert as Convert
 import qualified Jikka.Main.Subcommand.Debug as Debug
 import qualified Jikka.Main.Subcommand.Execute as Execute
@@ -12,7 +12,7 @@ import Jikka.Main.Target
 import Paths_Jikka (version)
 import System.Console.GetOpt
 import System.Exit (ExitCode (..))
-import System.IO (hPutStr, hPutStrLn, stderr)
+import System.IO (hPutStr, stderr)
 
 data Flag
   = Help
@@ -57,21 +57,21 @@ main name args = do
       return ExitSuccess
     (parsed, [subcmd, path], []) -> case parseFlags name parsed of
       Left err -> do
-        mapM_ (hPutStrLn stderr) (prettyError err)
+        hPrintError stderr err
         return $ ExitFailure 1
       Right opts -> do
         result <- runExceptT $ runSubcommand subcmd opts path
         case result of
           Left err -> do
             text <- liftIO $ T.readFile path
-            mapM_ (hPutStrLn stderr) (prettyErrorWithText text err)
+            hPrintErrorWithText stderr text err
             return $ ExitFailure 1
           Right () -> do
             return ExitSuccess
     (_, _, errors) | errors /= [] -> do
       forM_ errors $ \msg -> do
         let err = WithGroup CommandLineError (Error msg)
-        mapM_ (hPutStr stderr) (prettyError err)
+        hPrintError stderr err
       return $ ExitFailure 1
     _ -> do
       hPutStr stderr usage
