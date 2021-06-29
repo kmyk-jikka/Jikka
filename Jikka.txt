@@ -231,6 +231,33 @@ instance GHC.Show.Show Jikka.CPlusPlus.Format.Assoc
 instance GHC.Classes.Ord Jikka.CPlusPlus.Format.Assoc
 instance GHC.Classes.Eq Jikka.CPlusPlus.Format.Assoc
 
+module Jikka.Common.Format.Color
+data ColorFlag
+EnableColor :: ColorFlag
+DisableColor :: ColorFlag
+withColor :: ColorFlag -> Color -> String -> String
+withBold :: ColorFlag -> String -> String
+hGetColorFlag :: Handle -> IO ColorFlag
+
+-- | ANSI's eight standard colors. They come in two intensities, which are
+--   controlled by <a>ColorIntensity</a>. Many terminals allow the colors
+--   of the standard palette to be customised, so that, for example,
+--   <tt>setSGR [ SetColor Foreground Vivid Green ]</tt> may not result in
+--   bright green characters.
+data Color
+Black :: Color
+Red :: Color
+Green :: Color
+Yellow :: Color
+Blue :: Color
+Magenta :: Color
+Cyan :: Color
+White :: Color
+instance GHC.Read.Read Jikka.Common.Format.Color.ColorFlag
+instance GHC.Show.Show Jikka.Common.Format.Color.ColorFlag
+instance GHC.Classes.Ord Jikka.Common.Format.Color.ColorFlag
+instance GHC.Classes.Eq Jikka.Common.Format.Color.ColorFlag
+
 module Jikka.Common.Format.Show
 run :: Show program => program -> Either String Text
 
@@ -291,7 +318,7 @@ instance Data.String.IsString a => Data.String.IsString (Jikka.Common.Location.W
 
 module Jikka.Common.Format.Location
 prettyLoc :: Loc -> String
-prettyLocWithText :: Text -> Loc -> [String]
+prettyLocWithText :: ColorFlag -> Text -> Loc -> [String]
 
 
 module Jikka.Common.Error
@@ -399,8 +426,10 @@ instance GHC.Classes.Eq Jikka.Common.Error.Error
 instance GHC.Base.Semigroup Jikka.Common.Error.Error
 
 module Jikka.Common.Format.Error
-prettyError :: Error -> [String]
-prettyErrorWithText :: Text -> Error -> [String]
+prettyError :: ColorFlag -> Error -> [String]
+prettyErrorWithText :: ColorFlag -> Text -> Error -> [String]
+hPrintError :: Handle -> Error -> IO ()
+hPrintErrorWithText :: Handle -> Text -> Error -> IO ()
 
 module Jikka.Common.Matrix
 

@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_KMrFbbJXv6f3Rjm8X19KjX"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Common.Format.Color</span><span>
+</span><span id="line-2"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.Common.Format.Color.html#ColorFlag"><span class="hs-identifier">ColorFlag</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-3"></span><span>    </span><span class="annot"><a href="Jikka.Common.Format.Color.html#withColor"><span class="hs-identifier">withColor</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-4"></span><span>    </span><span class="annot"><a href="Jikka.Common.Format.Color.html#withBold"><span class="hs-identifier">withBold</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Jikka.Common.Format.Color.html#hGetColorFlag"><span class="hs-identifier">hGetColorFlag</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>    </span><span class="annot"><span class="hs-identifier">Color</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Console.ANSI</span></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Handle</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">data</span><span> </span><span id="ColorFlag"><span class="annot"><a href="Jikka.Common.Format.Color.html#ColorFlag"><span class="hs-identifier hs-var">ColorFlag</span></a></span></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="EnableColor"><span class="annot"><a href="Jikka.Common.Format.Color.html#EnableColor"><span class="hs-identifier hs-var">EnableColor</span></a></span></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="DisableColor"><span class="annot"><a href="Jikka.Common.Format.Color.html#DisableColor"><span class="hs-identifier hs-var">DisableColor</span></a></span></span><span>
+</span><span id="line-16"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679279151"><span id="local-6989586621679279153"><span class="annot"><span class="annottext">ColorFlag -&gt; ColorFlag -&gt; Bool
+(ColorFlag -&gt; ColorFlag -&gt; Bool)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; Bool) -&gt; Eq ColorFlag
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ColorFlag -&gt; ColorFlag -&gt; Bool
+$c/= :: ColorFlag -&gt; ColorFlag -&gt; Bool
+== :: ColorFlag -&gt; ColorFlag -&gt; Bool
+$c== :: ColorFlag -&gt; ColorFlag -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679279135"><span id="local-6989586621679279137"><span id="local-6989586621679279139"><span id="local-6989586621679279141"><span id="local-6989586621679279143"><span id="local-6989586621679279145"><span id="local-6989586621679279147"><span class="annot"><span class="annottext">Eq ColorFlag
+Eq ColorFlag
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; Ordering)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; Bool)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; Bool)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; Bool)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; Bool)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; ColorFlag)
+-&gt; (ColorFlag -&gt; ColorFlag -&gt; ColorFlag)
+-&gt; Ord ColorFlag
+ColorFlag -&gt; ColorFlag -&gt; Bool
+ColorFlag -&gt; ColorFlag -&gt; Ordering
+ColorFlag -&gt; ColorFlag -&gt; ColorFlag
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: ColorFlag -&gt; ColorFlag -&gt; ColorFlag
+$cmin :: ColorFlag -&gt; ColorFlag -&gt; ColorFlag
+max :: ColorFlag -&gt; ColorFlag -&gt; ColorFlag
+$cmax :: ColorFlag -&gt; ColorFlag -&gt; ColorFlag
+&gt;= :: ColorFlag -&gt; ColorFlag -&gt; Bool
+$c&gt;= :: ColorFlag -&gt; ColorFlag -&gt; Bool
+&gt; :: ColorFlag -&gt; ColorFlag -&gt; Bool
+$c&gt; :: ColorFlag -&gt; ColorFlag -&gt; Bool
+&lt;= :: ColorFlag -&gt; ColorFlag -&gt; Bool
+$c&lt;= :: ColorFlag -&gt; ColorFlag -&gt; Bool
+&lt; :: ColorFlag -&gt; ColorFlag -&gt; Bool
+$c&lt; :: ColorFlag -&gt; ColorFlag -&gt; Bool
+compare :: ColorFlag -&gt; ColorFlag -&gt; Ordering
+$ccompare :: ColorFlag -&gt; ColorFlag -&gt; Ordering
+$cp1Ord :: Eq ColorFlag
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679279128"><span id="local-6989586621679279130"><span id="local-6989586621679279132"><span class="annot"><span class="annottext">Int -&gt; ColorFlag -&gt; ShowS
+[ColorFlag] -&gt; ShowS
+ColorFlag -&gt; String
+(Int -&gt; ColorFlag -&gt; ShowS)
+-&gt; (ColorFlag -&gt; String)
+-&gt; ([ColorFlag] -&gt; ShowS)
+-&gt; Show ColorFlag
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ColorFlag] -&gt; ShowS
+$cshowList :: [ColorFlag] -&gt; ShowS
+show :: ColorFlag -&gt; String
+$cshow :: ColorFlag -&gt; String
+showsPrec :: Int -&gt; ColorFlag -&gt; ShowS
+$cshowsPrec :: Int -&gt; ColorFlag -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679279119"><span id="local-6989586621679279121"><span id="local-6989586621679279123"><span id="local-6989586621679279125"><span class="annot"><span class="annottext">ReadPrec [ColorFlag]
+ReadPrec ColorFlag
+Int -&gt; ReadS ColorFlag
+ReadS [ColorFlag]
+(Int -&gt; ReadS ColorFlag)
+-&gt; ReadS [ColorFlag]
+-&gt; ReadPrec ColorFlag
+-&gt; ReadPrec [ColorFlag]
+-&gt; Read ColorFlag
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [ColorFlag]
+$creadListPrec :: ReadPrec [ColorFlag]
+readPrec :: ReadPrec ColorFlag
+$creadPrec :: ReadPrec ColorFlag
+readList :: ReadS [ColorFlag]
+$creadList :: ReadS [ColorFlag]
+readsPrec :: Int -&gt; ReadS ColorFlag
+$creadsPrec :: Int -&gt; ReadS ColorFlag
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="annot"><a href="Jikka.Common.Format.Color.html#withColor"><span class="hs-identifier hs-type">withColor</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Common.Format.Color.html#ColorFlag"><span class="hs-identifier hs-type">ColorFlag</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Color</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-19"></span><span id="withColor"><span class="annot"><span class="annottext">withColor :: ColorFlag -&gt; Color -&gt; ShowS
+</span><a href="Jikka.Common.Format.Color.html#withColor"><span class="hs-identifier hs-var hs-var">withColor</span></a></span></span><span> </span><span class="annot"><span class="annottext">ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#DisableColor"><span class="hs-identifier hs-var">DisableColor</span></a></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679279117"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279117"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279117"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-20"></span><span class="annot"><a href="Jikka.Common.Format.Color.html#withColor"><span class="hs-identifier hs-var">withColor</span></a></span><span> </span><span class="annot"><span class="annottext">ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#EnableColor"><span class="hs-identifier hs-var">EnableColor</span></a></span><span> </span><span id="local-6989586621679279116"><span class="annot"><span class="annottext">Color
+</span><a href="#local-6989586621679279116"><span class="hs-identifier hs-var">color</span></a></span></span><span> </span><span id="local-6989586621679279115"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279115"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[SGR] -&gt; String
+</span><span class="hs-identifier hs-var">setSGRCode</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ConsoleLayer -&gt; ColorIntensity -&gt; Color -&gt; SGR
+</span><span class="hs-identifier hs-var">SetColor</span></span><span> </span><span class="annot"><span class="annottext">ConsoleLayer
+</span><span class="hs-identifier hs-var">Foreground</span></span><span> </span><span class="annot"><span class="annottext">ColorIntensity
+</span><span class="hs-identifier hs-var">Vivid</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><a href="#local-6989586621679279116"><span class="hs-identifier hs-var">color</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279115"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[SGR] -&gt; String
+</span><span class="hs-identifier hs-var">setSGRCode</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ConsoleLayer -&gt; ColorIntensity -&gt; Color -&gt; SGR
+</span><span class="hs-identifier hs-var">SetColor</span></span><span> </span><span class="annot"><span class="annottext">ConsoleLayer
+</span><span class="hs-identifier hs-var">Foreground</span></span><span> </span><span class="annot"><span class="annottext">ColorIntensity
+</span><span class="hs-identifier hs-var">Dull</span></span><span> </span><span class="annot"><span class="annottext">Color
+</span><span class="hs-identifier hs-var">White</span></span><span class="hs-special">]</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Jikka.Common.Format.Color.html#withBold"><span class="hs-identifier hs-type">withBold</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Common.Format.Color.html#ColorFlag"><span class="hs-identifier hs-type">ColorFlag</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-23"></span><span id="withBold"><span class="annot"><span class="annottext">withBold :: ColorFlag -&gt; ShowS
+</span><a href="Jikka.Common.Format.Color.html#withBold"><span class="hs-identifier hs-var hs-var">withBold</span></a></span></span><span> </span><span class="annot"><span class="annottext">ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#DisableColor"><span class="hs-identifier hs-var">DisableColor</span></a></span><span> </span><span id="local-6989586621679279108"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279108"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279108"><span class="hs-identifier hs-var">s</span></a></span><span>
+</span><span id="line-24"></span><span class="annot"><a href="Jikka.Common.Format.Color.html#withBold"><span class="hs-identifier hs-var">withBold</span></a></span><span> </span><span class="annot"><span class="annottext">ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#EnableColor"><span class="hs-identifier hs-var">EnableColor</span></a></span><span> </span><span id="local-6989586621679279107"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279107"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[SGR] -&gt; String
+</span><span class="hs-identifier hs-var">setSGRCode</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ConsoleIntensity -&gt; SGR
+</span><span class="hs-identifier hs-var">SetConsoleIntensity</span></span><span> </span><span class="annot"><span class="annottext">ConsoleIntensity
+</span><span class="hs-identifier hs-var">BoldIntensity</span></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679279107"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[SGR] -&gt; String
+</span><span class="hs-identifier hs-var">setSGRCode</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">ConsoleIntensity -&gt; SGR
+</span><span class="hs-identifier hs-var">SetConsoleIntensity</span></span><span> </span><span class="annot"><span class="annottext">ConsoleIntensity
+</span><span class="hs-identifier hs-var">NormalIntensity</span></span><span class="hs-special">]</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Jikka.Common.Format.Color.html#hGetColorFlag"><span class="hs-identifier hs-type">hGetColorFlag</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Handle</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Jikka.Common.Format.Color.html#ColorFlag"><span class="hs-identifier hs-type">ColorFlag</span></a></span><span>
+</span><span id="line-27"></span><span id="hGetColorFlag"><span class="annot"><span class="annottext">hGetColorFlag :: Handle -&gt; IO ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#hGetColorFlag"><span class="hs-identifier hs-var hs-var">hGetColorFlag</span></a></span></span><span> </span><span id="local-6989586621679279103"><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679279103"><span class="hs-identifier hs-var">handle</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-28"></span><span>  </span><span id="local-6989586621679279102"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679279102"><span class="hs-identifier hs-var">supported</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Handle -&gt; IO Bool
+</span><span class="hs-identifier hs-var">hSupportsANSI</span></span><span> </span><span class="annot"><span class="annottext">Handle
+</span><a href="#local-6989586621679279103"><span class="hs-identifier hs-var">handle</span></a></span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><span class="annottext">ColorFlag -&gt; IO ColorFlag
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679279102"><span class="hs-identifier hs-var">supported</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#EnableColor"><span class="hs-identifier hs-var">EnableColor</span></a></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">ColorFlag
+</span><a href="Jikka.Common.Format.Color.html#DisableColor"><span class="hs-identifier hs-var">DisableColor</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span></pre></body></html>
