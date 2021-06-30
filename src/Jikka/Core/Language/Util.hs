@@ -122,26 +122,41 @@ countOccurrencesToplevelExpr x = \case
   ToplevelLet y _ e cont -> countOccurrences x e + (if x == y then 0 else countOccurrencesToplevelExpr x cont)
   ToplevelLetRec f args _ body cont -> if x == f then 0 else countOccurrencesToplevelExpr x cont + (if x `elem` map fst args then 0 else countOccurrences x body)
 
-mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
-mapExprM f env = \case
-  Var y -> f env (Var y)
-  Lit lit -> f env (Lit lit)
-  App g args -> f env =<< (App <$> mapExprM f env g <*> mapM (mapExprM f env) args)
-  Lam args body -> f env . Lam args =<< mapExprM f (reverse args ++ env) body
-  Let y t e1 e2 -> f env =<< (Let y t <$> mapExprM f env e1 <*> mapExprM f ((y, t) : env) e2)
+-- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
+mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapExprM' pre post env e = do
+  e <- pre env e
+  let go = mapExprM' pre post
+  e <- case e of
+    Var y -> return $ Var y
+    Lit lit -> return $ Lit lit
+    App g args -> App <$> go env g <*> mapM (go env) args
+    Lam args body -> Lam args <$> go (reverse args ++ env) body
+    Let y t e1 e2 -> Let y t <$> go env e1 <*> go ((y, t) : env) e2
+  post env e
 
-mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprToplevelExprM f env = \case
-  ResultExpr e -> ResultExpr <$> mapExprM f env e
+mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprToplevelExprM' pre post env = \case
+  ResultExpr e -> ResultExpr <$> mapExprM' pre post env e
   ToplevelLet y t e cont ->
     let env' = (y, t) : env
-     in ToplevelLet y t <$> mapExprM f env' e <*> mapExprToplevelExprM f env' cont
+     in ToplevelLet y t <$> mapExprM' pre post env' e <*> mapExprToplevelExprM' pre post env' cont
   ToplevelLetRec g args ret body cont ->
     let env' = (g, FunTy (map snd args) ret) : env
-     in ToplevelLetRec g args ret <$> mapExprM f (reverse args ++ env) body <*> mapExprToplevelExprM f env' cont
+     in ToplevelLetRec g args ret <$> mapExprM' pre post (reverse args ++ env) body <*> mapExprToplevelExprM' pre post env' cont
+
+mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
+mapExprProgramM' pre post = mapExprToplevelExprM' pre post []
+
+-- | `mapExprM` is a wrapper of `mapExprM'`. This function works in post-order.
+mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapExprM f = mapExprM' (\_ e -> return e) f
+
+mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprToplevelExprM f = mapExprToplevelExprM' (\_ e -> return e) f
 
 mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-mapExprProgramM f = mapExprToplevelExprM f []
+mapExprProgramM f = mapExprProgramM' (\_ e -> return e) f
 
 mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
 mapExpr f env e = runIdentity $ mapExprM (\env e -> return $ f env e) env e
