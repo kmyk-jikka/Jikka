@@ -27,6 +27,7 @@ import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
+import qualified Jikka.Core.Convert.UnpackTuple as UnpackTuple
 import Jikka.Core.Language.Expr
 
 run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
@@ -36,6 +37,7 @@ run' prog = do
   prog <- RemoveUnusedVars.run prog
   prog <- ImmediateAppToLet.run prog
   prog <- TrivialLetElimination.run prog
+  prog <- UnpackTuple.run prog
   prog <- LinearFunction.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
