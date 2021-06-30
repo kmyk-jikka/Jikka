@@ -711,6 +711,9 @@ Sum :: Builtin
 Product :: Builtin
 
 -- | &lt;math&gt;
+ModProduct :: Builtin
+
+-- | &lt;math&gt;
 Min1 :: Type -> Builtin
 
 -- | &lt;math&gt;
@@ -927,6 +930,7 @@ pattern SetAt' :: Type -> Expr -> Expr -> Expr -> Expr
 pattern Elem' :: Type -> Expr -> Expr -> Expr
 pattern Sum' :: Expr -> Expr
 pattern Product' :: Expr -> Expr
+pattern ModProduct' :: Expr -> Expr -> Expr
 pattern Min1' :: Type -> Expr -> Expr
 pattern Max1' :: Type -> Expr -> Expr
 pattern ArgMin' :: Type -> Expr -> Expr
@@ -1097,7 +1101,7 @@ module Jikka.Core.Convert.PropagateMod
 --   <pre>
 --   (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y
 --   </pre>
-run :: MonadError Error m => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 module Jikka.Core.Convert.MakeEager

@@ -6,556 +6,665 @@
 </span><span id="line-6"></span><span>  </span><span class="hs-special">)</span><span>
 </span><span id="line-7"></span><span class="hs-keyword">where</span><span>
 </span><span id="line-8"></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html"><span class="hs-identifier">Jikka.Core.Language.BuiltinPatterns</span></a></span><span>
-</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span>
-</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Lint.html"><span class="hs-identifier">Jikka.Core.Language.Lint</span></a></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.TypeCheck.html"><span class="hs-identifier">Jikka.Core.Language.TypeCheck</span></a></span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Util.html"><span class="hs-identifier">Jikka.Core.Language.Util</span></a></span><span>
-</span><span id="line-15"></span><span>
-</span><span id="line-16"></span><span id="local-6989586621679284478"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-type">runFloorMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284478"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284478"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
-</span><span id="line-17"></span><span id="runFloorMod"><span class="annot"><span class="annottext">runFloorMod :: [(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
-</span><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-var hs-var">runFloorMod</span></a></span></span><span> </span><span id="local-6989586621679284452"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284452"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621679284451"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284451"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284450"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284451"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-18"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-19"></span><span>    </span><span id="local-6989586621679284489"><span class="annot"><a href="#local-6989586621679284449"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284489"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284489"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
-</span><span id="line-20"></span><span>    </span><span id="local-6989586621679284449"><span class="annot"><span class="annottext">go :: Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-21"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Negate%27"><span class="hs-identifier hs-type">Negate'</span></a></span><span> </span><span id="local-6989586621679284447"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284447"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html"><span class="hs-identifier">Jikka.Common.Alpha</span></a></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html"><span class="hs-identifier">Jikka.Core.Language.BuiltinPatterns</span></a></span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Lint.html"><span class="hs-identifier">Jikka.Core.Language.Lint</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.TypeCheck.html"><span class="hs-identifier">Jikka.Core.Language.TypeCheck</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Util.html"><span class="hs-identifier">Jikka.Core.Language.Util</span></a></span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span id="local-6989586621679284689"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-type">runFloorMod</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284689"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284689"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284689"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
+</span><span id="line-18"></span><span id="runFloorMod"><span class="annot"><span class="annottext">runFloorMod :: [(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
+</span><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-var hs-var">runFloorMod</span></a></span></span><span> </span><span id="local-6989586621679284662"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679284662"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621679284661"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284661"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284660"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284661"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-20"></span><span>    </span><span id="local-6989586621679284702"><span class="annot"><a href="#local-6989586621679284659"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284702"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284702"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284702"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
+</span><span id="line-21"></span><span>    </span><span id="local-6989586621679284659"><span class="annot"><span class="annottext">go :: Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-22"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Negate%27"><span class="hs-identifier hs-type">Negate'</span></a></span><span> </span><span id="local-6989586621679284657"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284657"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Negate%27"><span class="hs-identifier hs-var">Negate'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284447"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284657"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-22"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Plus%27"><span class="hs-identifier hs-type">Plus'</span></a></span><span> </span><span id="local-6989586621679284443"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284443"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284442"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284442"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-23"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Plus%27"><span class="hs-identifier hs-type">Plus'</span></a></span><span> </span><span id="local-6989586621679284653"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284653"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284652"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284652"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Plus%27"><span class="hs-identifier hs-var">Plus'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284443"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284653"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284442"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284652"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-23"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Minus%27"><span class="hs-identifier hs-type">Minus'</span></a></span><span> </span><span id="local-6989586621679284440"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284440"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284439"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284439"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-24"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Minus%27"><span class="hs-identifier hs-type">Minus'</span></a></span><span> </span><span id="local-6989586621679284650"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284650"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284649"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284649"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Minus%27"><span class="hs-identifier hs-var">Minus'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284440"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284650"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284439"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284649"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-24"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Mult%27"><span class="hs-identifier hs-type">Mult'</span></a></span><span> </span><span id="local-6989586621679284437"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284437"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284436"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284436"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-25"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Mult%27"><span class="hs-identifier hs-type">Mult'</span></a></span><span> </span><span id="local-6989586621679284647"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284647"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284646"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284646"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Mult%27"><span class="hs-identifier hs-var">Mult'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284437"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284647"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284436"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284646"><span class="hs-identifier hs-var">e2</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-25"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Pow%27"><span class="hs-identifier hs-type">Pow'</span></a></span><span> </span><span id="local-6989586621679284434"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284434"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284433"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284433"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-26"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Pow%27"><span class="hs-identifier hs-type">Pow'</span></a></span><span> </span><span id="local-6989586621679284644"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284644"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284643"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284643"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModPow%27"><span class="hs-identifier hs-var">ModPow'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284434"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284644"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284433"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284643"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-26"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModInv%27"><span class="hs-identifier hs-type">ModInv'</span></a></span><span> </span><span id="local-6989586621679284430"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284430"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284429"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284429"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-27"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModInv%27"><span class="hs-identifier hs-type">ModInv'</span></a></span><span> </span><span id="local-6989586621679284640"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284640"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284639"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284639"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284429"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284639"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModInv%27"><span class="hs-identifier hs-var">ModInv'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284430"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284640"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-27"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModPow%27"><span class="hs-identifier hs-type">ModPow'</span></a></span><span> </span><span id="local-6989586621679284428"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284428"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284427"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284426"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284426"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-28"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModPow%27"><span class="hs-identifier hs-type">ModPow'</span></a></span><span> </span><span id="local-6989586621679284638"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284638"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284637"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284637"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284636"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284636"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284426"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284636"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModPow%27"><span class="hs-identifier hs-var">ModPow'</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284428"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284638"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284427"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284637"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-28"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatAp%27"><span class="hs-identifier hs-type">MatAp'</span></a></span><span> </span><span id="local-6989586621679284424"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284424"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284423"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284423"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284422"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284422"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284421"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284421"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-29"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatAp%27"><span class="hs-identifier hs-type">MatAp'</span></a></span><span> </span><span id="local-6989586621679284634"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284634"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284633"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284633"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284632"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284632"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284631"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284631"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAp%27"><span class="hs-identifier hs-var">ModMatAp'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284424"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284423"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284634"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284633"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284422"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284632"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284421"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284631"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-29"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatAdd%27"><span class="hs-identifier hs-type">MatAdd'</span></a></span><span> </span><span id="local-6989586621679284418"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284418"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284417"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284417"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284416"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284416"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284415"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284415"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-30"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatAdd%27"><span class="hs-identifier hs-type">MatAdd'</span></a></span><span> </span><span id="local-6989586621679284628"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284628"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284627"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284627"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284626"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284626"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284625"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284625"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAdd%27"><span class="hs-identifier hs-var">ModMatAdd'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284418"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284417"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284628"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284627"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284416"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284626"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284415"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284625"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-30"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatMul%27"><span class="hs-identifier hs-type">MatMul'</span></a></span><span> </span><span id="local-6989586621679284412"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284412"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284411"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284411"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284410"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284410"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284409"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284409"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284408"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284408"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-31"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatMul%27"><span class="hs-identifier hs-type">MatMul'</span></a></span><span> </span><span id="local-6989586621679284622"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284622"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284621"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284621"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284620"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284620"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284619"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284619"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284618"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284618"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatMul%27"><span class="hs-identifier hs-var">ModMatMul'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284412"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284411"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284410"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284622"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284621"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284620"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284409"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284619"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284408"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284618"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-31"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatPow%27"><span class="hs-identifier hs-type">MatPow'</span></a></span><span> </span><span id="local-6989586621679284405"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284405"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284404"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284404"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284403"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284403"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-32"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatPow%27"><span class="hs-identifier hs-type">MatPow'</span></a></span><span> </span><span id="local-6989586621679284615"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284615"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284614"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284614"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284613"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284613"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatPow%27"><span class="hs-identifier hs-var">ModMatPow'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284405"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284615"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284404"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284614"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284403"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284613"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-32"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Proj%27"><span class="hs-identifier hs-type">Proj'</span></a></span><span> </span><span id="local-6989586621679284400"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679284400"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679284399"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284399"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679284398"><span class="annot"><span class="annottext">e :: Expr
-</span><a href="#local-6989586621679284398"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatAp%27"><span class="hs-identifier hs-type">MatAp'</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Int -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-33"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Proj%27"><span class="hs-identifier hs-type">Proj'</span></a></span><span> </span><span id="local-6989586621679284610"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679284610"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679284609"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284609"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679284608"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679284608"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#MatAp%27"><span class="hs-identifier hs-type">MatAp'</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Int -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Proj%27"><span class="hs-identifier hs-var">Proj'</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679284400"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284399"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284610"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284609"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284398"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-33"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Proj%27"><span class="hs-identifier hs-type">Proj'</span></a></span><span> </span><span id="local-6989586621679284397"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679284397"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679284396"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284396"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679284395"><span class="annot"><span class="annottext">e :: Expr
-</span><a href="#local-6989586621679284395"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAp%27"><span class="hs-identifier hs-type">ModMatAp'</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Int -&gt; Expr -&gt; Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284608"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-34"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Proj%27"><span class="hs-identifier hs-type">Proj'</span></a></span><span> </span><span id="local-6989586621679284607"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679284607"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679284606"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284606"><span class="hs-identifier hs-var">i</span></a></span></span><span> </span><span id="local-6989586621679284605"><span class="annot"><span class="annottext">e :: Expr
+</span><a href="#local-6989586621679284605"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAp%27"><span class="hs-identifier hs-type">ModMatAp'</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Int -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Proj%27"><span class="hs-identifier hs-var">Proj'</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679284397"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284396"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284607"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284606"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284395"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-34"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAp%27"><span class="hs-identifier hs-type">ModMatAp'</span></a></span><span> </span><span id="local-6989586621679284394"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284394"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284393"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284393"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284392"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284392"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284391"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284391"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284390"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284390"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284605"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-35"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAp%27"><span class="hs-identifier hs-type">ModMatAp'</span></a></span><span> </span><span id="local-6989586621679284604"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284604"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284603"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284603"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284602"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284602"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284601"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284601"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284600"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284600"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284390"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284600"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAp%27"><span class="hs-identifier hs-var">ModMatAp'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284394"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284393"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284604"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284603"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284392"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284602"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284391"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284601"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-35"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAdd%27"><span class="hs-identifier hs-type">ModMatAdd'</span></a></span><span> </span><span id="local-6989586621679284389"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284389"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284388"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284388"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284387"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284387"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284386"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284386"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284385"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284385"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-36"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAdd%27"><span class="hs-identifier hs-type">ModMatAdd'</span></a></span><span> </span><span id="local-6989586621679284599"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284599"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284598"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284598"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284597"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284597"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284596"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284596"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284595"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284595"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284385"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284595"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatAdd%27"><span class="hs-identifier hs-var">ModMatAdd'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284389"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284388"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284599"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284598"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284387"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284597"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284386"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284596"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-36"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatMul%27"><span class="hs-identifier hs-type">ModMatMul'</span></a></span><span> </span><span id="local-6989586621679284384"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284384"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284383"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284383"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284382"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284382"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284381"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284381"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284380"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284380"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284379"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284379"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-37"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatMul%27"><span class="hs-identifier hs-type">ModMatMul'</span></a></span><span> </span><span id="local-6989586621679284594"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284594"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span id="local-6989586621679284593"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284593"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284592"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284592"><span class="hs-identifier hs-var">w</span></a></span></span><span> </span><span id="local-6989586621679284591"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284591"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284590"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284590"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284589"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284589"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284379"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284589"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatMul%27"><span class="hs-identifier hs-var">ModMatMul'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284384"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284383"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284382"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284594"><span class="hs-identifier hs-var">h</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284593"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284592"><span class="hs-identifier hs-var">w</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284381"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284591"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284380"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284590"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-37"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatPow%27"><span class="hs-identifier hs-type">ModMatPow'</span></a></span><span> </span><span id="local-6989586621679284378"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284378"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284377"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284377"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284376"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284376"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284375"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284375"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-38"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatPow%27"><span class="hs-identifier hs-type">ModMatPow'</span></a></span><span> </span><span id="local-6989586621679284588"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679284588"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span id="local-6989586621679284587"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284587"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679284586"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284586"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679284585"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284585"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284375"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284585"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Expr -&gt; Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModMatPow%27"><span class="hs-identifier hs-var">ModMatPow'</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679284378"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
+</span><a href="#local-6989586621679284588"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr -&gt; Expr -&gt; Expr)
 -&gt; m Expr -&gt; m (Expr -&gt; Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284377"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284587"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr -&gt; Expr) -&gt; m Expr -&gt; m (Expr -&gt; Expr)
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284376"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284586"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">m (Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-38"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679284372"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284372"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679284371"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284371"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679284370"><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621679284370"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-39"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679284582"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679284582"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679284581"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284581"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679284580"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679284580"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; Expr
 </span><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-var">App</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; [Expr] -&gt; Expr) -&gt; m Expr -&gt; m ([Expr] -&gt; Expr)
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284372"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
+</span><a href="#local-6989586621679284582"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr) -&gt; m Expr -&gt; m Expr
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
 forall (m :: * -&gt; *).
-MonadError Error m =&gt;
+(MonadAlpha m, MonadError Error m) =&gt;
 [(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
 </span><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-var">runFloorMod</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; [(VarName, Type)]
 forall a. [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284372"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; [(VarName, Type)] -&gt; [(VarName, Type)]
+</span><a href="#local-6989586621679284582"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; [(VarName, Type)] -&gt; [(VarName, Type)]
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284452"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284371"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m ([Expr] -&gt; Expr) -&gt; m [Expr] -&gt; m Expr
+</span><a href="#local-6989586621679284662"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284581"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">m ([Expr] -&gt; Expr) -&gt; m [Expr] -&gt; m Expr
 forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Expr] -&gt; m [Expr]
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621679284370"><span class="hs-identifier hs-var">es</span></a></span><span>
-</span><span id="line-39"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Tuple%27"><span class="hs-identifier hs-type">Tuple'</span></a></span><span> </span><span id="local-6989586621679284367"><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679284367"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679284366"><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621679284366"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; [Expr] -&gt; Expr
+</span><a href="#local-6989586621679284580"><span class="hs-identifier hs-var">es</span></a></span><span>
+</span><span id="line-40"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Tuple%27"><span class="hs-identifier hs-type">Tuple'</span></a></span><span> </span><span id="local-6989586621679284577"><span class="annot"><span class="annottext">[Type]
+</span><a href="#local-6989586621679284577"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span id="local-6989586621679284576"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679284576"><span class="hs-identifier hs-var">es</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; [Expr] -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Tuple%27"><span class="hs-identifier hs-var">Tuple'</span></a></span><span> </span><span class="annot"><span class="annottext">[Type]
-</span><a href="#local-6989586621679284367"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">([Expr] -&gt; Expr) -&gt; m [Expr] -&gt; m Expr
+</span><a href="#local-6989586621679284577"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">([Expr] -&gt; Expr) -&gt; m [Expr] -&gt; m Expr
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; [Expr] -&gt; m [Expr]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
-</span><a href="#local-6989586621679284366"><span class="hs-identifier hs-var">es</span></a></span><span>
-</span><span id="line-40"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-type">FloorMod'</span></a></span><span> </span><span id="local-6989586621679284364"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284364"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284363"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284363"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
-</span><span id="line-41"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679284576"><span class="hs-identifier hs-var">es</span></a></span><span>
+</span><span id="line-41"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Sum%27"><span class="hs-identifier hs-type">Sum'</span></a></span><span> </span><span id="local-6989586621679284573"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284573"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>        </span><span id="local-6989586621679284572"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679284572"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m VarName
+forall (m :: * -&gt; *). MonadAlpha m =&gt; m VarName
+</span><a href="Jikka.Core.Language.Util.html#genVarName%27"><span class="hs-identifier hs-var">genVarName'</span></a></span><span>
+</span><span id="line-43"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.BuiltinPatterns.html#Sum%27"><span class="hs-identifier hs-var">Sum'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type -&gt; Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.BuiltinPatterns.html#Map%27"><span class="hs-identifier hs-var">Map'</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="Jikka.Core.Language.Expr.html#IntTy"><span class="hs-identifier hs-var">IntTy</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="Jikka.Core.Language.Expr.html#IntTy"><span class="hs-identifier hs-var">IntTy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-var">Lam</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679284572"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="Jikka.Core.Language.Expr.html#IntTy"><span class="hs-identifier hs-var">IntTy</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679284572"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284573"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-44"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#Product%27"><span class="hs-identifier hs-type">Product'</span></a></span><span> </span><span id="local-6989586621679284566"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284566"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModProduct%27"><span class="hs-identifier hs-var">ModProduct'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284566"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-45"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#ModProduct%27"><span class="hs-identifier hs-type">ModProduct'</span></a></span><span> </span><span id="local-6989586621679284564"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284564"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284563"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284563"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284363"><span class="hs-identifier hs-var">m'</span></a></span><span>
-</span><span id="line-42"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *). MonadError Error m =&gt; Expr -&gt; m Expr
-</span><a href="#local-6989586621679284449"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284364"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-43"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
+</span><a href="#local-6989586621679284563"><span class="hs-identifier hs-var">m'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="Jikka.Core.Language.BuiltinPatterns.html#ModProduct%27"><span class="hs-identifier hs-var">ModProduct'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284564"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-46"></span><span>      </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-type">FloorMod'</span></a></span><span> </span><span id="local-6989586621679284562"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284562"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284561"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284561"><span class="hs-identifier hs-var">m'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-47"></span><span>        </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284561"><span class="hs-identifier hs-var">m'</span></a></span><span>
+</span><span id="line-48"></span><span>          </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (m :: * -&gt; *).
-MonadError Error m =&gt;
+(MonadAlpha m, MonadError Error m) =&gt;
+Expr -&gt; m Expr
+</span><a href="#local-6989586621679284659"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284562"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-49"></span><span>          </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
 [(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
 </span><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-var">runFloorMod</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284452"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284364"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
+</span><a href="#local-6989586621679284662"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284562"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#Lcm%27"><span class="hs-identifier hs-var">Lcm'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284363"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span>      </span><span id="local-6989586621679284361"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284361"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-45"></span><span>        </span><span id="local-6989586621679284360"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679284360"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; m Type
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284561"><span class="hs-identifier hs-var">m'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span>      </span><span id="local-6989586621679284559"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284559"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-51"></span><span>        </span><span id="local-6989586621679284558"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679284558"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; m Type
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 [(VarName, Type)] -&gt; Expr -&gt; m Type
 </span><a href="Jikka.Core.Language.TypeCheck.html#typecheckExpr"><span class="hs-identifier hs-var">typecheckExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284452"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284361"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-46"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+</span><a href="#local-6989586621679284662"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284559"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-52"></span><span>        </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679284360"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-47"></span><span>          </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679284558"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-53"></span><span>          </span><span class="annot"><span class="annottext">Type
 </span><a href="Jikka.Core.Language.Expr.html#IntTy"><span class="hs-identifier hs-var">IntTy</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; Expr -&gt; Expr
 </span><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-var">FloorMod'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284361"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284450"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-48"></span><span>          </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679284559"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284660"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-54"></span><span>          </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284361"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span id="local-6989586621679284461"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#runExpr"><span class="hs-identifier hs-type">runExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284461"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284461"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
-</span><span id="line-51"></span><span id="runExpr"><span class="annot"><span class="annottext">runExpr :: [(VarName, Type)] -&gt; Expr -&gt; m Expr
-</span><a href="Jikka.Core.Convert.PropagateMod.html#runExpr"><span class="hs-identifier hs-var hs-var">runExpr</span></a></span></span><span> </span><span id="local-6989586621679284356"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284356"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-type">FloorMod'</span></a></span><span> </span><span id="local-6989586621679284355"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284355"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284354"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284354"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
+</span><a href="#local-6989586621679284559"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-55"></span><span>
+</span><span id="line-56"></span><span id="local-6989586621679284671"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#runExpr"><span class="hs-identifier hs-type">runExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284671"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284671"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284671"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
+</span><span id="line-57"></span><span id="runExpr"><span class="annot"><span class="annottext">runExpr :: [(VarName, Type)] -&gt; Expr -&gt; m Expr
+</span><a href="Jikka.Core.Convert.PropagateMod.html#runExpr"><span class="hs-identifier hs-var hs-var">runExpr</span></a></span></span><span> </span><span id="local-6989586621679284555"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621679284555"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-58"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.BuiltinPatterns.html#FloorMod%27"><span class="hs-identifier hs-type">FloorMod'</span></a></span><span> </span><span id="local-6989586621679284554"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284554"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679284553"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284553"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
 forall (m :: * -&gt; *).
-MonadError Error m =&gt;
+(MonadAlpha m, MonadError Error m) =&gt;
 [(VarName, Type)] -&gt; Expr -&gt; Expr -&gt; m Expr
 </span><a href="Jikka.Core.Convert.PropagateMod.html#runFloorMod"><span class="hs-identifier hs-var">runFloorMod</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679284356"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284355"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284354"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-53"></span><span>  </span><span id="local-6989586621679284353"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284353"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+</span><a href="#local-6989586621679284555"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284554"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284553"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679284552"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679284552"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679284353"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-54"></span><span>
-</span><span id="line-55"></span><span id="local-6989586621679284456"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#runProgram"><span class="hs-identifier hs-type">runProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284456"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284456"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
-</span><span id="line-56"></span><span id="runProgram"><span class="annot"><span class="annottext">runProgram :: Program -&gt; m Program
+</span><a href="#local-6989586621679284552"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span id="local-6989586621679284666"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#runProgram"><span class="hs-identifier hs-type">runProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284666"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284666"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284666"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-62"></span><span id="runProgram"><span class="annot"><span class="annottext">runProgram :: Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.PropagateMod.html#runProgram"><span class="hs-identifier hs-var hs-var">runProgram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([(VarName, Type)] -&gt; Expr -&gt; m Expr) -&gt; Program -&gt; m Program
 forall (m :: * -&gt; *).
 Monad m =&gt;
 ([(VarName, Type)] -&gt; Expr -&gt; m Expr) -&gt; Program -&gt; m Program
 </span><a href="Jikka.Core.Language.Util.html#mapExprProgramM"><span class="hs-identifier hs-var">mapExprProgramM</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; Expr -&gt; m Expr
 forall (m :: * -&gt; *).
-MonadError Error m =&gt;
+(MonadAlpha m, MonadError Error m) =&gt;
 [(VarName, Type)] -&gt; Expr -&gt; m Expr
 </span><a href="Jikka.Core.Convert.PropagateMod.html#runExpr"><span class="hs-identifier hs-var">runExpr</span></a></span><span>
-</span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span class="hs-comment">-- | `run` propagates `FloorMod` to leaves of exprs.</span><span>
-</span><span id="line-59"></span><span class="hs-comment">-- For example, this converts the following:</span><span>
-</span><span id="line-60"></span><span class="hs-comment">--</span><span>
-</span><span id="line-61"></span><span class="hs-comment">-- &gt; mod ((fun x -&gt; x * x + x) y) 1000000007</span><span>
-</span><span id="line-62"></span><span class="hs-comment">--</span><span>
-</span><span id="line-63"></span><span class="hs-comment">-- to:</span><span>
-</span><span id="line-64"></span><span class="hs-comment">--</span><span>
-</span><span id="line-65"></span><span class="hs-comment">-- &gt; (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y</span><span>
-</span><span id="line-66"></span><span id="local-6989586621679284350"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284350"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284350"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
-</span><span id="line-67"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
-</span><a href="Jikka.Core.Convert.PropagateMod.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679284349"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679284349"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="hs-comment">-- | `run` propagates `FloorMod` to leaves of exprs.</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- For example, this converts the following:</span><span>
+</span><span id="line-66"></span><span class="hs-comment">--</span><span>
+</span><span id="line-67"></span><span class="hs-comment">-- &gt; mod ((fun x -&gt; x * x + x) y) 1000000007</span><span>
+</span><span id="line-68"></span><span class="hs-comment">--</span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- to:</span><span>
+</span><span id="line-70"></span><span class="hs-comment">--</span><span>
+</span><span id="line-71"></span><span class="hs-comment">-- &gt; (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y</span><span>
+</span><span id="line-72"></span><span id="local-6989586621679284549"><span class="annot"><a href="Jikka.Core.Convert.PropagateMod.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284549"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679284549"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679284549"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-73"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.PropagateMod.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679284548"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679284548"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Jikka.Core.Convert.PropagateMod&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-68"></span><span>  </span><span id="local-6989586621679284347"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679284347"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
-forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m Program
+</span><span id="line-74"></span><span>  </span><span id="local-6989586621679284546"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679284546"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.PropagateMod.html#runProgram"><span class="hs-identifier hs-var">runProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679284349"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-69"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><a href="#local-6989586621679284548"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679284347"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-70"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+</span><a href="#local-6989586621679284546"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-76"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679284347"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-71"></span></pre></body></html>
+</span><a href="#local-6989586621679284546"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-77"></span></pre></body></html>
