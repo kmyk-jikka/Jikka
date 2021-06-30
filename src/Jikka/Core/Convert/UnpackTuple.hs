@@ -34,19 +34,21 @@ runAppLam = go [] []
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 runExpr _ = \case
   App (Lam formal body) actual -> runAppLam formal body actual
-  Proj' ts i (Tuple' ts' es) -> do
-    when (ts /= ts') $ do
-      throwInternalError "the types of tuple don't match"
-    return $ es !! i
-  Foldl' t2 (TupleTy [t1]) (Lam [(x1, TupleTy [_]), (x2, _)] (Tuple' [_] [body])) (Tuple' [_] [e]) es ->
-    let body' = substitute x1 (Tuple' [t1] [Var x1]) body
-     in return $ Tuple' [t1] [Foldl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') e es]
-  Scanl' t2 (TupleTy [t1]) (Lam [(x1, _), (x2, TupleTy [_])] (Tuple' [_] [body])) (Tuple' [_] [e]) es -> do
-    let body' = substitute x1 (Tuple' [t1] [Var x1]) body
-    let e' = Scanl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') e es
+  Tuple' [_] [Proj' [_] 0 e] -> return e
+  Proj' _ i (Tuple' _ es) -> return $ es !! i
+  Foldl' t2 (TupleTy [t1]) (Lam [(x1, TupleTy [_]), (x2, _)] body) e es -> do
+    let body' = substitute x1 (Tuple' [t1] [Var x1]) (Proj' [t1] 0 body)
+    return $ Tuple' [t1] [Foldl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') (Proj' [t1] 0 e) es]
+  Scanl' t2 (TupleTy [t1]) (Lam [(x1, _), (x2, TupleTy [_])] body) e es -> do
+    let body' = substitute x1 (Tuple' [t1] [Var x1]) (Proj' [t1] 0 body)
+    let e' = Scanl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') (Proj' [t1] 0 e) es
     y <- genVarName'
     let f = Map' t1 (TupleTy [t1]) (Lam [(y, t1)] (Tuple' [t1] [Var y]))
     return $ f e'
+  NatInd' (TupleTy [t]) e (Lam [(x, TupleTy [_])] body) n -> do
+    let body' = substitute x (Tuple' [t] [Var x]) (Proj' [t] 0 body)
+    return $ Tuple' [t] [NatInd' t (Proj' [t] 0 e) (Lam [(x, t)] body') n]
+  Proj' ts i (If' _ e1 e2 e3) -> return $ If' (ts !! i) e1 (Proj' ts i e2) (Proj' ts i e3)
   e -> return e
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
