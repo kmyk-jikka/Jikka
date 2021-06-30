@@ -737,13 +737,13 @@ List :: Type -> Builtin
 -- | &lt;math&gt;
 Reversed :: Type -> Builtin
 
--- | &lt;math&gt;1
+-- | &lt;math&gt;
 Range1 :: Builtin
 
--- | &lt;math&gt;1
+-- | &lt;math&gt;
 Range2 :: Builtin
 
--- | &lt;math&gt;1
+-- | &lt;math&gt;
 Range3 :: Builtin
 
 -- | &lt;math&gt;
@@ -1043,6 +1043,15 @@ genVarName' :: MonadAlpha m => m VarName
 mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
 countOccurrences :: VarName -> Expr -> Int
 countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
+
+-- | <a>mapExprM</a>` substitutes exprs using given two functions, which
+--   are called in pre-order and post-order.
+mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
+
+-- | <a>mapExprM</a> is a wrapper of <a>mapExprM</a>`. This function works
+--   in post-order.
 mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
 mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
 mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
@@ -1290,6 +1299,35 @@ module Jikka.Core.Language.Beta
 --   </pre>
 substitute :: VarName -> Expr -> Expr -> Expr
 substitute' :: [VarName] -> VarName -> Expr -> Expr -> Expr
+
+module Jikka.Core.Convert.UnpackTuple
+
+-- | <a>run</a> removes unnecessary introductions and eliminations of
+--   tuples. For example, this converts the following:
+--   
+--   <pre>
+--   (fun xs -&gt; (proj0 xs) + (proj1 xs)) (tuple 2 1)
+--   </pre>
+--   
+--   to the follwoing:
+--   
+--   <pre>
+--   (fun x0 x1 -&gt; x0 + x1) 2 1
+--   </pre>
+--   
+--   This can remove 1-tuples over higher-order functions. For example,
+--   this converts the following:
+--   
+--   <pre>
+--   foldl (fun xs y -&gt; tuple (proj0 xs + y) (tuple 0) [1, 2, 3]
+--   </pre>
+--   
+--   to the follwoing:
+--   
+--   <pre>
+--   tuple (foldl (fun x y -&gt; x + y) 0 [1, 2, 3])
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 -- | <a>FromCore</a> converts exprs of our core language to exprs of C++.
