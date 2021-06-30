@@ -8,7 +8,7 @@ def solve1(x: int, d: int, n: int) -> int:
     assert 0 <= d < MOD
     assert 0 <= n < 10 ** 9
 
-    return sum([x + i * d for i in range(n)]) % MOD
+    return product(x + i * d for i in range(n)) % MOD
 
 def solve(Q: int, x: List[int], d: List[int], n: List[int]) -> List[int]:
     assert 1 <= Q <= 100000

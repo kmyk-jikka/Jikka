@@ -68,6 +68,7 @@ builtinToType = \case
   Elem t -> FunTy [t, ListTy t] BoolTy
   Sum -> FunLTy IntTy
   Product -> FunLTy IntTy
+  ModProduct -> FunTy [ListTy IntTy, IntTy] IntTy
   Min1 t -> FunLTy t
   Max1 t -> FunLTy t
   ArgMin t -> FunTy [ListTy t] IntTy

@@ -287,6 +287,16 @@ inline int64_t product(const std::vector<int64_t> &xs) {
   return std::accumulate(xs.begin(), xs.end(), 1, std::multiplies<int64_t>());
 }
 
+inline int64_t modproduct(const std::vector<int64_t> &xs, int64_t MOD) {
+  assert(not xs.empty());
+  assert(1 <= MOD);
+  int64_t y = 1;
+  for (int64_t x : xs) {
+    y = y * x % MOD;
+  }
+  return y;
+}
+
 template <class T> T minimum(const std::vector<T> &xs) {
   assert(not xs.empty());
   return *std::min_element(xs.begin(), xs.end());

@@ -80,6 +80,7 @@ mapTypeInBuiltin f = \case
   Elem t -> Elem (f t)
   Sum -> Sum
   Product -> Product
+  ModProduct -> ModProduct
   Min1 t -> Min1 (f t)
   Max1 t -> Max1 (f t)
   ArgMin t -> ArgMin (f t)

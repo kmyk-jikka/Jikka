@@ -172,6 +172,8 @@ data Builtin
     Sum
   | -- | \(: \list(\int) \to \int\)
     Product
+  | -- | \(: \list(\int) \times \int \to \int\)
+    ModProduct
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
     Min1 Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)

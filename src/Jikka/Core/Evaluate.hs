@@ -209,6 +209,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     (Elem _, [x, ValList a]) -> return $ ValBool (x `V.elem` a)
     (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
     (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
+    (ModProduct, [ValList a, ValInt b]) -> ValInt . (`mod` b) . product <$> valueToIntList a
     (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
     (Max1 IntTy, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a) -- TODO: allow non-integers
     (ArgMin IntTy, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a) -- TODO: allow non-integers

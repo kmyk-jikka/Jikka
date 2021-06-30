@@ -6,6 +6,7 @@ module Jikka.Core.Convert.PropagateMod
   )
 where
 
+import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -13,10 +14,10 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 
-runFloorMod :: MonadError Error m => [(VarName, Type)] -> Expr -> Expr -> m Expr
+runFloorMod :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m Expr
 runFloorMod env e m = go e
   where
-    go :: MonadError Error m => Expr -> m Expr
+    go :: (MonadAlpha m, MonadError Error m) => Expr -> m Expr
     go = \case
       Negate' e -> FloorMod' <$> (Negate' <$> go e) <*> pure m
       Plus' e1 e2 -> FloorMod' <$> (Plus' <$> go e1 <*> go e2) <*> pure m
@@ -37,6 +38,11 @@ runFloorMod env e m = go e
       ModMatPow' n e1 e2 m' | m == m' -> ModMatPow' n <$> go e1 <*> pure e2 <*> pure m
       App (Lam args body) es -> App <$> (Lam args <$> runFloorMod (reverse args ++ env) body m) <*> pure es
       Tuple' ts es -> Tuple' ts <$> mapM go es
+      Sum' e -> do
+        x <- genVarName'
+        return $ FloorMod' (Sum' (Map' IntTy IntTy (Lam [(x, IntTy)] (FloorMod' (Var x) m)) e)) m
+      Product' e -> return $ ModProduct' e m
+      ModProduct' e m' | m == m' -> return $ ModProduct' e m
       FloorMod' e m' ->
         if m == m'
           then go e
@@ -47,12 +53,12 @@ runFloorMod env e m = go e
           IntTy -> FloorMod' e m
           _ -> e
 
-runExpr :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 runExpr env = \case
   FloorMod' e m -> runFloorMod env e m
   e -> return e
 
-runProgram :: MonadError Error m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = mapExprProgramM runExpr
 
 -- | `run` propagates `FloorMod` to leaves of exprs.
@@ -63,7 +69,7 @@ runProgram = mapExprProgramM runExpr
 -- to:
 --
 -- > (fun x -> mod (mod (x * x) 1000000007 + x) 1000000007) y
-run :: MonadError Error m => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.PropagateMod" $ do
   prog <- runProgram prog
   ensureWellTyped prog
