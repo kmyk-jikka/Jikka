@@ -176,9 +176,9 @@ data Builtin
     Min1 Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
     Max1 Type
-  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     ArgMin Type
-  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     ArgMax Type
   | -- | \(: \list(\bool) \to \bool\)
     All
@@ -204,13 +204,13 @@ data Builtin
     Proj [Type] Int
   | -- comparison
 
-    -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+    -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     LessThan Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     LessEqual Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     GreaterThan Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     GreaterEqual Type
   | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
     Equal Type
