@@ -34,7 +34,6 @@ standardBuiltinNames =
       "reversed",
       "sorted",
       "sum",
-      "tuple",
       "zip"
     ]
 
@@ -96,10 +95,10 @@ resolveUniqueBuiltin x = do
 
 resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> Int -> m Expr'
 resolveBuiltin x _ | value' x `S.notMember` builtinNames = return $ WithLoc' (loc' x) (Name x)
-resolveBuiltin x n = maybe id wrapAt (loc' x) $ do
+resolveBuiltin x n = maybe id wrapAt (loc' x) . wrapError' "Jikka.RestrictedPython.Language.Builtin.resolveBuiltin" $ do
   let f = return . WithLoc' (loc' x) . Constant . ConstBuiltin
   when (n < 0) $ do
-    throwInternalError "parseBuiltin with negative arity"
+    throwInternalError $ "negative arity: " ++ show n
   case value' x of
     "map" -> f =<< (BuiltinMap <$> replicateM (n - 1) genType <*> genType)
     "max" -> case n of
@@ -117,11 +116,12 @@ resolveBuiltin x n = maybe id wrapAt (loc' x) $ do
       2 -> f BuiltinRange2
       3 -> f BuiltinRange3
       _ -> throwTypeError $ "range expected 1, 2, or 3 arguments, got " ++ show n
+    "zip" -> f . BuiltinZip =<< replicateM n genType
     _ -> do
       e <- resolveUniqueBuiltin x
       case value' e of
         Constant (ConstBuiltin _) -> return e
-        _ -> throwInternalError "resolveBuiltin is not exhaustive"
+        _ -> throwInternalError $ "not exhaustive: " ++ unVarName (value' x)
 
 formatBuiltin :: Builtin -> String
 formatBuiltin = \case
