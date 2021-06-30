@@ -14,6 +14,8 @@ module Jikka.RestrictedPython.Format
   ( run,
     run',
     formatType,
+    formatOperator,
+    formatBuiltin,
   )
 where
 

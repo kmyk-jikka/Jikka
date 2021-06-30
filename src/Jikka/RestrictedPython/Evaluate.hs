@@ -29,6 +29,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
 import Jikka.Common.Combinatorics
 import Jikka.Common.Error
+import Jikka.RestrictedPython.Format (formatBuiltin, formatOperator)
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Value
@@ -505,108 +506,109 @@ run prog e = do
   runWithGlobal global e
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value
-evalBinOp v1 op v2 = do
-  case (v1, v2) of
-    (IntVal v1, IntVal v2) -> do
-      v <- case (op, v2) of
-        (Add, _) -> return $ v1 + v2
-        (Sub, _) -> return $ v1 - v2
-        (Mult, _) -> return $ v1 * v2
-        (MatMult, _) -> throwInternalError "matmul operator ('@') is not supported"
-        (Div, _) -> throwInternalError "floatdiv operator ('/') is not supported"
-        (FloorDiv, 0) -> throwRuntimeError "division by zero"
-        (FloorDiv, _) -> return $ v1 `div` v2
-        (FloorMod, 0) -> throwRuntimeError "division by zero"
-        (FloorMod, _) -> return $ v1 `mod` v2
-        (CeilDiv, 0) -> throwRuntimeError "division by zero"
-        (CeilDiv, _) -> return $ (v1 + v2 - 1) `div` v2
-        (CeilMod, 0) -> throwRuntimeError "division by zero"
-        (CeilMod, _) -> return $ (v1 + v2 - 1) `mod` v2
-        (Pow, _) -> return $ v1 ^ v2
-        (BitLShift, _) -> return $ shiftL v1 (fromInteger v2)
-        (BitRShift, _) -> return $ shiftR v1 (fromInteger v2)
-        (BitOr, _) -> return $ v1 .|. v2
-        (BitXor, _) -> return $ v1 `xor` v2
-        (BitAnd, _) -> return $ v1 .&. v2
-        (Max, _) -> return $ max v1 v2
-        (Min, _) -> return $ min v1 v2
-      return $ IntVal v
-    (_, _) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBinOp: type error"
+evalBinOp v1 op v2 = wrapError' ("calculating " ++ formatOperator op ++ " operator") $ do
+  v1 <- toInt v1
+  v2 <- toInt v2
+  v <- case (op, v2) of
+    (Add, _) -> return $ v1 + v2
+    (Sub, _) -> return $ v1 - v2
+    (Mult, _) -> return $ v1 * v2
+    (MatMult, _) -> throwInternalError "matmul operator ('@') is not supported"
+    (Div, _) -> throwInternalError "floatdiv operator ('/') is not supported"
+    (FloorDiv, 0) -> throwRuntimeError "division by zero"
+    (FloorDiv, _) -> return $ v1 `div` v2
+    (FloorMod, 0) -> throwRuntimeError "division by zero"
+    (FloorMod, _) -> return $ v1 `mod` v2
+    (CeilDiv, 0) -> throwRuntimeError "division by zero"
+    (CeilDiv, _) -> return $ (v1 + v2 - 1) `div` v2
+    (CeilMod, 0) -> throwRuntimeError "division by zero"
+    (CeilMod, _) -> return $ (v1 + v2 - 1) `mod` v2
+    (Pow, _) -> return $ v1 ^ v2
+    (BitLShift, _) -> return $ shiftL v1 (fromInteger v2)
+    (BitRShift, _) -> return $ shiftR v1 (fromInteger v2)
+    (BitOr, _) -> return $ v1 .|. v2
+    (BitXor, _) -> return $ v1 `xor` v2
+    (BitAnd, _) -> return $ v1 .&. v2
+    (Max, _) -> return $ max v1 v2
+    (Min, _) -> return $ min v1 v2
+  return $ IntVal v
 
 evalBuiltin :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Builtin -> [Value] -> m Value
-evalBuiltin b args = case (b, args) of
-  (BuiltinAbs, [IntVal n]) -> return $ IntVal (abs n)
-  (BuiltinPow, [IntVal x, IntVal k]) -> return $ IntVal (x ^ k)
-  (BuiltinModPow, [IntVal x, IntVal k, IntVal m]) -> return $ IntVal ((x ^ k) `mod` m)
-  (BuiltinAll, [ListVal xs]) -> BoolVal . minimum <$> toBoolList' xs
-  (BuiltinMin1 _, [ListVal xs]) -> return $ V.minimumBy compareValues' xs
-  (BuiltinMin _ _, xs@(_ : _ : _)) -> return $ minimumBy compareValues' xs
-  (BuiltinAny, [ListVal xs]) -> BoolVal . maximum <$> toBoolList' xs
-  (BuiltinDivMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
-  (BuiltinDivMod, [IntVal a, IntVal b]) -> return $ TupleVal [IntVal (a `div` b), IntVal (a `mod` b)]
-  (BuiltinSorted _, [ListVal xs]) ->
-    return $ ListVal (V.fromList (sortBy compareValues' (V.toList xs)))
-  (BuiltinEnumerate _, [ListVal xs]) ->
-    return $ ListVal (V.fromList (zipWith (\i x -> TupleVal [IntVal i, x]) [0 ..] (V.toList xs)))
-  (BuiltinBool _, [IntVal n]) -> return $ BoolVal (n /= 0)
-  (BuiltinBool _, [BoolVal p]) -> return $ BoolVal p
-  (BuiltinBool _, [ListVal xs]) -> return $ BoolVal (not (V.null xs))
-  (BuiltinBool _, [TupleVal xs]) -> return $ BoolVal (not (null xs))
-  (BuiltinInt _, [IntVal n]) -> return $ IntVal n
-  (BuiltinInt _, [BoolVal p]) -> return $ IntVal (if p then 1 else 0)
-  (BuiltinSum, [ListVal xs]) -> IntVal . sum <$> toIntList' xs
-  (BuiltinZip _, [ListVal xs1, ListVal xs2]) -> return $ ListVal (V.zipWith (\x1 x2 -> TupleVal [x1, x2]) xs1 xs2)
-  (BuiltinZip _, [ListVal xs1, ListVal xs2, ListVal xs3]) -> return $ ListVal (V.zipWith3 (\x1 x2 x3 -> TupleVal [x1, x2, x3]) xs1 xs2 xs3)
-  (BuiltinFilter _, [f, ListVal xs]) -> do
-    let go x = do
-          pred <- evalCall' f [x]
-          case pred of
-            BoolVal True -> return $ Just x
-            BoolVal False -> return Nothing
-            _ -> throwInternalError "type error"
-    ListVal <$> V.mapMaybeM go xs
-  (BuiltinLen _, [ListVal xs]) -> return $ IntVal (fromIntegral (V.length xs))
-  (BuiltinList _, [ListVal xs]) -> return $ ListVal xs
-  (BuiltinRange1, [IntVal to]) -> return $ ListVal (V.fromList (map IntVal [0 .. to - 1]))
-  (BuiltinRange2, [IntVal from, IntVal to]) -> return $ ListVal (V.fromList (map IntVal [from .. to - 1]))
-  (BuiltinRange3, [IntVal from, IntVal to, IntVal step]) -> return $ ListVal (V.fromList (map IntVal [from, from + step .. to - 1]))
-  (BuiltinMap _ _, [f, ListVal xs]) -> do
-    let go x = evalCall' f [x]
-    ListVal <$> V.mapM go xs
-  (BuiltinMap _ _, [f, ListVal xs1, ListVal xs2]) -> do
-    let go x1 x2 = evalCall' f [x1, x2]
-    ListVal <$> V.zipWithM go xs1 xs2
-  (BuiltinReversed _, [ListVal xs]) -> return $ ListVal (V.reverse xs)
-  (BuiltinMax1 _, [ListVal xs]) -> return $ V.maximumBy compareValues' xs
-  (BuiltinMax _ _, xs@(_ : _ : _)) -> return $ maximumBy compareValues' xs
-  (BuiltinArgMax _, [ListVal _]) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
-  (BuiltinArgMin _, [ListVal _]) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
-  (BuiltinCeilDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
-  (BuiltinCeilDiv, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `div` b)
-  (BuiltinCeilMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
-  (BuiltinCeilMod, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `mod` b)
-  (BuiltinFloorDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
-  (BuiltinFloorDiv, [IntVal a, IntVal b]) -> return $ IntVal (a `div` b)
-  (BuiltinFloorMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
-  (BuiltinFloorMod, [IntVal a, IntVal b]) -> return $ IntVal (a `mod` b)
-  (BuiltinGcd, [IntVal a, IntVal b]) -> return $ IntVal (gcd a b)
-  (BuiltinModInv, [IntVal _, IntVal _]) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
-  (BuiltinLcm, [IntVal a, IntVal b]) -> return $ IntVal (lcm a b)
-  (BuiltinProduct, [ListVal xs]) -> IntVal . product <$> toIntList' xs
-  (BuiltinFact, [IntVal n]) ->
-    if 0 <= n
-      then return (IntVal (fact n))
-      else throwRuntimeError "invalid argument"
-  (BuiltinChoose, [IntVal n, IntVal r]) ->
-    if 0 <= r && r <= n
-      then return (IntVal (choose n r))
-      else throwRuntimeError "invalid argument"
-  (BuiltinPermute, [IntVal n, IntVal r]) ->
-    if 0 <= r && r <= n
-      then return (IntVal (permute n r))
-      else throwRuntimeError "invalid argument"
-  (BuiltinMultiChoose, [IntVal n, IntVal r]) ->
-    if 0 <= r && r <= n
-      then return (IntVal (multichoose n r))
-      else throwRuntimeError "invalid argument"
-  _ -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: type error"
+evalBuiltin b args = wrapError' ("calling " ++ formatBuiltin b) $ do
+  let go1' t1 ret f = case args of
+        [v1] -> ret <$> (f =<< t1 v1)
+        _ -> throwInternalError $ "expected 1 argument, got " ++ show (length args)
+  let go1 t1 ret f = go1' t1 ret (return . f)
+  let go2' t1 t2 ret f = case args of
+        [v1, v2] -> ret <$> join (f <$> t1 v1 <*> t2 v2)
+        _ -> throwInternalError $ "expected 2 arguments, got " ++ show (length args)
+  let go2 t1 t2 ret f = go2' t1 t2 ret ((return .) . f)
+  let go3 t1 t2 t3 ret f = case args of
+        [v1, v2, v3] -> ret <$> (f <$> t1 v1 <*> t2 v2 <*> t3 v3)
+        _ -> throwInternalError $ "expected 3 arguments, got " ++ show (length args)
+  let goN' t ret f = ret <$> (f =<< mapM t args)
+  let goN t ret f = goN' t ret (return . f)
+  let zipN acc [] = reverse acc
+      zipN acc xss | any null xss = reverse acc
+      zipN acc xss = zipN (map head xss : acc) (map tail xss)
+  case b of
+    BuiltinAbs -> go1 toInt IntVal abs
+    BuiltinPow -> go2 toInt toInt IntVal (^)
+    BuiltinModPow -> go3 toInt toInt toInt IntVal $ \x k m -> (x ^ k) `mod` m
+    BuiltinAll -> go1 toBoolList BoolVal minimum
+    BuiltinAny -> go1 toBoolList BoolVal maximum
+    BuiltinDivMod -> go2' toInt toInt TupleVal $ \a b -> case b of
+      0 -> throwRuntimeError "division by zero"
+      _ -> return [IntVal (a `div` b), IntVal (a `mod` b)]
+    BuiltinSorted _ -> go1 toList ListVal (V.fromList . sortBy compareValues' . V.toList)
+    BuiltinEnumerate _ -> go1 toList ListVal (V.fromList . zipWith (\i x -> TupleVal [IntVal i, x]) [0 ..] . V.toList)
+    BuiltinBool _ -> go1' pure BoolVal $ \case
+      IntVal n -> return $ n /= 0
+      BoolVal p -> return p
+      ListVal xs -> return $ not (V.null xs)
+      TupleVal xs -> return $ not (null xs)
+      _ -> throwInternalError "type error"
+    BuiltinInt _ -> go1' return IntVal $ \case
+      IntVal n -> return n
+      BoolVal p -> return $ if p then 1 else 0
+      _ -> throwInternalError "type error"
+    BuiltinTuple _ -> goN pure TupleVal id
+    BuiltinSum -> go1 toIntList IntVal sum
+    BuiltinZip _ -> goN toList ListVal (V.fromList . map TupleVal . zipN [] . map V.toList)
+    BuiltinFilter _ -> go2' pure toList ListVal $ \f xs -> do
+      let go x = do
+            pred <- evalCall' f [x]
+            case pred of
+              BoolVal True -> return $ Just x
+              BoolVal False -> return Nothing
+              _ -> throwInternalError "type error"
+      V.mapMaybeM go xs
+    BuiltinLen _ -> go1 toList IntVal (fromIntegral . V.length)
+    BuiltinList _ -> go1 toList ListVal id
+    BuiltinRange1 -> go1 toInt ListVal $ \to -> V.fromList (map IntVal [0 .. to - 1])
+    BuiltinRange2 -> go2 toInt toInt ListVal $ \from to -> V.fromList (map IntVal [from .. to - 1])
+    BuiltinRange3 -> go3 toInt toInt toInt ListVal $ \from to step -> V.fromList (map IntVal [from, from + step .. to - 1])
+    BuiltinMap _ _ -> goN' pure ListVal $ \case
+      [] -> throwInternalError "type error"
+      f : args -> do
+        args <- mapM toList args
+        V.fromList <$> mapM (evalCall' f) (zipN [] (map V.toList args))
+    BuiltinReversed _ -> go1 toList ListVal V.reverse
+    BuiltinMin1 _ -> go1 toList id (minimumBy compareValues')
+    BuiltinMin _ _ -> goN pure id (minimumBy compareValues')
+    BuiltinMax1 _ -> go1 toList id (maximumBy compareValues')
+    BuiltinMax _ _ -> goN pure id (maximumBy compareValues')
+    BuiltinArgMax _ -> go1 toList IntVal $ \xs -> snd (maximumBy (\(x, i) (y, j) -> compareValues' x y <> compare i j) (zip (V.toList xs) [0 ..]))
+    BuiltinArgMin _ -> go1 toList IntVal $ \xs -> snd (minimumBy (\(x, i) (y, j) -> compareValues' x y <> compare i j) (zip (V.toList xs) [0 ..]))
+    BuiltinCeilDiv -> go2' toInt toInt IntVal $ \a b -> if b == 0 then throwRuntimeError "division by zero" else return $ (a + b - 1) `div` b
+    BuiltinCeilMod -> go2' toInt toInt IntVal $ \a b -> if b == 0 then throwRuntimeError "division by zero" else return $ (a + b - 1) `mod` b
+    BuiltinFloorDiv -> go2' toInt toInt IntVal $ \a b -> if b == 0 then throwRuntimeError "division by zero" else return $ a `div` b
+    BuiltinFloorMod -> go2' toInt toInt IntVal $ \a b -> if b == 0 then throwRuntimeError "division by zero" else return $ a `mod` b
+    BuiltinGcd -> go2 toInt toInt IntVal gcd
+    BuiltinLcm -> go2 toInt toInt IntVal lcm
+    BuiltinModInv -> go2' toInt toInt IntVal $ \_ _ -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
+    BuiltinProduct -> go1 toIntList IntVal product
+    BuiltinFact -> go1' toInt IntVal $ \n -> if 0 <= n then return $ fact n else throwRuntimeError "invalid argument"
+    BuiltinChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ choose n r else throwRuntimeError "invalid argument"
+    BuiltinPermute -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ permute n r else throwRuntimeError "invalid argument"
+    BuiltinMultiChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ multichoose n r else throwRuntimeError "invalid argument"

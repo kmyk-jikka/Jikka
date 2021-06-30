@@ -41,38 +41,38 @@ newtype Local = Local
   }
   deriving (Eq, Ord, Show, Read)
 
+toInt :: MonadError Error m => Value -> m Integer
+toInt = \case
+  IntVal n -> return n
+  v -> throwInternalError $ "not an integer value: " ++ formatValue v
+
+toBool :: MonadError Error m => Value -> m Bool
+toBool = \case
+  BoolVal p -> return p
+  v -> throwInternalError $ "not a boolean value: " ++ formatValue v
+
 toList :: MonadError Error m => Value -> m (V.Vector Value)
 toList = \case
   ListVal xs -> return xs
-  _ -> throwInternalError "type error"
+  v -> throwInternalError $ "not a list value: " ++ formatValue v
 
-toIntList :: V.Vector Value -> Maybe (V.Vector Integer)
-toIntList xs = mapM go xs
+toTuple :: MonadError Error m => Value -> m [Value]
+toTuple = \case
+  TupleVal xs -> return xs
+  v -> throwInternalError $ "not a tuple value: " ++ formatValue v
+
+toIntList :: MonadError Error m => Value -> m (V.Vector Integer)
+toIntList xs = V.mapM toInt =<< toList xs
+
+toBoolList :: MonadError Error m => Value -> m (V.Vector Bool)
+toBoolList xs = V.mapM toBool =<< toList xs
+
+toMatrix :: MonadError Error m => Value -> m (Matrix Integer)
+toMatrix a = toMatrix' =<< V.mapM toIntList =<< toList a
   where
-    go (IntVal x) = Just x
-    go _ = Nothing
-
-toIntList' :: MonadError Error m => V.Vector Value -> m (V.Vector Integer)
-toIntList' xs = case toIntList xs of
-  Just xs -> return xs
-  Nothing -> throwRuntimeError "not a list of integers"
-
-toBoolList' :: MonadError Error m => V.Vector Value -> m (V.Vector Bool)
-toBoolList' xs = mapM go xs
-  where
-    go (BoolVal x) = return x
-    go _ = throwRuntimeError "not a list of booleans"
-
-toMatrix :: V.Vector Value -> Maybe (Matrix Integer)
-toMatrix a = makeMatrix =<< mapM go a
-  where
-    go (ListVal row) = toIntList row
-    go _ = Nothing
-
-toMatrix' :: MonadError Error m => V.Vector Value -> m (Matrix Integer)
-toMatrix' a = case toMatrix a of
-  Just a -> return a
-  Nothing -> throwRuntimeError "not a matrix"
+    toMatrix' a = case makeMatrix a of
+      Just a -> return a
+      Nothing -> throwInternalError $ "not a matrix: " ++ show a
 
 fromMatrix :: Matrix Integer -> Value
 fromMatrix a = ListVal (fmap (ListVal . fmap IntVal) (unMatrix a))
