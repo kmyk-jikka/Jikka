@@ -196,11 +196,11 @@ runAssign (WithLoc' _ x) e cont = case x of
 runListComp :: (MonadAlpha m, MonadError Error m) => X.Expr' -> X.Comprehension -> m Y.Expr
 runListComp e (X.Comprehension x iter pred) = do
   iter <- runExpr iter
-  iter <- case pred of
-    Nothing -> return iter
-    Just pred -> Y.Filter' <$> Y.genType <*> runExpr pred <*> pure iter
   y <- Y.genVarName'
   t1 <- Y.genType
+  iter <- case pred of
+    Nothing -> return iter
+    Just pred -> Y.Filter' t1 <$> (Y.Lam [(y, t1)] <$> runAssign x (Y.Var y) (runExpr pred)) <*> pure iter
   t2 <- Y.genType
   e <- runExpr e
   Y.Map' t1 t2 <$> (Y.Lam [(y, t1)] <$> runAssign x (Y.Var y) (pure e)) <*> pure iter
