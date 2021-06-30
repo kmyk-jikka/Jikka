@@ -114,6 +114,7 @@ analyzeBuiltin = \case
   Elem t -> Fun [t] "elem"
   Sum -> fun "sum"
   Product -> fun "product"
+  ModProduct -> fun "modproduct"
   Min1 t -> Fun [t] "min1"
   Max1 t -> Fun [t] "max1"
   ArgMin t -> Fun [t] "argmin"

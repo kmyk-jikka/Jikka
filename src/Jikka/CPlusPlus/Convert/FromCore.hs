@@ -179,6 +179,7 @@ runAppBuiltin f args = case (f, args) of
     return $ Y.Call (Y.Function "jikka::elem" [t]) [e1, e2]
   (X.Sum, [e]) -> return $ Y.Call (Y.Function "jikka::sum" []) [e]
   (X.Product, [e]) -> return $ Y.Call (Y.Function "jikka::product" []) [e]
+  (X.ModProduct, [e1, e2]) -> return $ Y.Call (Y.Function "jikka::modproduct" []) [e1, e2]
   (X.Min1 t, [e]) -> do
     t <- runType t
     return $ Y.Call (Y.Function "jikka::minimum" [t]) [e]

@@ -124,6 +124,8 @@ pattern Sum' e = AppBuiltin Sum [e]
 
 pattern Product' e = AppBuiltin Product [e]
 
+pattern ModProduct' e1 e2 = AppBuiltin ModProduct [e1, e2]
+
 pattern Min1' t e = AppBuiltin (Min1 t) [e]
 
 pattern Max1' t e = AppBuiltin (Max1 t) [e]
