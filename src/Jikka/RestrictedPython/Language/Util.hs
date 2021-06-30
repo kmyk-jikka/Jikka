@@ -148,6 +148,7 @@ mapSubExprM f = go
         Lambda args body -> Lambda args <$> go body
         IfExp e1 e2 e3 -> IfExp <$> go e1 <*> go e2 <*> go e3
         ListComp e (Comprehension x iter pred) -> do
+          e <- go e
           x <- mapExprTargetM f x
           iter <- go iter
           pred <- mapM go pred
