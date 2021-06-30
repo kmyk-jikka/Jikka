@@ -38,19 +38,37 @@ runExpr _ = \case
     when (ts /= ts') $ do
       throwInternalError "the types of tuple don't match"
     return $ es !! i
+  Foldl' t2 (TupleTy [t1]) (Lam [(x1, TupleTy [_]), (x2, _)] (Tuple' [_] [body])) (Tuple' [_] [e]) es ->
+    let body' = substitute x1 (Tuple' [t1] [Var x1]) body
+     in return $ Tuple' [t1] [Foldl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') e es]
+  Scanl' t2 (TupleTy [t1]) (Lam [(x1, _), (x2, TupleTy [_])] (Tuple' [_] [body])) (Tuple' [_] [e]) es -> do
+    let body' = substitute x1 (Tuple' [t1] [Var x1]) body
+    let e' = Scanl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') e es
+    y <- genVarName'
+    let f = Map' t1 (TupleTy [t1]) (Lam [(y, t1)] (Tuple' [t1] [Var y]))
+    return $ f e'
   e -> return e
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-runProgram = mapExprProgramM' runExpr (\_ e -> return e)
+runProgram = mapExprProgramM' runExpr runExpr
 
 -- | `run` removes unnecessary introductions and eliminations of tuples.
 -- For example, this converts the following:
 --
--- > (fun xs -> proj0(xs) + proj1(xs))(tuple(2, 1))
+-- > (fun xs -> (proj0 xs) + (proj1 xs)) (tuple 2 1)
 --
 -- to the follwoing:
 --
--- > (fun x0 x1 -> x0 + x1)(2, 1)
+-- > (fun x0 x1 -> x0 + x1) 2 1
+--
+-- This can remove 1-tuples over higher-order functions.
+-- For example, this converts the following:
+--
+-- > foldl (fun xs y -> tuple (proj0 xs + y) (tuple 0) [1, 2, 3]
+--
+-- to the follwoing:
+--
+-- > tuple (foldl (fun x y -> x + y) 0 [1, 2, 3])
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.UnpackTuple" $ do
   prog <- Alpha.run prog

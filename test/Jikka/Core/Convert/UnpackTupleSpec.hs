@@ -26,3 +26,11 @@ spec = describe "run" $ do
           ResultExpr $
             App (Lam [("x$1", IntTy), ("x$2", IntTy)] (Plus' (Var "x$1") (Var "x$2"))) [LitInt' 0, LitInt' 1]
     run' prog `shouldBe` Right expected
+  it "works on foldl" $ do
+    let prog =
+          ResultExpr $
+            Foldl' IntTy (TupleTy [IntTy]) (Lam [("x", TupleTy [IntTy]), ("y", IntTy)] (Tuple' [IntTy] [Plus' (Proj' [IntTy] 0 (Var "x")) (Var "y")])) (Tuple' [IntTy] [LitInt' 0]) (Range1' (LitInt' 10))
+    let expected =
+          ResultExpr $
+            Tuple' [IntTy] [Foldl' IntTy IntTy (Lam [("x$0", IntTy), ("y$1", IntTy)] (Plus' (Var "x$0") (Var "y$1"))) (LitInt' 0) (Range1' (LitInt' 10))]
+    run' prog `shouldBe` Right expected
