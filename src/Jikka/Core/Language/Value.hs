@@ -33,34 +33,40 @@ literalToValue = \case
 valueToInt :: MonadError Error m => Value -> m Integer
 valueToInt = \case
   ValInt n -> return n
-  val -> throwRuntimeError $ "Internal Error: not int: " ++ show val
+  val -> throwInternalError $ "not an integer value: " ++ formatValue val
 
-valueToIntList :: MonadError Error m => V.Vector Value -> m [Integer]
-valueToIntList = mapM valueToInt . V.toList
+valueToList :: MonadError Error m => Value -> m (V.Vector Value)
+valueToList = \case
+  ValList xs -> return xs
+  val -> throwInternalError $ "not a list value: " ++ formatValue val
 
-valueToIntList' :: MonadError Error m => Value -> m [Integer]
-valueToIntList' (ValList xs) = valueToIntList xs
-valueToIntList' _ = throwRuntimeError "Internal Error: type error"
+valueToIntList :: MonadError Error m => Value -> m [Integer]
+valueToIntList xs = mapM valueToInt . V.toList =<< valueToList xs
 
 valueToBool :: MonadError Error m => Value -> m Bool
 valueToBool = \case
   ValBool p -> return p
-  val -> throwRuntimeError $ "Internal Error: not bool: " ++ show val
+  val -> throwInternalError $ "not an boolean value: " ++ formatValue val
 
-valueToBoolList :: MonadError Error m => V.Vector Value -> m [Bool]
-valueToBoolList = mapM valueToBool . V.toList
+valueToBoolList :: MonadError Error m => Value -> m [Bool]
+valueToBoolList xs = mapM valueToBool . V.toList =<< valueToList xs
+
+valueToTuple :: MonadError Error m => Value -> m [Value]
+valueToTuple = \case
+  ValTuple xs -> return xs
+  val -> throwInternalError $ "not a tuple value: " ++ formatValue val
 
 valueToVector :: MonadError Error m => Value -> m (V.Vector Integer)
-valueToVector (ValTuple x) = V.fromList <$> mapM valueToInt x
-valueToVector _ = throwRuntimeError "Internal Error: value is not a vector"
+valueToVector = \case
+  ValTuple x -> V.fromList <$> mapM valueToInt x
+  val -> throwInternalError $ "not a vector: " ++ formatValue val
 
 valueToMatrix :: MonadError Error m => Value -> m (Matrix Integer)
-valueToMatrix (ValTuple f) = do
-  f <- V.fromList <$> mapM valueToVector f
-  case makeMatrix f of
-    Nothing -> throwRuntimeError "Internal Error: value is not a matrix"
-    Just f -> return f
-valueToMatrix _ = throwRuntimeError "Internal Error: value is not a matrix"
+valueToMatrix a = do
+  a <- V.mapM valueToVector . V.fromList =<< valueToTuple a
+  case makeMatrix a of
+    Just a -> return a
+    Nothing -> throwInternalError $ "not a matrix: " ++ show a
 
 valueFromVector :: V.Vector Integer -> Value
 valueFromVector x = ValTuple (map ValInt (V.toList x))
@@ -92,6 +98,12 @@ compareValues a b = case (a, b) of
 
 compareValues' :: Value -> Value -> Ordering
 compareValues' a b = fromMaybe EQ (compareValues a b)
+
+minValue :: Value -> Value -> Value
+minValue a b = if compareValues' a b == LT then a else b
+
+maxValue :: Value -> Value -> Value
+maxValue a b = if compareValues' a b == GT then a else b
 
 formatValue :: Value -> String
 formatValue = \case

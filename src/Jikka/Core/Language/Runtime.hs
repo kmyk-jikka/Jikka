@@ -20,22 +20,6 @@ ceilMod :: MonadError Error m => Integer -> Integer -> m Integer
 ceilMod _ 0 = throwRuntimeError "zero div"
 ceilMod a b = return (a - ((a + b - 1) `div` b) * b)
 
-minimumEither :: (MonadError Error m, Ord a) => [a] -> m a
-minimumEither [] = throwRuntimeError "there is no minimum for the empty list"
-minimumEither a = return $ minimum a
-
-maximumEither :: (MonadError Error m, Ord a) => [a] -> m a
-maximumEither [] = throwRuntimeError "there is no maximum for the empty list"
-maximumEither a = return $ maximum a
-
-argminEither :: (MonadError Error m, Ord a) => [a] -> m Integer
-argminEither [] = throwRuntimeError "there is no minimum for the empty list"
-argminEither a = return $ snd (minimum (zip a [0 ..]))
-
-argmaxEither :: (MonadError Error m, Ord a) => [a] -> m Integer
-argmaxEither [] = throwRuntimeError "there is no maximum for the empty list"
-argmaxEither a = return $ snd (maximum (zip a [0 ..]))
-
 modinv :: MonadError Error m => Integer -> Integer -> m Integer
 modinv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
 modinv _ _ = throwInternalError "TODO: implement inv()"

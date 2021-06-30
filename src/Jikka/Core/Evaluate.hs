@@ -27,7 +27,7 @@ where
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Bits
-import Data.List (intercalate, sortBy)
+import Data.List (intercalate, maximumBy, minimumBy, sortBy)
 import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
@@ -145,99 +145,131 @@ range3 :: MonadError Error m => Integer -> Integer -> Integer -> m (V.Vector Val
 range3 l r step | not (l <= r && step >= 0) = throwRuntimeError $ "invalid argument for range3: " ++ show (l, r, step)
 range3 l r step = return $ V.fromList (map ValInt [l, l + step .. r])
 
+matap' :: (Num a, MonadError Error m) => Matrix a -> V.Vector a -> m (V.Vector a)
+matap' f x | snd (matsize f) /= V.length x = throwInternalError "invalid argument"
+matap' f x = return $ matap f x
+
+matadd' :: (Num a, MonadError Error m) => Matrix a -> Matrix a -> m (Matrix a)
+matadd' f g | matsize f /= matsize g = throwInternalError "invalid argument"
+matadd' f g = return $ matadd f g
+
+matmul' :: (Num a, MonadError Error m) => Matrix a -> Matrix a -> m (Matrix a)
+matmul' f g | snd (matsize f) /= fst (matsize g) = throwInternalError "invalid argument"
+matmul' f g = return $ matmul f g
+
+matpow' :: (Num a, Show a, MonadError Error m) => Matrix a -> Integer -> m (Matrix a)
+matpow' f _ | let (h, w) = matsize f in h /= w = throwInternalError $ "matrix is not square: " ++ show (matsize f)
+matpow' _ k | k < 0 = throwRuntimeError $ "exponent is negative: " ++ show k
+matpow' f k = return $ matpow f k
+
 -- -----------------------------------------------------------------------------
 -- evaluator
 
 callBuiltin :: MonadError Error m => Builtin -> [Value] -> m Value
 callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltinIsolated builtin) $ do
-  case (builtin, args) of
+  let go0 ret f = case args of
+        [] -> return $ ret f
+        _ -> throwInternalError $ "expected 0 arguments, got " ++ show (length args)
+  let go1' t1 ret f = case args of
+        [v1] -> ret <$> (f =<< t1 v1)
+        _ -> throwInternalError $ "expected 1 argument, got " ++ show (length args)
+  let go1 t1 ret f = go1' t1 ret (return . f)
+  let go2' t1 t2 ret f = case args of
+        [v1, v2] -> ret <$> join (f <$> t1 v1 <*> t2 v2)
+        _ -> throwInternalError $ "expected 2 arguments, got " ++ show (length args)
+  let go2 t1 t2 ret f = go2' t1 t2 ret ((return .) . f)
+  let go3' t1 t2 t3 ret f = case args of
+        [v1, v2, v3] -> ret <$> join (f <$> t1 v1 <*> t2 v2 <*> t3 v3)
+        _ -> throwInternalError $ "expected 3 arguments, got " ++ show (length args)
+  let go3 t1 t2 t3 ret f = go3' t1 t2 t3 ret (((return .) .) . f)
+  let goN t ret f = ret . f <$> mapM t args
+  case builtin of
     -- arithmetical functions
-    (Negate, [ValInt n]) -> return $ ValInt (- n)
-    (Plus, [ValInt a, ValInt b]) -> return $ ValInt (a + b)
-    (Minus, [ValInt a, ValInt b]) -> return $ ValInt (a - b)
-    (Mult, [ValInt a, ValInt b]) -> return $ ValInt (a * b)
-    (FloorDiv, [ValInt a, ValInt b]) -> ValInt <$> floorDiv a b
-    (FloorMod, [ValInt a, ValInt b]) -> ValInt <$> floorMod a b
-    (CeilDiv, [ValInt a, ValInt b]) -> ValInt <$> ceilDiv a b
-    (CeilMod, [ValInt a, ValInt b]) -> ValInt <$> ceilMod a b
-    (Pow, [ValInt a, ValInt b]) -> return $ ValInt (a ^ b)
+    Negate -> go1 valueToInt ValInt negate
+    Plus -> go2 valueToInt valueToInt ValInt (+)
+    Minus -> go2 valueToInt valueToInt ValInt (-)
+    Mult -> go2 valueToInt valueToInt ValInt (*)
+    FloorDiv -> go2' valueToInt valueToInt ValInt floorDiv
+    FloorMod -> go2' valueToInt valueToInt ValInt floorMod
+    CeilDiv -> go2' valueToInt valueToInt ValInt ceilDiv
+    CeilMod -> go2' valueToInt valueToInt ValInt ceilMod
+    Pow -> go2 valueToInt valueToInt ValInt (^)
     -- induction functions
-    (NatInd _, [base, step, ValInt n]) -> natind base step n
+    NatInd _ -> go3' pure pure valueToInt id $ \base step n -> natind base step n
     -- advanced arithmetical functions
-    (Abs, [ValInt n]) -> return $ ValInt (abs n)
-    (Gcd, [ValInt a, ValInt b]) -> return $ ValInt (gcd a b)
-    (Lcm, [ValInt a, ValInt b]) -> return $ ValInt (lcm a b)
-    (Min2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (min a b) -- TODO: allow non-integers
-    (Max2 IntTy, [ValInt a, ValInt b]) -> return $ ValInt (max a b) -- TODO: allow non-integers
+    Abs -> go1 valueToInt ValInt abs
+    Gcd -> go2 valueToInt valueToInt ValInt gcd
+    Lcm -> go2 valueToInt valueToInt ValInt lcm
+    Min2 _ -> go2 pure pure id minValue
+    Max2 _ -> go2 pure pure id maxValue
     -- logical functions
-    (Not, [ValBool p]) -> return $ ValBool (not p)
-    (And, [ValBool p, ValBool q]) -> return $ ValBool (p && q)
-    (Or, [ValBool p, ValBool q]) -> return $ ValBool (p || q)
-    (Implies, [ValBool p, ValBool q]) -> return $ ValBool (not p || q)
-    (If _, [ValBool p, a, b]) -> return $ if p then a else b
+    Not -> go1 valueToBool ValBool not
+    And -> go2 valueToBool valueToBool ValBool (&&)
+    Or -> go2 valueToBool valueToBool ValBool (||)
+    Implies -> go2 valueToBool valueToBool ValBool $ \p q -> not p || q
+    If _ -> go3 valueToBool pure pure id $ \p a b -> if p then a else b
     -- bitwise functions
-    (BitNot, [ValInt a]) -> return $ ValInt (complement a)
-    (BitAnd, [ValInt a, ValInt b]) -> return $ ValInt (a .&. b)
-    (BitOr, [ValInt a, ValInt b]) -> return $ ValInt (a .|. b)
-    (BitXor, [ValInt a, ValInt b]) -> return $ ValInt (a `xor` b)
-    (BitLeftShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger b)
-    (BitRightShift, [ValInt a, ValInt b]) -> return $ ValInt (a `shift` fromInteger (- b))
+    BitNot -> go1 valueToInt ValInt complement
+    BitAnd -> go2 valueToInt valueToInt ValInt (.&.)
+    BitOr -> go2 valueToInt valueToInt ValInt (.|.)
+    BitXor -> go2 valueToInt valueToInt ValInt xor
+    BitLeftShift -> go2 valueToInt valueToInt ValInt $ \a b -> a `shift` fromInteger b
+    BitRightShift -> go2 valueToInt valueToInt ValInt $ \a b -> a `shift` fromInteger (- b)
     -- matrix functions
-    (MatAp _ _, [f, x]) -> valueFromVector <$> (matap <$> valueToMatrix f <*> valueToVector x)
-    (MatZero n, []) -> return $ valueFromMatrix (matzero n)
-    (MatOne n, []) -> return $ valueFromMatrix (matone n)
-    (MatAdd _ _, [f, g]) -> valueFromMatrix <$> (matadd <$> valueToMatrix f <*> valueToMatrix g)
-    (MatMul _ _ _, [f, g]) -> valueFromMatrix <$> (matmul <$> valueToMatrix f <*> valueToMatrix g)
-    (MatPow _, [f, ValInt k]) -> valueFromMatrix <$> (matpow <$> valueToMatrix f <*> pure k)
+    MatAp _ _ -> go2' valueToMatrix valueToVector valueFromVector matap'
+    MatZero n -> go0 valueFromMatrix (matzero n)
+    MatOne n -> go0 valueFromMatrix (matone n)
+    MatAdd _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matadd'
+    MatMul _ _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matmul'
+    MatPow _ -> go2' valueToMatrix valueToInt valueFromMatrix matpow'
     -- modular functions
-    (ModInv, [ValInt x, ValInt m]) -> ValInt <$> modinv x m
-    (ModPow, [ValInt x, ValInt k, ValInt m]) -> ValInt <$> modpow x k m
-    (ModMatAp _ _, [f, x, ValInt m]) -> valueFromModVector <$> (matap <$> valueToModMatrix m f <*> valueToModVector m x)
-    (ModMatAdd _ _, [f, g, ValInt m]) -> valueFromModMatrix <$> (matadd <$> valueToModMatrix m f <*> valueToModMatrix m g)
-    (ModMatMul _ _ _, [f, g, ValInt m]) -> valueFromModMatrix <$> (matmul <$> valueToModMatrix m f <*> valueToModMatrix m g)
-    (ModMatPow _, [f, ValInt k, ValInt m]) -> valueFromModMatrix <$> (matpow <$> valueToModMatrix m f <*> pure k)
+    ModInv -> go2' valueToInt valueToInt ValInt modinv
+    ModPow -> go3' valueToInt valueToInt valueToInt ValInt modpow
+    ModMatAp _ _ -> go3' pure pure valueToInt valueFromModVector $ \f x m -> join (matap' <$> valueToModMatrix m f <*> valueToModVector m x)
+    ModMatAdd _ _ -> go3' pure pure valueToInt valueFromModMatrix $ \f g m -> join (matadd' <$> valueToModMatrix m f <*> valueToModMatrix m g)
+    ModMatMul _ _ _ -> go3' pure pure valueToInt valueFromModMatrix $ \f g m -> join (matmul' <$> valueToModMatrix m f <*> valueToModMatrix m g)
+    ModMatPow _ -> go3' pure valueToInt valueToInt valueFromModMatrix $ \f k m -> join (matpow' <$> valueToModMatrix m f <*> pure k)
     -- list functions
-    (Cons _, [x, ValList xs]) -> return $ ValList (V.cons x xs)
-    (Foldl _ _, [f, x, ValList a]) -> V.foldM (\x y -> callValue f [x, y]) x a
-    (Scanl _ _, [f, x, ValList a]) -> ValList <$> scanM (\x y -> callValue f [x, y]) x a
-    (Len _, [ValList a]) -> return $ ValInt (fromIntegral (V.length a))
-    (Tabulate _, [ValInt n, f]) -> ValList <$> tabulate n f
-    (Map _ _, [f, ValList a]) -> ValList <$> map' f a
-    (Filter _, [f, ValList a]) -> ValList <$> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) a -- TODO
-    (At _, [ValList a, ValInt n]) -> atEither a n
-    (SetAt _, [ValList a, ValInt n, x]) -> ValList <$> setAtEither a n x
-    (Elem _, [x, ValList a]) -> return $ ValBool (x `V.elem` a)
-    (Sum, [ValList a]) -> ValInt . sum <$> valueToIntList a
-    (Product, [ValList a]) -> ValInt . product <$> valueToIntList a
-    (ModProduct, [ValList a, ValInt b]) -> ValInt . (`mod` b) . product <$> valueToIntList a
-    (Min1 IntTy, [ValList a]) -> ValInt <$> (minimumEither =<< valueToIntList a) -- TODO: allow non-integers
-    (Max1 IntTy, [ValList a]) -> ValInt <$> (maximumEither =<< valueToIntList a) -- TODO: allow non-integers
-    (ArgMin IntTy, [ValList a]) -> ValInt <$> (argminEither =<< valueToIntList a) -- TODO: allow non-integers
-    (ArgMax IntTy, [ValList a]) -> ValInt <$> (argmaxEither =<< valueToIntList a) -- TODO: allow non-integers
-    (All, [ValList a]) -> ValBool . and <$> valueToBoolList a
-    (Any, [ValList a]) -> ValBool . or <$> valueToBoolList a
-    (Sorted _, [ValList a]) -> return $ ValList (sortVector a)
-    (List _, [ValList a]) -> return $ ValList a
-    (Reversed _, [ValList a]) -> return $ ValList (V.reverse a)
-    (Range1, [ValInt n]) -> ValList <$> range1 n
-    (Range2, [ValInt l, ValInt r]) -> ValList <$> range2 l r
-    (Range3, [ValInt l, ValInt r, ValInt step]) -> ValList <$> range3 l r step
+    Cons _ -> go2 pure valueToList ValList V.cons
+    Foldl _ _ -> go3' pure pure valueToList id $ \f x a -> V.foldM (\x y -> callValue f [x, y]) x a
+    Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
+    Len _ -> go1 valueToList ValInt (fromIntegral . V.length)
+    Tabulate _ -> go2' valueToInt pure ValList tabulate
+    Map _ _ -> go2' pure valueToList ValList map'
+    Filter _ -> go2' pure valueToList ValList $ \f xs -> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) xs
+    At _ -> go2' valueToList valueToInt id atEither
+    SetAt _ -> go3' valueToList valueToInt pure ValList setAtEither
+    Elem _ -> go2 pure valueToList ValBool V.elem
+    Sum -> go1 valueToIntList ValInt sum
+    Product -> go1 valueToIntList ValInt product
+    ModProduct -> go2 valueToIntList valueToInt ValInt $ \xs m -> product xs `mod` m
+    Min1 _ -> go1 valueToList id (V.minimumBy compareValues')
+    Max1 _ -> go1 valueToList id (V.maximumBy compareValues')
+    ArgMin _ -> go1 valueToList ValInt $ \xs -> snd (minimumBy (\(x, i) (y, j) -> compareValues' x y <> compare i j) (zip (V.toList xs) [0 ..]))
+    ArgMax _ -> go1 valueToList ValInt $ \xs -> snd (maximumBy (\(x, i) (y, j) -> compareValues' x y <> compare i j) (zip (V.toList xs) [0 ..]))
+    All -> go1 valueToBoolList ValBool and
+    Any -> go1 valueToBoolList ValBool or
+    Sorted _ -> go1 valueToList ValList sortVector
+    List _ -> go1 valueToList ValList id
+    Reversed _ -> go1 valueToList ValList V.reverse
+    Range1 -> go1' valueToInt ValList range1
+    Range2 -> go2' valueToInt valueToInt ValList range2
+    Range3 -> go3' valueToInt valueToInt valueToInt ValList range3
     -- tuple functions
-    (Tuple _, xs) -> return $ ValTuple xs
-    (Proj _ n, [ValTuple xs]) -> return $ xs !! n
-    -- comparison
-    (LessThan _, [a, b]) -> return $ ValBool (compareValues a b == Just LT)
-    (LessEqual _, [a, b]) -> return $ ValBool (compareValues a b /= Just GT)
-    (GreaterThan _, [a, b]) -> return $ ValBool (compareValues a b == Just GT)
-    (GreaterEqual _, [a, b]) -> return $ ValBool (compareValues a b /= Just LT)
-    (Equal _, [a, b]) -> return $ ValBool (a == b)
-    (NotEqual _, [a, b]) -> return $ ValBool (a /= b)
+    Tuple _ -> goN pure ValTuple id
+    Proj _ n -> go1 valueToTuple id (!! n)
+    -- -- comparison
+    LessThan _ -> go2 pure pure ValBool $ \a b -> compareValues a b == Just LT
+    LessEqual _ -> go2 pure pure ValBool $ \a b -> compareValues a b /= Just GT
+    GreaterThan _ -> go2 pure pure ValBool $ \a b -> compareValues a b == Just GT
+    GreaterEqual _ -> go2 pure pure ValBool $ \a b -> compareValues a b /= Just LT
+    Equal _ -> go2 pure pure ValBool (==)
+    NotEqual _ -> go2 pure pure ValBool (/=)
     -- combinational functions
-    (Fact, [ValInt n]) -> ValInt <$> fact n
-    (Choose, [ValInt n, ValInt r]) -> ValInt <$> choose n r
-    (Permute, [ValInt n, ValInt r]) -> ValInt <$> permute n r
-    (MultiChoose, [ValInt n, ValInt r]) -> ValInt <$> multichoose n r
-    _ -> throwInternalError $ "invalid builtin call: " ++ formatBuiltinIsolated builtin ++ "(" ++ intercalate "," (map formatValue args) ++ ")"
+    Fact -> go1' valueToInt ValInt fact
+    Choose -> go2' valueToInt valueToInt ValInt choose
+    Permute -> go2' valueToInt valueToInt ValInt permute
+    MultiChoose -> go2' valueToInt valueToInt ValInt multichoose
 
 callLambda :: MonadError Error m => Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
 callLambda name env formalArgs body actualArgs = wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ do
