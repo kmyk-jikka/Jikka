@@ -164,7 +164,7 @@ data Builtin
     Filter Type
   | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
     At Type
-  | -- | \(: \forall \alpha. \list(alpha) \times \int \times \alpha \to \list(\alpha)\)
+  | -- | \(: \forall \alpha. \list(\alpha) \times \int \times \alpha \to \list(\alpha)\)
     SetAt Type
   | -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \bool\)
     Elem Type
@@ -190,11 +190,11 @@ data Builtin
     List Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
     Reversed Type
-  | -- | \(: \int \to \list(\int)\)1
+  | -- | \(: \int \to \list(\int)\)
     Range1
-  | -- | \(: \int \times \int \to \list(\int)\)1
+  | -- | \(: \int \times \int \to \list(\int)\)
     Range2
-  | -- | \(: \int \times \int \times \int \to \list(\int)\)1
+  | -- | \(: \int \times \int \times \int \to \list(\int)\)
     Range3
   | -- tuple functions
 
