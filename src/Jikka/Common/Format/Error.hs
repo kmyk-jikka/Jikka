@@ -10,6 +10,7 @@ module Jikka.Common.Format.Error
 where
 
 import Data.List (intercalate)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Jikka.Common.Error
 import Jikka.Common.Format.Color
@@ -85,7 +86,7 @@ getErrorGroup :: Error -> Maybe ErrorGroup
 getErrorGroup = \case
   Error _ -> Nothing
   ErrorAppend _ _ -> bug "ErrorAppend is not allowed here."
-  WithGroup group _ -> Just group
+  WithGroup group err -> Just (fromMaybe group (getErrorGroup err))
   WithWrapped _ err -> getErrorGroup err
   WithLocation _ err -> getErrorGroup err
   WithResponsibility _ err -> getErrorGroup err
@@ -97,7 +98,7 @@ getLocation = \case
   ErrorAppend _ _ -> bug "ErrorAppend is not allowed here."
   WithGroup _ err -> getLocation err
   WithWrapped _ err -> getLocation err
-  WithLocation loc _ -> Just loc
+  WithLocation loc err -> Just (fromMaybe loc (getLocation err))
   WithResponsibility _ err -> getLocation err
 
 getResponsibilityFromErrorGroup :: ErrorGroup -> Maybe Responsibility

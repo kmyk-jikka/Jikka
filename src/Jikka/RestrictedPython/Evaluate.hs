@@ -41,14 +41,14 @@ lookupLocal x = do
   local <- get
   case M.lookup (value' x) (unLocal local) of
     Just v -> return v
-    Nothing -> maybe id wrapAt (loc' x) . throwRuntimeError $ "undefined variable: " ++ unVarName (value' x)
+    Nothing -> maybe id wrapAt (loc' x) . throwInternalError $ "undefined variable: " ++ unVarName (value' x)
 
 assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Expr' -> Value -> m ()
-assignSubscriptedTarget f index v = do
+assignSubscriptedTarget f index v = maybe id wrapAt (loc' f) $ do
   let go f indices = maybe id wrapAt (loc' f) $ case value' f of
         SubscriptTrg f index -> go f (index : indices)
         NameTrg x -> return (x, indices)
-        TupleTrg _ -> throwRuntimeError "cannot subscript a tuple target"
+        TupleTrg _ -> throwInternalError "cannot subscript a tuple target"
   (x, indices) <- go f [index]
   f <- lookupLocal x
   indices <- mapM evalExpr indices
@@ -59,7 +59,7 @@ assignSubscriptedTarget f index v = do
             throwRuntimeError "list index out of range"
           v' <- go (f V.! fromInteger index) indices
           return $ ListVal (f V.// [(fromInteger index, v')])
-        (_, _) -> throwRuntimeError "type error"
+        (_, _) -> throwInternalError "type error"
   f <- go f indices
   assign (value' x) f
 
@@ -73,10 +73,10 @@ assignTarget x0 v = maybe id wrapAt (loc' x0) $ case value' x0 of
     case v of
       TupleVal vs -> do
         when (length xs /= length vs) $ do
-          throwRuntimeError "the lengths of tuple are different"
+          throwInternalError "the lengths of tuple are different"
         forM_ (zip xs vs) $ \(x, v) -> do
           assignTarget x v
-      _ -> throwRuntimeError "cannot unpack non-tuple value"
+      _ -> throwInternalError "cannot unpack non-tuple value"
 
 evalTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> m Value
 evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
@@ -88,7 +88,7 @@ evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
         when (index < 0 || fromIntegral (V.length f) <= index) $ do
           throwRuntimeError "list index out of range"
         return $ f V.! fromInteger index
-      (_, _) -> throwRuntimeError "type error"
+      (_, _) -> throwInternalError "type error"
   NameTrg x -> lookupLocal x
   TupleTrg xs -> TupleVal <$> mapM evalTarget xs
 
@@ -181,7 +181,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
       (BoolVal True, Or) -> return $ BoolVal True
       (BoolVal False, Implies) -> return $ BoolVal True
       (BoolVal True, Implies) -> evalExpr e2
-      (_, _) -> throwRuntimeError "type error"
+      (_, _) -> throwInternalError "type error"
   BinOp e1 op e2 -> do
     v1 <- evalExpr e1
     v2 <- evalExpr e2
@@ -193,7 +193,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
       (Not, BoolVal v) -> return $ BoolVal (not v)
       (UAdd, IntVal v) -> return $ IntVal v
       (USub, IntVal v) -> return $ IntVal (- v)
-      (_, _) -> throwRuntimeError "type error"
+      (_, _) -> throwInternalError "type error"
   Lambda args body -> do
     savedLocal <- get
     return $ ClosureVal savedLocal (map (first value') args) [Return body]
@@ -202,7 +202,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
     case v1 of
       BoolVal True -> evalExpr e2
       BoolVal False -> evalExpr e3
-      _ -> throwRuntimeError "type error"
+      _ -> throwInternalError "type error"
   ListComp e (Comprehension x iter pred) -> do
     iter <- evalExpr iter
     case iter of
@@ -216,7 +216,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
             _ -> Just <$> evalExpr e
         put savedLocal
         return $ ListVal (V.catMaybes vs)
-      _ -> throwRuntimeError "type error"
+      _ -> throwInternalError "type error"
   Compare e1 op e2 -> do
     v1 <- evalExpr e1
     v2 <- evalExpr e2
@@ -254,7 +254,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
         when (v2 < 0 || fromIntegral (V.length v1) <= v2) $ do
           throwRuntimeError "list index out of range"
         return $ v1 V.! fromInteger v2
-      _ -> throwRuntimeError "type error"
+      _ -> throwInternalError "type error"
   Name x -> do
     local <- get
     case M.lookup (value' x) (unLocal local) of
@@ -263,7 +263,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
         global <- ask
         case M.lookup (value' x) (unGlobal global) of
           Just v -> return v
-          Nothing -> throwRuntimeError $ "undefined variable: " ++ show x
+          Nothing -> throwInternalError $ "undefined variable: " ++ unVarName (value' x)
   List _ es -> ListVal . V.fromList <$> mapM evalExpr es
   Tuple es -> TupleVal <$> mapM evalExpr es
   SubscriptSlice e from to step -> do
@@ -274,16 +274,16 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
     case v of
       ListVal v ->
         ListVal <$> case (from, to, step) of
-          (_, _, Just _) -> throwRuntimeError "slice with step is TODO"
+          (_, _, Just _) -> throwInternalError "slice with step is TODO"
           (Nothing, Nothing, Nothing) -> return v
           (Nothing, Just (IntVal to), Nothing) -> return $ V.take (fromInteger to) v
           (Just (IntVal from), Nothing, Nothing) -> return $ V.drop (fromInteger from) v
           (Just (IntVal from), Just (IntVal to), Nothing) -> return $ V.drop (fromInteger from) (V.take (fromInteger to) v)
-          (_, _, _) -> throwRuntimeError "type error"
-      _ -> throwRuntimeError "type error"
+          (_, _, _) -> throwInternalError "type error"
+      _ -> throwInternalError "type error"
 
 evalCall :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> [Expr'] -> m Value
-evalCall f args = do
+evalCall f args = maybe id wrapAt (loc' f) $ do
   f <- evalExpr f
   args <- mapM evalExpr args
   evalCall' f args
@@ -294,7 +294,7 @@ evalCall' f actualArgs = case f of
     evalBuiltin b actualArgs
   ClosureVal local formalArgs body -> do
     when (length formalArgs /= length actualArgs) $ do
-      throwRuntimeError "wrong number of arguments"
+      throwInternalError "wrong number of arguments"
     savedLocal <- get
     put local
     mapM_ (uncurry assign) (zip (map fst formalArgs) actualArgs)
@@ -437,13 +437,14 @@ evalStatement = \case
                 Just v -> return $ Just v
                 Nothing -> go iter
         go (V.toList iter)
-      _ -> throwRuntimeError "type error"
+      _ -> maybe id wrapAt (loc' x) $ do
+        throwInternalError "type error"
   If pred body1 body2 -> do
     pred <- evalExpr pred
     if pred /= BoolVal False
       then evalStatements body1
       else evalStatements body2
-  Assert e -> do
+  Assert e -> maybe id wrapAt (loc' e) $ do
     v <- evalExpr e
     when (v == BoolVal False) $ do
       throwRuntimeError "assertion failure"
@@ -488,12 +489,13 @@ execToplevelStatement = \case
       throwRuntimeError "assertion failure"
 
 runWithGlobal :: MonadError Error m => Global -> Expr' -> m Value
-runWithGlobal global e = runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
+runWithGlobal global e = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
+  runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
 
 -- | `makeGlobal` packs toplevel definitions into `Global`.
 -- This assumes `doesntHaveLeakOfLoopCounters`.
 makeGlobal :: MonadError Error m => Program -> m Global
-makeGlobal prog = do
+makeGlobal prog = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
   ensureDoesntHaveLeakOfLoopCounters prog
   execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
@@ -510,8 +512,8 @@ evalBinOp v1 op v2 = do
         (Add, _) -> return $ v1 + v2
         (Sub, _) -> return $ v1 - v2
         (Mult, _) -> return $ v1 * v2
-        (MatMult, _) -> throwRuntimeError "matmul operator ('@') is not supported"
-        (Div, _) -> throwRuntimeError "floatdiv operator ('/') is not supported"
+        (MatMult, _) -> throwInternalError "matmul operator ('@') is not supported"
+        (Div, _) -> throwInternalError "floatdiv operator ('/') is not supported"
         (FloorDiv, 0) -> throwRuntimeError "division by zero"
         (FloorDiv, _) -> return $ v1 `div` v2
         (FloorMod, 0) -> throwRuntimeError "division by zero"
@@ -529,7 +531,7 @@ evalBinOp v1 op v2 = do
         (Max, _) -> return $ max v1 v2
         (Min, _) -> return $ min v1 v2
       return $ IntVal v
-    (_, _) -> throwRuntimeError "type error"
+    (_, _) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBinOp: type error"
 
 evalBuiltin :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Builtin -> [Value] -> m Value
 evalBuiltin b args = case (b, args) of
@@ -561,7 +563,7 @@ evalBuiltin b args = case (b, args) of
           case pred of
             BoolVal True -> return $ Just x
             BoolVal False -> return Nothing
-            _ -> throwRuntimeError "type error"
+            _ -> throwInternalError "type error"
     ListVal <$> V.mapMaybeM go xs
   (BuiltinLen _, [ListVal xs]) -> return $ IntVal (fromIntegral (V.length xs))
   (BuiltinList _, [ListVal xs]) -> return $ ListVal xs
@@ -577,8 +579,8 @@ evalBuiltin b args = case (b, args) of
   (BuiltinReversed _, [ListVal xs]) -> return $ ListVal (V.reverse xs)
   (BuiltinMax1 _, [ListVal xs]) -> return $ V.maximumBy compareValues' xs
   (BuiltinMax _ _, xs@(_ : _ : _)) -> return $ maximumBy compareValues' xs
-  (BuiltinArgMax _, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
-  (BuiltinArgMin _, [ListVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinArgMax _, [ListVal _]) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
+  (BuiltinArgMin _, [ListVal _]) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
   (BuiltinCeilDiv, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinCeilDiv, [IntVal a, IntVal b]) -> return $ IntVal ((a + b - 1) `div` b)
   (BuiltinCeilMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
@@ -588,7 +590,7 @@ evalBuiltin b args = case (b, args) of
   (BuiltinFloorMod, [IntVal _, IntVal 0]) -> throwRuntimeError "division by zero"
   (BuiltinFloorMod, [IntVal a, IntVal b]) -> return $ IntVal (a `mod` b)
   (BuiltinGcd, [IntVal a, IntVal b]) -> return $ IntVal (gcd a b)
-  (BuiltinModInv, [IntVal _, IntVal _]) -> throwRuntimeError "TODO evalBuiltin"
+  (BuiltinModInv, [IntVal _, IntVal _]) -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: TODO"
   (BuiltinLcm, [IntVal a, IntVal b]) -> return $ IntVal (lcm a b)
   (BuiltinProduct, [ListVal xs]) -> IntVal . product <$> toIntList' xs
   (BuiltinFact, [IntVal n]) ->
@@ -607,4 +609,4 @@ evalBuiltin b args = case (b, args) of
     if 0 <= r && r <= n
       then return (IntVal (multichoose n r))
       else throwRuntimeError "invalid argument"
-  _ -> throwRuntimeError "type error on builtin function call"
+  _ -> throwInternalError "Jikka.RestrictedPython.Evaluate.evalBuiltin: type error"
