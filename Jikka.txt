@@ -984,10 +984,6 @@ floorDiv :: MonadError Error m => Integer -> Integer -> m Integer
 floorMod :: MonadError Error m => Integer -> Integer -> m Integer
 ceilDiv :: MonadError Error m => Integer -> Integer -> m Integer
 ceilMod :: MonadError Error m => Integer -> Integer -> m Integer
-minimumEither :: (MonadError Error m, Ord a) => [a] -> m a
-maximumEither :: (MonadError Error m, Ord a) => [a] -> m a
-argminEither :: (MonadError Error m, Ord a) => [a] -> m Integer
-argmaxEither :: (MonadError Error m, Ord a) => [a] -> m Integer
 modinv :: MonadError Error m => Integer -> Integer -> m Integer
 modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 fact :: MonadError Error m => Integer -> m Integer
@@ -1199,10 +1195,11 @@ ValLambda :: Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> Value
 type Env = [(VarName, Value)]
 literalToValue :: Literal -> Value
 valueToInt :: MonadError Error m => Value -> m Integer
-valueToIntList :: MonadError Error m => Vector Value -> m [Integer]
-valueToIntList' :: MonadError Error m => Value -> m [Integer]
+valueToList :: MonadError Error m => Value -> m (Vector Value)
+valueToIntList :: MonadError Error m => Value -> m [Integer]
 valueToBool :: MonadError Error m => Value -> m Bool
-valueToBoolList :: MonadError Error m => Vector Value -> m [Bool]
+valueToBoolList :: MonadError Error m => Value -> m [Bool]
+valueToTuple :: MonadError Error m => Value -> m [Value]
 valueToVector :: MonadError Error m => Value -> m (Vector Integer)
 valueToMatrix :: MonadError Error m => Value -> m (Matrix Integer)
 valueFromVector :: Vector Integer -> Value
@@ -1213,6 +1210,8 @@ valueFromModVector :: Vector ModInt -> Value
 valueFromModMatrix :: Matrix ModInt -> Value
 compareValues :: Value -> Value -> Maybe Ordering
 compareValues' :: Value -> Value -> Ordering
+minValue :: Value -> Value -> Value
+maxValue :: Value -> Value -> Value
 formatValue :: Value -> String
 writeValueIO :: Value -> IO ()
 instance GHC.Read.Read Jikka.Core.Language.Value.Value
@@ -2296,6 +2295,8 @@ module Jikka.RestrictedPython.Format
 run :: Applicative m => Program -> m Text
 run' :: Program -> String
 formatType :: Type -> String
+formatOperator :: Operator -> String
+formatBuiltin :: Builtin -> String
 
 
 module Jikka.RestrictedPython.Convert.TypeInfer
@@ -2412,12 +2413,13 @@ BuiltinVal :: Builtin -> Value
 newtype Local
 Local :: Map VarName Value -> Local
 [unLocal] :: Local -> Map VarName Value
+toInt :: MonadError Error m => Value -> m Integer
+toBool :: MonadError Error m => Value -> m Bool
 toList :: MonadError Error m => Value -> m (Vector Value)
-toIntList :: Vector Value -> Maybe (Vector Integer)
-toIntList' :: MonadError Error m => Vector Value -> m (Vector Integer)
-toBoolList' :: MonadError Error m => Vector Value -> m (Vector Bool)
-toMatrix :: Vector Value -> Maybe (Matrix Integer)
-toMatrix' :: MonadError Error m => Vector Value -> m (Matrix Integer)
+toTuple :: MonadError Error m => Value -> m [Value]
+toIntList :: MonadError Error m => Value -> m (Vector Integer)
+toBoolList :: MonadError Error m => Value -> m (Vector Bool)
+toMatrix :: MonadError Error m => Value -> m (Matrix Integer)
 fromMatrix :: Matrix Integer -> Value
 compareValues :: Value -> Value -> Maybe Ordering
 compareValues' :: Value -> Value -> Ordering
