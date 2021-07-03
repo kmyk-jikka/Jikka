@@ -13,27 +13,27 @@ spec = describe "run" $ do
     let prog =
           ResultExpr
             ( Lam1
-                "n@0"
+                "n"
                 IntTy
                 ( Sum'
                     ( Tabulate'
                         IntTy
-                        (Var "n@0")
-                        (Lam1 "x@1" IntTy (Mult' (Lit (LitInt 100)) (Var "x@1")))
+                        (Var "n")
+                        (Lam1 "x" IntTy (Mult' (Lit (LitInt 100)) (Var "x")))
                     )
                 )
             )
     let expected =
           ResultExpr
             ( Lam1
-                "n@0"
+                "n"
                 IntTy
                 ( Mult'
                     (Lit (LitInt 100))
                     ( FloorDiv'
                         ( Mult'
-                            (Var "n@0")
-                            (Plus' (Var "n@0") (Negate' Lit1))
+                            (Var "n")
+                            (Plus' (Var "n") (Negate' Lit1))
                         )
                         Lit2
                     )

@@ -27,6 +27,7 @@ import Jikka.Core.Language.Vars
 substitute :: VarName -> Expr -> Expr -> Expr
 substitute = substitute' []
 
+-- TODO: Rewrite using @Jikka.Common.Alpha.MonadAlpha@
 substitute' :: [VarName] -> VarName -> Expr -> Expr -> Expr
 substitute' used x e = go
   where
