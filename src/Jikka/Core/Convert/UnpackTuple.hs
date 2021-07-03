@@ -73,7 +73,10 @@ runProgram = mapExprProgramM' runExpr runExpr
 -- > tuple (foldl (fun x y -> x + y) 0 [1, 2, 3])
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.UnpackTuple" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- Alpha.run prog
   prog <- runProgram prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

@@ -68,6 +68,9 @@ run' = runToplevelExpr
 -- > in solve
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.RemoveUnusedVars" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- return $ run' prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

@@ -64,6 +64,9 @@ runProgram = mapExprProgramM runExpr
 -- TODO: support affine functions
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.LinearFunction" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- runProgram prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

@@ -59,6 +59,9 @@ run' = runToplevelExpr M.empty
 -- NOTE: this doesn't constant folding.
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ConstantPropagation" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- return $ run' prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

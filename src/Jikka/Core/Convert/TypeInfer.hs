@@ -25,6 +25,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Format (formatType)
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck (literalToType, typecheckProgram)
 import Jikka.Core.Language.Util
 import Jikka.Core.Language.Vars
@@ -203,5 +204,6 @@ run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   let eqns'' = mergeAssertions assertions
   sigma <- solveEquations (eqns' ++ eqns'')
   prog <- return $ substProgram sigma prog
-  typecheckProgram prog
+  postcondition $ do
+    typecheckProgram prog
   return prog

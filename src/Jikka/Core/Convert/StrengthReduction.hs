@@ -231,6 +231,9 @@ weakenToplevelExpr e = case e of
 
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.StrengthReduction" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- return $ weakenToplevelExpr prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

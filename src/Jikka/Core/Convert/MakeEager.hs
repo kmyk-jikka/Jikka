@@ -53,6 +53,9 @@ run' = mapExprProgram runExpr
 -- > in fact 10
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.MakeEager" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- return $ run' prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog
