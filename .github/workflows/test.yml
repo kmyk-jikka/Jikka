@@ -32,7 +32,10 @@ jobs:
       run: stack --system-ghc build --ghc-options=-Werror
 
     - name: Run unit tests
-      run: stack --system-ghc test --ghc-options=-Werror
+      run: stack --system-ghc test --ghc-options=-Werror Jikka:jikka-test
+
+    - name: Run doctests
+      run: stack --system-ghc test --ghc-options=-Werror Jikka:jikka-doctest
 
     - name: Run integration tests
       run: bash examples/test.sh
