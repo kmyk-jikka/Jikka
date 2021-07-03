@@ -17,6 +17,7 @@ module Jikka.Common.Alpha where
 
 import Control.Arrow (first)
 import Control.Monad.Except
+import Control.Monad.Identity (Identity (..))
 import Control.Monad.Reader
 import Control.Monad.Signatures
 import Control.Monad.State.Strict
@@ -77,3 +78,6 @@ instance MonadAlpha m => MonadAlpha (StateT s m) where
 
 instance (MonadAlpha m, Monoid w) => MonadAlpha (WriterT w m) where
   nextCounter = lift nextCounter
+
+evalAlpha :: AlphaT Identity a -> Int -> a
+evalAlpha f i = runIdentity (evalAlphaT f i)
