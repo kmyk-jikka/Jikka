@@ -18,7 +18,7 @@ run' = flip evalAlphaT 0 . run
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ResultExpr $
             Plus'
               (Let "x" IntTy Lit1 (Var "x"))
@@ -30,4 +30,4 @@ spec = describe "run" $ do
                 Let "$2" (Fun1Ty IntTy) (Var "$3") $
                   Let "$4" IntTy (App (Var "$2") [Lit1]) $
                     Plus' (Var "x$0") (Var "$4")
-    run' input `shouldBe` Right expected
+    run' prog `shouldBe` Right expected

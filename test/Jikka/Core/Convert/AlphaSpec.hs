@@ -18,7 +18,7 @@ run' = flip evalAlphaT 0 . run
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ResultExpr
             ( Let
                 "x"
@@ -44,4 +44,4 @@ spec = describe "run" $ do
                     (Var "x$1")
                 )
             )
-    run' input `shouldBe` Right expected
+    run' prog `shouldBe` Right expected

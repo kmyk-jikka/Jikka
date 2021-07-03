@@ -7,7 +7,7 @@ import Test.Hspec
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ResultExpr
             ( AppBuiltin
                 (If IntTy)
@@ -28,4 +28,4 @@ spec = describe "run" $ do
                 )
                 []
             )
-    run input `shouldBe` Right expected
+    run prog `shouldBe` Right expected

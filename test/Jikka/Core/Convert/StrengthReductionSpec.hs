@@ -10,7 +10,7 @@ import Test.Hspec
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ResultExpr
             ( Lam1
                 "n@0"
@@ -39,4 +39,4 @@ spec = describe "run" $ do
                     )
                 )
             )
-    run input `shouldBe` Right expected
+    run prog `shouldBe` Right expected
