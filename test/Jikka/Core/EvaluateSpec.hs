@@ -3,6 +3,7 @@
 module Jikka.Core.EvaluateSpec (spec) where
 
 import Jikka.Core.Evaluate (Token (..), Value (..), run')
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
 
@@ -14,11 +15,9 @@ spec = describe "run" $ do
             "solve@0"
             [("xs@1", ListTy IntTy)]
             IntTy
-            ( AppBuiltin
-                Plus
-                [ AppBuiltin Sum [Var "xs@1"],
-                  AppBuiltin (Len IntTy) [Var "xs@1"]
-                ]
+            ( Plus'
+                (Sum' (Var "xs@1"))
+                (Len' IntTy (Var "xs@1"))
             )
             (ResultExpr (Var "solve@0"))
     let tokens =
@@ -36,19 +35,17 @@ spec = describe "run" $ do
             [("n@1", IntTy)]
             IntTy
             ( App
-                ( AppBuiltin
-                    (If (FunTy [] IntTy))
-                    [ AppBuiltin (Equal IntTy) [Var "n@1", Lit0],
-                      Lam [] Lit1,
-                      Lam
+                ( If'
+                    (FunTy [] IntTy)
+                    (Equal' IntTy (Var "n@1") Lit0)
+                    (Lam [] Lit1)
+                    ( Lam
                         []
-                        ( AppBuiltin
-                            Mult
-                            [ Var "n@1",
-                              App (Var "fact@0") [AppBuiltin Minus [Var "n@1", Lit1]]
-                            ]
+                        ( Mult'
+                            (Var "n@1")
+                            (App (Var "fact@0") [Minus' (Var "n@1") Lit1])
                         )
-                    ]
+                    )
                 )
                 []
             )

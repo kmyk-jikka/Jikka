@@ -6,6 +6,7 @@ module Jikka.Core.FormatSpec
 where
 
 import Jikka.Core.Format
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
 
@@ -20,15 +21,15 @@ spec = describe "run" $ do
             ( Let
                 "xs@2"
                 (ListTy IntTy)
-                ( AppBuiltin
-                    (Tabulate IntTy)
-                    [ Var "n@1",
-                      Lam
+                ( Tabulate'
+                    IntTy
+                    (Var "n@1")
+                    ( Lam
                         [("i@3", IntTy)]
-                        (AppBuiltin Mult [Var "i@3", Var "i@3"])
-                    ]
+                        (Mult' (Var "i@3") (Var "i@3"))
+                    )
                 )
-                (AppBuiltin Sum [Var "xs@2"])
+                (Sum' (Var "xs@2"))
             )
             (ResultExpr (Var "solve@0"))
     let expected =
