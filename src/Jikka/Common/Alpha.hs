@@ -17,6 +17,7 @@ module Jikka.Common.Alpha where
 
 import Control.Arrow (first)
 import Control.Monad.Except
+import Control.Monad.Identity (Identity (..))
 import Control.Monad.Reader
 import Control.Monad.Signatures
 import Control.Monad.State.Strict
@@ -46,7 +47,7 @@ instance Monad m => Monad (AlphaT m) where
     runAlphaT (f x) i
 
 instance MonadFix m => MonadFix (AlphaT m) where
-  mfix f = AlphaT (\i -> mfix (\(x, _) -> runAlphaT (f x) i))
+  mfix f = AlphaT (\i -> mfix (\x -> runAlphaT (f (fst x)) i))
 
 liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
 liftCatch catchE m h = AlphaT (\i -> runAlphaT m i `catchE` \e -> runAlphaT (h e) i)
@@ -77,3 +78,6 @@ instance MonadAlpha m => MonadAlpha (StateT s m) where
 
 instance (MonadAlpha m, Monoid w) => MonadAlpha (WriterT w m) where
   nextCounter = lift nextCounter
+
+evalAlpha :: AlphaT Identity a -> Int -> a
+evalAlpha f i = runIdentity (evalAlphaT f i)

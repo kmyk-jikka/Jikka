@@ -30,15 +30,11 @@ runExpr env = \case
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just y -> return $ Var y
   Lit lit -> return $ Lit lit
-  App f args -> App <$> runExpr env f <*> mapM (runExpr env) args
-  Lam args body -> do
-    args <- forM args $ \(x, t) -> do
-      y <- rename x
-      return (x, y, t)
-    let args1 = map (\(x, y, _) -> (x, y)) args
-    let args2 = map (\(_, y, t) -> (y, t)) args
-    body <- runExpr (reverse args1 ++ env) body
-    return $ Lam args2 body
+  App f e -> App <$> runExpr env f <*> runExpr env e
+  Lam x t body -> do
+    y <- rename x
+    body <- runExpr ((x, y) : env) body
+    return $ Lam y t body
   Let x t e1 e2 -> do
     e1 <- runExpr env e1
     y <- rename x

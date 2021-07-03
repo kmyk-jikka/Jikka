@@ -36,22 +36,26 @@ runFloorMod env e m = go e
       ModMatAdd' h w e1 e2 m' | m == m' -> ModMatAdd' h w <$> go e1 <*> go e2 <*> pure m
       ModMatMul' h n w e1 e2 m' | m == m' -> ModMatMul' h n w <$> go e1 <*> go e2 <*> pure m
       ModMatPow' n e1 e2 m' | m == m' -> ModMatPow' n <$> go e1 <*> pure e2 <*> pure m
-      App (Lam args body) es -> App <$> (Lam args <$> runFloorMod (reverse args ++ env) body m) <*> pure es
-      Tuple' ts es -> Tuple' ts <$> mapM go es
+      App (Lam x t body) es -> App <$> (Lam x t <$> runFloorMod ((x, t) : env) body m) <*> pure es
       Sum' e -> do
         x <- genVarName'
-        return $ FloorMod' (Sum' (Map' IntTy IntTy (Lam [(x, IntTy)] (FloorMod' (Var x) m)) e)) m
+        return $ FloorMod' (Sum' (Map' IntTy IntTy (Lam x IntTy (FloorMod' (Var x) m)) e)) m
       Product' e -> return $ ModProduct' e m
       ModProduct' e m' | m == m' -> return $ ModProduct' e m
       FloorMod' e m' ->
         if m == m'
           then go e
           else runFloorMod env e (Lcm' m m')
-      e -> do
-        t <- typecheckExpr env e
-        return $ case t of
-          IntTy -> FloorMod' e m
-          _ -> e
+      e -> case curryApp e of
+        (Tuple' ts, es) -> do
+          l <- mapM go (take (length ts) es)
+          let r = drop (length ts) es
+          return $ uncurryApp (Tuple' ts) (l ++ r)
+        _ -> do
+          t <- typecheckExpr env e
+          return $ case t of
+            IntTy -> FloorMod' e m
+            _ -> e
 
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 runExpr env = \case
@@ -71,6 +75,9 @@ runProgram = mapExprProgramM runExpr
 -- > (fun x -> mod (mod (x * x) 1000000007 + x) 1000000007) y
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.PropagateMod" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- runProgram prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

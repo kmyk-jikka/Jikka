@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 -- |
@@ -10,59 +11,74 @@
 -- Portability : portable
 module Jikka.Core.Language.Beta
   ( substitute,
-    substitute',
+    substituteToplevelExpr,
   )
 where
 
+import Jikka.Common.Alpha
+import Jikka.Common.Error
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Util
 import Jikka.Core.Language.Vars
 
 -- | `substitute` replaces the occrences of the given variable with the given expr. This considers contexts.
 --
--- >>> substitute (VarName "x") (Lit (LitInt 0)) (Lam1 (VarName "y") IntTy (Var (VarName "x")))
--- Lam [(VarName "y",IntTy)] (Lit (LitInt 0))
+-- >>> flip evalAlphaT 0 $ substitute (VarName "x") (Lit (LitInt 0)) (Lam (VarName "y") IntTy (Var (VarName "x")))
+-- Lam (VarName "y") IntTy (Lit (LitInt 0))
 --
--- >>> substitute (VarName "x") (Lit (LitInt 0)) (Lam1 (VarName "x") IntTy (Var (VarName "x")))
--- Lam [(VarName "x",IntTy)] (Var (VarName "x"))
-substitute :: VarName -> Expr -> Expr -> Expr
-substitute = substitute' []
+-- >>> flip evalAlphaT 0 $ substitute (VarName "x") (Lit (LitInt 0)) (Lam (VarName "x") IntTy (Var (VarName "x")))
+-- Lam (VarName "x") IntTy (Var (VarName "x"))
+substitute :: MonadAlpha m => VarName -> Expr -> Expr -> m Expr
+substitute x e = \case
+  Var y -> return $ if y == x then e else Var y
+  Lit lit -> return $ Lit lit
+  App e1 e2 -> App <$> substitute x e e1 <*> substitute x e e2
+  Lam y t body ->
+    if x == y
+      then return $ Lam y t body
+      else do
+        (y, body) <- resolveConflict e (y, body)
+        Lam y t <$> substitute x e body
+  Let y t e1 e2 -> do
+    e1 <- substitute x e e1
+    if y == x
+      then return $ Let y t e1 e2
+      else do
+        (y, e2) <- resolveConflict e (y, e2)
+        Let y t e1 <$> substitute x e e2
 
-substitute' :: [VarName] -> VarName -> Expr -> Expr -> Expr
-substitute' used x e = go
-  where
-    go :: Expr -> Expr
-    go = \case
-      Var y -> if y == x then e else Var y
-      Lit lit -> Lit lit
-      App f args -> App (go f) (map go args)
-      Lam args body -> case () of
-        _ | x `elem` map fst args -> Lam args body
-        _ ->
-          let rename' (y, t) (args', body') = let (y', body'') = rename (y, body') in ((y', t) : args', body'')
-              (args', body') = foldr rename' ([], body) args
-              used' = reverse (map fst args') ++ used
-           in Lam args' (substitute' used' x e body')
-      Let y t e1 e2 -> case () of
-        _ | y == x -> Let y t (go e1) e2
-        _ ->
-          let (y', e2') = rename (y, e2)
-           in Let y' t (go e1) (substitute' (y' : used) x e e2')
-    rename :: (VarName, Expr) -> (VarName, Expr)
-    rename (y, e')
-      | not (y `isFreeVarOrScopedVar` e) = (y, e')
-      | otherwise = let z = findFreshVar' ([e, e'] ++ map Var used) in (z, renameWithoutContext y z e')
+substituteToplevelExpr :: (MonadAlpha m, MonadError Error m) => VarName -> Expr -> ToplevelExpr -> m ToplevelExpr
+substituteToplevelExpr x e = \case
+  ResultExpr e' -> ResultExpr <$> substitute x e e'
+  ToplevelLet y t e' cont -> do
+    e' <- substitute x e e'
+    if y == x
+      then return $ ToplevelLet y t e' cont
+      else do
+        when (y `isFreeVar` e) $ do
+          throwInternalError $ "Jikka.Core.Language.Beta.substituteToplevelExpr: toplevel name conflicts: " ++ unVarName y
+        ToplevelLet y t e' <$> substituteToplevelExpr x e cont
+  ToplevelLetRec f args ret body cont -> do
+    if f == x
+      then return $ ToplevelLetRec f args ret body cont
+      else do
+        when (f `isFreeVar` e) $ do
+          throwInternalError $ "Jikka.Core.Language.Beta.substituteToplevelExpr: toplevel name conflicts: " ++ unVarName f
+        (args, body) <-
+          if x `elem` map fst args
+            then return (args, body)
+            else do
+              let go (args, body) (y, t) = do
+                    (y, body) <- resolveConflict e (y, body)
+                    return (args ++ [(y, t)], body)
+              foldM go ([], body) args
+        ToplevelLetRec f args ret body <$> substituteToplevelExpr x e cont
 
-renameWithoutContext :: VarName -> VarName -> Expr -> Expr
-renameWithoutContext x y = go
-  where
-    rename :: VarName -> VarName
-    rename z
-      | z == x = y
-      | otherwise = z
-    go :: Expr -> Expr
-    go = \case
-      Var z -> Var (rename z)
-      Lit lit -> Lit lit
-      App f args -> App (go f) (map go args)
-      Lam args e -> Lam (map (\(z, t) -> (rename z, t)) args) (go e)
-      Let z t e1 e2 -> Let (rename z) t (go e1) (go e2)
+resolveConflict :: MonadAlpha m => Expr -> (VarName, Expr) -> m (VarName, Expr)
+resolveConflict e (x, e') =
+  if x `isFreeVar` e
+    then do
+      y <- genVarName x
+      e' <- substitute x (Var y) e'
+      return (y, e')
+    else return (x, e')

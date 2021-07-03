@@ -113,8 +113,8 @@ countOccurrences :: VarName -> Expr -> Int
 countOccurrences x = \case
   Var y -> if x == y then 1 else 0
   Lit _ -> 0
-  App f args -> sum (map (countOccurrences x) (f : args))
-  Lam args body -> if x `elem` map fst args then 0 else countOccurrences x body
+  App f e -> countOccurrences x f + countOccurrences x e
+  Lam y _ body -> if x == y then 0 else countOccurrences x body
   Let y _ e1 e2 -> countOccurrences x e1 + (if x == y then 0 else countOccurrences x e2)
 
 countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
@@ -131,8 +131,8 @@ mapExprM' pre post env e = do
   e <- case e of
     Var y -> return $ Var y
     Lit lit -> return $ Lit lit
-    App g args -> App <$> go env g <*> mapM (go env) args
-    Lam args body -> Lam args <$> go (reverse args ++ env) body
+    App g e -> App <$> go env g <*> go env e
+    Lam x t body -> Lam x t <$> go ((x, t) : env) body
     Let y t e1 e2 -> Let y t <$> go env e1 <*> go ((y, t) : env) e2
   post env e
 
@@ -143,7 +143,7 @@ mapExprToplevelExprM' pre post env = \case
     let env' = (y, t) : env
      in ToplevelLet y t <$> mapExprM' pre post env' e <*> mapExprToplevelExprM' pre post env' cont
   ToplevelLetRec g args ret body cont ->
-    let env' = (g, FunTy (map snd args) ret) : env
+    let env' = (g, foldr (FunTy . snd) ret args) : env
      in ToplevelLetRec g args ret <$> mapExprM' pre post (reverse args ++ env) body <*> mapExprToplevelExprM' pre post env' cont
 
 mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
@@ -167,3 +167,27 @@ mapExprToplevelExpr f env e = runIdentity $ mapExprToplevelExprM (\env e -> retu
 
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 mapExprProgram f prog = runIdentity $ mapExprProgramM (\env e -> return $ f env e) prog
+
+uncurryFunTy :: Type -> ([Type], Type)
+uncurryFunTy = \case
+  (FunTy t t') -> let (ts, ret) = uncurryFunTy t' in (t : ts, ret)
+  ret -> ([], ret)
+
+uncurryLam :: Expr -> ([(VarName, Type)], Expr)
+uncurryLam = \case
+  Lam x t body -> let (args, body') = uncurryLam body in ((x, t) : args, body')
+  body -> ([], body)
+
+curryApp :: Expr -> (Expr, [Expr])
+curryApp = \case
+  App f e -> let (f', e') = curryApp f in (f', e' ++ [e])
+  f -> (f, [])
+
+curryFunTy :: [Type] -> Type -> Type
+curryFunTy ts ret = foldr FunTy ret ts
+
+curryLam :: [(VarName, Type)] -> Expr -> Expr
+curryLam args body = foldr (uncurry Lam) body args
+
+uncurryApp :: Expr -> [Expr] -> Expr
+uncurryApp = foldl App

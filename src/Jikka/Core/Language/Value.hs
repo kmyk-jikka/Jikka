@@ -10,6 +10,7 @@ import qualified Data.Vector as V
 import Jikka.Common.Error
 import Jikka.Common.Matrix
 import Jikka.Common.ModInt
+import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
 import Jikka.Core.Language.Expr
 
 data Value
@@ -17,15 +18,16 @@ data Value
   | ValBool Bool
   | ValList (V.Vector Value)
   | ValTuple [Value]
-  | ValBuiltin Builtin
-  | ValLambda (Maybe VarName) Env [(VarName, Type)] Expr
-  deriving (Eq, Show, Read)
+  | ValBuiltin Builtin [Value]
+  | -- | The `Env` may contain the `ValLambda` cyclicly.
+    ValLambda (Maybe VarName) Env VarName Type Expr
+  deriving (Eq, Read)
 
 type Env = [(VarName, Value)]
 
 literalToValue :: Literal -> Value
 literalToValue = \case
-  LitBuiltin builtin -> ValBuiltin builtin
+  LitBuiltin builtin -> ValBuiltin builtin []
   LitInt n -> ValInt n
   LitBool p -> ValBool p
   LitNil _ -> ValList V.empty
@@ -112,8 +114,9 @@ formatValue = \case
   ValList xs -> "[" ++ intercalate ", " (map formatValue (V.toList xs)) ++ "]"
   ValTuple [x] -> "(" ++ formatValue x ++ ",)"
   ValTuple xs -> "(" ++ intercalate ", " (map formatValue xs) ++ ")"
-  ValBuiltin builtin -> show builtin
-  f@ValLambda {} -> show f
+  ValBuiltin builtin [] -> formatBuiltinIsolated builtin
+  ValBuiltin builtin args -> formatBuiltinIsolated builtin ++ "(" ++ intercalate ", " (map formatValue args) ++ ")"
+  ValLambda _ _ x t body -> formatExpr (Lam x t body) -- Don't show env because it may be cyclic.
 
 writeValueIO :: Value -> IO ()
 writeValueIO = \case
@@ -123,5 +126,5 @@ writeValueIO = \case
     print (V.length xs)
     mapM_ writeValueIO xs
   ValTuple xs -> mapM_ writeValueIO xs
-  ValBuiltin builtin -> print builtin
-  f@ValLambda {} -> print f
+  f@(ValBuiltin _ _) -> putStrLn (formatValue f)
+  f@ValLambda {} -> putStrLn (formatValue f)

@@ -28,6 +28,7 @@ import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
 import qualified Jikka.Core.Language.TypeCheck as X
+import qualified Jikka.Core.Language.Util as X
 
 --------------------------------------------------------------------------------
 -- monad
@@ -74,7 +75,7 @@ lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
-  t@X.VarTy {} -> throwInternalError $ "variable type appears at invalid place: " ++ X.formatType t
+  t@X.VarTy {} -> throwInternalError $ "cannot convert type variable: " ++ X.formatType t
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
@@ -82,7 +83,7 @@ runType = \case
     if not (null ts) && ts == replicate (length ts) (head ts)
       then Y.TyArray <$> runType (head ts) <*> pure (fromIntegral (length ts))
       else Y.TyTuple <$> mapM runType ts
-  X.FunTy ts t -> Y.TyFunction <$> runType t <*> mapM runType ts
+  X.FunTy t ret -> Y.TyFunction <$> runType ret <*> mapM runType [t]
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
 runLiteral = \case
@@ -92,6 +93,18 @@ runLiteral = \case
   X.LitNil t -> do
     t <- runType t
     return $ Y.Call (Y.Function "std::vector" [t]) []
+
+arityOfBuiltin :: X.Builtin -> Int
+arityOfBuiltin = \case
+  X.NatInd _ -> 3
+  X.Min2 _ -> 2
+  X.Max2 _ -> 2
+  X.Foldl _ _ -> 3
+  X.At _ -> 2
+  X.Min1 _ -> 1
+  X.Max1 _ -> 1
+  X.Proj _ _ -> 1
+  builtin -> length (fst (X.uncurryFunTy (X.builtinToType builtin)))
 
 runAppBuiltin :: MonadError Error m => X.Builtin -> [Y.Expr] -> m Y.Expr
 runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsolated f) $ do
@@ -248,25 +261,38 @@ runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
   X.Var x -> Y.Var <$> lookupVarName env x
   X.Lit lit -> runLiteral lit
-  X.App f args -> do
+  e@(X.App _ _) -> do
+    let (f, args) = X.curryApp e
     args <- mapM (runExpr env) args
-    case f of
-      X.Lit (X.LitBuiltin builtin) -> runAppBuiltin builtin args
+    (e, args) <- case f of
+      X.Lit (X.LitBuiltin builtin) -> do
+        let arity = arityOfBuiltin builtin
+        if length args < arity
+          then do
+            e <- runExpr env e
+            let (ts, ret) = X.uncurryFunTy (X.builtinToType builtin)
+            ts <- mapM runType ts
+            ret <- runType ret
+            xs <- replicateM (arity - length args) (renameVarName LocalArgumentNameKind "_")
+            let (_, e') = foldr (\(t, x) (ret, e) -> (Y.TyFunction ret [t], Y.Lam [(t, x)] ret [Y.Return e])) (ret, e) (zip (drop (length args) ts) xs)
+            return (e', [])
+          else do
+            e <- runAppBuiltin builtin (take arity args)
+            return (e, drop arity args)
       e -> do
         e <- runExpr env e
-        return $ Y.Call (Y.Callable e) args
-  X.Lam args e -> do
-    args <- forM args $ \(x, t) -> do
-      y <- renameVarName LocalArgumentNameKind x
-      return (x, t, y)
-    let env' = reverse args ++ env
-    args <- forM args $ \(_, t, y) -> do
-      t <- runType t
-      return (t, y)
-    ret <- runType =<< typecheckExpr env' e
-    body <- runExprToStatements env' e
-    return $ Y.Lam args ret body
-  X.Let x _ e1 e2 -> runExpr env $ X.substitute x e1 e2
+        return (e, args)
+    return $ foldl (\e arg -> Y.Call (Y.Callable e) [arg]) e args
+  e@(X.Lam _ _ _) -> do
+    let (args, body) = X.uncurryLam e
+    ys <- mapM (renameVarName LocalArgumentNameKind . fst) args
+    let env' = reverse (zipWith (\(x, t) y -> (x, t, y)) args ys) ++ env
+    ret <- runType =<< typecheckExpr env' body
+    body <- runExprToStatements env' body
+    ts <- mapM (runType . snd) args
+    let (_, [Y.Return e]) = foldr (\(t, y) (ret, body) -> (Y.TyFunction ret [t], [Y.Return (Y.Lam [(t, y)] ret body)])) (ret, body) (zip ts ys)
+    return e
+  X.Let x _ e1 e2 -> runExpr env =<< X.substitute x e1 e2
 
 runExprToStatements :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m [Y.Statement]
 runExprToStatements env = \case
@@ -369,8 +395,8 @@ runMainWrite e = \case
 
 runMain :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.ToplevelStatement]
 runMain solve t = do
-  (body, ans, t) <- case t of
-    X.FunTy ts ret -> do
+  (body, ans, t) <- case X.uncurryFunTy t of
+    (ts@(_ : _), ret) -> do
       body <- forM ts $ \t -> do
         x <- newFreshName LocalNameKind ""
         t <- runType t
@@ -391,13 +417,12 @@ runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -
 runToplevelExpr env = \case
   X.ResultExpr e -> do
     t <- typecheckExpr env e
-    case t of
-      X.FunTy ts ret -> do
+    case X.uncurryFunTy t of
+      (ts@(_ : _), ret) -> do
         let f = Y.VarName "solve"
-        (args, body) <- case e of
-          X.Lam args body -> do
-            when (map snd args /= ts) $ do
-              throwInternalError "type error"
+        (args, body) <- case X.uncurryLam e of
+          (args, body) | length args == length ts -> do
+            -- merge two sets of arguments which introduced by @FunTy@ and @Lam@
             args <- forM args $ \(x, t) -> do
               y <- renameVarName ArgumentNameKind x
               return (x, t, y)
@@ -424,9 +449,17 @@ runToplevelExpr env = \case
         ans <- runToplevelVarDef env x t e
         main <- runMain x t
         return $ ans ++ main
-  X.ToplevelLet x t e cont -> case (e, t) of
-    (X.Lam args body, X.FunTy _ ret) -> do
+  X.ToplevelLet x t e cont -> case (X.uncurryLam e, X.uncurryFunTy t) of
+    ((args@(_ : _), body), (ts@(_ : _), ret)) -> do
       g <- renameVarName FunctionNameKind x
+      (args, body) <-
+        if length args < length ts
+          then do
+            xs <- replicateM (length ts - length args) X.genVarName'
+            let args' = args ++ zip xs (drop (length args) ts)
+            let body' = X.uncurryApp body (map X.Var xs)
+            return (args', body')
+          else return (args, body)
       stmt <- runToplevelFunDef ((x, t, g) : env) g args ret body
       cont <- runToplevelExpr ((x, t, g) : env) cont
       return $ stmt ++ cont
@@ -437,7 +470,7 @@ runToplevelExpr env = \case
       return $ stmt ++ cont
   X.ToplevelLetRec f args ret body cont -> do
     g <- renameVarName FunctionNameKind f
-    let t = X.FunTy (map snd args) ret
+    let t = X.curryFunTy (map snd args) ret
     stmt <- runToplevelFunDef ((f, t, g) : env) g args ret body
     cont <- runToplevelExpr ((f, t, g) : env) cont
     return $ stmt ++ cont

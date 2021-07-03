@@ -1,31 +1,37 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.Convert.MakeEagerSpec (spec) where
 
+import Jikka.Common.Alpha
+import Jikka.Common.Error
 import Jikka.Core.Convert.MakeEager (run)
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
+
+run' :: Program -> Either Error Program
+run' = flip evalAlphaT 0 . run
 
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ResultExpr
-            ( AppBuiltin
-                (If IntTy)
-                [ LitTrue,
-                  Lit0,
-                  Lit1
-                ]
+            ( If'
+                IntTy
+                LitTrue
+                Lit0
+                Lit1
             )
     let expected =
           ResultExpr
             ( App
-                ( AppBuiltin
-                    (If (FunTy [] IntTy))
-                    [ LitTrue,
-                      Lam [] Lit0,
-                      Lam [] Lit1
-                    ]
+                ( If'
+                    (FunTy (TupleTy []) IntTy)
+                    LitTrue
+                    (Lam "$0" (TupleTy []) Lit0)
+                    (Lam "$1" (TupleTy []) Lit1)
                 )
-                []
+                (Tuple' [])
             )
-    run input `shouldBe` Right expected
+    run' prog `shouldBe` Right expected

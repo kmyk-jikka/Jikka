@@ -22,13 +22,13 @@ spec = describe "run" $ do
           ResultExpr
             ( Let
                 "f"
-                (FunTy [IntTy] IntTy)
-                (Lam [("y", IntTy)] (Var "y"))
+                (FunTy IntTy IntTy)
+                (Lam "y" IntTy (Var "y"))
                 ( Let
                     "x"
                     IntTy
                     Lit1
-                    (App (Var "f") [Plus' (Var "x") (Var "x")])
+                    (App (Var "f") (Plus' (Var "x") (Var "x")))
                 )
             )
     let expected =
@@ -37,6 +37,6 @@ spec = describe "run" $ do
                 "x"
                 IntTy
                 Lit1
-                (App (Lam [("y", IntTy)] (Var "y")) [Plus' (Var "x") (Var "x")])
+                (App (Lam "y" IntTy (Var "y")) (Plus' (Var "x") (Var "x")))
             )
     run' prog `shouldBe` Right expected

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.Convert.RemoveUnusedVarsSpec (spec) where
 
 import Jikka.Core.Convert.RemoveUnusedVars (run)
@@ -7,17 +9,17 @@ import Test.Hspec
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ToplevelLetRec
-            (VarName "solve")
-            [(VarName "x", BoolTy)]
+            "solve"
+            [("x", BoolTy)]
             BoolTy
-            (Let (VarName "y") IntTy Lit0 (Var (VarName "x")))
-            (ResultExpr (Var (VarName "solve")))
+            (Let "y" IntTy Lit0 (Var "x"))
+            (ResultExpr (Var "solve"))
     let expected =
           ToplevelLet
-            (VarName "solve")
-            (FunTy [BoolTy] BoolTy)
-            (Lam [(VarName "x", BoolTy)] (Var (VarName "x")))
-            (ResultExpr (Var (VarName "solve")))
-    run input `shouldBe` Right expected
+            "solve"
+            (FunTy BoolTy BoolTy)
+            (Lam "x" BoolTy (Var "x"))
+            (ResultExpr (Var "solve"))
+    run prog `shouldBe` Right expected

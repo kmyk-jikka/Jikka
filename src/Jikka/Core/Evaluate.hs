@@ -18,6 +18,9 @@
 module Jikka.Core.Evaluate
   ( run,
     run',
+    callProgram,
+    makeArguments,
+    makeArgumentsIO,
     Value (..),
     Token (..),
     tokenize,
@@ -27,15 +30,18 @@ where
 import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Bits
-import Data.List (intercalate, maximumBy, minimumBy, sortBy)
+import Data.List (maximumBy, minimumBy, sortBy)
 import qualified Data.Vector as V
+import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Matrix
 import qualified Jikka.Core.Convert.MakeEager as MakeEager
-import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
+import Jikka.Core.Format (formatBuiltinIsolated)
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Runtime
-import Jikka.Core.Language.TypeCheck (builtinToType)
+import Jikka.Core.Language.TypeCheck
+import Jikka.Core.Language.Util
 import Jikka.Core.Language.Value
 import Text.Read (readEither)
 
@@ -167,22 +173,31 @@ matpow' f k = return $ matpow f k
 
 callBuiltin :: MonadError Error m => Builtin -> [Value] -> m Value
 callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltinIsolated builtin) $ do
-  let go0 ret f = case args of
-        [] -> return $ ret f
-        _ -> throwInternalError $ "expected 0 arguments, got " ++ show (length args)
+  let go0 ret f = callValue (ret f) args
   let go1' t1 ret f = case args of
-        [v1] -> ret <$> (f =<< t1 v1)
-        _ -> throwInternalError $ "expected 1 argument, got " ++ show (length args)
+        v1 : args -> do
+          f <- ret <$> (f =<< t1 v1)
+          callValue f args
+        _ -> return $ ValBuiltin builtin args
   let go1 t1 ret f = go1' t1 ret (return . f)
   let go2' t1 t2 ret f = case args of
-        [v1, v2] -> ret <$> join (f <$> t1 v1 <*> t2 v2)
-        _ -> throwInternalError $ "expected 2 arguments, got " ++ show (length args)
+        v1 : v2 : args -> do
+          f <- ret <$> join (f <$> t1 v1 <*> t2 v2)
+          callValue f args
+        _ -> return $ ValBuiltin builtin args
   let go2 t1 t2 ret f = go2' t1 t2 ret ((return .) . f)
   let go3' t1 t2 t3 ret f = case args of
-        [v1, v2, v3] -> ret <$> join (f <$> t1 v1 <*> t2 v2 <*> t3 v3)
-        _ -> throwInternalError $ "expected 3 arguments, got " ++ show (length args)
+        v1 : v2 : v3 : args -> do
+          f <- ret <$> join (f <$> t1 v1 <*> t2 v2 <*> t3 v3)
+          callValue f args
+        _ -> return $ ValBuiltin builtin args
   let go3 t1 t2 t3 ret f = go3' t1 t2 t3 ret (((return .) .) . f)
-  let goN t ret f = ret . f <$> mapM t args
+  let goN n t ret f =
+        if length args < n
+          then return $ ValBuiltin builtin args
+          else do
+            f <- ret . f <$> mapM t (take n args)
+            callValue f (drop n args)
   case builtin of
     -- arithmetical functions
     Negate -> go1 valueToInt ValInt negate
@@ -256,7 +271,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Range2 -> go2' valueToInt valueToInt ValList range2
     Range3 -> go3' valueToInt valueToInt valueToInt ValList range3
     -- tuple functions
-    Tuple _ -> goN pure ValTuple id
+    Tuple ts -> goN (length ts) pure ValTuple id
     Proj _ n -> go1 valueToTuple id (!! n)
     -- -- comparison
     LessThan _ -> go2 pure pure ValBool $ \a b -> compareValues a b == Just LT
@@ -271,88 +286,86 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Permute -> go2' valueToInt valueToInt ValInt permute
     MultiChoose -> go2' valueToInt valueToInt ValInt multichoose
 
-callLambda :: MonadError Error m => Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> [Value] -> m Value
-callLambda name env formalArgs body actualArgs = wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ do
-  if length formalArgs /= length actualArgs
-    then throwInternalError $ "wrong number of arguments for lambda function: expr = " ++ formatExpr (Lam formalArgs body) ++ ", args = (" ++ intercalate ", " (map formatValue actualArgs) ++ ")"
-    else case (formalArgs, actualArgs) of
-      ([], []) -> evaluateExpr env body
-      ((x, _) : formalArgs, val : actualArgs) -> callLambda name ((x, val) : env) formalArgs body actualArgs
-      _ -> throwInternalError "wrong number of arguments for lambda function"
+callLambda :: MonadError Error m => Maybe VarName -> Env -> VarName -> Type -> Expr -> [Value] -> m Value
+callLambda = \name env x t body args -> wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ go Nothing env x t body args
+  where
+    go name env x t body [] = return $ ValLambda name env x t body
+    go name env x _ body (e : args) = maybe id (\name -> wrapError' $ "while calling lambda " ++ unVarName name) name $ do
+      body <- evaluateExpr ((x, e) : env) body
+      case body of
+        ValLambda name env x t body -> go name env x t body args
+        _ -> callValue body args
 
 callValue :: MonadError Error m => Value -> [Value] -> m Value
-callValue f args = case f of
-  ValBuiltin builtin -> callBuiltin builtin args
-  ValLambda name env args' body -> callLambda name env args' body args
-  _ -> throwInternalError $ "call non-function: " ++ formatValue f
+callValue f args = case (f, args) of
+  (ValBuiltin builtin args', _) -> callBuiltin builtin (args' ++ args)
+  (ValLambda name env x t body, _) -> callLambda name env x t body args
+  (_, []) -> return f
+  _ -> throwInternalError $ "cannot call a non-function: " ++ formatValue f
 
 evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
 evaluateExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwRuntimeError $ "Internal Error: undefined variable: " ++ unVarName x
+    Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just val -> return val
   Lit lit -> return $ literalToValue lit
-  App f args -> do
+  e@(App _ _) -> do
+    let (f, args) = curryApp e
     f <- evaluateExpr env f
     args <- mapM (evaluateExpr env) args
     callValue f args
-  Lam args body -> return $ ValLambda Nothing env args body
+  Lam x t body -> return $ ValLambda Nothing env x t body
   Let x _ e1 e2 -> do
     v1 <- evaluateExpr env e1
     evaluateExpr ((x, v1) : env) e2
 
-callBuiltinWithTokens :: MonadError Error m => [Token] -> Builtin -> m (Value, [Token])
-callBuiltinWithTokens tokens builtin = wrapError' ("while calling builtin " ++ formatBuiltinIsolated builtin) $ do
-  case builtinToType builtin of
-    FunTy ts _ -> do
-      (args, tokens) <- readInputMap ts tokens
-      val <- callBuiltin builtin args
-      return (val, tokens)
-    _ -> throwInternalError "all builtin must be functions"
-
-callLambdaWithTokens :: MonadError Error m => [Token] -> Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> m (Value, [Token])
-callLambdaWithTokens tokens name env args body = wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ go tokens env args
-  where
-    go tokens env args = case args of
-      ((x, t) : args) -> do
-        (val, tokens) <- readInput t tokens
-        go tokens ((x, val) : env) args
-      [] -> do
-        val <- evaluateExpr env body
-        return (val, tokens)
-
-evaluateToplevelExpr :: (MonadFix m, MonadError Error m) => [Token] -> Env -> ToplevelExpr -> m (Value, [Token])
-evaluateToplevelExpr tokens env = \case
+callToplevelExpr :: (MonadFix m, MonadError Error m) => Env -> ToplevelExpr -> [Value] -> m Value
+callToplevelExpr env e args = case e of
   ToplevelLet x _ e cont -> do
     val <- evaluateExpr env e
-    evaluateToplevelExpr tokens ((x, val) : env) cont
-  ToplevelLetRec f args _ body cont -> do
-    val <- mfix $ \val -> evaluateExpr ((f, val) : env) (Lam args body)
-    evaluateToplevelExpr tokens ((f, val) : env) cont
+    callToplevelExpr ((x, val) : env) cont args
+  ToplevelLetRec f args' _ body cont -> do
+    val <- mfix $ \val -> evaluateExpr ((f, val) : env) (curryLam args' body)
+    callToplevelExpr ((f, val) : env) cont args
   ResultExpr e -> do
     val <- evaluateExpr env e
-    case val of
-      ValBuiltin builtin -> callBuiltinWithTokens tokens builtin
-      ValLambda name env args body -> callLambdaWithTokens tokens name env args body
-      _ -> return (val, tokens)
+    callValue val args
 
-evaluateProgram :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
-evaluateProgram tokens prog = do
-  (val, tokens) <- evaluateToplevelExpr tokens [] prog
-  if null tokens
-    then return val
-    else throwWrongInputError $ "evaluation succeeds, but unused inputs remain: value = " ++ formatValue val ++ ", tokens = " ++ show tokens
+-- | `callProgram` evaluates programs with given arguments.
+-- This function assumes that given programs are ready for eager evaluation (@ensureEagerlyEvaluatable@).
+callProgram :: (MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
+callProgram prog args = wrapError' "Jikka.Core.Evaluate" $ do
+  precondition $ do
+    ensureEagerlyEvaluatable prog
+    ensureWellTyped prog
+  callToplevelExpr [] prog args
 
 -- -----------------------------------------------------------------------------
 -- run
 
-run' :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
-run' tokens prog = wrapError' "Jikka.Core.Evaluate.run' failed" $ do
-  prog <- MakeEager.run prog
-  evaluateProgram tokens prog
+makeArguments :: MonadError Error m => [Token] -> Program -> m [Value]
+makeArguments tokens prog = wrapError' "Jikka.Core.Evaluate" $ do
+  t <- typecheckProgram prog
+  let (ts, _) = uncurryFunTy t
+  (args, tokens) <- readInputMap ts tokens
+  unless (null tokens) $ do
+    throwRuntimeError $ "unused tokens: " ++ unwords (map unToken tokens)
+  return args
 
-run :: (MonadIO m, MonadFix m, MonadError Error m) => Program -> m Value
-run prog = do
+makeArgumentsIO :: (MonadIO m, MonadError Error m) => Program -> m [Value]
+makeArgumentsIO prog = do
   contents <- liftIO getContents
   let tokens = tokenize contents
-  liftEither $ run' tokens prog
+  makeArguments tokens prog
+
+run' :: (MonadFix m, MonadAlpha m, MonadError Error m) => [Token] -> Program -> m Value
+run' tokens prog = do
+  args <- makeArguments tokens prog
+  prog <- MakeEager.run prog
+  callProgram prog args
+
+run :: (MonadIO m, MonadAlpha m, MonadFix m, MonadError Error m) => Program -> m Value
+run prog = do
+  args <- makeArgumentsIO prog
+  prog <- MakeEager.run prog
+  callProgram prog args

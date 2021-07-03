@@ -216,7 +216,7 @@ attributeref :: { Expr' }
 
 -- 6.3.2. Subscriptions
 subscription :: { Expr' }
-    : primary "[" expression "]"                            { $1 @> Subscript $1 $3 }
+    : primary "[" expression_list "]"                       { $1 @> Subscript $1 (uncurry fromExprList $3) }
 
 -- 6.3.3. Slicings
 slicing :: { Expr' }

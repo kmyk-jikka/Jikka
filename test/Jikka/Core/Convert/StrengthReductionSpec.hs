@@ -1,40 +1,47 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.Convert.StrengthReductionSpec (spec) where
 
+import Jikka.Common.Alpha
+import Jikka.Common.Error
 import Jikka.Core.Convert.StrengthReduction (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
 
+run' :: Program -> Either Error Program
+run' = flip evalAlphaT 0 . run
+
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let input =
+    let prog =
           ResultExpr
-            ( Lam1
-                (VarName "n@0")
+            ( Lam
+                "n"
                 IntTy
                 ( Sum'
                     ( Tabulate'
                         IntTy
-                        (Var (VarName "n@0"))
-                        (Lam1 (VarName "x@1") IntTy (Mult' (Lit (LitInt 100)) (Var (VarName "x@1"))))
+                        (Var "n")
+                        (Lam "x" IntTy (Mult' (Lit (LitInt 100)) (Var "x")))
                     )
                 )
             )
     let expected =
           ResultExpr
-            ( Lam1
-                (VarName "n@0")
+            ( Lam
+                "n"
                 IntTy
                 ( Mult'
                     (Lit (LitInt 100))
                     ( FloorDiv'
                         ( Mult'
-                            (Var (VarName "n@0"))
-                            (Plus' (Var (VarName "n@0")) (Negate' Lit1))
+                            (Var "n")
+                            (Plus' (Var "n") (Negate' Lit1))
                         )
                         Lit2
                     )
                 )
             )
-    run input `shouldBe` Right expected
+    run' prog `shouldBe` Right expected

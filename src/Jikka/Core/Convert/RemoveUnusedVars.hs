@@ -20,6 +20,7 @@ where
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.Util
 import Jikka.Core.Language.Vars (isUnusedVar)
 
 runLet :: VarName -> Type -> Expr -> Expr -> Expr
@@ -31,8 +32,8 @@ runExpr :: Expr -> Expr
 runExpr = \case
   Var x -> Var x
   Lit lit -> Lit lit
-  App f args -> App (runExpr f) (map runExpr args)
-  Lam args e -> Lam args (runExpr e)
+  App f e -> App (runExpr f) (runExpr e)
+  Lam x t e -> Lam x t (runExpr e)
   Let x t e1 e2 -> runLet x t (runExpr e1) (runExpr e2)
 
 runToplevelExpr :: ToplevelExpr -> ToplevelExpr
@@ -43,7 +44,7 @@ runToplevelExpr = \case
     let body' = runExpr body
         cont' = runToplevelExpr cont
      in if isUnusedVar f body'
-          then ToplevelLet f (FunTy (map snd args) ret) (Lam args body') cont'
+          then ToplevelLet f (curryFunTy (map snd args) ret) (curryLam args body') cont'
           else ToplevelLetRec f args ret body' cont'
 
 run' :: Program -> Program
@@ -68,6 +69,9 @@ run' = runToplevelExpr
 -- > in solve
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.RemoveUnusedVars" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- return $ run' prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

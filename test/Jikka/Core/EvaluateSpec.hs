@@ -1,24 +1,31 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.EvaluateSpec (spec) where
 
+import Jikka.Common.Alpha
+import Jikka.Common.Error
 import Jikka.Core.Evaluate (Token (..), Value (..), run')
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Value (formatValue)
 import Test.Hspec
+
+run'' :: [Token] -> Program -> Either Error Value
+run'' = (flip evalAlphaT 0 .) . run'
 
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
     let prog =
           ToplevelLetRec
-            (VarName "solve@0")
-            [(VarName "xs@1", ListTy IntTy)]
+            "solve"
+            [("xs", ListTy IntTy)]
             IntTy
-            ( AppBuiltin
-                Plus
-                [ AppBuiltin Sum [Var (VarName "xs@1")],
-                  AppBuiltin (Len IntTy) [Var (VarName "xs@1")]
-                ]
+            ( Plus'
+                (Sum' (Var "xs"))
+                (Len' IntTy (Var "xs"))
             )
-            (ResultExpr (Var (VarName "solve@0")))
+            (ResultExpr (Var "solve"))
     let tokens =
           [ Token "3",
             Token "1",
@@ -26,33 +33,32 @@ spec = describe "run" $ do
             Token "5"
           ]
     let expected = ValInt 11
-    run' tokens prog `shouldBe` Right expected
+    (formatValue <$> run'' tokens prog) `shouldBe` Right (formatValue expected)
   it "works on a recursive function" $ do
     let prog =
           ToplevelLetRec
-            (VarName "fact@0")
-            [(VarName "n@1", IntTy)]
+            "fact"
+            [("n", IntTy)]
             IntTy
             ( App
-                ( AppBuiltin
-                    (If (FunTy [] IntTy))
-                    [ AppBuiltin (Equal IntTy) [Var (VarName "n@1"), Lit0],
-                      Lam [] Lit1,
-                      Lam
-                        []
-                        ( AppBuiltin
-                            Mult
-                            [ Var (VarName "n@1"),
-                              App (Var (VarName "fact@0")) [AppBuiltin Minus [Var (VarName "n@1"), Lit1]]
-                            ]
+                ( If'
+                    (FunTy UnitTy IntTy)
+                    (Equal' IntTy (Var "n") Lit0)
+                    (Lam "x" UnitTy Lit1)
+                    ( Lam
+                        "x"
+                        UnitTy
+                        ( Mult'
+                            (Var "n")
+                            (App (Var "fact") (Minus' (Var "n") Lit1))
                         )
-                    ]
+                    )
                 )
-                []
+                (Tuple' [])
             )
-            (ResultExpr (Var (VarName "fact@0")))
+            (ResultExpr (Var "fact"))
     let tokens =
           [ Token "10"
           ]
     let expected = ValInt 3628800
-    run' tokens prog `shouldBe` Right expected
+    (formatValue <$> run'' tokens prog) `shouldBe` Right (formatValue expected)

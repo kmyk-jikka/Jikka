@@ -1,43 +1,47 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.FormatSpec
   ( spec,
   )
 where
 
 import Jikka.Core.Format
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
 
 spec :: Spec
-spec = describe "run" $ do
+spec = describe "formatExpr" $ do
   it "works" $ do
     let program =
           ToplevelLetRec
-            (VarName "solve@0")
-            [(VarName "n@1", IntTy)]
+            "solve$0"
+            [("n$1", IntTy)]
             IntTy
             ( Let
-                (VarName "xs@2")
+                "xs$2"
                 (ListTy IntTy)
-                ( AppBuiltin
-                    (Tabulate IntTy)
-                    [ Var (VarName "n@1"),
-                      Lam
-                        [(VarName "i@3", IntTy)]
-                        (AppBuiltin Mult [Var (VarName "i@3"), Var (VarName "i@3")])
-                    ]
+                ( Tabulate'
+                    IntTy
+                    (Var "n$1")
+                    ( Lam
+                        "i$3"
+                        IntTy
+                        (Mult' (Var "i$3") (Var "i$3"))
+                    )
                 )
-                (AppBuiltin Sum [Var (VarName "xs@2")])
+                (Sum' (Var "xs$2"))
             )
-            (ResultExpr (Var (VarName "solve@0")))
+            (ResultExpr (Var "solve$0"))
     let expected =
           unlines
-            [ "let rec solve@0 (n@1: int): int =",
-              "    let xs@2: int list =",
-              "        tabulate(n@1, (fun (i@3: int) ->",
-              "            (i@3 * i@3)",
+            [ "let rec solve$0 (n$1: int): int =",
+              "    let xs$2: int list =",
+              "        tabulate(n$1, (fun (i$3: int) ->",
+              "            (i$3 * i$3)",
               "        ))",
-              "    in sum(xs@2)",
+              "    in sum(xs$2)",
               "in",
-              "solve@0"
+              "solve$0"
             ]
-    run' program `shouldBe` expected
+    formatProgram program `shouldBe` expected

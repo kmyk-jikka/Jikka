@@ -66,6 +66,9 @@ runProgram = mapExprProgramM runExpr
 -- > 3 x + 3
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ConstantFolding" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- runProgram prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog

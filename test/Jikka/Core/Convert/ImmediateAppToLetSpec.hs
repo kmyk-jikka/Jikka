@@ -21,16 +21,18 @@ spec = describe "run" $ do
     let prog =
           ResultExpr
             ( Lam
-                [("a", IntTy)]
+                "a"
+                IntTy
                 ( App
-                    (Lam [("x", IntTy)] (Plus' (Var "x") (Var "x")))
-                    [Var "a"]
+                    (Lam "x" IntTy (Plus' (Var "x") (Var "x")))
+                    (Var "a")
                 )
             )
     let expected =
           ResultExpr
             ( Lam
-                [("a$0", IntTy)]
+                "a$0"
+                IntTy
                 ( Let
                     "x$1"
                     IntTy

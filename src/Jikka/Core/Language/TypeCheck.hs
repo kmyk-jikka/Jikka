@@ -3,99 +3,99 @@
 
 module Jikka.Core.Language.TypeCheck where
 
-import Data.List (intercalate)
 import Jikka.Common.Error
 import Jikka.Core.Format (formatExpr, formatType)
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Util
 
 builtinToType :: Builtin -> Type
 builtinToType = \case
   -- arithmetical functions
-  Negate -> Fun1Ty IntTy
-  Plus -> Fun2Ty IntTy
-  Minus -> Fun2Ty IntTy
-  Mult -> Fun2Ty IntTy
-  FloorDiv -> Fun2Ty IntTy
-  FloorMod -> Fun2Ty IntTy
-  CeilDiv -> Fun2Ty IntTy
-  CeilMod -> Fun2Ty IntTy
-  Pow -> Fun2Ty IntTy
+  Negate -> Fun1STy IntTy
+  Plus -> Fun2STy IntTy
+  Minus -> Fun2STy IntTy
+  Mult -> Fun2STy IntTy
+  FloorDiv -> Fun2STy IntTy
+  FloorMod -> Fun2STy IntTy
+  CeilDiv -> Fun2STy IntTy
+  CeilMod -> Fun2STy IntTy
+  Pow -> Fun2STy IntTy
   -- induction functions
-  NatInd t -> FunTy [t, FunTy [t] t, IntTy] t
+  NatInd t -> Fun3Ty t (FunTy t t) IntTy t
   -- advanced arithmetical functions
-  Abs -> Fun1Ty IntTy
-  Gcd -> Fun2Ty IntTy
-  Lcm -> Fun2Ty IntTy
-  Min2 t -> Fun2Ty t
-  Max2 t -> Fun2Ty t
+  Abs -> Fun1STy IntTy
+  Gcd -> Fun2STy IntTy
+  Lcm -> Fun2STy IntTy
+  Min2 t -> Fun2STy t
+  Max2 t -> Fun2STy t
   -- logical functions
-  Not -> Fun1Ty BoolTy
-  And -> Fun2Ty BoolTy
-  Or -> Fun2Ty BoolTy
-  Implies -> Fun2Ty BoolTy
-  If t -> FunTy [BoolTy, t, t] t
+  Not -> Fun1STy BoolTy
+  And -> Fun2STy BoolTy
+  Or -> Fun2STy BoolTy
+  Implies -> Fun2STy BoolTy
+  If t -> Fun3Ty BoolTy t t t
   -- bitwise functions
-  BitNot -> Fun1Ty IntTy
-  BitAnd -> Fun2Ty IntTy
-  BitOr -> Fun2Ty IntTy
-  BitXor -> Fun2Ty IntTy
-  BitLeftShift -> Fun2Ty IntTy
-  BitRightShift -> Fun2Ty IntTy
+  BitNot -> Fun1STy IntTy
+  BitAnd -> Fun2STy IntTy
+  BitOr -> Fun2STy IntTy
+  BitXor -> Fun2STy IntTy
+  BitLeftShift -> Fun2STy IntTy
+  BitRightShift -> Fun2STy IntTy
   -- matrix functions
-  MatAp h w -> FunTy [matrixTy h w, vectorTy w] (vectorTy h)
-  MatZero n -> FunTy [] (matrixTy n n)
-  MatOne n -> FunTy [] (matrixTy n n)
-  MatAdd h w -> FunTy [matrixTy h w, matrixTy h w] (matrixTy h w)
-  MatMul h n w -> FunTy [matrixTy h n, matrixTy n w] (matrixTy h w)
-  MatPow n -> FunTy [matrixTy n n, IntTy] (matrixTy n n)
+  MatAp h w -> Fun2Ty (matrixTy h w) (vectorTy w) (vectorTy h)
+  MatZero n -> matrixTy n n
+  MatOne n -> matrixTy n n
+  MatAdd h w -> Fun2Ty (matrixTy h w) (matrixTy h w) (matrixTy h w)
+  MatMul h n w -> Fun2Ty (matrixTy h n) (matrixTy n w) (matrixTy h w)
+  MatPow n -> Fun2Ty (matrixTy n n) IntTy (matrixTy n n)
   -- modular functions
-  ModInv -> Fun2Ty IntTy
-  ModPow -> Fun3Ty IntTy
-  ModMatAp h w -> FunTy [matrixTy h w, vectorTy w, IntTy] (vectorTy h)
-  ModMatAdd h w -> FunTy [matrixTy h w, matrixTy h w, IntTy] (matrixTy h w)
-  ModMatMul h n w -> FunTy [matrixTy h n, matrixTy n w, IntTy] (matrixTy h w)
-  ModMatPow n -> FunTy [matrixTy n n, IntTy, IntTy] (matrixTy n n)
+  ModInv -> Fun2STy IntTy
+  ModPow -> Fun3STy IntTy
+  ModMatAp h w -> Fun3Ty (matrixTy h w) (vectorTy w) IntTy (vectorTy h)
+  ModMatAdd h w -> Fun3Ty (matrixTy h w) (matrixTy h w) IntTy (matrixTy h w)
+  ModMatMul h n w -> Fun3Ty (matrixTy h n) (matrixTy n w) IntTy (matrixTy h w)
+  ModMatPow n -> Fun3Ty (matrixTy n n) IntTy IntTy (matrixTy n n)
   -- list functions
-  Cons t -> FunTy [t, ListTy t] (ListTy t)
-  Foldl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] t2
-  Scanl t1 t2 -> FunTy [FunTy [t2, t1] t2, t2, ListTy t1] (ListTy t2)
-  Len t -> FunTy [ListTy t] IntTy
-  Tabulate t -> FunTy [IntTy, FunTy [IntTy] t] (ListTy t)
-  Map t1 t2 -> FunTy [FunTy [t1] t2, ListTy t1] (ListTy t2)
-  Filter t -> FunTy [FunTy [t] BoolTy, ListTy t] (ListTy t)
-  At t -> FunTy [ListTy t, IntTy] t
-  SetAt t -> FunTy [ListTy t, IntTy, t] (ListTy t)
-  Elem t -> FunTy [t, ListTy t] BoolTy
+  Cons t -> Fun2Ty t (ListTy t) (ListTy t)
+  Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
+  Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
+  Len t -> FunTy (ListTy t) IntTy
+  Tabulate t -> Fun2Ty IntTy (FunTy IntTy t) (ListTy t)
+  Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
+  Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)
+  At t -> Fun2Ty (ListTy t) IntTy t
+  SetAt t -> Fun3Ty (ListTy t) IntTy t (ListTy t)
+  Elem t -> Fun2Ty t (ListTy t) BoolTy
   Sum -> FunLTy IntTy
   Product -> FunLTy IntTy
-  ModProduct -> FunTy [ListTy IntTy, IntTy] IntTy
+  ModProduct -> Fun2Ty (ListTy IntTy) IntTy IntTy
   Min1 t -> FunLTy t
   Max1 t -> FunLTy t
-  ArgMin t -> FunTy [ListTy t] IntTy
-  ArgMax t -> FunTy [ListTy t] IntTy
+  ArgMin t -> FunTy (ListTy t) IntTy
+  ArgMax t -> FunTy (ListTy t) IntTy
   All -> FunLTy BoolTy
   Any -> FunLTy BoolTy
-  Sorted t -> Fun1Ty (ListTy t)
-  List t -> Fun1Ty (ListTy t)
-  Reversed t -> Fun1Ty (ListTy t)
-  Range1 -> FunTy [IntTy] (ListTy IntTy)
-  Range2 -> FunTy [IntTy, IntTy] (ListTy IntTy)
-  Range3 -> FunTy [IntTy, IntTy, IntTy] (ListTy IntTy)
+  Sorted t -> Fun1STy (ListTy t)
+  List t -> Fun1STy (ListTy t)
+  Reversed t -> Fun1STy (ListTy t)
+  Range1 -> FunTy IntTy (ListTy IntTy)
+  Range2 -> Fun2Ty IntTy IntTy (ListTy IntTy)
+  Range3 -> Fun3Ty IntTy IntTy IntTy (ListTy IntTy)
   -- tuple functions
-  Tuple ts -> FunTy ts (TupleTy ts)
-  Proj ts n -> FunTy [TupleTy ts] (ts !! n)
+  Tuple ts -> curryFunTy ts (TupleTy ts)
+  Proj ts n -> FunTy (TupleTy ts) (ts !! n)
   -- comparison
-  LessThan t -> FunTy [t, t] BoolTy
-  LessEqual t -> FunTy [t, t] BoolTy
-  GreaterThan t -> FunTy [t, t] BoolTy
-  GreaterEqual t -> FunTy [t, t] BoolTy
-  Equal t -> FunTy [t, t] BoolTy
-  NotEqual t -> FunTy [t, t] BoolTy
+  LessThan t -> Fun2Ty t t BoolTy
+  LessEqual t -> Fun2Ty t t BoolTy
+  GreaterThan t -> Fun2Ty t t BoolTy
+  GreaterEqual t -> Fun2Ty t t BoolTy
+  Equal t -> Fun2Ty t t BoolTy
+  NotEqual t -> Fun2Ty t t BoolTy
   -- combinational functions
-  Fact -> Fun1Ty IntTy
-  Choose -> Fun2Ty IntTy
-  Permute -> Fun2Ty IntTy
-  MultiChoose -> Fun2Ty IntTy
+  Fact -> Fun1STy IntTy
+  Choose -> Fun2STy IntTy
+  Permute -> Fun2STy IntTy
+  MultiChoose -> Fun2STy IntTy
 
 literalToType :: Literal -> Type
 literalToType = \case
@@ -113,13 +113,13 @@ typecheckExpr env = \case
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just t -> return t
   Lit lit -> return $ literalToType lit
-  App e args -> do
-    t <- typecheckExpr env e
-    ts <- mapM (typecheckExpr env) args
-    case t of
-      FunTy ts' ret | ts' == ts -> return ret
-      _ -> throwInternalError $ "wrong type funcall: expr = " ++ formatExpr (App e args) ++ ", expected type = " ++ intercalate " * " (map formatType ts) ++ " -> ?, actual type = " ++ formatType t
-  Lam args e -> FunTy (map snd args) <$> typecheckExpr (reverse args ++ env) e
+  App f e -> do
+    tf <- typecheckExpr env f
+    te <- typecheckExpr env e
+    case tf of
+      FunTy te' ret | te' == te -> return ret
+      _ -> throwInternalError $ "wrong type funcall: function = " ++ formatExpr f ++ " and argument = " ++ formatExpr e ++ ", function's type = " ++ formatType tf ++ ", but argument's type = " ++ formatType te
+  Lam x t e -> FunTy t <$> typecheckExpr ((x, t) : env) e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     when (t /= t') $ do
@@ -137,7 +137,7 @@ typecheckToplevelExpr env = \case
   ToplevelLetRec f args ret body cont -> do
     let t = case args of
           [] -> ret
-          _ -> FunTy (map snd args) ret
+          _ -> curryFunTy (map snd args) ret
     ret' <- typecheckExpr (reverse args ++ (f, t) : env) body
     when (ret' /= ret) $ do
       throwInternalError $ "returned type is not correct: context = (let rec " ++ unVarName f ++ " " ++ unwords (map (\(x, t) -> unVarName x ++ ": " ++ formatType t) args) ++ ": " ++ formatType ret ++ " = " ++ formatExpr body ++ " in ...), expected type = " ++ formatType ret ++ ", actual type = " ++ formatType ret'

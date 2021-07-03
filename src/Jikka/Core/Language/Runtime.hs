@@ -26,7 +26,10 @@ modinv _ _ = throwInternalError "TODO: implement inv()"
 
 modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 modpow _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for modpow: MOD = " ++ show m
-modpow a b m = return $ (a ^ b) `mod` m
+modpow a b m = return $ go (a `mod` m) b
+  where
+    go a 0 = a
+    go a b = go (if b `mod` 2 == 1 then a * b `mod` m else a) (b `div` 2)
 
 fact :: MonadError Error m => Integer -> m Integer
 fact n | n < 0 = throwRuntimeError $ "invalid argument for fact: " ++ show n

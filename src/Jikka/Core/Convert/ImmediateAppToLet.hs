@@ -15,7 +15,7 @@ import Jikka.Core.Language.Util
 
 runExpr :: [(VarName, Type)] -> Expr -> Expr
 runExpr _ = \case
-  App (Lam formal body) actual -> foldr (\((x, t), e) -> Let x t e) body (zip formal actual)
+  App (Lam x t body) e -> Let x t e body
   e -> e
 
 runProgram :: Program -> Program
@@ -31,7 +31,10 @@ runProgram = mapExprProgram runExpr
 -- > let x = a in x + x
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ImmediateAppToLet" $ do
+  precondition $ do
+    ensureWellTyped prog
   prog <- Alpha.run prog
   prog <- return $ runProgram prog
-  ensureWellTyped prog
+  postcondition $ do
+    ensureWellTyped prog
   return prog
