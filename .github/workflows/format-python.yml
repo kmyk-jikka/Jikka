@@ -1,0 +1,28 @@
+name: format-python
+
+on: [push, pull_request]
+
+jobs:
+  format-python:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install dependencies
+      run: pip3 install -r scripts/requirements.txt
+
+    - name: Run isort
+      run: isort --check-only --diff scripts/*.py
+
+    - name: Run yapf
+      run: |
+        yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py
+
+    - name: Run mypy
+      run: mypy scripts/*.py
