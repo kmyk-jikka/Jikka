@@ -46,7 +46,7 @@ instance Monad m => Monad (AlphaT m) where
     runAlphaT (f x) i
 
 instance MonadFix m => MonadFix (AlphaT m) where
-  mfix f = AlphaT (\i -> mfix (\(x, _) -> runAlphaT (f x) i))
+  mfix f = AlphaT (\i -> mfix (\x -> runAlphaT (f (fst x)) i))
 
 liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
 liftCatch catchE m h = AlphaT (\i -> runAlphaT m i `catchE` \e -> runAlphaT (h e) i)
