@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.EvaluateSpec (spec) where
 
 import Jikka.Core.Evaluate (Token (..), Value (..), run')
@@ -9,16 +11,16 @@ spec = describe "run" $ do
   it "works" $ do
     let prog =
           ToplevelLetRec
-            (VarName "solve@0")
-            [(VarName "xs@1", ListTy IntTy)]
+            "solve@0"
+            [("xs@1", ListTy IntTy)]
             IntTy
             ( AppBuiltin
                 Plus
-                [ AppBuiltin Sum [Var (VarName "xs@1")],
-                  AppBuiltin (Len IntTy) [Var (VarName "xs@1")]
+                [ AppBuiltin Sum [Var "xs@1"],
+                  AppBuiltin (Len IntTy) [Var "xs@1"]
                 ]
             )
-            (ResultExpr (Var (VarName "solve@0")))
+            (ResultExpr (Var "solve@0"))
     let tokens =
           [ Token "3",
             Token "1",
@@ -30,27 +32,27 @@ spec = describe "run" $ do
   it "works on a recursive function" $ do
     let prog =
           ToplevelLetRec
-            (VarName "fact@0")
-            [(VarName "n@1", IntTy)]
+            "fact@0"
+            [("n@1", IntTy)]
             IntTy
             ( App
                 ( AppBuiltin
                     (If (FunTy [] IntTy))
-                    [ AppBuiltin (Equal IntTy) [Var (VarName "n@1"), Lit0],
+                    [ AppBuiltin (Equal IntTy) [Var "n@1", Lit0],
                       Lam [] Lit1,
                       Lam
                         []
                         ( AppBuiltin
                             Mult
-                            [ Var (VarName "n@1"),
-                              App (Var (VarName "fact@0")) [AppBuiltin Minus [Var (VarName "n@1"), Lit1]]
+                            [ Var "n@1",
+                              App (Var "fact@0") [AppBuiltin Minus [Var "n@1", Lit1]]
                             ]
                         )
                     ]
                 )
                 []
             )
-            (ResultExpr (Var (VarName "fact@0")))
+            (ResultExpr (Var "fact@0"))
     let tokens =
           [ Token "10"
           ]

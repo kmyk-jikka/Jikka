@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.Convert.StrengthReductionSpec (spec) where
 
 import Jikka.Core.Convert.StrengthReduction (run)
@@ -11,27 +13,27 @@ spec = describe "run" $ do
     let input =
           ResultExpr
             ( Lam1
-                (VarName "n@0")
+                "n@0"
                 IntTy
                 ( Sum'
                     ( Tabulate'
                         IntTy
-                        (Var (VarName "n@0"))
-                        (Lam1 (VarName "x@1") IntTy (Mult' (Lit (LitInt 100)) (Var (VarName "x@1"))))
+                        (Var "n@0")
+                        (Lam1 "x@1" IntTy (Mult' (Lit (LitInt 100)) (Var "x@1")))
                     )
                 )
             )
     let expected =
           ResultExpr
             ( Lam1
-                (VarName "n@0")
+                "n@0"
                 IntTy
                 ( Mult'
                     (Lit (LitInt 100))
                     ( FloorDiv'
                         ( Mult'
-                            (Var (VarName "n@0"))
-                            (Plus' (Var (VarName "n@0")) (Negate' Lit1))
+                            (Var "n@0")
+                            (Plus' (Var "n@0") (Negate' Lit1))
                         )
                         Lit2
                     )

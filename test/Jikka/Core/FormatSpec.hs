@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.Core.FormatSpec
   ( spec,
   )
@@ -12,23 +14,23 @@ spec = describe "run" $ do
   it "works" $ do
     let program =
           ToplevelLetRec
-            (VarName "solve@0")
-            [(VarName "n@1", IntTy)]
+            "solve@0"
+            [("n@1", IntTy)]
             IntTy
             ( Let
-                (VarName "xs@2")
+                "xs@2"
                 (ListTy IntTy)
                 ( AppBuiltin
                     (Tabulate IntTy)
-                    [ Var (VarName "n@1"),
+                    [ Var "n@1",
                       Lam
-                        [(VarName "i@3", IntTy)]
-                        (AppBuiltin Mult [Var (VarName "i@3"), Var (VarName "i@3")])
+                        [("i@3", IntTy)]
+                        (AppBuiltin Mult [Var "i@3", Var "i@3"])
                     ]
                 )
-                (AppBuiltin Sum [Var (VarName "xs@2")])
+                (AppBuiltin Sum [Var "xs@2"])
             )
-            (ResultExpr (Var (VarName "solve@0")))
+            (ResultExpr (Var "solve@0"))
     let expected =
           unlines
             [ "let rec solve@0 (n@1: int): int =",
