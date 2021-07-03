@@ -193,6 +193,7 @@ AlphaT :: (Int -> m (a, Int)) -> AlphaT m a
 [runAlphaT] :: AlphaT m a -> Int -> m (a, Int)
 liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
 evalAlphaT :: Functor m => AlphaT m a -> Int -> m a
+evalAlpha :: AlphaT Identity a -> Int -> a
 instance GHC.Base.Monad m => Jikka.Common.Alpha.MonadAlpha (Jikka.Common.Alpha.AlphaT m)
 instance GHC.Base.Functor m => GHC.Base.Functor (Jikka.Common.Alpha.AlphaT m)
 instance GHC.Base.Monad m => GHC.Base.Applicative (Jikka.Common.Alpha.AlphaT m)
@@ -552,9 +553,7 @@ IntTy :: Type
 BoolTy :: Type
 ListTy :: Type -> Type
 TupleTy :: [Type] -> Type
-
--- | The functions are not curried. TODO: currying?
-FunTy :: [Type] -> Type -> Type
+FunTy :: Type -> Type -> Type
 
 -- | TODO: What is the difference between <a>Literal</a> and
 --   <a>Builtin</a>?
@@ -806,19 +805,22 @@ Var :: VarName -> Expr
 Lit :: Literal -> Expr
 
 -- | The functions are not curried.
-App :: Expr -> [Expr] -> Expr
+App :: Expr -> Expr -> Expr
 
 -- | The lambdas are also not curried.
-Lam :: [(VarName, Type)] -> Expr -> Expr
+Lam :: VarName -> Type -> Expr -> Expr
 
 -- | This "let" is not recursive.
 Let :: VarName -> Type -> Expr -> Expr -> Expr
-pattern Fun1Ty :: Type -> Type
-pattern Fun2Ty :: Type -> Type
-pattern Fun3Ty :: Type -> Type
+pattern Fun2Ty :: Type -> Type -> Type -> Type
+pattern Fun3Ty :: Type -> Type -> Type -> Type -> Type
+pattern Fun1STy :: Type -> Type
+pattern Fun2STy :: Type -> Type
+pattern Fun3STy :: Type -> Type
 pattern FunLTy :: Type -> Type
 vectorTy :: Int -> Type
 matrixTy :: Int -> Int -> Type
+pattern UnitTy :: Type
 pattern LitInt' :: Integer -> Expr
 pattern Lit0 :: Expr
 pattern Lit1 :: Expr
@@ -828,8 +830,12 @@ pattern LitBool' :: Bool -> Expr
 pattern LitTrue :: Expr
 pattern LitFalse :: Expr
 pattern Builtin :: Builtin -> Expr
-pattern AppBuiltin :: Builtin -> [Expr] -> Expr
-pattern Lam1 :: VarName -> Type -> Expr -> Expr
+pattern App2 :: Expr -> Expr -> Expr -> Expr
+pattern App3 :: Expr -> Expr -> Expr -> Expr -> Expr
+pattern App4 :: Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+pattern AppBuiltin :: Builtin -> Expr -> Expr
+pattern AppBuiltin2 :: Builtin -> Expr -> Expr -> Expr
+pattern AppBuiltin3 :: Builtin -> Expr -> Expr -> Expr -> Expr
 pattern Lam2 :: VarName -> Type -> VarName -> Type -> Expr -> Expr
 pattern Lam3 :: VarName -> Type -> VarName -> Type -> VarName -> Type -> Expr -> Expr
 pattern LamId :: VarName -> Type -> Expr
@@ -907,8 +913,6 @@ pattern BitXor' :: Expr -> Expr -> Expr
 pattern BitLeftShift' :: Expr -> Expr -> Expr
 pattern BitRightShift' :: Expr -> Expr -> Expr
 pattern MatAp' :: Int -> Int -> Expr -> Expr -> Expr
-pattern MatZero' :: Int -> Expr
-pattern MatOne' :: Int -> Expr
 pattern MatAdd' :: Int -> Int -> Expr -> Expr -> Expr
 pattern MatMul' :: Int -> Int -> Int -> Expr -> Expr -> Expr
 pattern MatPow' :: Int -> Expr -> Expr -> Expr
@@ -943,7 +947,7 @@ pattern Reversed' :: Type -> Expr -> Expr
 pattern Range1' :: Expr -> Expr
 pattern Range2' :: Expr -> Expr -> Expr
 pattern Range3' :: Expr -> Expr -> Expr -> Expr
-pattern Tuple' :: [Type] -> [Expr] -> Expr
+pattern Tuple' :: [Type] -> Expr
 pattern Proj' :: [Type] -> Int -> Expr -> Expr
 pattern LessThan' :: Type -> Expr -> Expr -> Expr
 pattern LessEqual' :: Type -> Expr -> Expr -> Expr
@@ -955,19 +959,6 @@ pattern Fact' :: Expr -> Expr
 pattern Choose' :: Expr -> Expr -> Expr
 pattern Permute' :: Expr -> Expr -> Expr
 pattern MultiChoose' :: Expr -> Expr -> Expr
-
-
-module Jikka.Core.Format
-run :: Applicative m => Program -> m Text
-run' :: Program -> String
-formatBuiltinIsolated :: Builtin -> String
-formatBuiltin :: Builtin -> [Expr] -> String
-formatType :: Type -> String
-formatExpr :: Expr -> String
-instance GHC.Read.Read Jikka.Core.Format.Builtin'
-instance GHC.Show.Show Jikka.Core.Format.Builtin'
-instance GHC.Classes.Ord Jikka.Core.Format.Builtin'
-instance GHC.Classes.Eq Jikka.Core.Format.Builtin'
 
 
 -- | <a>Alpha</a> renames variables in exprs to avoid name conflictions,
@@ -991,6 +982,48 @@ choose :: MonadError Error m => Integer -> Integer -> m Integer
 permute :: MonadError Error m => Integer -> Integer -> m Integer
 multichoose :: MonadError Error m => Integer -> Integer -> m Integer
 
+module Jikka.Core.Language.Util
+genType :: MonadAlpha m => m Type
+genVarName :: MonadAlpha m => VarName -> m VarName
+genVarName' :: MonadAlpha m => m VarName
+mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
+countOccurrences :: VarName -> Expr -> Int
+countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
+
+-- | <a>mapExprM</a>` substitutes exprs using given two functions, which
+--   are called in pre-order and post-order.
+mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
+
+-- | <a>mapExprM</a> is a wrapper of <a>mapExprM</a>`. This function works
+--   in post-order.
+mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
+mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
+mapExprToplevelExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
+mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
+uncurryFunTy :: Type -> ([Type], Type)
+uncurryLam :: Expr -> ([(VarName, Type)], Expr)
+curryApp :: Expr -> (Expr, [Expr])
+curryFunTy :: [Type] -> Type -> Type
+curryLam :: [(VarName, Type)] -> Expr -> Expr
+uncurryApp :: Expr -> [Expr] -> Expr
+
+
+module Jikka.Core.Format
+run :: Applicative m => Program -> m Text
+formatBuiltinIsolated :: Builtin -> String
+formatBuiltin :: Builtin -> [Expr] -> String
+formatType :: Type -> String
+formatExpr :: Expr -> String
+formatProgram :: Program -> String
+instance GHC.Read.Read Jikka.Core.Format.Builtin'
+instance GHC.Show.Show Jikka.Core.Format.Builtin'
+instance GHC.Classes.Ord Jikka.Core.Format.Builtin'
+instance GHC.Classes.Eq Jikka.Core.Format.Builtin'
+
 module Jikka.Core.Language.TypeCheck
 builtinToType :: Builtin -> Type
 literalToType :: Literal -> Type
@@ -1006,6 +1039,11 @@ typecheckProgram :: MonadError Error m => Program -> m Type
 -- | <a>Lint</a> module checks the invariants of data types. Mainly, this
 --   checks types of <a>Expr</a>.
 module Jikka.Core.Language.Lint
+precondition :: MonadError Error m => m a -> m a
+postcondition :: MonadError Error m => m a -> m a
+
+-- | TODO: implement this
+ensureEagerlyEvaluatable :: MonadError Error m => Program -> m ()
 ensureWellTyped :: MonadError Error m => Program -> m ()
 
 module Jikka.Core.Convert.ConstantPropagation
@@ -1035,29 +1073,6 @@ run' :: Program -> Program
 -- | <a>isSmallExpr</a> checks whether given exprs are suitable to
 --   propagate.
 isSmallExpr :: Expr -> Bool
-
-module Jikka.Core.Language.Util
-genType :: MonadAlpha m => m Type
-genVarName :: MonadAlpha m => VarName -> m VarName
-genVarName' :: MonadAlpha m => m VarName
-mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
-countOccurrences :: VarName -> Expr -> Int
-countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
-
--- | <a>mapExprM</a>` substitutes exprs using given two functions, which
---   are called in pre-order and post-order.
-mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
-mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-
--- | <a>mapExprM</a> is a wrapper of <a>mapExprM</a>`. This function works
---   in post-order.
-mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
-mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
-mapExprToplevelExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
-mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 
 module Jikka.Core.Convert.TrivialLetElimination
 
@@ -1098,38 +1113,6 @@ module Jikka.Core.Convert.PropagateMod
 --   (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
-module Jikka.Core.Convert.MakeEager
-
--- | <a>run</a> wraps some exprs with lambda redundant things from AST.
---   Specifically, this converts <tt>if p then a else b</tt> to something
---   like <tt>(if p then (lambda. a) else (lambda. b))()</tt>.
---   
---   For example, this converts:
---   
---   <pre>
---   let rec fact n =
---       if n == 0 then
---           1
---       else
---           n * fact (n - 1)
---   in fact 10
---   </pre>
---   
---   to:
---   
---   <pre>
---   let rec fact n =
---       (if n == 0 then
---           fun -&gt; 1
---       else
---           fun -&gt; n * fact (n - 1)
---       )()
---   in fact 10
---   </pre>
-run :: MonadError Error m => Program -> m Program
-run' :: Program -> Program
 
 module Jikka.Core.Convert.ImmediateAppToLet
 
@@ -1190,8 +1173,10 @@ ValInt :: Integer -> Value
 ValBool :: Bool -> Value
 ValList :: Vector Value -> Value
 ValTuple :: [Value] -> Value
-ValBuiltin :: Builtin -> Value
-ValLambda :: Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> Value
+ValBuiltin :: Builtin -> [Value] -> Value
+
+-- | The <a>Env</a> may contain the <a>ValLambda</a> cyclicly.
+ValLambda :: Maybe VarName -> Env -> VarName -> Type -> Expr -> Value
 type Env = [(VarName, Value)]
 literalToValue :: Literal -> Value
 valueToInt :: MonadError Error m => Value -> m Integer
@@ -1215,33 +1200,7 @@ maxValue :: Value -> Value -> Value
 formatValue :: Value -> String
 writeValueIO :: Value -> IO ()
 instance GHC.Read.Read Jikka.Core.Language.Value.Value
-instance GHC.Show.Show Jikka.Core.Language.Value.Value
 instance GHC.Classes.Eq Jikka.Core.Language.Value.Value
-
-
--- | <a>Evaluate</a> evaluates exprs to values. Also this recognizes users'
---   inputs at once.
---   
---   The implementation assumes that all variable names don't conflict even
---   when their scopes are distinct.
-module Jikka.Core.Evaluate
-run :: (MonadIO m, MonadFix m, MonadError Error m) => Program -> m Value
-run' :: (MonadFix m, MonadError Error m) => [Token] -> Program -> m Value
-data Value
-ValInt :: Integer -> Value
-ValBool :: Bool -> Value
-ValList :: Vector Value -> Value
-ValTuple :: [Value] -> Value
-ValBuiltin :: Builtin -> Value
-ValLambda :: Maybe VarName -> Env -> [(VarName, Type)] -> Expr -> Value
-newtype Token
-Token :: String -> Token
-[unToken] :: Token -> String
-tokenize :: String -> [Token]
-instance GHC.Read.Read Jikka.Core.Evaluate.Token
-instance GHC.Show.Show Jikka.Core.Evaluate.Token
-instance GHC.Classes.Ord Jikka.Core.Evaluate.Token
-instance GHC.Classes.Eq Jikka.Core.Evaluate.Token
 
 
 module Jikka.Core.Language.Vars
@@ -1250,12 +1209,12 @@ module Jikka.Core.Language.Vars
 --   expr. This considers contexts.
 --   
 --   <pre>
---   &gt;&gt;&gt; VarName "x" `isFreeVar` Lam1 (VarName "y") IntTy (Var (VarName "x"))
+--   &gt;&gt;&gt; VarName "x" `isFreeVar` Lam (VarName "y") IntTy (Var (VarName "x"))
 --   True
 --   </pre>
 --   
 --   <pre>
---   &gt;&gt;&gt; VarName "x" `isFreeVar` Lam1 (VarName "x") IntTy (Var (VarName "x"))
+--   &gt;&gt;&gt; VarName "x" `isFreeVar` Lam (VarName "x") IntTy (Var (VarName "x"))
 --   False
 --   </pre>
 isFreeVar :: VarName -> Expr -> Bool
@@ -1269,20 +1228,10 @@ isUnusedVar :: VarName -> Expr -> Bool
 --   tiven expr. This ignores contexts.
 --   
 --   <pre>
---   &gt;&gt;&gt; VarName "x" `isFreeVarOrScopedVar` Lam1 (VarName "x") IntTy (Var (VarName "y"))
+--   &gt;&gt;&gt; VarName "x" `isFreeVarOrScopedVar` Lam (VarName "x") IntTy (Var (VarName "y"))
 --   True
 --   </pre>
 isFreeVarOrScopedVar :: VarName -> Expr -> Bool
-
--- | <a>findFreshVar</a> generates a variable which isn't free in the given
---   expr. The return variable name may conflict if you ignores the
---   context.
-findFreshVar :: Expr -> VarName
-
--- | TODO: make a function to list free/scoped vars and use it to optimize
---   the time complexity.
-findFreshVar' :: [Expr] -> VarName
-getAnonymousVar :: Int -> VarName
 freeTyVars :: Type -> [TypeName]
 
 
@@ -1292,16 +1241,16 @@ module Jikka.Core.Language.Beta
 --   the given expr. This considers contexts.
 --   
 --   <pre>
---   &gt;&gt;&gt; substitute (VarName "x") (Lit (LitInt 0)) (Lam1 (VarName "y") IntTy (Var (VarName "x")))
---   Lam [(VarName "y",IntTy)] (Lit (LitInt 0))
+--   &gt;&gt;&gt; flip evalAlphaT 0 $ substitute (VarName "x") (Lit (LitInt 0)) (Lam (VarName "y") IntTy (Var (VarName "x")))
+--   Lam (VarName "y") IntTy (Lit (LitInt 0))
 --   </pre>
 --   
 --   <pre>
---   &gt;&gt;&gt; substitute (VarName "x") (Lit (LitInt 0)) (Lam1 (VarName "x") IntTy (Var (VarName "x")))
---   Lam [(VarName "x",IntTy)] (Var (VarName "x"))
+--   &gt;&gt;&gt; flip evalAlphaT 0 $ substitute (VarName "x") (Lit (LitInt 0)) (Lam (VarName "x") IntTy (Var (VarName "x")))
+--   Lam (VarName "x") IntTy (Var (VarName "x"))
 --   </pre>
-substitute :: VarName -> Expr -> Expr -> Expr
-substitute' :: [VarName] -> VarName -> Expr -> Expr -> Expr
+substitute :: MonadAlpha m => VarName -> Expr -> Expr -> m Expr
+substituteToplevelExpr :: (MonadAlpha m, MonadError Error m) => VarName -> Expr -> ToplevelExpr -> m ToplevelExpr
 
 module Jikka.Core.Convert.UnpackTuple
 
@@ -1331,6 +1280,71 @@ module Jikka.Core.Convert.UnpackTuple
 --   tuple (foldl (fun x y -&gt; x + y) 0 [1, 2, 3])
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+
+module Jikka.Core.Convert.MakeEager
+
+-- | <a>run</a> wraps some exprs with lambda redundant things from AST.
+--   Specifically, this converts <tt>if p then a else b</tt> to something
+--   like <tt>(if p then (lambda. a) else (lambda. b))()</tt>.
+--   
+--   For example, this converts:
+--   
+--   <pre>
+--   let rec fact n =
+--       if n == 0 then
+--           1
+--       else
+--           n * fact (n - 1)
+--   in fact 10
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let rec fact n =
+--       (if n == 0 then
+--           fun -&gt; 1
+--       else
+--           fun -&gt; n * fact (n - 1)
+--       )()
+--   in fact 10
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+
+-- | <a>Evaluate</a> evaluates exprs to values. Also this recognizes users'
+--   inputs at once.
+--   
+--   The implementation assumes that all variable names don't conflict even
+--   when their scopes are distinct.
+module Jikka.Core.Evaluate
+run :: (MonadIO m, MonadAlpha m, MonadFix m, MonadError Error m) => Program -> m Value
+run' :: (MonadFix m, MonadAlpha m, MonadError Error m) => [Token] -> Program -> m Value
+
+-- | <a>callProgram</a> evaluates programs with given arguments. This
+--   function assumes that given programs are ready for eager evaluation
+--   (<tt>ensureEagerlyEvaluatable</tt>).
+callProgram :: (MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
+makeArguments :: MonadError Error m => [Token] -> Program -> m [Value]
+makeArgumentsIO :: (MonadIO m, MonadError Error m) => Program -> m [Value]
+data Value
+ValInt :: Integer -> Value
+ValBool :: Bool -> Value
+ValList :: Vector Value -> Value
+ValTuple :: [Value] -> Value
+ValBuiltin :: Builtin -> [Value] -> Value
+
+-- | The <a>Env</a> may contain the <a>ValLambda</a> cyclicly.
+ValLambda :: Maybe VarName -> Env -> VarName -> Type -> Expr -> Value
+newtype Token
+Token :: String -> Token
+[unToken] :: Token -> String
+tokenize :: String -> [Token]
+instance GHC.Read.Read Jikka.Core.Evaluate.Token
+instance GHC.Show.Show Jikka.Core.Evaluate.Token
+instance GHC.Classes.Ord Jikka.Core.Evaluate.Token
+instance GHC.Classes.Eq Jikka.Core.Evaluate.Token
 
 
 -- | <a>FromCore</a> converts exprs of our core language to exprs of C++.
@@ -1421,7 +1435,7 @@ instance GHC.Classes.Eq Jikka.Core.Convert.TypeInfer.Equation
 --   weaker functions. For example, this replace <tt>abs x</tt> with
 --   <tt>max x (- x)</tt>.
 module Jikka.Core.Convert.StrengthReduction
-run :: MonadError Error m => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 -- | <a>RemoveUnusedVars</a> remove unused variables from exprs.
