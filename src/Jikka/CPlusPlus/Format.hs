@@ -213,7 +213,7 @@ formatExpr = \case
     let args' = map (\(t, x) -> formatType t ++ " " ++ unVarName x) args
         ret' = formatType ret
         body' = concatMap formatStatement body
-     in ("[&](" ++ intercalate ", " args' ++ ") -> " ++ ret' ++ "{ " ++ unwords body' ++ " }", FunCallPrec)
+     in ("[=](" ++ intercalate ", " args' ++ ") -> " ++ ret' ++ "{ " ++ unwords body' ++ " }", FunCallPrec)
   Call f args -> case f of
     Callable f -> (formatExpr' FunCallPrec f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
     Function f ts ->
