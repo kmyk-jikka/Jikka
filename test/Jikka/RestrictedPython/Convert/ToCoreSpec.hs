@@ -4,7 +4,7 @@ module Jikka.RestrictedPython.Convert.ToCoreSpec (spec) where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Core.Format as Y.Format
+import qualified Jikka.Core.Format as Y (formatProgram)
 import qualified Jikka.Core.Language.BuiltinPatterns as Y
 import qualified Jikka.Core.Language.Expr as Y
 import Jikka.RestrictedPython.Convert.ToCore (run)
@@ -42,7 +42,7 @@ spec = describe "run" $ do
                 Y.Lit1
                 ( Y.Mult'
                     (Y.Var "n")
-                    (Y.App (Y.Var "solve") [Y.Minus' (Y.Var "n") Y.Lit1])
+                    (Y.App (Y.Var "solve") (Y.Minus' (Y.Var "n") Y.Lit1))
                 )
             )
             (Y.ResultExpr (Y.Var "solve"))
@@ -96,7 +96,7 @@ spec = describe "run" $ do
               "in",
               "solve"
             ]
-    (Y.Format.run' <$> run' prog) `shouldBe` Right expected
+    (Y.formatProgram <$> run' prog) `shouldBe` Right expected
   it "converts if-statements correctly" $ do
     let prog =
           [ X.ToplevelFunctionDef
@@ -127,4 +127,4 @@ spec = describe "run" $ do
               "in",
               "solve"
             ]
-    (Y.Format.run' <$> run' prog) `shouldBe` Right expected
+    (Y.formatProgram <$> run' prog) `shouldBe` Right expected

@@ -10,6 +10,7 @@ import Jikka.Common.Error
 import Jikka.Core.Convert.LinearFunction (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Util
 import Test.Hspec
 
 run' :: Program -> Either Error Program
@@ -23,6 +24,7 @@ spec = describe "run" $ do
     let ts3 = [IntTy, IntTy, IntTy]
     let ts23 = [TupleTy ts3, TupleTy ts3]
     let proj i = Proj' ts3 i (Var xs)
+    let mkTuple ts = uncurryApp (Tuple' ts)
     let prog =
           ResultExpr
             ( Let
@@ -30,8 +32,9 @@ spec = describe "run" $ do
                 IntTy
                 (LitInt' 10)
                 ( Lam
-                    [(xs, TupleTy ts3)]
-                    (Tuple' ts2 [Plus' (proj 0) (Mult' (Var "c") (proj 1)), Plus' (proj 0) (proj 2)])
+                    xs
+                    (TupleTy ts3)
+                    (mkTuple ts2 [Plus' (proj 0) (Mult' (Var "c") (proj 1)), Plus' (proj 0) (proj 2)])
                 )
             )
     let expected =
@@ -41,8 +44,9 @@ spec = describe "run" $ do
                 IntTy
                 (LitInt' 10)
                 ( Lam
-                    [(xs, TupleTy ts3)]
-                    (MatAp' 2 3 (Tuple' ts23 [Tuple' ts3 [Lit1, Mult' (Var "c") Lit1, Lit0], Tuple' ts3 [Lit1, Lit0, Lit1]]) (Var xs))
+                    xs
+                    (TupleTy ts3)
+                    (MatAp' 2 3 (mkTuple ts23 [mkTuple ts3 [Lit1, Mult' (Var "c") Lit1, Lit0], mkTuple ts3 [Lit1, Lit0, Lit1]]) (Var xs))
                 )
             )
     run' prog `shouldBe` Right expected

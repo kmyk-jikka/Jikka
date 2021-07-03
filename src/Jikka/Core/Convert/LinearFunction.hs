@@ -23,30 +23,33 @@ import Jikka.Core.Language.Vars
 fromMatrix :: Matrix ArithmeticalExpr -> Expr
 fromMatrix f =
   let (h, w) = matsize f
-      go row = Tuple' (replicate w IntTy) (map formatArithmeticalExpr (V.toList row))
-   in Tuple' (replicate h (TupleTy (replicate w IntTy))) (map go (V.toList (unMatrix f)))
+      go row = uncurryApp (Tuple' (replicate w IntTy)) (map formatArithmeticalExpr (V.toList row))
+   in uncurryApp (Tuple' (replicate h (TupleTy (replicate w IntTy)))) (map go (V.toList (unMatrix f)))
 
 runExpr :: MonadAlpha m => [(VarName, Type)] -> Expr -> m Expr
 runExpr env = \case
-  orig@(Lam [(x, TupleTy ts)] (Tuple' ts' es)) ->
-    (fromMaybe orig <$>) . runMaybeT $ do
-      guard $ length ts >= 2 && all (== IntTy) ts
-      guard $ length ts' >= 2 && all (== IntTy) ts'
-      xs <- V.fromList <$> replicateM (length ts) (lift (genVarName x))
-      let indexOfProj = \case
-            (Proj' ts'' i (Var x')) | ts'' == ts && x' == x -> Just i
-            _ -> Nothing
-      let replaceWithVar _ e = case indexOfProj e of
-            Just i -> Var (xs V.! i)
-            Nothing -> e
-      rows <- forM es $ \e -> MaybeT . return $ do
-        let e' = mapExpr replaceWithVar env e
-        guard $ x `isUnusedVar` e'
-        (row, c) <- makeVectorFromArithmeticalExpr xs (parseArithmeticalExpr e')
-        guard $ c == zeroSumExpr -- TODO: support affine functions
-        return row
-      f <- MaybeT . return $ makeMatrix (V.fromList rows)
-      return $ Lam [(x, TupleTy ts)] (MatAp' (length ts') (length ts) (fromMatrix f) (Var x))
+  orig@(Lam x (TupleTy ts) e) ->
+    case curryApp e of
+      (Tuple' ts', es) ->
+        (fromMaybe orig <$>) . runMaybeT $ do
+          guard $ length ts >= 2 && all (== IntTy) ts
+          guard $ length ts' >= 2 && all (== IntTy) ts'
+          xs <- V.fromList <$> replicateM (length ts) (lift (genVarName x))
+          let indexOfProj = \case
+                (Proj' ts'' i (Var x')) | ts'' == ts && x' == x -> Just i
+                _ -> Nothing
+          let replaceWithVar _ e = case indexOfProj e of
+                Just i -> Var (xs V.! i)
+                Nothing -> e
+          rows <- forM es $ \e -> MaybeT . return $ do
+            let e' = mapExpr replaceWithVar env e
+            guard $ x `isUnusedVar` e'
+            (row, c) <- makeVectorFromArithmeticalExpr xs (parseArithmeticalExpr e')
+            guard $ c == zeroSumExpr -- TODO: support affine functions
+            return row
+          f <- MaybeT . return $ makeMatrix (V.fromList rows)
+          return $ Lam x (TupleTy ts) (MatAp' (length ts') (length ts) (fromMatrix f) (Var x))
+      _ -> return orig
   e -> return e
 
 runProgram :: MonadAlpha m => Program -> m Program

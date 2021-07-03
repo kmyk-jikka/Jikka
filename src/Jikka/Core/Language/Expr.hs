@@ -40,8 +40,8 @@ unTypeName (TypeName name) = name
 --         \vert & \int \\
 --         \vert & \bool \\
 --         \vert & \list(\tau) \\
---         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \\
---         \vert & \tau_0 \times \tau_1 \times \dots \times \tau_{n-1} \to \tau_n
+--         \vert & \tau \times \tau \times \dots \times \tau \\
+--         \vert & \tau \to \tau
 --     \end{array}
 -- \]
 data Type
@@ -50,8 +50,7 @@ data Type
   | BoolTy
   | ListTy Type
   | TupleTy [Type]
-  | -- | The functions are not curried. TODO: currying?
-    FunTy [Type] Type
+  | FunTy Type Type
   deriving (Eq, Ord, Show, Read)
 
 -- | TODO: What is the difference between `Literal` and `Builtin`?
@@ -60,119 +59,119 @@ data Builtin
 
     -- | \(: \int \to \int\)
     Negate
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Plus
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Minus
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Mult
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     FloorDiv
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     FloorMod
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     CeilDiv
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     CeilMod
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Pow
   | -- induction functions
 
-    -- | natural induction \(: \forall \alpha. \alpha \times (\alpha \to \alpha) \times \int \to \alpha\)
+    -- | natural induction \(: \forall \alpha. \alpha \to (\alpha \to \alpha) \to \int \to \alpha\)
     NatInd Type
   | -- advanced arithmetical functions
 
     -- | \(: \int \to \int\)
     Abs
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Gcd
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Lcm
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \alpha\)
     Min2 Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \alpha\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \alpha\)
     Max2 Type
   | -- logical functions
 
     -- | \(: \bool \to \bool\)
     Not
-  | -- | \(: \bool \times \bool \to \bool\)
+  | -- | \(: \bool \to \bool \to \bool\)
     And
-  | -- | \(: \bool \times \bool \to \bool\)
+  | -- | \(: \bool \to \bool \to \bool\)
     Or
-  | -- | \(: \bool \times \bool \to \bool\)
+  | -- | \(: \bool \to \bool \to \bool\)
     Implies
-  | -- | \(: \forall \alpha. \bool \times \alpha \times \alpha \to \alpha\)
+  | -- | \(: \forall \alpha. \bool \to \alpha \to \alpha \to \alpha\)
     If Type
   | -- bitwise functions
 
     -- | \(: \int \to \int\)
     BitNot
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     BitAnd
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     BitOr
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     BitXor
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     BitLeftShift
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     BitRightShift
   | -- matrix functions
 
-    -- | matrix application \(: \int^{H \times W} \times \int^W \to \int^H\)
+    -- | matrix application \(: \int^{H \times W} \to \int^W \to \int^H\)
     MatAp Int Int
   | -- | zero matrix \(: \to \int^{n \times n}\)
     MatZero Int
   | -- | unit matrix \(: \to \int^{n \times n}\)
     MatOne Int
-  | -- | matrix addition \(: \int^{H \times W} \times \int^{H \times W} \to \int^{H \times W}\)
+  | -- | matrix addition \(: \int^{H \times W} \to \int^{H \times W} \to \int^{H \times W}\)
     MatAdd Int Int
-  | -- | matrix multiplication \(: \int^{H \times n} \times \int^{n \times W} \to \int^{H \times W}\)
+  | -- | matrix multiplication \(: \int^{H \times n} \to \int^{n \times W} \to \int^{H \times W}\)
     MatMul Int Int Int
-  | -- | matrix power \(: \int^{n \times n} \times \int \to \int^{n \times n}\)
+  | -- | matrix power \(: \int^{n \times n} \to \int \to \int^{n \times n}\)
     MatPow Int
   | -- modular functions
 
-    -- | \(: \int \times \int \to \int\)
+    -- | \(: \int \to \int \to \int\)
     ModInv
-  | -- | \(: \int \times \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int \to \int\)
     ModPow
-  | -- | matrix application \(: \int^{H \times W} \times \int^W \times \int \to \int^H\)
+  | -- | matrix application \(: \int^{H \times W} \to \int^W \to \int \to \int^H\)
     ModMatAp Int Int
-  | -- | matrix addition \(: \int^{H \times W} \times \int^{H \times W} \times \int \to \int^{H \times W}\)
+  | -- | matrix addition \(: \int^{H \times W} \to \int^{H \times W} \to \int \to \int^{H \times W}\)
     ModMatAdd Int Int
-  | -- | matrix multiplication \(: \int^{H \times n} \times \int^{n \times W} \times \int \to \int^{H \times W}\)
+  | -- | matrix multiplication \(: \int^{H \times n} \to \int^{n \times W} \to \int \to \int^{H \times W}\)
     ModMatMul Int Int Int
-  | -- | matrix power \(: \int^{n \times n} \times \int \to \int^{n \times n}\)
+  | -- | matrix power \(: \int^{n \times n} \to \int \to \int^{n \times n}\)
     ModMatPow Int
   | -- list functions
 
-    -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \list(\alpha)\)
+    -- | \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)
     Cons Type
-  | -- | \(: \forall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \beta\)
+  | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)
     Foldl Type Type
-  | -- | \(: \forall \alpha \beta. (\beta \times \alpha \to \beta) \times \beta \times \list(\alpha) \to \list(\beta)\)
+  | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
     Scanl Type Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
-  | -- | \(: \forall \alpha. \int \times (\int \to \alpha) \to \list(\alpha)\)
+  | -- | \(: \forall \alpha. \int \to (\int \to \alpha) \to \list(\alpha)\)
     Tabulate Type
-  | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \times \list(\alpha) \to \list(\beta)\)
+  | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)
     Map Type Type
-  | -- | \(: \forall \alpha \beta. (\alpha \to \bool) \times \list(\alpha) \to \list(\beta)\)
+  | -- | \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)
     Filter Type
-  | -- | \(: \forall \alpha. \list(\alpha) \times \int \to \alpha\)
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int \to \alpha\)
     At Type
-  | -- | \(: \forall \alpha. \list(\alpha) \times \int \times \alpha \to \list(\alpha)\)
+  | -- | \(: \forall \alpha. \list(\alpha) \to \int \to \alpha \to \list(\alpha)\)
     SetAt Type
-  | -- | \(: \forall \alpha. \alpha \times \list(\alpha) \to \bool\)
+  | -- | \(: \forall \alpha. \alpha \to \list(\alpha) \to \bool\)
     Elem Type
   | -- | \(: \list(\int) \to \int\)
     Sum
   | -- | \(: \list(\int) \to \int\)
     Product
-  | -- | \(: \list(\int) \times \int \to \int\)
+  | -- | \(: \list(\int) \to \int \to \int\)
     ModProduct
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
     Min1 Type
@@ -194,39 +193,39 @@ data Builtin
     Reversed Type
   | -- | \(: \int \to \list(\int)\)
     Range1
-  | -- | \(: \int \times \int \to \list(\int)\)
+  | -- | \(: \int \to \int \to \list(\int)\)
     Range2
-  | -- | \(: \int \times \int \times \int \to \list(\int)\)
+  | -- | \(: \int \to \int \to \int \to \list(\int)\)
     Range3
   | -- tuple functions
 
-    -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_0 \times \dots \times \alpha _ {n - 1}\)
+    -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \to \dots \to \alpha _ {n - 1} \to \alpha_0 \times \dots \times \alpha _ {n - 1}\)
     Tuple [Type]
   | -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_i\)
     Proj [Type] Int
   | -- comparison
 
-    -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+    -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
     LessThan Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
     LessEqual Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
     GreaterThan Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
     GreaterEqual Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
     Equal Type
-  | -- | \(: \forall \alpha. \alpha \times \alpha \to \bool\)
+  | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
     NotEqual Type
   | -- combinational functions
 
     -- | \(: \int \to \int\)
     Fact
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Choose
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     Permute
-  | -- | \(: \int \times \int \to \int\)
+  | -- | \(: \int \to \int \to \int\)
     MultiChoose
   deriving (Eq, Ord, Show, Read)
 
@@ -256,38 +255,44 @@ data Expr
   = Var VarName
   | Lit Literal
   | -- | The functions are not curried.
-    App Expr [Expr]
+    App Expr Expr
   | -- | The lambdas are also not curried.
-    Lam [(VarName, Type)] Expr
+    Lam VarName Type Expr
   | -- | This "let" is not recursive.
     Let VarName Type Expr Expr
   deriving (Eq, Ord, Show, Read)
 
-pattern Fun1Ty t <-
-  (\case FunTy [t1] t0 | t1 == t0 -> Just t0; _ -> Nothing -> Just t)
-  where
-    Fun1Ty t = FunTy [t] t
+pattern Fun2Ty t1 t2 ret = FunTy t1 (FunTy t2 ret)
 
-pattern Fun2Ty t <-
-  (\case FunTy [t1, t2] t0 | t1 == t0 && t2 == t0 -> Just t0; _ -> Nothing -> Just t)
-  where
-    Fun2Ty t = FunTy [t, t] t
+pattern Fun3Ty t1 t2 t3 ret = FunTy t1 (FunTy t2 (FunTy t3 ret))
 
-pattern Fun3Ty t <-
-  (\case FunTy [t1, t2, t3] t0 | t1 == t0 && t2 == t0 && t3 == t0 -> Just t0; _ -> Nothing -> Just t)
+pattern Fun1STy t <-
+  (\case FunTy t1 ret | t1 == ret -> Just ret; _ -> Nothing -> Just t)
   where
-    Fun3Ty t = FunTy [t, t, t] t
+    Fun1STy t = FunTy t t
+
+pattern Fun2STy t <-
+  (\case Fun2Ty t1 t2 ret | t1 == ret && t2 == ret -> Just ret; _ -> Nothing -> Just t)
+  where
+    Fun2STy t = Fun2Ty t t t
+
+pattern Fun3STy t <-
+  (\case Fun3Ty t1 t2 t3 ret | t1 == ret && t2 == ret && t3 == ret -> Just ret; _ -> Nothing -> Just t)
+  where
+    Fun3STy t = Fun3Ty t t t t
 
 pattern FunLTy t <-
-  (\case FunTy [ListTy t1] t0 | t1 == t0 -> Just t0; _ -> Nothing -> Just t)
+  (\case FunTy (ListTy t1) ret | t1 == ret -> Just ret; _ -> Nothing -> Just t)
   where
-    FunLTy t = FunTy [ListTy t] t
+    FunLTy t = FunTy (ListTy t) t
 
 vectorTy :: Int -> Type
 vectorTy n = TupleTy (replicate n IntTy)
 
 matrixTy :: Int -> Int -> Type
 matrixTy h w = TupleTy (replicate h (TupleTy (replicate w IntTy)))
+
+pattern UnitTy = TupleTy []
 
 pattern LitInt' n = Lit (LitInt n)
 
@@ -307,18 +312,26 @@ pattern LitFalse = Lit (LitBool False)
 
 pattern Builtin builtin = Lit (LitBuiltin builtin)
 
-pattern AppBuiltin builtin args = App (Lit (LitBuiltin builtin)) args
+pattern App2 f e1 e2 = App (App f e1) e2
 
-pattern Lam1 x1 t1 e = Lam [(x1, t1)] e
+pattern App3 f e1 e2 e3 = App (App (App f e1) e2) e3
 
-pattern Lam2 x1 t1 x2 t2 e = Lam [(x1, t1), (x2, t2)] e
+pattern App4 f e1 e2 e3 e4 = App (App (App (App f e1) e2) e3) e4
 
-pattern Lam3 x1 t1 x2 t2 x3 t3 e = Lam [(x1, t1), (x2, t2), (x3, t3)] e
+pattern AppBuiltin builtin e1 = App (Lit (LitBuiltin builtin)) e1
+
+pattern AppBuiltin2 builtin e1 e2 = App2 (Lit (LitBuiltin builtin)) e1 e2
+
+pattern AppBuiltin3 builtin e1 e2 e3 = App3 (Lit (LitBuiltin builtin)) e1 e2 e3
+
+pattern Lam2 x1 t1 x2 t2 e = Lam x1 t1 (Lam x2 t2 e)
+
+pattern Lam3 x1 t1 x2 t2 x3 t3 e = Lam x1 t1 (Lam x2 t2 (Lam x3 t3 e))
 
 pattern LamId x t <-
-  (\case Lam [(x, t)] (Var y) | x == y -> Just (x, t); _ -> Nothing -> Just (x, t))
+  (\case Lam x t (Var y) | x == y -> Just (x, t); _ -> Nothing -> Just (x, t))
   where
-    LamId x t = Lam [(x, t)] (Var x)
+    LamId x t = Lam x t (Var x)
 
 -- | `ToplevelExpr` is the toplevel exprs. In our core, "let rec" is allowed only on the toplevel.
 --

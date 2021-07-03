@@ -19,7 +19,7 @@ spec = describe "run" $ do
     let expected =
           ToplevelLet
             "solve"
-            (FunTy [BoolTy] BoolTy)
-            (Lam [("x", BoolTy)] (Var "x"))
+            (FunTy BoolTy BoolTy)
+            (Lam "x" BoolTy (Var "x"))
             (ResultExpr (Var "solve"))
     run prog `shouldBe` Right expected

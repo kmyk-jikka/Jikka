@@ -16,164 +16,160 @@ module Jikka.Core.Language.BuiltinPatterns where
 import Jikka.Core.Language.Expr
 
 -- arithmetical functions
-pattern Negate' e = AppBuiltin Negate [e]
+pattern Negate' e = AppBuiltin Negate e
 
-pattern Plus' e1 e2 = AppBuiltin Plus [e1, e2]
+pattern Plus' e1 e2 = AppBuiltin2 Plus e1 e2
 
-pattern Minus' e1 e2 = AppBuiltin Minus [e1, e2]
+pattern Minus' e1 e2 = AppBuiltin2 Minus e1 e2
 
-pattern Mult' e1 e2 = AppBuiltin Mult [e1, e2]
+pattern Mult' e1 e2 = AppBuiltin2 Mult e1 e2
 
-pattern FloorDiv' e1 e2 = AppBuiltin FloorDiv [e1, e2]
+pattern FloorDiv' e1 e2 = AppBuiltin2 FloorDiv e1 e2
 
-pattern FloorMod' e1 e2 = AppBuiltin FloorMod [e1, e2]
+pattern FloorMod' e1 e2 = AppBuiltin2 FloorMod e1 e2
 
-pattern CeilDiv' e1 e2 = AppBuiltin CeilDiv [e1, e2]
+pattern CeilDiv' e1 e2 = AppBuiltin2 CeilDiv e1 e2
 
-pattern CeilMod' e1 e2 = AppBuiltin CeilMod [e1, e2]
+pattern CeilMod' e1 e2 = AppBuiltin2 CeilMod e1 e2
 
-pattern Pow' e1 e2 = AppBuiltin Pow [e1, e2]
+pattern Pow' e1 e2 = AppBuiltin2 Pow e1 e2
 
 -- induction functions
-pattern NatInd' t base step n = AppBuiltin (NatInd t) [base, step, n]
+pattern NatInd' t base step n = AppBuiltin3 (NatInd t) base step n
 
 -- advanced arithmetical functions
-pattern Abs' e = AppBuiltin Abs [e]
+pattern Abs' e = AppBuiltin Abs e
 
-pattern Gcd' e1 e2 = AppBuiltin Gcd [e1, e2]
+pattern Gcd' e1 e2 = AppBuiltin2 Gcd e1 e2
 
-pattern Lcm' e1 e2 = AppBuiltin Lcm [e1, e2]
+pattern Lcm' e1 e2 = AppBuiltin2 Lcm e1 e2
 
-pattern Min2' t e1 e2 = AppBuiltin (Min2 t) [e1, e2]
+pattern Min2' t e1 e2 = AppBuiltin2 (Min2 t) e1 e2
 
-pattern Max2' t e1 e2 = AppBuiltin (Max2 t) [e1, e2]
+pattern Max2' t e1 e2 = AppBuiltin2 (Max2 t) e1 e2
 
 -- logical functions
-pattern Not' e = AppBuiltin Not [e]
+pattern Not' e = AppBuiltin Not e
 
-pattern And' e1 e2 = AppBuiltin And [e1, e2]
+pattern And' e1 e2 = AppBuiltin2 And e1 e2
 
-pattern Or' e1 e2 = AppBuiltin Or [e1, e2]
+pattern Or' e1 e2 = AppBuiltin2 Or e1 e2
 
-pattern Implies' e1 e2 = AppBuiltin Implies [e1, e2]
+pattern Implies' e1 e2 = AppBuiltin2 Implies e1 e2
 
-pattern If' t e1 e2 e3 = AppBuiltin (If t) [e1, e2, e3]
+pattern If' t e1 e2 e3 = AppBuiltin3 (If t) e1 e2 e3
 
 -- bitwise functions
-pattern BitNot' e = AppBuiltin BitNot [e]
+pattern BitNot' e = AppBuiltin BitNot e
 
-pattern BitAnd' e1 e2 = AppBuiltin BitAnd [e1, e2]
+pattern BitAnd' e1 e2 = AppBuiltin2 BitAnd e1 e2
 
-pattern BitOr' e1 e2 = AppBuiltin BitOr [e1, e2]
+pattern BitOr' e1 e2 = AppBuiltin2 BitOr e1 e2
 
-pattern BitXor' e1 e2 = AppBuiltin BitXor [e1, e2]
+pattern BitXor' e1 e2 = AppBuiltin2 BitXor e1 e2
 
-pattern BitLeftShift' e1 e2 = AppBuiltin BitLeftShift [e1, e2]
+pattern BitLeftShift' e1 e2 = AppBuiltin2 BitLeftShift e1 e2
 
-pattern BitRightShift' e1 e2 = AppBuiltin BitRightShift [e1, e2]
+pattern BitRightShift' e1 e2 = AppBuiltin2 BitRightShift e1 e2
 
 -- matrix functions
 
-pattern MatAp' h w e1 e2 = AppBuiltin (MatAp h w) [e1, e2]
+pattern MatAp' h w e1 e2 = AppBuiltin2 (MatAp h w) e1 e2
 
-pattern MatZero' n = AppBuiltin (MatZero n) []
+pattern MatAdd' h w e1 e2 = AppBuiltin2 (MatAdd h w) e1 e2
 
-pattern MatOne' n = AppBuiltin (MatOne n) []
+pattern MatMul' h n w e1 e2 = AppBuiltin2 (MatMul h n w) e1 e2
 
-pattern MatAdd' h w e1 e2 = AppBuiltin (MatAdd h w) [e1, e2]
-
-pattern MatMul' h n w e1 e2 = AppBuiltin (MatMul h n w) [e1, e2]
-
-pattern MatPow' n e1 e2 = AppBuiltin (MatPow n) [e1, e2]
+pattern MatPow' n e1 e2 = AppBuiltin2 (MatPow n) e1 e2
 
 -- modular functions
-pattern ModInv' e1 e2 = AppBuiltin ModInv [e1, e2]
+pattern ModInv' e1 e2 = AppBuiltin2 ModInv e1 e2
 
-pattern ModPow' e1 e2 e3 = AppBuiltin ModPow [e1, e2, e3]
+pattern ModPow' e1 e2 e3 = AppBuiltin3 ModPow e1 e2 e3
 
-pattern ModMatAp' h w e1 e2 e3 = AppBuiltin (ModMatAp h w) [e1, e2, e3]
+pattern ModMatAp' h w e1 e2 e3 = AppBuiltin3 (ModMatAp h w) e1 e2 e3
 
-pattern ModMatAdd' h w e1 e2 e3 = AppBuiltin (ModMatAdd h w) [e1, e2, e3]
+pattern ModMatAdd' h w e1 e2 e3 = AppBuiltin3 (ModMatAdd h w) e1 e2 e3
 
-pattern ModMatMul' h n w e1 e2 e3 = AppBuiltin (ModMatMul h n w) [e1, e2, e3]
+pattern ModMatMul' h n w e1 e2 e3 = AppBuiltin3 (ModMatMul h n w) e1 e2 e3
 
-pattern ModMatPow' n e1 e2 e3 = AppBuiltin (ModMatPow n) [e1, e2, e3]
+pattern ModMatPow' n e1 e2 e3 = AppBuiltin3 (ModMatPow n) e1 e2 e3
 
 -- list functions
-pattern Cons' t e1 e2 = AppBuiltin (Cons t) [e1, e2]
+pattern Cons' t e1 e2 = AppBuiltin2 (Cons t) e1 e2
 
-pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin (Foldl t1 t2) [e1, e2, e3]
+pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 
-pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin (Scanl t1 t2) [e1, e2, e3]
+pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3
 
-pattern Len' t e = AppBuiltin (Len t) [e]
+pattern Len' t e = AppBuiltin (Len t) e
 
-pattern Tabulate' t n f = AppBuiltin (Tabulate t) [n, f]
+pattern Tabulate' t n f = AppBuiltin2 (Tabulate t) n f
 
-pattern Map' t1 t2 f e = AppBuiltin (Map t1 t2) [f, e]
+pattern Map' t1 t2 f e = AppBuiltin2 (Map t1 t2) f e
 
-pattern Filter' t f e = AppBuiltin (Filter t) [f, e]
+pattern Filter' t f e = AppBuiltin2 (Filter t) f e
 
-pattern At' t e1 e2 = AppBuiltin (At t) [e1, e2]
+pattern At' t e1 e2 = AppBuiltin2 (At t) e1 e2
 
-pattern SetAt' t e1 e2 e3 = AppBuiltin (SetAt t) [e1, e2, e3]
+pattern SetAt' t e1 e2 e3 = AppBuiltin3 (SetAt t) e1 e2 e3
 
-pattern Elem' t e1 e2 = AppBuiltin (Elem t) [e1, e2]
+pattern Elem' t e1 e2 = AppBuiltin2 (Elem t) e1 e2
 
-pattern Sum' e = AppBuiltin Sum [e]
+pattern Sum' e = AppBuiltin Sum e
 
-pattern Product' e = AppBuiltin Product [e]
+pattern Product' e = AppBuiltin Product e
 
-pattern ModProduct' e1 e2 = AppBuiltin ModProduct [e1, e2]
+pattern ModProduct' e1 e2 = AppBuiltin2 ModProduct e1 e2
 
-pattern Min1' t e = AppBuiltin (Min1 t) [e]
+pattern Min1' t e = AppBuiltin (Min1 t) e
 
-pattern Max1' t e = AppBuiltin (Max1 t) [e]
+pattern Max1' t e = AppBuiltin (Max1 t) e
 
-pattern ArgMin' t e = AppBuiltin (ArgMin t) [e]
+pattern ArgMin' t e = AppBuiltin (ArgMin t) e
 
-pattern ArgMax' t e = AppBuiltin (ArgMax t) [e]
+pattern ArgMax' t e = AppBuiltin (ArgMax t) e
 
-pattern All' e = AppBuiltin All [e]
+pattern All' e = AppBuiltin All e
 
-pattern Any' e = AppBuiltin Any [e]
+pattern Any' e = AppBuiltin Any e
 
-pattern Sorted' t e = AppBuiltin (Sorted t) [e]
+pattern Sorted' t e = AppBuiltin (Sorted t) e
 
-pattern List' t e = AppBuiltin (List t) [e]
+pattern List' t e = AppBuiltin (List t) e
 
-pattern Reversed' t e = AppBuiltin (Reversed t) [e]
+pattern Reversed' t e = AppBuiltin (Reversed t) e
 
-pattern Range1' e = AppBuiltin Range1 [e]
+pattern Range1' e = AppBuiltin Range1 e
 
-pattern Range2' e1 e2 = AppBuiltin Range2 [e1, e2]
+pattern Range2' e1 e2 = AppBuiltin2 Range2 e1 e2
 
-pattern Range3' e1 e2 e3 = AppBuiltin Range3 [e1, e2, e3]
+pattern Range3' e1 e2 e3 = AppBuiltin3 Range3 e1 e2 e3
 
 -- tuple functions
-pattern Tuple' ts es = AppBuiltin (Tuple ts) es
+pattern Tuple' ts = Lit (LitBuiltin (Tuple ts))
 
-pattern Proj' ts n e = AppBuiltin (Proj ts n) [e]
+pattern Proj' ts n e = AppBuiltin (Proj ts n) e
 
 -- arithmetical relations
-pattern LessThan' t e1 e2 = AppBuiltin (LessThan t) [e1, e2]
+pattern LessThan' t e1 e2 = AppBuiltin2 (LessThan t) e1 e2
 
-pattern LessEqual' t e1 e2 = AppBuiltin (LessEqual t) [e1, e2]
+pattern LessEqual' t e1 e2 = AppBuiltin2 (LessEqual t) e1 e2
 
-pattern GreaterThan' t e1 e2 = AppBuiltin (GreaterThan t) [e1, e2]
+pattern GreaterThan' t e1 e2 = AppBuiltin2 (GreaterThan t) e1 e2
 
-pattern GreaterEqual' t e1 e2 = AppBuiltin (GreaterEqual t) [e1, e2]
+pattern GreaterEqual' t e1 e2 = AppBuiltin2 (GreaterEqual t) e1 e2
 
 -- equality relations (polymorphic)
-pattern Equal' t e1 e2 = AppBuiltin (Equal t) [e1, e2]
+pattern Equal' t e1 e2 = AppBuiltin2 (Equal t) e1 e2
 
-pattern NotEqual' t e1 e2 = AppBuiltin (NotEqual t) [e1, e2]
+pattern NotEqual' t e1 e2 = AppBuiltin2 (NotEqual t) e1 e2
 
 -- combinational functions
-pattern Fact' e = AppBuiltin Fact [e]
+pattern Fact' e = AppBuiltin Fact e
 
-pattern Choose' e1 e2 = AppBuiltin Choose [e1, e2]
+pattern Choose' e1 e2 = AppBuiltin2 Choose e1 e2
 
-pattern Permute' e1 e2 = AppBuiltin Permute [e1, e2]
+pattern Permute' e1 e2 = AppBuiltin2 Permute e1 e2
 
-pattern MultiChoose' e1 e2 = AppBuiltin MultiChoose [e1, e2]
+pattern MultiChoose' e1 e2 = AppBuiltin2 MultiChoose e1 e2

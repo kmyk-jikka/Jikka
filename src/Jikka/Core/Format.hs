@@ -12,11 +12,11 @@
 -- TODO: add parens with considering precedences.
 module Jikka.Core.Format
   ( run,
-    run',
     formatBuiltinIsolated,
     formatBuiltin,
     formatType,
     formatExpr,
+    formatProgram,
   )
 where
 
@@ -25,6 +25,7 @@ import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Util
 
 paren :: String -> String
 paren s = "(" ++ s ++ ")"
@@ -38,7 +39,9 @@ formatType = \case
   TupleTy ts -> case ts of
     [t] -> paren $ formatType t ++ ","
     _ -> paren $ intercalate " * " (map formatType ts)
-  FunTy ts ret -> paren $ intercalate " * " (map formatType ts) ++ " -> " ++ formatType ret
+  t@(FunTy _ _) ->
+    let (ts, ret) = uncurryFunTy t
+     in paren $ intercalate " -> " (map formatType (ts ++ [ret]))
 
 data Builtin'
   = Fun [Type] String
@@ -148,8 +151,10 @@ formatTemplate = \case
   [] -> ""
   ts -> "<" ++ intercalate ", " (map formatType ts) ++ ">"
 
-formatFunCall :: String -> [Type] -> [Expr] -> String
-formatFunCall f _ args = f ++ "(" ++ intercalate ", " (map formatExpr' args) ++ ")"
+formatFunCall :: String -> [Expr] -> String
+formatFunCall f = \case
+  [] -> f
+  args -> f ++ "(" ++ intercalate ", " (map formatExpr' args) ++ ")"
 
 formatBuiltinIsolated' :: Builtin' -> String
 formatBuiltinIsolated' = \case
@@ -164,12 +169,12 @@ formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
 
 formatBuiltin' :: Builtin' -> [Expr] -> String
 formatBuiltin' builtin args = case (builtin, args) of
-  (Fun ts name, _) -> formatFunCall name ts args
-  (PrefixOp op, [e1]) -> paren $ op ++ " " ++ formatExpr' e1
-  (InfixOp _ op, [e1, e2]) -> paren $ formatExpr' e1 ++ " " ++ op ++ " " ++ formatExpr' e2
-  (At' _, [e1, e2]) -> paren $ formatExpr' e1 ++ ")[" ++ formatExpr' e2 ++ "]"
-  (If' _, [e1, e2, e3]) -> paren $ "if" ++ " " ++ formatExpr' e1 ++ " then " ++ formatExpr' e2 ++ " else " ++ formatExpr' e3
-  _ -> formatFunCall (formatBuiltinIsolated' builtin) [] args
+  (Fun _ name, _) -> formatFunCall name args
+  (PrefixOp op, e1 : args) -> formatFunCall (paren $ op ++ " " ++ formatExpr' e1) args
+  (InfixOp _ op, e1 : e2 : args) -> formatFunCall (paren $ formatExpr' e1 ++ " " ++ op ++ " " ++ formatExpr' e2) args
+  (At' _, e1 : e2 : args) -> formatFunCall (paren $ formatExpr' e1 ++ ")[" ++ formatExpr' e2 ++ "]") args
+  (If' _, e1 : e2 : e3 : args) -> formatFunCall (paren $ "if" ++ " " ++ formatExpr' e1 ++ " then " ++ formatExpr' e2 ++ " else " ++ formatExpr' e3) args
+  _ -> formatFunCall (formatBuiltinIsolated' builtin) args
 
 formatBuiltin :: Builtin -> [Expr] -> String
 formatBuiltin = formatBuiltin' . analyzeBuiltin
@@ -188,11 +193,15 @@ formatExpr' :: Expr -> String
 formatExpr' = \case
   Var x -> unVarName x
   Lit lit -> formatLiteral lit
-  App f args -> case f of
-    Var x -> formatFunCall (unVarName x) [] args
-    Lit (LitBuiltin builtin) -> formatBuiltin builtin args
-    _ -> formatFunCall (formatExpr' f) [] args
-  Lam args e -> paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr' e ++ "\n" ++ dedent ++ "\n"
+  e@(App _ _) ->
+    let (f, args) = curryApp e
+     in case f of
+          Var x -> formatFunCall (unVarName x) args
+          Lit (LitBuiltin builtin) -> formatBuiltin builtin args
+          _ -> formatFunCall (formatExpr' f) args
+  e@(Lam _ _ _) ->
+    let (args, body) = uncurryLam e
+     in paren $ "fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ formatExpr' body ++ "\n" ++ dedent ++ "\n"
   Let x t e1 e2 -> "let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ formatExpr' e1 ++ "\n" ++ dedent ++ "\nin " ++ formatExpr' e2
 
 formatExpr :: Expr -> String
@@ -210,11 +219,8 @@ formatToplevelExpr = \case
         ++ [dedent, "in"]
         ++ formatToplevelExpr cont
 
-formatProgram :: Program -> [String]
-formatProgram = formatToplevelExpr
-
-run' :: Program -> String
-run' = unlines . makeIndentFromMarkers 4 . formatProgram
+formatProgram :: Program -> String
+formatProgram = unlines . makeIndentFromMarkers 4 . formatToplevelExpr
 
 run :: Applicative m => Program -> m Text
-run = pure . pack . run'
+run = pure . pack . formatProgram

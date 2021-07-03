@@ -22,13 +22,15 @@ spec = describe "run" $ do
     let prog =
           ResultExpr
             ( Lam
-                [("y", IntTy)]
-                (f (App (Lam [("x", IntTy)] (Plus' (Mult' (Var "x") (Var "x")) (Var "x"))) [Var "y"]))
+                "y"
+                IntTy
+                (f (App (Lam "x" IntTy (Plus' (Mult' (Var "x") (Var "x")) (Var "x"))) (Var "y")))
             )
     let expected =
           ResultExpr
             ( Lam
-                [("y", IntTy)]
-                (App (Lam [("x", IntTy)] (f (Plus' (f (Mult' (f (Var "x")) (f (Var "x")))) (f (Var "x"))))) [Var "y"])
+                "y"
+                IntTy
+                (App (Lam "x" IntTy (f (Plus' (f (Mult' (f (Var "x")) (f (Var "x")))) (f (Var "x"))))) (Var "y"))
             )
     run' prog `shouldBe` Right expected

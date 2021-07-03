@@ -15,40 +15,35 @@ import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Util
 
-runAppLam :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> [Expr] -> m Expr
-runAppLam = go [] []
-  where
-    go :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> [Expr] -> [(VarName, Type)] -> Expr -> [Expr] -> m Expr
-    go formal actual [] body [] = return $ App (Lam (reverse formal) body) (reverse actual)
-    go formal' actual' ((x, TupleTy ts) : formal) body (Tuple' ts' es : actual) = do
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
+runExpr _ = \case
+  orig@(App (Lam x (TupleTy ts) body) e) -> case curryApp e of
+    (Tuple' ts', es) -> do
       when (ts /= ts') $ do
         throwInternalError "the types of tuple don't match"
       when (length ts /= length es) $ do
         throwInternalError "the sizes of tuple don't match"
       xs <- replicateM (length ts) (genVarName x)
-      let body' = substitute x (Tuple' ts (map Var xs)) body
-      go (reverse (zip xs ts) ++ formal') (reverse es ++ actual') formal body' actual
-    go formal' actual' (xt : formal) body (e : actual) = go (xt : formal') (e : actual') formal body actual
-    go _ _ _ _ _ = throwInternalError "the numbers of arguments dont' match"
-
-runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
-runExpr _ = \case
-  App (Lam formal body) actual -> runAppLam formal body actual
-  Tuple' [_] [Proj' [_] 0 e] -> return e
-  Proj' _ i (Tuple' _ es) -> return $ es !! i
-  Foldl' t2 (TupleTy [t1]) (Lam [(x1, TupleTy [_]), (x2, _)] body) e es -> do
-    let body' = substitute x1 (Tuple' [t1] [Var x1]) (Proj' [t1] 0 body)
-    return $ Tuple' [t1] [Foldl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') (Proj' [t1] 0 e) es]
-  Scanl' t2 (TupleTy [t1]) (Lam [(x1, _), (x2, TupleTy [_])] body) e es -> do
-    let body' = substitute x1 (Tuple' [t1] [Var x1]) (Proj' [t1] 0 body)
-    let e' = Scanl' t2 t1 (Lam [(x1, t1), (x2, t2)] body') (Proj' [t1] 0 e) es
+      body' <- substitute x (uncurryApp (Tuple' ts) (map Var xs)) body
+      return $ uncurryApp (curryLam (zip xs ts) body') es
+    _ -> return orig
+  App (Tuple' [_]) (Proj' [_] 0 e) -> return e
+  Proj' ts i e -> case curryApp e of
+    (Tuple' _, es) -> return $ es !! i
+    (Lit (LitBuiltin (If _)), [e1, e2, e3]) -> return $ If' (ts !! i) e1 (Proj' ts i e2) (Proj' ts i e3)
+    _ -> return $ Proj' ts i e
+  Foldl' t2 (TupleTy [t1]) (Lam x1 (TupleTy [_]) (Lam x2 _ body)) e es -> do
+    body' <- substitute x1 (App (Tuple' [t1]) (Var x1)) (Proj' [t1] 0 body)
+    return $ App (Tuple' [t1]) (Foldl' t2 t1 (Lam2 x1 t1 x2 t2 body') (Proj' [t1] 0 e) es)
+  Scanl' t2 (TupleTy [t1]) (Lam x1 _ (Lam x2 (TupleTy [_]) body)) e es -> do
+    body' <- substitute x1 (App (Tuple' [t1]) (Var x1)) (Proj' [t1] 0 body)
+    let e' = Scanl' t2 t1 (Lam2 x1 t1 x2 t2 body') (Proj' [t1] 0 e) es
     y <- genVarName'
-    let f = Map' t1 (TupleTy [t1]) (Lam [(y, t1)] (Tuple' [t1] [Var y]))
+    let f = Map' t1 (TupleTy [t1]) (Lam y t1 (App (Tuple' [t1]) (Var y)))
     return $ f e'
-  NatInd' (TupleTy [t]) e (Lam [(x, TupleTy [_])] body) n -> do
-    let body' = substitute x (Tuple' [t] [Var x]) (Proj' [t] 0 body)
-    return $ Tuple' [t] [NatInd' t (Proj' [t] 0 e) (Lam [(x, t)] body') n]
-  Proj' ts i (If' _ e1 e2 e3) -> return $ If' (ts !! i) e1 (Proj' ts i e2) (Proj' ts i e3)
+  NatInd' (TupleTy [t]) e (Lam x (TupleTy [_]) body) n -> do
+    body' <- substitute x (App (Tuple' [t]) (Var x)) (Proj' [t] 0 body)
+    return $ uncurryApp (Tuple' [t]) [NatInd' t (Proj' [t] 0 e) (Lam x t body') n]
   e -> return e
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program

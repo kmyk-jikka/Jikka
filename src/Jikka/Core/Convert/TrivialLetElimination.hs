@@ -20,8 +20,8 @@ runExpr :: Env -> Expr -> Expr
 runExpr env = \case
   Var x -> fromMaybe (Var x) (M.lookup x env)
   Lit lit -> Lit lit
-  App f args -> App (runExpr env f) (map (runExpr env) args)
-  Lam args body -> Lam args (runExpr env body)
+  App f e -> App (runExpr env f) (runExpr env e)
+  Lam x t body -> Lam x t (runExpr env body)
   Let x t e1 e2 ->
     let e1' = runExpr env e1
      in if countOccurrences x e2 <= 1

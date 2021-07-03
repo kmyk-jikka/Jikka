@@ -28,7 +28,7 @@ spec = describe "run" $ do
                 X.IntTy
                 (X.Equal' X.IntTy (X.Var "n") X.Lit0)
                 X.Lit1
-                (X.Mult' (X.Var "n") (X.App (X.Var "f") [X.Minus' (X.Var "n") X.Lit1]))
+                (X.Mult' (X.Var "n") (X.App (X.Var "f") (X.Minus' (X.Var "n") X.Lit1)))
             )
             (X.ResultExpr (X.Var "f"))
     let expectedF =

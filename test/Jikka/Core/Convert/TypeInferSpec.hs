@@ -52,14 +52,14 @@ spec = describe "run" $ do
             [("x", VarTy "t1")]
             (VarTy "t2")
             (Var "x")
-            (ResultExpr (App (Var "f") [Lit0]))
+            (ResultExpr (App (Var "f") Lit0))
     let expected =
           ToplevelLetRec
             "f"
             [("x", IntTy)]
             IntTy
             (Var "x")
-            (ResultExpr (App (Var "f") [Lit0]))
+            (ResultExpr (App (Var "f") Lit0))
     run' prog `shouldBe` Right expected
   it "replaces undetermined types with 0-tuples" $ do
     let prog =
@@ -89,7 +89,7 @@ spec = describe "run" $ do
                 Lit1
                 ( Mult'
                     (Var "n")
-                    (App (Var "solve") [Minus' (Var "n") Lit1])
+                    (App (Var "solve") (Minus' (Var "n") Lit1))
                 )
             )
             (ResultExpr (Var "solve"))
@@ -104,7 +104,7 @@ spec = describe "run" $ do
                 Lit1
                 ( Mult'
                     (Var "n")
-                    (App (Var "solve") [Minus' (Var "n") Lit1])
+                    (App (Var "solve") (Minus' (Var "n") Lit1))
                 )
             )
             (ResultExpr (Var "solve"))

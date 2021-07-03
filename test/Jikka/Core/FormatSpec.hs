@@ -11,7 +11,7 @@ import Jikka.Core.Language.Expr
 import Test.Hspec
 
 spec :: Spec
-spec = describe "run" $ do
+spec = describe "formatExpr" $ do
   it "works" $ do
     let program =
           ToplevelLetRec
@@ -25,7 +25,8 @@ spec = describe "run" $ do
                     IntTy
                     (Var "n$1")
                     ( Lam
-                        [("i$3", IntTy)]
+                        "i$3"
+                        IntTy
                         (Mult' (Var "i$3") (Var "i$3"))
                     )
                 )
@@ -43,4 +44,4 @@ spec = describe "run" $ do
               "in",
               "solve$0"
             ]
-    run' program `shouldBe` expected
+    formatProgram program `shouldBe` expected

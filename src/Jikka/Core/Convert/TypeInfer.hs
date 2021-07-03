@@ -50,16 +50,15 @@ formularizeExpr = \case
     formularizeVarName x t
     return t
   Lit lit -> return $ literalToType lit
-  App f args -> do
+  App f e -> do
     ret <- genType
-    t <- formularizeExpr f
-    ts <- mapM formularizeExpr args
-    formularizeType (FunTy ts ret) t
+    t <- formularizeExpr e
+    formularizeExpr' f (FunTy t ret)
     return ret
-  Lam args body -> do
-    mapM_ (uncurry formularizeVarName) args
+  Lam x t body -> do
+    formularizeVarName x t
     ret <- formularizeExpr body
-    return $ FunTy (map snd args) ret
+    return $ FunTy t ret
   Let x t e1 e2 -> do
     formularizeVarName x t
     formularizeExpr' e1 t
@@ -78,7 +77,7 @@ formularizeToplevelExpr = \case
     formularizeExpr' e t
     formularizeToplevelExpr cont
   ToplevelLetRec f args ret body cont -> do
-    formularizeVarName f (FunTy (map snd args) ret)
+    formularizeVarName f (curryFunTy (map snd args) ret)
     mapM_ (uncurry formularizeVarName) args
     formularizeExpr' body ret
     formularizeToplevelExpr cont
@@ -115,7 +114,7 @@ subst sigma = \case
   BoolTy -> BoolTy
   ListTy t -> ListTy (subst sigma t)
   TupleTy ts -> TupleTy (map (subst sigma) ts)
-  FunTy ts ret -> FunTy (map (subst sigma) ts) (subst sigma ret)
+  FunTy t ret -> FunTy (subst sigma t) (subst sigma ret)
 
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
@@ -141,10 +140,8 @@ unifyType t1 t2 = wrapError' ("failed to unify " ++ formatType t1 ++ " and " ++ 
       if length ts1 == length ts2
         then mapM_ (uncurry unifyType) (zip ts1 ts2)
         else throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
-    (FunTy args1 ret1, FunTy args2 ret2) -> do
-      if length args1 == length args2
-        then mapM_ (uncurry unifyType) (zip args1 args2)
-        else throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
+    (FunTy t1 ret1, FunTy t2 ret2) -> do
+      unifyType t1 t2
       unifyType ret1 ret2
     _ -> throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
 
@@ -160,7 +157,7 @@ substUnit = \case
   BoolTy -> BoolTy
   ListTy t -> ListTy (substUnit t)
   TupleTy ts -> TupleTy (map substUnit ts)
-  FunTy ts ret -> FunTy (map substUnit ts) (substUnit ret)
+  FunTy t ret -> FunTy (substUnit t) (substUnit ret)
 
 -- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type
@@ -182,8 +179,8 @@ substExpr sigma = go
     go = \case
       Var x -> Var x
       Lit lit -> Lit (substLiteral sigma lit)
-      App f args -> App (go f) (map go args)
-      Lam args body -> Lam (map (second (subst' sigma)) args) (go body)
+      App f e -> App (go f) (go e)
+      Lam x t body -> Lam x (subst' sigma t) (go body)
       Let x t e1 e2 -> Let x (subst sigma t) (go e1) (go e2)
 
 substToplevelExpr :: Subst -> ToplevelExpr -> ToplevelExpr

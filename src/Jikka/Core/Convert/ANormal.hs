@@ -45,7 +45,7 @@ runApp env f args = go env id args
     go :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ([Expr] -> [Expr]) -> [Expr] -> m Expr
     go env acc [] = do
       (_, ctx, f) <- destruct env f
-      return $ ctx (App f (acc []))
+      return $ ctx (uncurryApp f (acc []))
     go env acc (arg : args) = do
       (env, ctx, arg) <- destruct env arg
       e <- go env (acc . (arg :)) args
@@ -55,15 +55,16 @@ runExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m Expr
 runExpr env = \case
   Var x -> return $ Var x
   Lit lit -> return $ Lit lit
-  App f args -> do
+  e@(App _ _) -> do
+    let (f, args) = curryApp e
     f <- runExpr env f
     args <- mapM (runExpr env) args
     case (f, args) of
       (Lit (LitBuiltin (If _)), [e1, e2, e3]) -> do
         (_, ctx, e1) <- destruct env e1
-        return $ ctx (App f [e1, e2, e3])
+        return $ ctx (App3 f e1 e2 e3)
       _ -> runApp env f args
-  Lam args body -> Lam args <$> runExpr (reverse args ++ env) body
+  Lam x t body -> Lam x t <$> runExpr ((x, t) : env) body
   Let x t e1 e2 -> do
     e1 <- runExpr env e1
     (env, ctx, e1) <- destruct env e1
@@ -78,7 +79,7 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((x, t) : env) cont
     return $ ToplevelLet x t e cont
   ToplevelLetRec f args ret body cont -> do
-    let t = FunTy (map snd args) ret
+    let t = curryFunTy (map snd args) ret
     body <- runExpr (reverse args ++ (f, t) : env) body
     cont <- runToplevelExpr ((f, t) : env) cont
     return $ ToplevelLetRec f args ret body cont
