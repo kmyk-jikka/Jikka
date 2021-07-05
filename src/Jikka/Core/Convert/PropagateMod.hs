@@ -6,64 +6,178 @@ module Jikka.Core.Convert.PropagateMod
   )
 where
 
+import Data.Maybe (fromMaybe, isNothing)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Core.Format (formatType)
+import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 
-runFloorMod :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m Expr
-runFloorMod env e m = go e
-  where
-    go :: (MonadAlpha m, MonadError Error m) => Expr -> m Expr
-    go = \case
-      Negate' e -> FloorMod' <$> (Negate' <$> go e) <*> pure m
-      Plus' e1 e2 -> FloorMod' <$> (Plus' <$> go e1 <*> go e2) <*> pure m
-      Minus' e1 e2 -> FloorMod' <$> (Minus' <$> go e1 <*> go e2) <*> pure m
-      Mult' e1 e2 -> FloorMod' <$> (Mult' <$> go e1 <*> go e2) <*> pure m
-      Pow' e1 e2 -> ModPow' <$> go e1 <*> pure e2 <*> pure m
-      ModInv' e m' | m == m' -> ModInv' <$> go e <*> pure m
-      ModPow' e1 e2 m' | m == m' -> ModPow' <$> go e1 <*> pure e2 <*> pure m
-      MatAp' h w e1 e2 -> ModMatAp' h w <$> go e1 <*> go e2 <*> pure m
-      MatAdd' h w e1 e2 -> ModMatAdd' h w <$> go e1 <*> go e2 <*> pure m
-      MatMul' h n w e1 e2 -> ModMatMul' h n w <$> go e1 <*> go e2 <*> pure m
-      MatPow' n e1 e2 -> ModMatPow' n <$> go e1 <*> pure e2 <*> pure m
-      Proj' ts i e@MatAp' {} -> Proj' ts i <$> go e
-      Proj' ts i e@ModMatAp' {} -> Proj' ts i <$> go e
-      ModMatAp' h w e1 e2 m' | m == m' -> ModMatAp' h w <$> go e1 <*> go e2 <*> pure m
-      ModMatAdd' h w e1 e2 m' | m == m' -> ModMatAdd' h w <$> go e1 <*> go e2 <*> pure m
-      ModMatMul' h n w e1 e2 m' | m == m' -> ModMatMul' h n w <$> go e1 <*> go e2 <*> pure m
-      ModMatPow' n e1 e2 m' | m == m' -> ModMatPow' n <$> go e1 <*> pure e2 <*> pure m
-      App (Lam x t body) es -> App <$> (Lam x t <$> runFloorMod ((x, t) : env) body m) <*> pure es
-      Sum' e -> do
-        x <- genVarName'
-        return $ FloorMod' (Sum' (Map' IntTy IntTy (Lam x IntTy (FloorMod' (Var x) m)) e)) m
-      Product' e -> return $ ModProduct' e m
-      ModProduct' e m' | m == m' -> return $ ModProduct' e m
-      FloorMod' e m' ->
-        if m == m'
-          then go e
-          else runFloorMod env e (Lcm' m m')
-      e -> case curryApp e of
-        (Tuple' ts, es) -> do
-          l <- mapM go (take (length ts) es)
-          let r = drop (length ts) es
-          return $ uncurryApp (Tuple' ts) (l ++ r)
-        _ -> do
-          t <- typecheckExpr env e
-          return $ case t of
-            IntTy -> FloorMod' e m
-            _ -> e
+-- | `Mod` is a newtype to avoid mistakes that swapping left and right of mod-op.
+newtype Mod = Mod Expr
 
-runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
-runExpr env = \case
-  FloorMod' e m -> runFloorMod env e m
-  e -> return e
+isModulo' :: Expr -> Mod -> Bool
+isModulo' e (Mod m) = case e of
+  FloorMod' _ m' -> m' == m
+  ModNegate' _ m' -> m' == m
+  ModPlus' _ _ m' -> m' == m
+  ModMinus' _ _ m' -> m' == m
+  ModMult' _ _ m' -> m' == m
+  ModInv' _ m' -> m' == m
+  ModPow' _ _ m' -> m' == m
+  VecFloorMod' _ _ m' -> m' == m
+  MatFloorMod' _ _ _ m' -> m' == m
+  ModMatAp' _ _ _ _ m' -> m' == m
+  ModMatAdd' _ _ _ _ m' -> m' == m
+  ModMatMul' _ _ _ _ _ m' -> m' == m
+  ModMatPow' _ _ _ m' -> m' == m
+  ModSum' _ m' -> m' == m
+  ModProduct' _ m' -> m' == m
+  LitInt' n -> case m of
+    LitInt' m -> 0 <= n && n < m
+    _ -> False
+  Proj' ts _ e | all (== IntTy) ts -> e `isModulo'` Mod m
+  Proj' ts@(TupleTy ts' : _) _ e | all (== IntTy) ts' && all (== TupleTy ts') ts -> e `isModulo'` Mod m
+  Map' _ _ f _ -> f `isModulo'` Mod m
+  Lam _ _ body -> body `isModulo'` Mod m
+  e@(App _ _) -> case curryApp e of
+    (e@(Lam _ _ _), _) -> e `isModulo'` Mod m
+    (Tuple' ts, es) | all (== IntTy) ts -> all (`isModulo'` Mod m) es
+    (Tuple' ts@(TupleTy ts' : _), es) | all (== IntTy) ts' && all (== TupleTy ts') ts -> all (`isModulo'` Mod m) es
+    _ -> False
+  _ -> False
+
+isModulo :: Expr -> Expr -> Bool
+isModulo e m = e `isModulo'` Mod m
+
+putFloorMod :: MonadAlpha m => Mod -> Expr -> m (Maybe Expr)
+putFloorMod (Mod m) =
+  let return' = return . Just
+   in \case
+        Negate' e -> return' $ ModNegate' e m
+        Plus' e1 e2 -> return' $ ModPlus' e1 e2 m
+        Minus' e1 e2 -> return' $ ModMinus' e1 e2 m
+        Mult' e1 e2 -> return' $ ModMult' e1 e2 m
+        Pow' e1 e2 -> return' $ ModPow' e1 e2 m
+        MatAp' h w e1 e2 -> return' $ ModMatAp' h w e1 e2 m
+        MatAdd' h w e1 e2 -> return' $ ModMatAdd' h w e1 e2 m
+        MatMul' h n w e1 e2 -> return' $ ModMatMul' h n w e1 e2 m
+        MatPow' n e1 e2 -> return' $ ModMatPow' n e1 e2 m
+        Sum' e -> return' $ ModSum' e m
+        Product' e -> return' $ ModProduct' e m
+        LitInt' n -> case m of
+          LitInt' m -> return' $ LitInt' (n `mod` m)
+          _ -> return Nothing
+        Proj' ts i e | all (== IntTy) ts -> return' $ Proj' ts i (VecFloorMod' (length ts) e m)
+        Proj' ts@(TupleTy ts' : _) i e | all (== IntTy) ts' && all (== TupleTy ts') ts -> return' $ Proj' ts i (MatFloorMod' (length ts) (length ts') e m)
+        Map' t1 t2 f xs -> do
+          f <- putFloorMod (Mod m) f
+          case f of
+            Nothing -> return Nothing
+            Just f -> return' $ Map' t1 t2 f xs
+        Lam x t body -> do
+          -- TODO: rename only if required
+          y <- genVarName x
+          body <- substitute x (Var y) body
+          body <- putFloorMod (Mod m) body
+          case body of
+            Nothing -> return Nothing
+            Just body -> return' $ Lam y t body
+        e@(App _ _) -> case curryApp e of
+          (f@(Lam _ _ _), args) -> do
+            f <- putFloorMod (Mod m) f
+            case f of
+              Nothing -> return Nothing
+              Just f -> return' $ uncurryApp f args
+          (Tuple' ts, es) | all (== IntTy) ts -> do
+            es' <- mapM (putFloorMod (Mod m)) es
+            if all isNothing es'
+              then return Nothing
+              else return' $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
+          (Tuple' ts@(TupleTy ts' : _), es) | all (== IntTy) ts' && all (== TupleTy ts') ts -> do
+            es' <- mapM (putFloorMod (Mod m)) es
+            if all isNothing es'
+              then return Nothing
+              else return' $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
+          _ -> return Nothing
+        _ -> return Nothing
+
+putFloorModGeneric :: MonadAlpha m => (Expr -> Mod -> m Expr) -> Mod -> Expr -> m Expr
+putFloorModGeneric fallback m e =
+  if e `isModulo'` m
+    then return e
+    else do
+      e' <- putFloorMod m e
+      case e' of
+        Just e' -> return e'
+        Nothing -> fallback e m
+
+putFloorModInt :: MonadAlpha m => Mod -> Expr -> m Expr
+putFloorModInt = putFloorModGeneric (\e (Mod m) -> return $ FloorMod' e m)
+
+putMapFloorMod :: MonadAlpha m => Mod -> Expr -> m Expr
+putMapFloorMod = putFloorModGeneric fallback
+  where
+    fallback e (Mod m) = do
+      x <- genVarName'
+      return $ Map' IntTy IntTy (Lam x IntTy (FloorMod' (Var x) m)) e
+
+putVecFloorMod :: (MonadError Error m, MonadAlpha m) => [(VarName, Type)] -> Mod -> Expr -> m Expr
+putVecFloorMod env = putFloorModGeneric fallback
+  where
+    fallback e (Mod m) = do
+      t <- typecheckExpr env e
+      case t of
+        TupleTy ts -> return $ VecFloorMod' (length ts) e m
+        _ -> throwInternalError $ "not a vector: " ++ formatType t
+
+putMatFloorMod :: (MonadError Error m, MonadAlpha m) => [(VarName, Type)] -> Mod -> Expr -> m Expr
+putMatFloorMod env = putFloorModGeneric fallback
+  where
+    fallback e (Mod m) = do
+      t <- typecheckExpr env e
+      case t of
+        TupleTy ts@(TupleTy ts' : _) -> return $ MatFloorMod' (length ts) (length ts') e m
+        _ -> throwInternalError $ "not a matrix: " ++ formatType t
+
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+rule =
+  let go1 m f (t1, e1) = Just <$> (f <$> t1 (Mod m) e1 <*> pure m)
+      go2 m f (t1, e1) (t2, e2) = Just <$> (f <$> t1 (Mod m) e1 <*> t2 (Mod m) e2 <*> pure m)
+   in RewriteRule $ \env -> \case
+        ModNegate' e m | not (e `isModulo` m) -> go1 m ModNegate' (putFloorModInt, e)
+        ModPlus' e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m ModPlus' (putFloorModInt, e1) (putFloorModInt, e2)
+        ModMinus' e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m ModMinus' (putFloorModInt, e1) (putFloorModInt, e2)
+        ModMult' e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m ModMult' (putFloorModInt, e1) (putFloorModInt, e2)
+        ModInv' e m | not (e `isModulo` m) -> go1 m ModInv' (putFloorModInt, e)
+        ModPow' e1 e2 m | not (e1 `isModulo` m) -> go2 m ModPow' (putFloorModInt, e1) (\_ e -> return e, e2)
+        ModMatAp' h w e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m (ModMatAp' h w) (putMatFloorMod env, e1) (putVecFloorMod env, e2)
+        ModMatAdd' h w e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m (ModMatAdd' h w) (putMatFloorMod env, e1) (putMatFloorMod env, e2)
+        ModMatMul' h n w e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m (ModMatMul' h n w) (putMatFloorMod env, e1) (putMatFloorMod env, e2)
+        ModMatPow' n e1 e2 m | not (e1 `isModulo` m) -> go2 m (ModMatPow' n) (putMatFloorMod env, e1) (\_ e -> return e, e2)
+        ModSum' e m | not (e `isModulo` m) -> go1 m ModSum' (putMapFloorMod, e)
+        ModProduct' e m | not (e `isModulo` m) -> go1 m ModProduct' (putMapFloorMod, e)
+        FloorMod' e m ->
+          if e `isModulo` m
+            then return $ Just e
+            else putFloorMod (Mod m) e
+        VecFloorMod' _ e m ->
+          if e `isModulo` m
+            then return $ Just e
+            else putFloorMod (Mod m) e
+        MatFloorMod' _ _ e m ->
+          if e `isModulo` m
+            then return $ Just e
+            else putFloorMod (Mod m) e
+        _ -> return Nothing
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-runProgram = mapExprProgramM runExpr
+runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` propagates `FloorMod` to leaves of exprs.
 -- For example, this converts the following:
