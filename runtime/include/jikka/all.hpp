@@ -296,7 +296,7 @@ inline int64_t modproduct(const std::vector<int64_t> &xs, int64_t MOD) {
   for (int64_t x : xs) {
     y = y * x % MOD;
   }
-  return y;
+  return floormod(y, MOD);
 }
 
 template <class T> T minimum(const std::vector<T> &xs) {
