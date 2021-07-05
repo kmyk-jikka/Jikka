@@ -8,6 +8,12 @@
 -   It has semantics similar to OCaml and Haskell.  It's statically typed and has type inference, and all values are immutable.
 -   It has some builtin functions and operators for competitive programming.  Implementations should optimize programs to reduce computational complexity.
 
+## About BREAKING CHANGE
+
+This language specification is in initial development.
+While the second major version is zero (`v5.0.y.z`), anything MAY change at any time.
+See also [item (4.) of Semantic Versioning](https://semver.org/#spec-item-4).
+
 
 ## Syntax
 
