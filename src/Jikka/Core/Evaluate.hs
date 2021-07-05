@@ -237,7 +237,13 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     MatAdd _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matadd'
     MatMul _ _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matmul'
     MatPow _ -> go2' valueToMatrix valueToInt valueFromMatrix matpow'
+    VecFloorMod _ -> go2 valueToVector valueToInt valueFromVector $ \x m -> V.map (`mod` m) x
+    MatFloorMod _ _ -> go2 valueToMatrix valueToInt valueFromMatrix $ \f m -> fmap (`mod` m) f
     -- modular functions
+    ModNegate -> go2 valueToInt valueToInt ValInt $ \a m -> (- a) `mod` m
+    ModPlus -> go3 valueToInt valueToInt valueToInt ValInt $ \a b m -> (a + b) `mod` m
+    ModMinus -> go3 valueToInt valueToInt valueToInt ValInt $ \a b m -> (a - b) `mod` m
+    ModMult -> go3 valueToInt valueToInt valueToInt ValInt $ \a b m -> (a * b) `mod` m
     ModInv -> go2' valueToInt valueToInt ValInt modinv
     ModPow -> go3' valueToInt valueToInt valueToInt ValInt modpow
     ModMatAp _ _ -> go3' pure pure valueToInt valueFromModVector $ \f x m -> join (matap' <$> valueToModMatrix m f <*> valueToModVector m x)
@@ -256,6 +262,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     SetAt _ -> go3' valueToList valueToInt pure ValList setAtEither
     Elem _ -> go2 pure valueToList ValBool V.elem
     Sum -> go1 valueToIntList ValInt sum
+    ModSum -> go2 valueToIntList valueToInt ValInt $ \xs m -> sum xs `mod` m
     Product -> go1 valueToIntList ValInt product
     ModProduct -> go2 valueToIntList valueToInt ValInt $ \xs m -> product xs `mod` m
     Min1 _ -> go1 valueToList id (V.minimumBy compareValues')

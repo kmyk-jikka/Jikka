@@ -131,9 +131,21 @@ data Builtin
     MatMul Int Int Int
   | -- | matrix power \(: \int^{n \times n} \to \int \to \int^{n \times n}\)
     MatPow Int
+  | -- | vector point-wise floor-mod \(: \int^{n} \to \int \to \int^{n}\)
+    VecFloorMod Int
+  | -- | matrix point-wise floor-mod \(: \int^{H \times W} \to \int \to \int^{H \times W}\)
+    MatFloorMod Int Int
   | -- modular functions
 
     -- | \(: \int \to \int \to \int\)
+    ModNegate
+  | -- | \(: \int \to \int \to \int \to \int\)
+    ModPlus
+  | -- | \(: \int \to \int \to \int \to \int\)
+    ModMinus
+  | -- | \(: \int \to \int \to \int \to \int\)
+    ModMult
+  | -- | \(: \int \to \int \to \int\)
     ModInv
   | -- | \(: \int \to \int \to \int \to \int\)
     ModPow
@@ -171,6 +183,8 @@ data Builtin
     Sum
   | -- | \(: \list(\int) \to \int\)
     Product
+  | -- | \(: \list(\int) \to \int \to \int\)
+    ModSum
   | -- | \(: \list(\int) \to \int \to \int\)
     ModProduct
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)

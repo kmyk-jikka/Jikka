@@ -169,7 +169,13 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.MatAdd h w -> go2 $ \f g -> Y.Call (Y.Function "jikka::matadd" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g]
     X.MatMul h n w -> go2 $ \f g -> Y.Call (Y.Function "jikka::matmul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g]
     X.MatPow n -> go2 $ \f k -> Y.Call (Y.Function "jikka::matpow" [Y.TyIntValue (fromIntegral n)]) [f, k]
+    X.VecFloorMod n -> go2 $ \x m -> Y.Call (Y.Function "jikka::vecfloormod" [Y.TyIntValue (fromIntegral n)]) [x, m]
+    X.MatFloorMod h w -> go2 $ \f m -> Y.Call (Y.Function "jikka::matfloormod" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, m]
     -- modular functions
+    X.ModNegate -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modnegate" []) [e1, e2]
+    X.ModPlus -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modplus" []) [e1, e2, e3]
+    X.ModMinus -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modminus" []) [e1, e2, e3]
+    X.ModMult -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modmult" []) [e1, e2, e3]
     X.ModInv -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
     X.ModPow -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
     X.ModMatAp h w -> go3 $ \f x m -> Y.Call (Y.Function "jikka::modmatap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x, m]
@@ -207,6 +213,7 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
       t <- runType t
       return $ Y.Call (Y.Function "jikka::elem" [t]) [e1, e2]
     X.Sum -> go1 $ \e -> Y.Call (Y.Function "jikka::sum" []) [e]
+    X.ModSum -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modsum" []) [e1, e2]
     X.Product -> go1 $ \e -> Y.Call (Y.Function "jikka::product" []) [e]
     X.ModProduct -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modproduct" []) [e1, e2]
     X.Min1 t -> go1' $ \e -> do
