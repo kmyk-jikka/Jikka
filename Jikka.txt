@@ -655,6 +655,24 @@ MatMul :: Int -> Int -> Int -> Builtin
 -- | matrix power &lt;math&gt;
 MatPow :: Int -> Builtin
 
+-- | vector point-wise floor-mod &lt;math&gt;
+VecFloorMod :: Int -> Builtin
+
+-- | matrix point-wise floor-mod &lt;math&gt;
+MatFloorMod :: Int -> Int -> Builtin
+
+-- | &lt;math&gt;
+ModNegate :: Builtin
+
+-- | &lt;math&gt;
+ModPlus :: Builtin
+
+-- | &lt;math&gt;
+ModMinus :: Builtin
+
+-- | &lt;math&gt;
+ModMult :: Builtin
+
 -- | &lt;math&gt;
 ModInv :: Builtin
 
@@ -708,6 +726,9 @@ Sum :: Builtin
 
 -- | &lt;math&gt;
 Product :: Builtin
+
+-- | &lt;math&gt;
+ModSum :: Builtin
 
 -- | &lt;math&gt;
 ModProduct :: Builtin
@@ -916,6 +937,12 @@ pattern MatAp' :: Int -> Int -> Expr -> Expr -> Expr
 pattern MatAdd' :: Int -> Int -> Expr -> Expr -> Expr
 pattern MatMul' :: Int -> Int -> Int -> Expr -> Expr -> Expr
 pattern MatPow' :: Int -> Expr -> Expr -> Expr
+pattern VecFloorMod' :: Int -> Expr -> Expr -> Expr
+pattern MatFloorMod' :: Int -> Int -> Expr -> Expr -> Expr
+pattern ModNegate' :: Expr -> Expr -> Expr
+pattern ModPlus' :: Expr -> Expr -> Expr -> Expr
+pattern ModMinus' :: Expr -> Expr -> Expr -> Expr
+pattern ModMult' :: Expr -> Expr -> Expr -> Expr
 pattern ModInv' :: Expr -> Expr -> Expr
 pattern ModPow' :: Expr -> Expr -> Expr -> Expr
 pattern ModMatAp' :: Int -> Int -> Expr -> Expr -> Expr -> Expr
@@ -934,6 +961,7 @@ pattern SetAt' :: Type -> Expr -> Expr -> Expr -> Expr
 pattern Elem' :: Type -> Expr -> Expr -> Expr
 pattern Sum' :: Expr -> Expr
 pattern Product' :: Expr -> Expr
+pattern ModSum' :: Expr -> Expr -> Expr
 pattern ModProduct' :: Expr -> Expr -> Expr
 pattern Min1' :: Type -> Expr -> Expr
 pattern Max1' :: Type -> Expr -> Expr
@@ -1011,6 +1039,28 @@ curryFunTy :: [Type] -> Type -> Type
 curryLam :: [(VarName, Type)] -> Expr -> Expr
 uncurryApp :: Expr -> [Expr] -> Expr
 
+module Jikka.Core.Language.RewriteRules
+newtype RewriteRule m
+RewriteRule :: ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
+pureRewriteRule :: Monad m => ([(VarName, Type)] -> Expr -> Maybe Expr) -> RewriteRule m
+simpleRewriteRule :: Monad m => (Expr -> Maybe Expr) -> RewriteRule m
+
+-- | <a>applyRewriteRule</a> applies a given rule to a given expr. This
+--   rewrites on all sub-exprs of the given expr, and repeats to rewrite
+--   while it is possible.
+--   
+--   <ul>
+--   <li>This function is idempotent.</li>
+--   <li>This function doesn't terminate when a given rewrite rule doesn't
+--   terminate.</li>
+--   </ul>
+applyRewriteRule :: Monad m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+applyRewriteRuleToplevelExpr :: Monad m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> m (Maybe ToplevelExpr)
+applyRewriteRuleProgram :: Monad m => RewriteRule m -> Program -> m (Maybe Program)
+applyRewriteRuleProgram' :: Monad m => RewriteRule m -> Program -> m Program
+instance GHC.Base.Monad m => GHC.Base.Semigroup (Jikka.Core.Language.RewriteRules.RewriteRule m)
+instance GHC.Base.Monad m => GHC.Base.Monoid (Jikka.Core.Language.RewriteRules.RewriteRule m)
+
 
 module Jikka.Core.Format
 run :: Applicative m => Program -> m Text
@@ -1074,6 +1124,22 @@ run' :: Program -> Program
 --   propagate.
 isSmallExpr :: Expr -> Bool
 
+module Jikka.Core.Convert.ConstantFolding
+
+-- | <a>run</a> folds constants in given programs. For example, this
+--   converts the following:
+--   
+--   <pre>
+--   3 x + 2 + 1
+--   </pre>
+--   
+--   to the follwoing:
+--   
+--   <pre>
+--   3 x + 3
+--   </pre>
+run :: MonadError Error m => Program -> m Program
+
 module Jikka.Core.Convert.TrivialLetElimination
 
 -- | <a>run</a> remove let-exprs whose assigned variables are used only at
@@ -1098,22 +1164,6 @@ module Jikka.Core.Convert.TrivialLetElimination
 run :: MonadError Error m => Program -> m Program
 run' :: Program -> Program
 
-module Jikka.Core.Convert.PropagateMod
-
--- | <a>run</a> propagates <a>FloorMod</a> to leaves of exprs. For example,
---   this converts the following:
---   
---   <pre>
---   mod ((fun x -&gt; x * x + x) y) 1000000007
---   </pre>
---   
---   to:
---   
---   <pre>
---   (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y
---   </pre>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
 module Jikka.Core.Convert.ImmediateAppToLet
 
 -- | <a>run</a> does beta-reductions in given programs. For example, this
@@ -1129,22 +1179,6 @@ module Jikka.Core.Convert.ImmediateAppToLet
 --   let x = a in x + x
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-module Jikka.Core.Convert.ConstantFolding
-
--- | <a>run</a> folds constants in given programs. For example, this
---   converts the following:
---   
---   <pre>
---   3 x + 2 + 1
---   </pre>
---   
---   to the follwoing:
---   
---   <pre>
---   3 x + 3
---   </pre>
-run :: MonadError Error m => Program -> m Program
 
 
 module Jikka.Core.Convert.ANormal
@@ -1278,6 +1312,22 @@ module Jikka.Core.Convert.UnpackTuple
 --   
 --   <pre>
 --   tuple (foldl (fun x y -&gt; x + y) 0 [1, 2, 3])
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+module Jikka.Core.Convert.PropagateMod
+
+-- | <a>run</a> propagates <a>FloorMod</a> to leaves of exprs. For example,
+--   this converts the following:
+--   
+--   <pre>
+--   mod ((fun x -&gt; x * x + x) y) 1000000007
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   (fun x -&gt; mod (mod (x * x) 1000000007 + x) 1000000007) y
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
