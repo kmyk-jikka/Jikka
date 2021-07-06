@@ -43,6 +43,9 @@ simpleRewriteRule f = RewriteRule (\_ e -> return (f e))
 
 -- | `applyRewriteRule` applies a given rule to a given expr.
 -- This rewrites on all sub-exprs of the given expr, and repeats to rewrite while it is possible.
+--
+-- * This function is idempotent.
+-- * This function doesn't terminate when a given rewrite rule doesn't terminate.
 applyRewriteRule :: Monad m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
 applyRewriteRule = applyRewriteRulePreOrder
 
