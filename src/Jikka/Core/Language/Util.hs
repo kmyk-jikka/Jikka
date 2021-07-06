@@ -60,7 +60,13 @@ mapTypeInBuiltin f = \case
   MatAdd h w -> MatAdd h w
   MatMul h n w -> MatMul h n w
   MatPow n -> MatPow n
+  VecFloorMod n -> VecFloorMod n
+  MatFloorMod h w -> MatFloorMod h w
   -- modular functionsmodular
+  ModNegate -> ModNegate
+  ModPlus -> ModPlus
+  ModMinus -> ModMinus
+  ModMult -> ModMult
   ModInv -> ModInv
   ModPow -> ModPow
   ModMatAp h w -> ModMatAp h w
@@ -80,6 +86,7 @@ mapTypeInBuiltin f = \case
   Elem t -> Elem (f t)
   Sum -> Sum
   Product -> Product
+  ModSum -> ModSum
   ModProduct -> ModProduct
   Min1 t -> Min1 (f t)
   Max1 t -> Max1 (f t)

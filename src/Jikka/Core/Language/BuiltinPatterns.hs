@@ -82,7 +82,19 @@ pattern MatMul' h n w e1 e2 = AppBuiltin2 (MatMul h n w) e1 e2
 
 pattern MatPow' n e1 e2 = AppBuiltin2 (MatPow n) e1 e2
 
+pattern VecFloorMod' n e1 e2 = AppBuiltin2 (VecFloorMod n) e1 e2
+
+pattern MatFloorMod' h w e1 e2 = AppBuiltin2 (MatFloorMod h w) e1 e2
+
 -- modular functions
+pattern ModNegate' e1 e2 = AppBuiltin2 ModNegate e1 e2
+
+pattern ModPlus' e1 e2 e3 = AppBuiltin3 ModPlus e1 e2 e3
+
+pattern ModMinus' e1 e2 e3 = AppBuiltin3 ModMinus e1 e2 e3
+
+pattern ModMult' e1 e2 e3 = AppBuiltin3 ModMult e1 e2 e3
+
 pattern ModInv' e1 e2 = AppBuiltin2 ModInv e1 e2
 
 pattern ModPow' e1 e2 e3 = AppBuiltin3 ModPow e1 e2 e3
@@ -119,6 +131,8 @@ pattern Elem' t e1 e2 = AppBuiltin2 (Elem t) e1 e2
 pattern Sum' e = AppBuiltin Sum e
 
 pattern Product' e = AppBuiltin Product e
+
+pattern ModSum' e1 e2 = AppBuiltin2 ModSum e1 e2
 
 pattern ModProduct' e1 e2 = AppBuiltin2 ModProduct e1 e2
 

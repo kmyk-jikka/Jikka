@@ -18,7 +18,8 @@ run' = flip evalAlphaT 0 . run
 spec :: Spec
 spec = describe "run" $ do
   it "works" $ do
-    let f e = FloorMod' e (LitInt' 1000000007)
+    let m = LitInt' 1000000007
+    let f e = FloorMod' e m
     let prog =
           ResultExpr
             ( Lam
@@ -31,6 +32,6 @@ spec = describe "run" $ do
             ( Lam
                 "y"
                 IntTy
-                (App (Lam "x" IntTy (f (Plus' (f (Mult' (f (Var "x")) (f (Var "x")))) (f (Var "x"))))) (Var "y"))
+                (App (Lam "x$0" IntTy (ModPlus' (ModMult' (f (Var "x$0")) (f (Var "x$0")) m) (f (Var "x$0")) m)) (Var "y"))
             )
     run' prog `shouldBe` Right expected

@@ -48,7 +48,13 @@ builtinToType = \case
   MatAdd h w -> Fun2Ty (matrixTy h w) (matrixTy h w) (matrixTy h w)
   MatMul h n w -> Fun2Ty (matrixTy h n) (matrixTy n w) (matrixTy h w)
   MatPow n -> Fun2Ty (matrixTy n n) IntTy (matrixTy n n)
+  VecFloorMod n -> Fun2Ty (vectorTy n) IntTy (vectorTy n)
+  MatFloorMod h w -> Fun2Ty (matrixTy h w) IntTy (matrixTy h w)
   -- modular functions
+  ModNegate -> Fun2STy IntTy
+  ModPlus -> Fun3STy IntTy
+  ModMinus -> Fun3STy IntTy
+  ModMult -> Fun3STy IntTy
   ModInv -> Fun2STy IntTy
   ModPow -> Fun3STy IntTy
   ModMatAp h w -> Fun3Ty (matrixTy h w) (vectorTy w) IntTy (vectorTy h)
@@ -68,6 +74,7 @@ builtinToType = \case
   Elem t -> Fun2Ty t (ListTy t) BoolTy
   Sum -> FunLTy IntTy
   Product -> FunLTy IntTy
+  ModSum -> Fun2Ty (ListTy IntTy) IntTy IntTy
   ModProduct -> Fun2Ty (ListTy IntTy) IntTy IntTy
   Min1 t -> FunLTy t
   Max1 t -> FunLTy t
