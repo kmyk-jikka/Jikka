@@ -18,6 +18,9 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
+import qualified Jikka.Core.Convert.CloseAll as CloseAll
+import qualified Jikka.Core.Convert.CloseMin as CloseMin
+import qualified Jikka.Core.Convert.CloseSum as CloseSum
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.ImmediateAppToLet as ImmediateAppToLet
@@ -29,7 +32,7 @@ import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import qualified Jikka.Core.Convert.UnpackTuple as UnpackTuple
-import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Expr (Program)
 
 run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run' prog = do
@@ -44,6 +47,9 @@ run' prog = do
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog
   prog <- ShortCutFusion.run prog
+  prog <- CloseSum.run prog
+  prog <- CloseAll.run prog
+  prog <- CloseMin.run prog
   StrengthReduction.run prog
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program

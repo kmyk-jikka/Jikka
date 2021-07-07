@@ -105,6 +105,8 @@ pattern ModMatMul' h n w e1 e2 e3 = AppBuiltin3 (ModMatMul h n w) e1 e2 e3
 pattern ModMatPow' n e1 e2 e3 = AppBuiltin3 (ModMatPow n) e1 e2 e3
 
 -- list functions
+pattern Nil' t = Lit (LitNil t)
+
 pattern Cons' t e1 e2 = AppBuiltin2 (Cons t) e1 e2
 
 pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3

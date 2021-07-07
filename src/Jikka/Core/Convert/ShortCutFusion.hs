@@ -11,11 +11,22 @@
 -- Portability : portable
 module Jikka.Core.Convert.ShortCutFusion
   ( run,
+
+    -- * internal rules
+    rule,
+    reduceBuild,
+    reduceMapBuild,
+    reduceMap,
+    reduceMapMap,
+    reduceFoldMap,
+    reduceFold,
+    reduceFoldBuild,
   )
 where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Core.Format (formatExpr)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -23,115 +34,166 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
--- | `reduceBuild` converts all other list constucting functions to `Range1`.
+-- |
+-- * `Range1` and `Tabulate` remain.
+-- * `Range2` is removed.
+-- * `Range3` is removed.
+-- * `Nil` and `Cons` are kept as is.
 reduceBuild :: MonadAlpha m => RewriteRule m
-reduceBuild = RewriteRule $ \_ -> \case
-  Tabulate' t n f -> return . Just $ Map' IntTy t f (Range1' n)
-  Range2' l r -> do
-    let n = Minus' r l
-    x <- genVarName'
-    return . Just $ Tabulate' IntTy (Lam x IntTy (Plus' l (Var x))) n
-  Range3' l r step -> do
-    let n = CeilDiv' (Minus' r l) step
-    x <- genVarName'
-    return . Just $ Tabulate' IntTy (Lam x IntTy (Plus' l (Mult' step (Var x)))) n
-  _ -> return Nothing
+reduceBuild =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        Tabulate' _ n (LamId _ _) -> return' $ Range1' n
+        Range2' l r -> do
+          let n = Minus' r l
+          x <- genVarName'
+          return' $ Tabulate' IntTy n (Lam x IntTy (Plus' l (Var x)))
+        Range3' l r step -> do
+          let n = CeilDiv' (Minus' r l) step
+          x <- genVarName'
+          return' $ Tabulate' IntTy n (Lam x IntTy (Plus' l (Mult' step (Var x))))
+        _ -> return Nothing
 
+reduceMapBuild :: MonadAlpha m => RewriteRule m
+reduceMapBuild =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        -- reduce `Map`
+        Map' _ t2 f (Range1' n) -> return' $ Tabulate' t2 n f
+        Map' _ t2 g (Tabulate' _ n f) -> do
+          x <- genVarName'
+          let h = Lam x IntTy (App g (App f (Var x)))
+          return' $ Tabulate' t2 n h
+        -- reduce `Sorted`
+        Sorted' _ (Range1' n) -> return' $ Range1' n
+        -- reduce `Reversed`
+        Reversed' _ (Range1' n) -> do
+          x <- genVarName'
+          let f = Lam x IntTy (Minus' (Minus' n (Var x)) (LitInt' 1))
+          return' $ Tabulate' IntTy f n
+        Reversed' t (Tabulate' _ n f) -> do
+          x <- genVarName'
+          let g = Lam x IntTy (App f (Minus' (Minus' n (Var x)) (LitInt' 1)))
+          return' $ Tabulate' t n g
+        -- others
+        _ -> return Nothing
+
+reduceMap :: Monad m => RewriteRule m
+reduceMap =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        -- reduce `Map`
+        Map' _ _ (LamId _ _) xs -> return' xs
+        -- reduce `Filter`
+        Filter' t (Lam _ _ LitFalse) _ -> return' (Nil' t)
+        Filter' _ (Lam _ _ LitTrue) xs -> return' xs
+        -- reduce `List`
+        List' _ xs -> return' xs
+        -- others
+        _ -> return Nothing
+
+-- |
+-- * Functions are reordered as:
+--   * `Sort` and `Reversed` (functions to reorder) are lastly applied to lists
+--   * `Map` and `SetAt` (functions to modify lists)
+--   * `Filter` (funcitons to reduce lengths) is firstly applied to lists
 reduceMapMap :: MonadAlpha m => RewriteRule m
-reduceMapMap = RewriteRule $ \_ -> \case
-  -- reduce `Reversed`
-  Reversed' _ (Reversed' _ xs) -> return $ Just xs
-  Reversed' _ (Map' t1 t2 f xs) -> return . Just $ Map' t1 t2 f (Reversed' t1 xs)
-  -- reduce `Sorted`
-  Sorted' t (Reversed' _ xs) -> return . Just $ Sorted' t xs
-  Sorted' t (Sorted' _ xs) -> return . Just $ Sorted' t xs
-  Sorted' _ (Range1' n) -> return . Just $ Range1' n
-  Sorted' _ (Map' t1 t2 f xs) -> return . Just $ Map' t1 t2 f (Sorted' t1 xs)
-  -- reduce `Map`
-  Map' _ _ (LamId _ _) xs -> return $ Just xs
-  Map' _ t3 f (Map' t1 _ (Lam x t e) xs) -> return . Just $ Map' t1 t3 (Lam x t (App f e)) xs
-  Map' _ t3 g (Map' t1 _ f xs) -> do
-    x <- genVarName'
-    return . Just $ Map' t1 t3 (Lam x t1 (App g (App f (Var x)))) xs
-  _ -> return Nothing
+reduceMapMap =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        -- reduce `Scanl`
+        -- reduce `SetAt`
+        -- reduce `Map`
+        Map' _ _ (LamId _ _) xs -> return' xs
+        Map' _ t3 g (Map' t1 _ f xs) -> do
+          x <- genVarName'
+          let h = Lam x t1 (App g (App f (Var x)))
+          return' $ Map' t1 t3 h xs
+        Map' t1 t2 f (Reversed' _ xs) -> return' $ Reversed' t2 (Map' t1 t2 f xs)
+        -- reduce `Filter`
+        Filter' t2 g (Map' t1 _ f xs) -> do
+          x <- genVarName'
+          let h = Lam x t1 (App g (App f (Var x)))
+          return' $ Map' t1 t2 f (Filter' t1 h xs)
+        Filter' t g (Filter' _ f xs) -> do
+          x <- genVarName'
+          let h = Lam x t (And' (App g (Var x)) (App f (Var x)))
+          return' $ Filter' t h xs
+        Filter' t f (Sorted' _ xs) -> return' $ Sorted' t (Filter' t f xs)
+        Filter' t f (Reversed' _ xs) -> return' $ Reversed' t (Filter' t f xs)
+        -- reduce `Reversed`
+        Reversed' _ (Reversed' _ xs) -> return' xs
+        Reversed' _ (Map' t1 t2 f xs) -> return' $ Map' t1 t2 f (Reversed' t1 xs)
+        -- reduce `Sorted`
+        Sorted' t (Reversed' _ xs) -> return' $ Sorted' t xs
+        Sorted' t (Sorted' _ xs) -> return' $ Sorted' t xs
+        -- others
+        _ -> return Nothing
 
-reduceFoldMap :: Monad m => RewriteRule m
-reduceFoldMap = simpleRewriteRule $ \case
-  -- reduce `Reversed`
-  Len' t (Reversed' _ xs) -> Just $ Len' t xs
-  At' t (Reversed' _ xs) i -> Just $ At' t xs (Minus' (Minus' (Len' t xs) i) Lit1)
-  Sum' (Reversed' _ xs) -> Just $ Sum' xs
-  Product' (Reversed' _ xs) -> Just $ Product' xs
-  Max1' t (Reversed' _ xs) -> Just $ Max1' t xs
-  Min1' t (Reversed' _ xs) -> Just $ Min1' t xs
-  ArgMin' t (Reversed' _ xs) -> Just $ ArgMin' t xs
-  ArgMax' t (Reversed' _ xs) -> Just $ ArgMax' t xs
-  All' (Reversed' _ xs) -> Just $ All' xs
-  Any' (Reversed' _ xs) -> Just $ Any' xs
-  -- reduce `Sorted`
-  Len' t (Sorted' _ xs) -> Just $ Len' t xs
-  Sum' (Sorted' _ xs) -> Just $ Sum' xs
-  Product' (Sorted' _ xs) -> Just $ Product' xs
-  Max1' t (Sorted' _ xs) -> Just $ Max1' t xs
-  Min1' t (Sorted' _ xs) -> Just $ Min1' t xs
-  All' (Sorted' _ xs) -> Just $ All' xs
-  Any' (Sorted' _ xs) -> Just $ Any' xs
-  -- reduce `Map`
-  Len' _ (Map' t1 _ _ xs) -> Just $ Len' t1 xs
-  At' _ (Map' t1 _ f xs) i -> Just $ App f (At' t1 xs i)
-  Sum' (Map' t1 _ (Lam x _ e) xs) | x `isUnusedVar` e -> Just $ Mult' (Len' t1 xs) e
-  Sum' (Map' t1 t2 (Lam x t (Negate' e)) xs) -> Just $ Negate' (Sum' (Map' t1 t2 (Lam x t e) xs))
-  Sum' (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) -> Just $ Plus' (Sum' (Map' t1 t2 (Lam x t e1) xs)) (Sum' (Map' t1 t2 (Lam x t e2) xs))
-  Sum' (Map' t1 t2 (Lam x t (Mult' e1 e2)) xs) | x `isUnusedVar` e1 -> Just $ Mult' e1 (Sum' (Map' t1 t2 (Lam x t e2) xs))
-  Sum' (Map' t1 t2 (Lam x t (Mult' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ Mult' e2 (Sum' (Map' t1 t2 (Lam x t e1) xs))
-  Product' (Map' t1 _ (Lam x _ e) xs) | x `isUnusedVar` e -> Just $ Pow' e (Len' t1 xs)
-  Product' (Map' t1 t2 (Lam x t (Negate' e)) xs) -> Just $ Mult' (Pow' (Negate' Lit0) (Len' t1 xs)) (Product' (Map' t1 t2 (Lam x t e) xs))
-  Product' (Map' t1 t2 (Lam x t (Mult' e1 e2)) xs) -> Just $ Mult' (Product' (Map' t1 t2 (Lam x t e1) xs)) (Product' (Map' t1 t2 (Lam x t e2) xs))
-  Max1' _ (Map' _ _ (Lam x _ e) _) | x `isUnusedVar` e -> Just e
-  Max1' _ (Map' t1 t2 (Lam x t (Max2' t' e1 e2)) xs) -> Just $ Max2' t' (Map' t1 t2 (Lam x t e1) xs) (Map' t1 t2 (Lam x t e2) xs)
-  Max1' _ (Map' t1 t2 (Lam x t (Negate' e)) xs) -> Just $ Negate' (Min1' t2 (Map' t1 t2 (Lam x t e) xs))
-  Max1' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> Just $ Plus' e1 (Max1' t2 (Map' t1 t2 (Lam x t e2) xs))
-  Max1' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ Plus' (Max1' t2 (Map' t1 t2 (Lam x t e1) xs)) e1
-  Min1' _ (Map' _ _ (Lam x _ e) _) | x `isUnusedVar` e -> Just e
-  Min1' _ (Map' t1 t2 (Lam x t (Min2' t' e1 e2)) xs) -> Just $ Min2' t' (Map' t1 t2 (Lam x t e1) xs) (Map' t1 t2 (Lam x t e2) xs)
-  Min1' _ (Map' t1 t2 (Lam x t (Negate' e)) xs) -> Just $ Negate' (Max1' t2 (Map' t1 t2 (Lam x t e) xs))
-  Min1' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> Just $ Plus' e1 (Min1' t2 (Map' t1 t2 (Lam x t e2) xs))
-  Min1' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ Plus' (Min1' t2 (Map' t1 t2 (Lam x t e1) xs)) e1
-  ArgMax' _ (Map' _ _ (Lam x t e) xs) | x `isUnusedVar` e -> Just $ Minus' (Len' t xs) Lit1
-  ArgMax' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> Just $ ArgMax' t2 (Map' t1 t2 (Lam x t e2) xs)
-  ArgMax' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ ArgMax' t2 (Map' t1 t2 (Lam x t e1) xs)
-  ArgMin' _ (Map' _ _ (Lam x _ e) _) | x `isUnusedVar` e -> Just Lit0
-  ArgMin' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e1 -> Just $ ArgMin' t2 (Map' t1 t2 (Lam x t e2) xs)
-  ArgMin' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ ArgMin' t2 (Map' t1 t2 (Lam x t e1) xs)
-  _ -> Nothing
-
-reduceFoldBuild :: Monad m => RewriteRule m
-reduceFoldBuild = simpleRewriteRule $ \case
-  Foldl' _ t (Lam2 x1 t1 x2 _ body) x (Range1' n) | x2 `isUnusedVar` body -> Just $ Iterate' t n (Lam x1 t1 body) x
-  Len' _ (Range1' n) -> Just n
-  At' _ (Range1' _) i -> Just i
-  Sum' (Range1' n) -> Just $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
-  Sum' (Map' _ _ (Lam x _ (Mult' x' x'')) (Range1' n)) | x' == Var x && x'' == Var x -> Just $ FloorDiv' (Mult' n (Mult' (Minus' n Lit1) (Minus' (Mult' Lit2 n) Lit1))) (Lit (LitInt 6))
-  Sum' (Map' _ _ (Lam x _ (Mult' x' (Mult' x'' x'''))) (Range1' n)) | x' == Var x && x'' == Var x && x''' == Var x -> Just $ FloorDiv' (Mult' n (Mult' n (Mult' (Minus' n Lit1) (Minus' n Lit1)))) (Lit (LitInt 4))
-  Product' (Range1' n) -> Just $ If' IntTy (Equal' IntTy n Lit0) Lit1 Lit0
-  Max1' _ (Range1' n) -> Just $ Minus' n Lit1
-  Min1' _ (Range1' _) -> Just Lit0
-  ArgMax' _ (Range1' n) -> Just $ Minus' n Lit1
-  ArgMin' _ (Range1' _) -> Just Lit0
-  _ -> Nothing
+reduceFoldMap :: MonadAlpha m => RewriteRule m
+reduceFoldMap =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        -- reduce `Reversed`
+        Len' t (Reversed' _ xs) -> return' $ Len' t xs
+        Elem' t x (Reversed' _ xs) -> return' $ Elem' t x xs
+        At' t (Reversed' _ xs) i -> return' $ At' t xs (Minus' (Minus' (Len' t xs) i) Lit1)
+        -- reduce `Sorted`
+        Len' t (Sorted' _ xs) -> return' $ Len' t xs
+        Elem' t x (Sorted' _ xs) -> return' $ Elem' t x xs
+        -- reduce `Map`
+        Len' _ (Map' t1 _ _ xs) -> return' $ Len' t1 xs
+        At' _ (Map' t1 _ f xs) i -> return' $ App f (At' t1 xs i)
+        Foldl' _ t3 g init (Map' t1 _ f xs) -> do
+          x3 <- genVarName'
+          x1 <- genVarName'
+          return' $ Foldl' t1 t3 (Lam2 x3 t3 x1 t1 (App2 g (Var x1) (App f (Var x1)))) init xs
+        -- others
+        _ -> return Nothing
 
 reduceFold :: Monad m => RewriteRule m
 reduceFold = simpleRewriteRule $ \case
-  Iterate' _ k (Lam x _ (MatAp' n _ f (Var x'))) v | x `isUnusedVar` f && x == x' -> Just $ MatAp' n n (MatPow' n f k) v
+  Foldl' t1 t2 (Lam2 x2 _ x1 _ body) init xs | x1 `isUnusedVar` body -> Just $ Iterate' t2 (Len' t1 xs) (Lam x2 t2 body) init
   _ -> Nothing
+
+reduceFoldBuild :: MonadAlpha m => RewriteRule m
+reduceFoldBuild =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        -- reduce `Foldl`
+        Foldl' _ _ _ init (Nil' _) -> return' init
+        Foldl' t1 t2 g init (Cons' _ x xs) -> return' $ Foldl' t1 t2 g (App2 g init x) xs
+        Foldl' _ t2 g init (Tabulate' _ n f) -> do
+          x0 <- genVarName'
+          x2 <- genVarName'
+          let h = Lam2 x2 t2 x0 IntTy (App2 g (Var x2) (App f (Var x0)))
+          return' $ Foldl' IntTy t2 h init (Range1' n)
+        -- reduce `Len`
+        Len' _ (Nil' _) -> return' Lit0
+        Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)
+        Len' _ (Range1' n) -> return' n
+        Len' _ (Tabulate' _ n _) -> return' n
+        -- reduce `At`
+        At' t (Nil' _) i -> return' $ Bottom' t $ "cannot subscript empty list: index = " ++ formatExpr i
+        At' t (Cons' _ x xs) i -> return' $ If' t (Equal' IntTy i Lit0) x (At' t xs (Minus' i Lit1))
+        At' _ (Range1' _) i -> return' i
+        At' _ (Tabulate' _ _ f) i -> return' $ App f i
+        -- reduce `Elem`
+        Elem' _ _ (Nil' _) -> return' LitFalse
+        Elem' t y (Cons' _ x xs) -> return' $ And' (Equal' t x y) (Elem' t y xs)
+        Elem' _ x (Range1' n) -> return' $ And' (LessEqual' IntTy Lit0 x) (LessThan' IntTy x n)
+        -- others
+        _ -> return Nothing
 
 rule :: MonadAlpha m => RewriteRule m
 rule =
   mconcat
-    [ reduceBuild,
+    [ reduceFoldMap,
+      reduceMap,
       reduceMapMap,
-      reduceFoldMap,
       reduceFoldBuild,
+      reduceMapBuild,
+      reduceBuild,
       reduceFold
     ]
 
@@ -142,13 +204,7 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- * This function is mainly for polymorphic reductions. This dosn't do much about concrete things, e.g., arithmetical operations.
 --
--- == References
---
--- * <https://wiki.haskell.org/Short_cut_fusion Short cut fusion - HaskellWiki>
--- * <https://wiki.haskell.org/Correctness_of_short_cut_fusion Correctness of short cut fusion - HaskellWiki>
--- * <https://qiita.com/autotaker1984/items/5ec0bbd5a44e146dbada GHCの融合変換を理解する(前編) - Qiita>
---
--- == List of related builtin functions
+-- == List of builtin functions which are reduced
 --
 -- \[
 --     \newcommand\int{\mathbf{int}}
@@ -177,19 +233,10 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- === Fold functions
 --
+-- * `Foldl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)
 -- * `Len` \(: \forall \alpha. \list(\alpha) \to \int\)
 -- * `At` \(: \forall \alpha. \list(\alpha) \to \int \to \alpha\)
 -- * `Elem` \(: \forall \alpha. \alpha \to \list(\alpha) \to \bool\)
--- * `Max1` \(: \forall \alpha. \list(\alpha) \to \alpha\)
--- * `Min1` \(: \forall \alpha. \list(\alpha) \to \alpha\)
--- * `ArgMax` \(: \forall \alpha. \list(\alpha) \to \int\)
--- * `ArgMin` \(: \forall \alpha. \list(\alpha) \to \int\)
--- * `Sum` \(: \list(\int) \to \int\)
--- * `Product` \(: \list(\int) \to \int\)
--- * `ModSum` \(: \list(\int) \to \int \to \int\)
--- * `ModProduct` \(: \list(\int) \to \int \to \int\)
--- * `All` \(: \list(\bool) \to \bool\)
--- * `Any` \(: \list(\bool) \to \bool\)
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ShortCutFusion" $ do
   precondition $ do
