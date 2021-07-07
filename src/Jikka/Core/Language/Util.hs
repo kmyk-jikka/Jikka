@@ -3,6 +3,7 @@
 module Jikka.Core.Language.Util where
 
 import Control.Monad.Identity
+import Data.Maybe (isJust)
 import Jikka.Common.Alpha
 import Jikka.Core.Language.Expr
 
@@ -198,3 +199,25 @@ curryLam args body = foldr (uncurry Lam) body args
 
 uncurryApp :: Expr -> [Expr] -> Expr
 uncurryApp = foldl App
+
+isVectorTy :: Type -> Bool
+isVectorTy = isJust . sizeOfVectorTy
+
+isVectorTy' :: [Type] -> Bool
+isVectorTy' = isVectorTy . TupleTy
+
+sizeOfVectorTy :: Type -> Maybe Int
+sizeOfVectorTy = \case
+  TupleTy ts | all (== IntTy) ts -> Just (length ts)
+  _ -> Nothing
+
+isMatrixTy :: Type -> Bool
+isMatrixTy = isJust . sizeOfMatrixTy
+
+isMatrixTy' :: [Type] -> Bool
+isMatrixTy' = isMatrixTy . TupleTy
+
+sizeOfMatrixTy :: Type -> Maybe (Int, Int)
+sizeOfMatrixTy = \case
+  TupleTy ts@(TupleTy ts' : _) | all (== IntTy) ts' && all (== TupleTy ts') ts -> Just (length ts, length ts')
+  _ -> Nothing

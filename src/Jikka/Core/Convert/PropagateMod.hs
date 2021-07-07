@@ -6,7 +6,7 @@ module Jikka.Core.Convert.PropagateMod
   )
 where
 
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Format (formatType)
@@ -41,14 +41,14 @@ isModulo' e (Mod m) = case e of
   LitInt' n -> case m of
     LitInt' m -> 0 <= n && n < m
     _ -> False
-  Proj' ts _ e | all (== IntTy) ts -> e `isModulo'` Mod m
-  Proj' ts@(TupleTy ts' : _) _ e | all (== IntTy) ts' && all (== TupleTy ts') ts -> e `isModulo'` Mod m
+  Proj' ts _ e | isVectorTy' ts -> e `isModulo'` Mod m
+  Proj' ts _ e | isMatrixTy' ts -> e `isModulo'` Mod m
   Map' _ _ f _ -> f `isModulo'` Mod m
   Lam _ _ body -> body `isModulo'` Mod m
   e@(App _ _) -> case curryApp e of
     (e@(Lam _ _ _), _) -> e `isModulo'` Mod m
-    (Tuple' ts, es) | all (== IntTy) ts -> all (`isModulo'` Mod m) es
-    (Tuple' ts@(TupleTy ts' : _), es) | all (== IntTy) ts' && all (== TupleTy ts') ts -> all (`isModulo'` Mod m) es
+    (Tuple' ts, es) | isVectorTy' ts -> all (`isModulo'` Mod m) es
+    (Tuple' ts, es) | isMatrixTy' ts -> all (`isModulo'` Mod m) es
     _ -> False
   _ -> False
 
@@ -73,8 +73,11 @@ putFloorMod (Mod m) =
         LitInt' n -> case m of
           LitInt' m -> return' $ LitInt' (n `mod` m)
           _ -> return Nothing
-        Proj' ts i e | all (== IntTy) ts -> return' $ Proj' ts i (VecFloorMod' (length ts) e m)
-        Proj' ts@(TupleTy ts' : _) i e | all (== IntTy) ts' && all (== TupleTy ts') ts -> return' $ Proj' ts i (MatFloorMod' (length ts) (length ts') e m)
+        Proj' ts i e | isVectorTy' ts -> return' $ Proj' ts i (VecFloorMod' (length ts) e m)
+        Proj' ts i e
+          | isMatrixTy' ts ->
+            let (h, w) = fromJust (sizeOfMatrixTy (TupleTy ts))
+             in return' $ Proj' ts i (MatFloorMod' h w e m)
         Map' t1 t2 f xs -> do
           f <- putFloorMod (Mod m) f
           case f of
@@ -94,12 +97,12 @@ putFloorMod (Mod m) =
             case f of
               Nothing -> return Nothing
               Just f -> return' $ uncurryApp f args
-          (Tuple' ts, es) | all (== IntTy) ts -> do
+          (Tuple' ts, es) | isVectorTy' ts -> do
             es' <- mapM (putFloorMod (Mod m)) es
             if all isNothing es'
               then return Nothing
               else return' $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
-          (Tuple' ts@(TupleTy ts' : _), es) | all (== IntTy) ts' && all (== TupleTy ts') ts -> do
+          (Tuple' ts, es) | isMatrixTy (TupleTy ts) -> do
             es' <- mapM (putFloorMod (Mod m)) es
             if all isNothing es'
               then return Nothing
