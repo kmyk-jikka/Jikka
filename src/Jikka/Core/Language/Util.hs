@@ -33,8 +33,6 @@ mapTypeInBuiltin f = \case
   CeilDiv -> CeilDiv
   CeilMod -> CeilMod
   Pow -> Pow
-  -- induction functions
-  NatInd t -> NatInd (f t)
   -- advanced arithmetical functions
   Abs -> Abs
   Gcd -> Gcd
@@ -78,6 +76,7 @@ mapTypeInBuiltin f = \case
   Cons t -> Cons (f t)
   Foldl t1 t2 -> Foldl (f t1) (f t2)
   Scanl t1 t2 -> Scanl (f t1) (f t2)
+  Iterate t -> Iterate (f t)
   Len t -> Len (f t)
   Tabulate t -> Tabulate (f t)
   Map t1 t2 -> Map (f t1) (f t2)

@@ -69,8 +69,6 @@ analyzeBuiltin = \case
   CeilDiv -> fun "ceildiv"
   CeilMod -> fun "ceilmod"
   Pow -> infixOp "**"
-  -- induction functions
-  NatInd t -> Fun [t] "ind"
   -- advanced arithmetical functions
   Abs -> fun "abs"
   Gcd -> fun "gcd"
@@ -114,6 +112,7 @@ analyzeBuiltin = \case
   Cons t -> Fun [t] "cons"
   Foldl t1 t2 -> Fun [t1, t2] "foldl"
   Scanl t1 t2 -> Fun [t1, t2] "scanl"
+  Iterate t -> Fun [t] "iterate"
   Len t -> Fun [t] "len"
   Tabulate t -> Fun [t] "tabulate"
   Map t1 t2 -> Fun [t1, t2] "map"

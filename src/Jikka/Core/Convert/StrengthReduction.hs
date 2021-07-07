@@ -175,7 +175,7 @@ reduceFoldMap = simpleRewriteRule $ \case
 
 reduceFoldBuild :: Monad m => RewriteRule m
 reduceFoldBuild = simpleRewriteRule $ \case
-  Foldl' _ t (Lam2 x1 t1 x2 _ body) x (Range1' n) | x2 `isUnusedVar` body -> Just $ NatInd' t x (Lam x1 t1 body) n
+  Foldl' _ t (Lam2 x1 t1 x2 _ body) x (Range1' n) | x2 `isUnusedVar` body -> Just $ Iterate' t n (Lam x1 t1 body) x
   Len' _ (Range1' n) -> Just n
   At' _ (Range1' _) i -> Just i
   Sum' (Range1' n) -> Just $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
@@ -190,7 +190,7 @@ reduceFoldBuild = simpleRewriteRule $ \case
 
 reduceFold :: Monad m => RewriteRule m
 reduceFold = simpleRewriteRule $ \case
-  NatInd' _ v (Lam x _ (MatAp' n _ f (Var x'))) k | x `isUnusedVar` f && x == x' -> Just $ MatAp' n n (MatPow' n f k) v
+  Iterate' _ k (Lam x _ (MatAp' n _ f (Var x'))) v | x `isUnusedVar` f && x == x' -> Just $ MatAp' n n (MatPow' n f k) v
   _ -> Nothing
 
 reduceList :: MonadAlpha m => RewriteRule m

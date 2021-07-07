@@ -34,9 +34,6 @@ pattern CeilMod' e1 e2 = AppBuiltin2 CeilMod e1 e2
 
 pattern Pow' e1 e2 = AppBuiltin2 Pow e1 e2
 
--- induction functions
-pattern NatInd' t base step n = AppBuiltin3 (NatInd t) base step n
-
 -- advanced arithmetical functions
 pattern Abs' e = AppBuiltin Abs e
 
@@ -113,6 +110,8 @@ pattern Cons' t e1 e2 = AppBuiltin2 (Cons t) e1 e2
 pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 
 pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3
+
+pattern Iterate' t n step base = AppBuiltin3 (Iterate t) n step base
 
 pattern Len' t e = AppBuiltin (Len t) e
 

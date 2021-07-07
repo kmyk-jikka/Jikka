@@ -96,10 +96,10 @@ runLiteral = \case
 
 arityOfBuiltin :: X.Builtin -> Int
 arityOfBuiltin = \case
-  X.NatInd _ -> 3
   X.Min2 _ -> 2
   X.Max2 _ -> 2
   X.Foldl _ _ -> 3
+  X.Iterate _ -> 3
   X.At _ -> 2
   X.Min1 _ -> 1
   X.Max1 _ -> 1
@@ -135,10 +135,6 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.CeilDiv -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceildiv" []) [e1, e2]
     X.CeilMod -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceilmod" []) [e1, e2]
     X.Pow -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::pow" []) [e1, e2]
-    -- induction functions
-    X.NatInd t -> go3' $ \base step n -> do
-      t <- runType t
-      return $ Y.Call (Y.Function "jikka::natind" [t]) [base, step, n]
     -- advanced arithmetical functions
     X.Abs -> go1 $ \e -> Y.Call (Y.Function "std::abs" []) [e]
     X.Gcd -> go2 $ \e1 e2 -> Y.Call (Y.Function "std::gcd" []) [e1, e2]
@@ -194,6 +190,9 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
       t1 <- runType t1
       t2 <- runType t2
       return $ Y.Call (Y.Function "jikka::scanl" [t1, t2]) [e1, e2, e3]
+    X.Iterate t -> go3' $ \n step base -> do
+      t <- runType t
+      return $ Y.Call (Y.Function "jikka::iterate" [t]) [n, step, base]
     X.Len _ -> go1 $ \e -> Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
     X.Tabulate t -> go2' $ \n f -> do
       t <- runType t

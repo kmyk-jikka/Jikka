@@ -75,10 +75,6 @@ data Builtin
     CeilMod
   | -- | \(: \int \to \int \to \int\)
     Pow
-  | -- induction functions
-
-    -- | natural induction \(: \forall \alpha. \alpha \to (\alpha \to \alpha) \to \int \to \alpha\)
-    NatInd Type
   | -- advanced arithmetical functions
 
     -- | \(: \int \to \int\)
@@ -165,6 +161,8 @@ data Builtin
     Foldl Type Type
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
     Scanl Type Type
+  | -- | iterated application \((\lambda k f x. f^k(x)): \forall \alpha. \int \to (\alpha \to \alpha) \to \alpha \to \alpha\)
+    Iterate Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
   | -- | \(: \forall \alpha. \int \to (\int \to \alpha) \to \list(\alpha)\)

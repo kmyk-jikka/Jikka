@@ -44,7 +44,7 @@ inline int64_t pow(int64_t x, int64_t k) {
   return y;
 }
 
-template <class T> inline T natind(T x, std::function<T(T)> f, int64_t n) {
+template <class T> inline T iterate(int64_t n, std::function<T(T)> f, T x) {
   if (n < 0) {
     return x;
   }

@@ -20,8 +20,6 @@ builtinToType = \case
   CeilDiv -> Fun2STy IntTy
   CeilMod -> Fun2STy IntTy
   Pow -> Fun2STy IntTy
-  -- induction functions
-  NatInd t -> Fun3Ty t (FunTy t t) IntTy t
   -- advanced arithmetical functions
   Abs -> Fun1STy IntTy
   Gcd -> Fun2STy IntTy
@@ -65,6 +63,7 @@ builtinToType = \case
   Cons t -> Fun2Ty t (ListTy t) (ListTy t)
   Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
+  Iterate t -> Fun3Ty IntTy (FunTy t t) t t
   Len t -> FunTy (ListTy t) IntTy
   Tabulate t -> Fun2Ty IntTy (FunTy IntTy t) (ListTy t)
   Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)

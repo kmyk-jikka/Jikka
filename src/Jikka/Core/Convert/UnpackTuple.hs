@@ -44,9 +44,9 @@ rule =
           y <- genVarName'
           let f = Map' t1 (TupleTy [t1]) (Lam y t1 (App (Tuple' [t1]) (Var y)))
           return' $ f e'
-        NatInd' (TupleTy [t]) e (Lam x (TupleTy [_]) body) n -> do
+        Iterate' (TupleTy [t]) n (Lam x (TupleTy [_]) body) base -> do
           body' <- substitute x (App (Tuple' [t]) (Var x)) (Proj' [t] 0 body)
-          return' $ uncurryApp (Tuple' [t]) [NatInd' t (Proj' [t] 0 e) (Lam x t body') n]
+          return' $ uncurryApp (Tuple' [t]) [Iterate' t n (Lam x t body') (Proj' [t] 0 base)]
         _ -> return Nothing
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
