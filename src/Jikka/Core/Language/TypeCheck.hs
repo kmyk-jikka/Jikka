@@ -117,6 +117,7 @@ literalToType = \case
   LitInt _ -> IntTy
   LitBool _ -> BoolTy
   LitNil t -> ListTy t
+  LitBottom t _ -> t
 
 type TypeEnv = [(VarName, Type)]
 

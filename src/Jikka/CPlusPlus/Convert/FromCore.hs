@@ -93,6 +93,9 @@ runLiteral = \case
   X.LitNil t -> do
     t <- runType t
     return $ Y.Call (Y.Function "std::vector" [t]) []
+  X.LitBottom t err -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::error" [t]) [Y.Lit (Y.LitString err)]
 
 arityOfBuiltin :: X.Builtin -> Int
 arityOfBuiltin = \case

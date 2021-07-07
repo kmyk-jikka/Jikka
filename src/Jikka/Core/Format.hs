@@ -191,6 +191,7 @@ formatLiteral = \case
   LitInt n -> show n
   LitBool p -> map toLower $ show p
   LitNil t -> "nil" ++ formatTemplate [t]
+  LitBottom t _ -> "bottom" ++ formatTemplate [t]
 
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args

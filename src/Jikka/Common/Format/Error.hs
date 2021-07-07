@@ -3,6 +3,7 @@
 
 module Jikka.Common.Format.Error
   ( prettyError,
+    prettyError',
     prettyErrorWithText,
     hPrintError,
     hPrintErrorWithText,
@@ -33,6 +34,9 @@ unpackCombinedErrors = go
 
 prettyError :: ColorFlag -> Error -> [String]
 prettyError color = map (prettyError1 color) . unpackCombinedErrors
+
+prettyError' :: Error -> [String]
+prettyError' = prettyError DisableColor
 
 -- | @err@ must not have `ErrorAppend`.
 prettyError1 :: ColorFlag -> Error -> String

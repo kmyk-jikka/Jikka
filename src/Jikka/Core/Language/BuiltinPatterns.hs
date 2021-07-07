@@ -186,3 +186,6 @@ pattern Choose' e1 e2 = AppBuiltin2 Choose e1 e2
 pattern Permute' e1 e2 = AppBuiltin2 Permute e1 e2
 
 pattern MultiChoose' e1 e2 = AppBuiltin2 MultiChoose e1 e2
+
+-- errors
+pattern Bottom' t err = Lit (LitBottom t err)

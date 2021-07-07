@@ -249,6 +249,8 @@ data Literal
     LitBool Bool
   | -- | \(: \forall \alpha. \list(\alpha)\)
     LitNil Type
+  | -- | \(: \bot : \forall \alpha. \alpha\). The second argument is its error message.
+    LitBottom Type String
   deriving (Eq, Ord, Show, Read)
 
 -- | `Expr` represents the exprs of our core language. This is similar to the `Expr` of GHC Core.

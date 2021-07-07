@@ -180,6 +180,7 @@ substLiteral sigma = \case
   LitInt n -> LitInt n
   LitBool p -> LitBool p
   LitNil t -> LitNil (subst' sigma t)
+  LitBottom t err -> LitBottom (subst' sigma t) err
 
 substExpr :: Subst -> Expr -> Expr
 substExpr sigma = go

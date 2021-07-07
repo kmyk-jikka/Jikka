@@ -314,7 +314,7 @@ evaluateExpr env = \case
   Var x -> case lookup x env of
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just val -> return val
-  Lit lit -> return $ literalToValue lit
+  Lit lit -> literalToValue lit
   e@(App _ _) -> do
     let (f, args) = curryApp e
     f <- evaluateExpr env f

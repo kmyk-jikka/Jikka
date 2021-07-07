@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <unordered_map>
 #include <vector>
@@ -460,6 +461,11 @@ inline int64_t modmultichoose(int64_t n, int64_t r, int64_t MOD) {
     return 1;
   }
   return modchoose(n + r - 1, r, MOD);
+}
+
+template <class T> inline T error(const std::string &message) {
+  std::cerr << message << std::endl;
+  assert(false);
 }
 
 } // namespace jikka
