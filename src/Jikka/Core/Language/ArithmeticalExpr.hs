@@ -68,9 +68,6 @@ sumExprFromInteger n =
       sumExprList = []
     }
 
-zeroSumExpr :: SumExpr
-zeroSumExpr = sumExprFromInteger 0
-
 negateSumExpr :: SumExpr -> SumExpr
 negateSumExpr e =
   SumExpr
@@ -112,7 +109,10 @@ parseArithmeticalExpr = parseSumExpr
 formatProductExpr :: ProductExpr -> Expr
 formatProductExpr e =
   let k = LitInt' (productExprConst e)
-      k' e' = if productExprConst e == 0 then Lit0 else Mult' e' k
+      k' e' = case productExprConst e of
+        0 -> LitInt' 0
+        1 -> e'
+        _ -> Mult' e' k
    in case productExprList e of
         [] -> k
         eHead : esTail -> k' (foldl Mult' eHead esTail)
@@ -164,10 +164,12 @@ normalizeArithmeticalExpr = normalizeSumExpr
 
 -- | `makeVectorFromArithmeticalExpr` makes a vector \(f\) and a expr \(c\) from a given vector of variables \(x_0, x_1, \dots, x _ {n - 1}\) and a given expr \(e\) s.t. \(f\) and \(c\) don't have \(x_0, x_1, \dots, x _ {n - 1}\) as free variables and \(e = c + f \cdot (x_0, x_1, \dots, x _ {n - 1})\) holds.
 -- This assumes given variables and exprs have the type \(\mathbf{int}\).
+--
+-- * The returned exprs are normalized with `normalizeArithmeticalExpr`.
 makeVectorFromArithmeticalExpr :: V.Vector VarName -> ArithmeticalExpr -> Maybe (V.Vector ArithmeticalExpr, ArithmeticalExpr)
 makeVectorFromArithmeticalExpr xs es = runST $ do
   runMaybeT $ do
-    f <- lift $ MV.replicate (V.length xs) zeroSumExpr
+    f <- lift $ MV.replicate (V.length xs) (sumExprFromInteger 0)
     c <- lift $ newSTRef (sumExprFromInteger (sumExprConst es))
     forM_ (sumExprList es) $ \e -> do
       let indices = V.imap (\i x -> map (i,) (findIndices (x `isFreeVar`) (productExprList e))) xs
@@ -180,3 +182,9 @@ makeVectorFromArithmeticalExpr xs es = runST $ do
     f <- V.freeze f
     c <- lift $ readSTRef c
     return (V.map normalizeArithmeticalExpr f, normalizeArithmeticalExpr c)
+
+isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
+isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
+
+isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
+isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
