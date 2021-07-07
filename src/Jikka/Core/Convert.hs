@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert
--- Description : is a meta module to combine other optimizers.
+-- Description : is a module to combine other optimizers. / 他の最適化器を組み合わせて実行する module です。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

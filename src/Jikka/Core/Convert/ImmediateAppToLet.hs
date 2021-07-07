@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Core.Convert.ImmediateAppToLet
+-- Description : replaces immediate applications to lambda abstractions with let-exprs. / lambda 抽象の直後に行なわれる関数適用を let 式で置き換えます。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Core.Convert.ImmediateAppToLet
   ( run,
   )

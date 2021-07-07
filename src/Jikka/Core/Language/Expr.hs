@@ -5,7 +5,7 @@
 
 -- |
 -- Module      : Jikka.Core.Language.Expr
--- Description : contains data types of our core language.
+-- Description : has data types of our core language. / core 言語のためのデータ型を持ちます。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

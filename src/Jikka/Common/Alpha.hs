@@ -5,7 +5,7 @@
 
 -- |
 -- Module      : Jikka.Common.Alpha
--- Description : provides a monad to run alpha-conversion.
+-- Description : provides a monad to run alpha-conversion. / alpha 変換用のモナドを提供します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

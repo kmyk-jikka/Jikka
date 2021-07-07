@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Language.BuiltinPatterns
--- Description : provides pattern synonyms for `Builtin` applications.
+-- Description : provides pattern synonyms for builtin functions. / 組み込み関数のための pattern synonyms を提供します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

@@ -3,6 +3,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 
+-- |
+-- Module      : Jikka.RestrictedPython.Convert.ToCore
+-- Description : converts programs of our restricted Python to programs of core language. / 制限された Python のプログラムを core 言語のプログラムに変換します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.RestrictedPython.Convert.ToCore
   ( run,
     runForStatement,

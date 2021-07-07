@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.RestrictedPython.Convert.TypeInfer
--- Description : infers types of the exprs of the restricted Python.
+-- Description : does type inference. / 型推論を行います。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

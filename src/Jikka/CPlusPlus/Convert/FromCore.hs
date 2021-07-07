@@ -4,7 +4,7 @@
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.FromCore
--- Description : converts core exprs to C++ exprs.
+-- Description : converts core programs to C++ programs. / core 言語のプログラムを C++ のプログラムに変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

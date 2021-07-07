@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.StrengthReduction
--- Description : replace stronger functions in exprs with weaker functions.
+-- Description : does strength reduction. / 演算子強度低減を行います。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

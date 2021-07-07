@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.RestrictedPython.Format
--- Description : converts the AST of the restricted Python to strings.
+-- Description : converts AST of the restricted Python to strings. / 制限された Python の抽象構文木を文字列に変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

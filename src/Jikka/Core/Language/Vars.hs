@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Converter.Core.Vars
--- Description : provides utilities for variables.
+-- Description : provides utilities aboud free variables. / 自由変数についてのユーティリティを提供します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

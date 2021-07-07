@@ -5,7 +5,7 @@
 
 -- |
 -- Module      : Jikka.Core.Evaluate
--- Description : exexutes the expr of our core language.
+-- Description : executes the expr of our core language. / core 言語の式を実行します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

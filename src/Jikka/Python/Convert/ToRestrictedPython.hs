@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Python.Convert.ToRestrictedPython
+-- Description : converts AST of the standard Python to AST of our restricted Python. / 標準の Python の抽象構文木を我々の restricted Python の抽象構文木に変換します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Python.Convert.ToRestrictedPython
   ( run,
   )

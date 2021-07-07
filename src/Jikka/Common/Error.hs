@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Common.Error
--- Description : has a data type for various errors.
+-- Description : provides a data type which represents various errors. / 種々のエラーを表現するデータ型を提供します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

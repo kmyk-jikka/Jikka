@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Language.Beta
--- Description : substitutes variables with another exprs.
+-- Description : does beta-reduction. / beta 簡約を行います。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

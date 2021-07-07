@@ -1,3 +1,11 @@
+-- |
+-- Module      : Jikka.RestrictedPython.Convert.RemoveUnbalancedIf
+-- Description : converts and removes if-statements whose either branch has return-statements and the other branch doesn't have return-statements. / その一方の分岐は return 文を持ちもう一方の分岐は return 文を持たないような if 文を変形し削除します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.RestrictedPython.Convert.RemoveUnbalancedIf
   ( run,
   )

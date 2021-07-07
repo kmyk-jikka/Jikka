@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.RemoveUnusedVars
--- Description : remove unused variables from exprs.
+-- Description : removes unused variables. / 使われていない変数を削除します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

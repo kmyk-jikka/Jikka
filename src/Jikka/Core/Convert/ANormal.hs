@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.ANormal
--- Description : convert exprs to A-normal form.
+-- Description : converts exprs to A-normal form. / 式を A 正規形に変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

@@ -1,5 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 
+-- |
+-- Module      : Jikka.RestrictedPython.Convert.TypeInfer
+-- Description : split a for-loop into many small for-loops based on the dependency graph of variables and assignments. / 変数と代入の依存関係グラフに基づいて、for ループを複数の小さな for ループに分割します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.RestrictedPython.Convert.SplitLoops
   ( run,
     run',

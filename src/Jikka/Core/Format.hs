@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Format
--- Description : converts the expr of core language to strings.
+-- Description : converts the syntax trees of core language to strings. / core 言語の構文木を文字列に変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
