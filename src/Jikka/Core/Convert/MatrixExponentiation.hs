@@ -2,14 +2,14 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- |
--- Module      : Jikka.Core.Convert.LinearFunction
+-- Module      : Jikka.Core.Convert.MatrixExponentiation
 -- Description : replaces repeated applications of linear (or, affine) functions with powers of matrices. / 線形な (あるいは affine な) 関数の繰り返しの適用を行列累乗で置き換えます。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
 -- Stability   : experimental
 -- Portability : portable
-module Jikka.Core.Convert.LinearFunction
+module Jikka.Core.Convert.MatrixExponentiation
   ( run,
   )
 where
@@ -74,7 +74,7 @@ runProgram = mapExprProgramM runExpr
 --
 -- TODO: support affine functions
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = wrapError' "Jikka.Core.Convert.LinearFunction" $ do
+run prog = wrapError' "Jikka.Core.Convert.MatrixExponentiation" $ do
   precondition $ do
     ensureWellTyped prog
   prog <- runProgram prog

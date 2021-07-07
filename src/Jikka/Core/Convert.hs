@@ -21,7 +21,7 @@ import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.ImmediateAppToLet as ImmediateAppToLet
-import qualified Jikka.Core.Convert.LinearFunction as LinearFunction
+import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
@@ -38,7 +38,7 @@ run' prog = do
   prog <- ImmediateAppToLet.run prog
   prog <- TrivialLetElimination.run prog
   prog <- UnpackTuple.run prog
-  prog <- LinearFunction.run prog
+  prog <- MatrixExponentiation.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog

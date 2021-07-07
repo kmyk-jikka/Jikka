@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jikka.Core.Convert.LinearFunctionSpec
+module Jikka.Core.Convert.MatrixExponentiationSpec
   ( spec,
   )
 where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Convert.LinearFunction (run)
+import Jikka.Core.Convert.MatrixExponentiation (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Util
