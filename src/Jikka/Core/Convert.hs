@@ -24,6 +24,7 @@ import qualified Jikka.Core.Convert.ImmediateAppToLet as ImmediateAppToLet
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
+import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
@@ -42,6 +43,7 @@ run' prog = do
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog
+  prog <- ShortCutFusion.run prog
   StrengthReduction.run prog
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
