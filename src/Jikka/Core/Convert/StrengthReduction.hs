@@ -21,10 +21,10 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
-import Jikka.Core.Language.Vars
 
 -- | `eliminateSomeBuiltins` removes some `Builtin` from `Expr` at all.
 eliminateSomeBuiltins :: Monad m => RewriteRule m

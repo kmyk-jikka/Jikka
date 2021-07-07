@@ -18,8 +18,8 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Util
-import Jikka.Core.Language.Vars
 
 -- | `substitute` replaces the occrences of the given variable with the given expr. This considers contexts.
 --

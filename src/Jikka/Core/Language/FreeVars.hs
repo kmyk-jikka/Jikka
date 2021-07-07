@@ -1,14 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- |
--- Module      : Jikka.Converter.Core.Vars
+-- Module      : Jikka.Converter.Core.FreeVars
 -- Description : provides utilities aboud free variables. / 自由変数についてのユーティリティを提供します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
 -- Stability   : experimental
 -- Portability : portable
-module Jikka.Core.Language.Vars where
+module Jikka.Core.Language.FreeVars where
 
 import Jikka.Core.Language.Expr
 

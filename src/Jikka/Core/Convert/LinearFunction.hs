@@ -24,9 +24,9 @@ import Jikka.Common.Matrix
 import Jikka.Core.Language.ArithmeticalExpr
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Util
-import Jikka.Core.Language.Vars
 
 fromMatrix :: Matrix ArithmeticalExpr -> Expr
 fromMatrix f =

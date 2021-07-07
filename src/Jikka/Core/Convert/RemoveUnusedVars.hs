@@ -19,9 +19,9 @@ where
 
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars (isUnusedVar)
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Util
-import Jikka.Core.Language.Vars (isUnusedVar)
 
 runLet :: VarName -> Type -> Expr -> Expr -> Expr
 runLet x t e1 e2

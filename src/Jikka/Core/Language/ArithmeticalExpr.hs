@@ -14,7 +14,7 @@ import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Vars
+import Jikka.Core.Language.FreeVars
 
 data ProductExpr = ProductExpr
   { productExprConst :: Integer,
