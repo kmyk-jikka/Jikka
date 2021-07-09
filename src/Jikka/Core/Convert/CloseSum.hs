@@ -188,7 +188,6 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- === List Map functions
 --
--- * `Scanl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
 -- * `Map` \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)
 -- * `Filter` \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)
 -- * `Reversed` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
