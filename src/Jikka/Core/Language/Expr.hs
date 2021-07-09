@@ -165,8 +165,6 @@ data Builtin
     Iterate Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
-  | -- | \(: \forall \alpha. \int \to (\int \to \alpha) \to \list(\alpha)\)
-    Tabulate Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)
     Map Type Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)

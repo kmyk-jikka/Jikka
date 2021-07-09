@@ -78,7 +78,6 @@ mapTypeInBuiltin f = \case
   Scanl t1 t2 -> Scanl (f t1) (f t2)
   Iterate t -> Iterate (f t)
   Len t -> Len (f t)
-  Tabulate t -> Tabulate (f t)
   Map t1 t2 -> Map (f t1) (f t2)
   Filter t -> Filter (f t)
   At t -> At (f t)

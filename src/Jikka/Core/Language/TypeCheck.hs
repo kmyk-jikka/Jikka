@@ -73,7 +73,6 @@ builtinToType = \case
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
   Iterate t -> Fun3Ty IntTy (FunTy t t) t t
   Len t -> FunTy (ListTy t) IntTy
-  Tabulate t -> Fun2Ty IntTy (FunTy IntTy t) (ListTy t)
   Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
   Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)
   At t -> Fun2Ty (ListTy t) IntTy t

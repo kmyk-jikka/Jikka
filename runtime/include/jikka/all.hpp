@@ -257,16 +257,6 @@ std::vector<U> scanl(std::function<std::function<U(T)>(U)> f, U y,
   return ys;
 }
 
-template <class T>
-std::vector<T> tabulate(int64_t n, std::function<T(int64_t)> f) {
-  assert(n >= 0);
-  std::vector<T> xs(n);
-  for (int64_t i = 0; i < n; ++i) {
-    xs[i] = f(i);
-  }
-  return xs;
-}
-
 template <class T, class U>
 std::vector<T> fmap(std::function<U(T)> f, const std::vector<T> &xs) {
   std::vector<U> ys(xs.size());

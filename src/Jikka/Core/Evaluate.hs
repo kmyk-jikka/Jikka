@@ -114,9 +114,6 @@ iterate' n step base = do
   base <- callValue step [base]
   iterate' (n - 1) step base
 
-tabulate :: MonadError Error m => Integer -> Value -> m (V.Vector Value)
-tabulate n f = V.fromList <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
-
 map' :: MonadError Error m => Value -> V.Vector Value -> m (V.Vector Value)
 map' f a = V.fromList <$> mapM (\val -> callValue f [val]) (V.toList a)
 
@@ -254,7 +251,6 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
     Iterate _ -> go3' valueToInt pure pure id $ \n step base -> iterate' n step base
     Len _ -> go1 valueToList ValInt (fromIntegral . V.length)
-    Tabulate _ -> go2' valueToInt pure ValList tabulate
     Map _ _ -> go2' pure valueToList ValList map'
     Filter _ -> go2' pure valueToList ValList $ \f xs -> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) xs
     At _ -> go2' valueToList valueToInt id atEither

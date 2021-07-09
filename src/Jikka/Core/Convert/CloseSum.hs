@@ -139,7 +139,6 @@ runProgram = applyRewriteRuleProgram' rule
 -- * `Nil` \(: \forall \alpha. \list(\alpha)\)
 -- * `Cons` \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)
 -- * `Range1` \(: \int \to \list(\int)\)
--- * `Tabulate` \(: \forall \alpha. \int \to (\int \to \alpha) \to \list(\alpha)\)
 --
 -- === List Map functions
 --

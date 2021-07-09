@@ -197,9 +197,6 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
       t <- runType t
       return $ Y.Call (Y.Function "jikka::iterate" [t]) [n, step, base]
     X.Len _ -> go1 $ \e -> Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
-    X.Tabulate t -> go2' $ \n f -> do
-      t <- runType t
-      return $ Y.Call (Y.Function "jikka::tabulate" [t]) [n, f]
     X.Map t1 t2 -> go2' $ \f xs -> do
       t1 <- runType t1
       t2 <- runType t2

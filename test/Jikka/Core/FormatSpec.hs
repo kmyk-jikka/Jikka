@@ -21,14 +21,15 @@ spec = describe "formatExpr" $ do
             ( Let
                 "xs$2"
                 (ListTy IntTy)
-                ( Tabulate'
+                ( Map'
                     IntTy
-                    (Var "n$1")
+                    IntTy
                     ( Lam
                         "i$3"
                         IntTy
                         (Mult' (Var "i$3") (Var "i$3"))
                     )
+                    (Range1' (Var "n$1"))
                 )
                 (Sum' (Var "xs$2"))
             )
@@ -37,9 +38,9 @@ spec = describe "formatExpr" $ do
           unlines
             [ "let rec solve$0 (n$1: int): int =",
               "    let xs$2: int list =",
-              "        tabulate(n$1, (fun (i$3: int) ->",
+              "        map((fun (i$3: int) ->",
               "            (i$3 * i$3)",
-              "        ))",
+              "        ), range1(n$1))",
               "    in sum(xs$2)",
               "in",
               "solve$0"

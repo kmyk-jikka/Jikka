@@ -35,7 +35,7 @@ import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
 -- |
--- * `Range1` and `Tabulate` remain.
+-- * `Range1` remains.
 -- * `Range2` is removed.
 -- * `Range3` is removed.
 -- * `Nil` and `Cons` are kept as is.
@@ -43,38 +43,29 @@ reduceBuild :: MonadAlpha m => RewriteRule m
 reduceBuild =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
-        Tabulate' _ n (LamId _ _) -> return' $ Range1' n
         Range2' l r -> do
           let n = Minus' r l
           x <- genVarName'
-          return' $ Tabulate' IntTy n (Lam x IntTy (Plus' l (Var x)))
+          let f = Lam x IntTy (Plus' l (Var x))
+          return' $ Map' IntTy IntTy f (Range1' n)
         Range3' l r step -> do
           let n = CeilDiv' (Minus' r l) step
           x <- genVarName'
-          return' $ Tabulate' IntTy n (Lam x IntTy (Plus' l (Mult' step (Var x))))
+          let f = Lam x IntTy (Plus' l (Mult' step (Var x)))
+          return' $ Map' IntTy IntTy f (Range1' n)
         _ -> return Nothing
 
 reduceMapBuild :: MonadAlpha m => RewriteRule m
 reduceMapBuild =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
-        -- reduce `Map`
-        Map' _ t2 f (Range1' n) -> return' $ Tabulate' t2 n f
-        Map' _ t2 g (Tabulate' _ n f) -> do
-          x <- genVarName'
-          let h = Lam x IntTy (App g (App f (Var x)))
-          return' $ Tabulate' t2 n h
         -- reduce `Sorted`
         Sorted' _ (Range1' n) -> return' $ Range1' n
         -- reduce `Reversed`
         Reversed' _ (Range1' n) -> do
           x <- genVarName'
           let f = Lam x IntTy (Minus' (Minus' n (Var x)) (LitInt' 1))
-          return' $ Tabulate' IntTy f n
-        Reversed' t (Tabulate' _ n f) -> do
-          x <- genVarName'
-          let g = Lam x IntTy (App f (Minus' (Minus' n (Var x)) (LitInt' 1)))
-          return' $ Tabulate' t n g
+          return' $ Map' IntTy IntTy f n
         -- others
         _ -> return Nothing
 
@@ -163,21 +154,14 @@ reduceFoldBuild =
         -- reduce `Foldl`
         Foldl' _ _ _ init (Nil' _) -> return' init
         Foldl' t1 t2 g init (Cons' _ x xs) -> return' $ Foldl' t1 t2 g (App2 g init x) xs
-        Foldl' _ t2 g init (Tabulate' _ n f) -> do
-          x0 <- genVarName'
-          x2 <- genVarName'
-          let h = Lam2 x2 t2 x0 IntTy (App2 g (Var x2) (App f (Var x0)))
-          return' $ Foldl' IntTy t2 h init (Range1' n)
         -- reduce `Len`
         Len' _ (Nil' _) -> return' Lit0
         Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)
         Len' _ (Range1' n) -> return' n
-        Len' _ (Tabulate' _ n _) -> return' n
         -- reduce `At`
         At' t (Nil' _) i -> return' $ Bottom' t $ "cannot subscript empty list: index = " ++ formatExpr i
         At' t (Cons' _ x xs) i -> return' $ If' t (Equal' IntTy i Lit0) x (At' t xs (Minus' i Lit1))
         At' _ (Range1' _) i -> return' i
-        At' _ (Tabulate' _ _ f) i -> return' $ App f i
         -- reduce `Elem`
         Elem' _ _ (Nil' _) -> return' LitFalse
         Elem' t y (Cons' _ x xs) -> return' $ And' (Equal' t x y) (Elem' t y xs)
@@ -219,7 +203,6 @@ runProgram = applyRewriteRuleProgram' rule
 -- * `Range1` \(: \int \to \list(\int)\)
 -- * `Range2` \(: \int \to \int \to \list(\int)\)
 -- * `Range3` \(: \int \to \int \to \int \to \list(\int)\)
--- * `Tabulate` \(: \forall \alpha. \int \to (\int \to \alpha) \to \list(\alpha)\)
 --
 -- === Map functions
 --

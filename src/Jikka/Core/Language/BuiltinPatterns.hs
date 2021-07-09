@@ -117,8 +117,6 @@ pattern Iterate' t n step base = AppBuiltin3 (Iterate t) n step base
 
 pattern Len' t e = AppBuiltin (Len t) e
 
-pattern Tabulate' t n f = AppBuiltin2 (Tabulate t) n f
-
 pattern Map' t1 t2 f e = AppBuiltin2 (Map t1 t2) f e
 
 pattern Filter' t f e = AppBuiltin2 (Filter t) f e
