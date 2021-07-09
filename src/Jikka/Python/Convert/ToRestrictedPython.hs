@@ -130,7 +130,7 @@ runExpr e =
     X.Call f args [] -> Y.Call <$> runExpr f <*> mapM runExpr args
     X.Constant const -> Y.Constant <$> runConstant const
     X.Subscript e1 e2 -> case value e2 of
-      X.Slice from to step -> Y.SubscriptSlice <$> runExpr e <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
+      X.Slice from to step -> Y.SubscriptSlice <$> runExpr e1 <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
       _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2
     X.Name x -> return $ Y.Name (runIdent x)
     X.List es -> Y.List <$> Y.genType <*> mapM runExpr es
