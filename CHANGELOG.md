@@ -1,5 +1,13 @@
 # Changelog for Jikka
 
+## 2021-07-09: v5.0.7.0
+
+Many internal cleanups are done.
+
+Now our core language is very close to GHC' Core.
+It's curried and has a system for rewrite-rules.
+
+
 ## 2021-06-29: v5.0.6.0
 
 Error reporting and error recovery are improved.
