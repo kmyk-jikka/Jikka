@@ -24,6 +24,7 @@ import qualified Jikka.Core.Convert.CloseMin as CloseMin
 import qualified Jikka.Core.Convert.CloseSum as CloseSum
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
+import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
@@ -45,6 +46,7 @@ run' prog = do
   prog <- UnpackTuple.run prog
   prog <- MatrixExponentiation.run prog
   prog <- SpecializeFoldl.run prog
+  prog <- MakeScanl.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog

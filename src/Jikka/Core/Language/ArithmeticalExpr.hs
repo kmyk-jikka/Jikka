@@ -188,3 +188,16 @@ isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
 
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
 isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
+
+unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
+unNPlusKPattern e = case normalizeArithmeticalExpr e of
+  SumExpr
+    { sumExprList =
+        [ ProductExpr
+            { productExprConst = 1,
+              productExprList = [Var x]
+            }
+          ],
+      sumExprConst = k
+    } -> Just (x, k)
+  _ -> Nothing
