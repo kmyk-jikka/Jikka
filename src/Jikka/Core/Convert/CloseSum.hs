@@ -9,6 +9,12 @@
 -- Maintainer  : kimiyuki95@gmail.com
 -- Stability   : experimental
 -- Portability : portable
+--
+-- \[
+--     \newcommand\int{\mathbf{int}}
+--     \newcommand\bool{\mathbf{bool}}
+--     \newcommand\list{\mathbf{list}}
+-- \]
 module Jikka.Core.Convert.CloseSum
   ( run,
 
@@ -34,15 +40,20 @@ reduceSum = simpleRewriteRule $ \case
   -- reduce list build functions
   Sum' (Nil' _) -> Just Lit0
   Sum' (Cons' _ x xs) -> Just $ Plus' x (Sum' xs)
-  Sum' (Range1' n) -> Just $ FloorDiv' (Mult' n (Plus' n Lit1)) Lit2
+  Sum' (Range1' n) -> Just $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
   -- reduce list map functions
   Sum' (Reversed' _ xs) -> Just $ Sum' xs
   Sum' (Sorted' _ xs) -> Just $ Sum' xs
-  Sum' (Map' t1 _ (Lam x _ e) xs) | x `isUnusedVar` e -> Just $ Mult' (Len' t1 xs) e
-  Sum' (Map' t1 t2 (Lam x t (Negate' e)) xs) -> Just $ Negate' (Sum' (Map' t1 t2 (Lam x t e) xs))
-  Sum' (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) -> Just $ Plus' (Sum' (Map' t1 t2 (Lam x t e1) xs)) (Sum' (Map' t1 t2 (Lam x t e2) xs))
-  Sum' (Map' t1 t2 (Lam x t (Mult' e1 e2)) xs) | x `isUnusedVar` e1 -> Just $ Mult' e1 (Sum' (Map' t1 t2 (Lam x t e2) xs))
-  Sum' (Map' t1 t2 (Lam x t (Mult' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ Mult' e2 (Sum' (Map' t1 t2 (Lam x t e1) xs))
+  Sum' (Map' t1 IntTy (Lam x _ body) xs) -> case (body, xs) of
+    (e, xs) | x `isUnusedVar` e -> Just $ Mult' (Len' t1 xs) e
+    (body, Range1' n) | body == Var x -> Just $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
+    (body, Range1' n) | body == Mult' (Var x) (Var x) || body == Pow' (Var x) (LitInt' 2) -> Just $ FloorDiv' (Mult' n (Mult' (Minus' n Lit1) (Minus' (Mult' Lit2 (Var x)) Lit1))) (LitInt' 6)
+    (Negate' e, xs) -> Just $ Negate' (Sum' (Map' t1 IntTy (Lam x t1 e) xs))
+    (Plus' e1 e2, xs) -> Just $ Plus' (Sum' (Map' t1 IntTy (Lam x t1 e1) xs)) (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
+    (Minus' e1 e2, xs) -> Just $ Minus' (Sum' (Map' t1 IntTy (Lam x t1 e1) xs)) (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
+    (Mult' e1 e2, xs) | x `isUnusedVar` e1 -> Just $ Mult' e1 (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
+    (Mult' e1 e2, xs) | x `isUnusedVar` e2 -> Just $ Mult' e2 (Sum' (Map' t1 IntTy (Lam x t1 e1) xs))
+    _ -> Nothing
   -- others
   _ -> Nothing
 
@@ -103,13 +114,9 @@ runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` reduces summations and products.
 --
--- == List of builtin functions which are reduced
+-- * This doen't do nothing about `Foldl`.
 --
--- \[
---     \newcommand\int{\mathbf{int}}
---     \newcommand\bool{\mathbf{bool}}
---     \newcommand\list{\mathbf{list}}
--- \]
+-- == List of builtin functions which are reduced
 --
 -- === Target functions
 --
