@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.CPlusPlus.Format
--- Description : converts the AST of C++ language to strings.
+-- Description : converts the AST of C++ to strings. / C++ の抽象構文木を文字列に変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Core.Convert.ConstantPropagation
+-- Description : propagates constants. / 定数伝播をします。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Core.Convert.ConstantPropagation
   ( run,
     run',

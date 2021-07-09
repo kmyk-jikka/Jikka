@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Core.Language.RewriteRules
+-- Description : checks and obtains types of exprs. / 式の型を検査し取得します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Core.Language.TypeCheck where
 
 import Jikka.Common.Error
@@ -20,14 +28,13 @@ builtinToType = \case
   CeilDiv -> Fun2STy IntTy
   CeilMod -> Fun2STy IntTy
   Pow -> Fun2STy IntTy
-  -- induction functions
-  NatInd t -> Fun3Ty t (FunTy t t) IntTy t
   -- advanced arithmetical functions
   Abs -> Fun1STy IntTy
   Gcd -> Fun2STy IntTy
   Lcm -> Fun2STy IntTy
   Min2 t -> Fun2STy t
   Max2 t -> Fun2STy t
+  Iterate t -> Fun3Ty IntTy (FunTy t t) t t
   -- logical functions
   Not -> Fun1STy BoolTy
   And -> Fun2STy BoolTy
@@ -66,7 +73,6 @@ builtinToType = \case
   Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
   Len t -> FunTy (ListTy t) IntTy
-  Tabulate t -> Fun2Ty IntTy (FunTy IntTy t) (ListTy t)
   Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
   Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)
   At t -> Fun2Ty (ListTy t) IntTy t
@@ -110,6 +116,7 @@ literalToType = \case
   LitInt _ -> IntTy
   LitBool _ -> BoolTy
   LitNil t -> ListTy t
+  LitBottom t _ -> t
 
 type TypeEnv = [(VarName, Type)]
 

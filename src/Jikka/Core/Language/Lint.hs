@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Language.Lint
--- Description : checks the invariants (e.g. types) of data types of our core language.
+-- Description : verifies various conditions (e.g. well-typed) of exprs of our core language. / core 言語の式の種々の条件 (例: 型付け可能性) を検査します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Core.Convert.TypeInfer
+-- Description : does type inference. / 型推論を行います。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Core.Convert.TypeInfer
   ( run,
 
@@ -25,10 +33,10 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Format (formatType)
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck (literalToType, typecheckProgram)
 import Jikka.Core.Language.Util
-import Jikka.Core.Language.Vars
 
 data Equation
   = TypeEquation Type Type
@@ -172,6 +180,7 @@ substLiteral sigma = \case
   LitInt n -> LitInt n
   LitBool p -> LitBool p
   LitNil t -> LitNil (subst' sigma t)
+  LitBottom t err -> LitBottom (subst' sigma t) err
 
 substExpr :: Subst -> Expr -> Expr
 substExpr sigma = go

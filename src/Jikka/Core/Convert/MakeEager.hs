@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.MakeEager
--- Description : convert exprs for eager evaluation.
+-- Description : wraps some exprs with empty lambdas to allow eager evaluation. / 正格評価をするためにいくつかの式を空の lambda で包みます。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

@@ -1,3 +1,11 @@
+-- |
+-- Module      : Jikka.RestrictedPython.Convert.RemoveUnreachable
+-- Description : removes unreachable statements. / 到達不能な文を削除します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.RestrictedPython.Convert.RemoveUnreachable
   ( run,
   )

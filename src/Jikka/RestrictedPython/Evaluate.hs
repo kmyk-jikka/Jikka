@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.RestrictedPython.Evaluate
--- Description : evaluates programs of the restricted Python.
+-- Description : evaluates programs of the restricted Python. / 制限された Python のプログラムを評価します。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

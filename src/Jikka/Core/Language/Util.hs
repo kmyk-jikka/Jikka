@@ -3,6 +3,7 @@
 module Jikka.Core.Language.Util where
 
 import Control.Monad.Identity
+import Data.Maybe (isJust)
 import Jikka.Common.Alpha
 import Jikka.Core.Language.Expr
 
@@ -32,14 +33,13 @@ mapTypeInBuiltin f = \case
   CeilDiv -> CeilDiv
   CeilMod -> CeilMod
   Pow -> Pow
-  -- induction functions
-  NatInd t -> NatInd (f t)
   -- advanced arithmetical functions
   Abs -> Abs
   Gcd -> Gcd
   Lcm -> Lcm
   Min2 t -> Min2 (f t)
   Max2 t -> Max2 (f t)
+  Iterate t -> Iterate (f t)
   -- logical functionslogical
   Not -> Not
   And -> And
@@ -78,7 +78,6 @@ mapTypeInBuiltin f = \case
   Foldl t1 t2 -> Foldl (f t1) (f t2)
   Scanl t1 t2 -> Scanl (f t1) (f t2)
   Len t -> Len (f t)
-  Tabulate t -> Tabulate (f t)
   Map t1 t2 -> Map (f t1) (f t2)
   Filter t -> Filter (f t)
   At t -> At (f t)
@@ -198,3 +197,25 @@ curryLam args body = foldr (uncurry Lam) body args
 
 uncurryApp :: Expr -> [Expr] -> Expr
 uncurryApp = foldl App
+
+isVectorTy :: Type -> Bool
+isVectorTy = isJust . sizeOfVectorTy
+
+isVectorTy' :: [Type] -> Bool
+isVectorTy' = isVectorTy . TupleTy
+
+sizeOfVectorTy :: Type -> Maybe Int
+sizeOfVectorTy = \case
+  TupleTy ts | all (== IntTy) ts -> Just (length ts)
+  _ -> Nothing
+
+isMatrixTy :: Type -> Bool
+isMatrixTy = isJust . sizeOfMatrixTy
+
+isMatrixTy' :: [Type] -> Bool
+isMatrixTy' = isMatrixTy . TupleTy
+
+sizeOfMatrixTy :: Type -> Maybe (Int, Int)
+sizeOfMatrixTy = \case
+  TupleTy ts@(TupleTy ts' : _) | all (== IntTy) ts' && all (== TupleTy ts') ts -> Just (length ts, length ts')
+  _ -> Nothing

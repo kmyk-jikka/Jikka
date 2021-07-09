@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Python.Language.Expr
--- Description : contains data types of the standard Python.
+-- Description : contains data types of the standard Python. / 標準の Python のためのデータ型を含みます。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

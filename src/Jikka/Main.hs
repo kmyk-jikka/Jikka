@@ -1,3 +1,11 @@
+-- |
+-- Module      : Jikka.Main
+-- Description : is the entry point of the @jikka@ command. / @jikka@ コマンドのエントリポイントです。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Main where
 
 import Data.Maybe (fromMaybe)

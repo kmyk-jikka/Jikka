@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdint>
 #include <functional>
+#include <iostream>
 #include <numeric>
 #include <unordered_map>
 #include <vector>
@@ -44,7 +45,7 @@ inline int64_t pow(int64_t x, int64_t k) {
   return y;
 }
 
-template <class T> inline T natind(T x, std::function<T(T)> f, int64_t n) {
+template <class T> inline T iterate(int64_t n, std::function<T(T)> f, T x) {
   if (n < 0) {
     return x;
   }
@@ -256,16 +257,6 @@ std::vector<U> scanl(std::function<std::function<U(T)>(U)> f, U y,
   return ys;
 }
 
-template <class T>
-std::vector<T> tabulate(int64_t n, std::function<T(int64_t)> f) {
-  assert(n >= 0);
-  std::vector<T> xs(n);
-  for (int64_t i = 0; i < n; ++i) {
-    xs[i] = f(i);
-  }
-  return xs;
-}
-
 template <class T, class U>
 std::vector<T> fmap(std::function<U(T)> f, const std::vector<T> &xs) {
   std::vector<U> ys(xs.size());
@@ -460,6 +451,11 @@ inline int64_t modmultichoose(int64_t n, int64_t r, int64_t MOD) {
     return 1;
   }
   return modchoose(n + r - 1, r, MOD);
+}
+
+template <class T> inline T error(const std::string &message) {
+  std::cerr << message << std::endl;
+  assert(false);
 }
 
 } // namespace jikka

@@ -1,16 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jikka.Core.Convert.StrengthReductionSpec (spec) where
+module Jikka.Core.Convert.CloseSumSpec (spec) where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Convert.StrengthReduction (run)
+import Jikka.Core.Convert.CloseSum (rule)
+import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
+import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.RewriteRules
 import Test.Hspec
 
 run' :: Program -> Either Error Program
-run' = flip evalAlphaT 0 . run
+run' = flip evalAlphaT 0 . applyRewriteRuleProgram' (rule <> ConstantFolding.rule <> ShortCutFusion.rule)
 
 spec :: Spec
 spec = describe "run" $ do
@@ -21,10 +24,11 @@ spec = describe "run" $ do
                 "n"
                 IntTy
                 ( Sum'
-                    ( Tabulate'
+                    ( Map'
                         IntTy
-                        (Var "n")
+                        IntTy
                         (Lam "x" IntTy (Mult' (Lit (LitInt 100)) (Var "x")))
+                        (Range1' (Var "n"))
                     )
                 )
             )
@@ -38,7 +42,7 @@ spec = describe "run" $ do
                     ( FloorDiv'
                         ( Mult'
                             (Var "n")
-                            (Plus' (Var "n") (Negate' Lit1))
+                            (Minus' (Var "n") Lit1)
                         )
                         Lit2
                     )

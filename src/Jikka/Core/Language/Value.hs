@@ -25,12 +25,13 @@ data Value
 
 type Env = [(VarName, Value)]
 
-literalToValue :: Literal -> Value
+literalToValue :: MonadError Error m => Literal -> m Value
 literalToValue = \case
-  LitBuiltin builtin -> ValBuiltin builtin []
-  LitInt n -> ValInt n
-  LitBool p -> ValBool p
-  LitNil _ -> ValList V.empty
+  LitBuiltin builtin -> return $ ValBuiltin builtin []
+  LitInt n -> return $ ValInt n
+  LitBool p -> return $ ValBool p
+  LitNil _ -> return $ ValList V.empty
+  LitBottom _ err -> throwRuntimeError err
 
 valueToInt :: MonadError Error m => Value -> m Integer
 valueToInt = \case

@@ -4,7 +4,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.Alpha
--- Description : renames variables in exprs.
+-- Description : does alpha-conversion. / alpha 変換をします。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

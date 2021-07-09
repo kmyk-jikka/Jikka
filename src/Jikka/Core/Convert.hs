@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert
--- Description : is a meta module to combine other optimizers.
+-- Description : is a module to combine other optimizers. / 他の最適化器を組み合わせて実行する module です。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -18,17 +18,22 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
+import qualified Jikka.Core.Convert.CloseAll as CloseAll
+import qualified Jikka.Core.Convert.CloseMin as CloseMin
+import qualified Jikka.Core.Convert.CloseSum as CloseSum
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.ImmediateAppToLet as ImmediateAppToLet
-import qualified Jikka.Core.Convert.LinearFunction as LinearFunction
+import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
+import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
+import qualified Jikka.Core.Convert.SpecializeFoldl as SpecializeFoldl
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import qualified Jikka.Core.Convert.UnpackTuple as UnpackTuple
-import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Expr (Program)
 
 run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run' prog = do
@@ -38,10 +43,15 @@ run' prog = do
   prog <- ImmediateAppToLet.run prog
   prog <- TrivialLetElimination.run prog
   prog <- UnpackTuple.run prog
-  prog <- LinearFunction.run prog
+  prog <- MatrixExponentiation.run prog
+  prog <- SpecializeFoldl.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog
+  prog <- ShortCutFusion.run prog
+  prog <- CloseSum.run prog
+  prog <- CloseAll.run prog
+  prog <- CloseMin.run prog
   StrengthReduction.run prog
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program

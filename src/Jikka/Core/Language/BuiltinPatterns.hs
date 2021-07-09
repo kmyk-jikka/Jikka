@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Language.BuiltinPatterns
--- Description : provides pattern synonyms for `Builtin` applications.
+-- Description : provides pattern synonyms for builtin functions. / 組み込み関数のための pattern synonyms を提供します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -34,9 +34,6 @@ pattern CeilMod' e1 e2 = AppBuiltin2 CeilMod e1 e2
 
 pattern Pow' e1 e2 = AppBuiltin2 Pow e1 e2
 
--- induction functions
-pattern NatInd' t base step n = AppBuiltin3 (NatInd t) base step n
-
 -- advanced arithmetical functions
 pattern Abs' e = AppBuiltin Abs e
 
@@ -47,6 +44,8 @@ pattern Lcm' e1 e2 = AppBuiltin2 Lcm e1 e2
 pattern Min2' t e1 e2 = AppBuiltin2 (Min2 t) e1 e2
 
 pattern Max2' t e1 e2 = AppBuiltin2 (Max2 t) e1 e2
+
+pattern Iterate' t n step base = AppBuiltin3 (Iterate t) n step base
 
 -- logical functions
 pattern Not' e = AppBuiltin Not e
@@ -108,6 +107,8 @@ pattern ModMatMul' h n w e1 e2 e3 = AppBuiltin3 (ModMatMul h n w) e1 e2 e3
 pattern ModMatPow' n e1 e2 e3 = AppBuiltin3 (ModMatPow n) e1 e2 e3
 
 -- list functions
+pattern Nil' t = Lit (LitNil t)
+
 pattern Cons' t e1 e2 = AppBuiltin2 (Cons t) e1 e2
 
 pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
@@ -115,8 +116,6 @@ pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3
 
 pattern Len' t e = AppBuiltin (Len t) e
-
-pattern Tabulate' t n f = AppBuiltin2 (Tabulate t) n f
 
 pattern Map' t1 t2 f e = AppBuiltin2 (Map t1 t2) f e
 
@@ -187,3 +186,6 @@ pattern Choose' e1 e2 = AppBuiltin2 Choose e1 e2
 pattern Permute' e1 e2 = AppBuiltin2 Permute e1 e2
 
 pattern MultiChoose' e1 e2 = AppBuiltin2 MultiChoose e1 e2
+
+-- errors
+pattern Bottom' t err = Lit (LitBottom t err)

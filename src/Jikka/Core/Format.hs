@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Format
--- Description : converts the expr of core language to strings.
+-- Description : converts the syntax trees of core language to strings. / core 言語の構文木を文字列に変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -69,8 +69,6 @@ analyzeBuiltin = \case
   CeilDiv -> fun "ceildiv"
   CeilMod -> fun "ceilmod"
   Pow -> infixOp "**"
-  -- induction functions
-  NatInd t -> Fun [t] "ind"
   -- advanced arithmetical functions
   Abs -> fun "abs"
   Gcd -> fun "gcd"
@@ -114,8 +112,8 @@ analyzeBuiltin = \case
   Cons t -> Fun [t] "cons"
   Foldl t1 t2 -> Fun [t1, t2] "foldl"
   Scanl t1 t2 -> Fun [t1, t2] "scanl"
+  Iterate t -> Fun [t] "iterate"
   Len t -> Fun [t] "len"
-  Tabulate t -> Fun [t] "tabulate"
   Map t1 t2 -> Fun [t1, t2] "map"
   Filter t -> Fun [t] "filter"
   At t -> At' t
@@ -192,6 +190,7 @@ formatLiteral = \case
   LitInt n -> show n
   LitBool p -> map toLower $ show p
   LitNil t -> "nil" ++ formatTemplate [t]
+  LitBottom t _ -> "bottom" ++ formatTemplate [t]
 
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args

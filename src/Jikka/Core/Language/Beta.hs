@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Language.Beta
--- Description : substitutes variables with another exprs.
+-- Description : does beta-reduction. / beta 簡約を行います。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -18,8 +18,8 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Util
-import Jikka.Core.Language.Vars
 
 -- | `substitute` replaces the occrences of the given variable with the given expr. This considers contexts.
 --

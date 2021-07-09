@@ -4,7 +4,7 @@
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.FromCore
--- Description : converts core exprs to C++ exprs.
+-- Description : converts core programs to C++ programs. / core 言語のプログラムを C++ のプログラムに変換します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -93,13 +93,16 @@ runLiteral = \case
   X.LitNil t -> do
     t <- runType t
     return $ Y.Call (Y.Function "std::vector" [t]) []
+  X.LitBottom t err -> do
+    t <- runType t
+    return $ Y.Call (Y.Function "jikka::error" [t]) [Y.Lit (Y.LitString err)]
 
 arityOfBuiltin :: X.Builtin -> Int
 arityOfBuiltin = \case
-  X.NatInd _ -> 3
   X.Min2 _ -> 2
   X.Max2 _ -> 2
   X.Foldl _ _ -> 3
+  X.Iterate _ -> 3
   X.At _ -> 2
   X.Min1 _ -> 1
   X.Max1 _ -> 1
@@ -135,10 +138,6 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.CeilDiv -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceildiv" []) [e1, e2]
     X.CeilMod -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceilmod" []) [e1, e2]
     X.Pow -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::pow" []) [e1, e2]
-    -- induction functions
-    X.NatInd t -> go3' $ \base step n -> do
-      t <- runType t
-      return $ Y.Call (Y.Function "jikka::natind" [t]) [base, step, n]
     -- advanced arithmetical functions
     X.Abs -> go1 $ \e -> Y.Call (Y.Function "std::abs" []) [e]
     X.Gcd -> go2 $ \e1 e2 -> Y.Call (Y.Function "std::gcd" []) [e1, e2]
@@ -149,6 +148,9 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.Max2 t -> go2' $ \e1 e2 -> do
       t <- runType t
       return $ Y.Call (Y.Function "std::max" [t]) [e1, e2]
+    X.Iterate t -> go3' $ \n step base -> do
+      t <- runType t
+      return $ Y.Call (Y.Function "jikka::iterate" [t]) [n, step, base]
     -- logical functions
     X.Not -> go1 $ \e -> Y.UnOp Y.Not e
     X.And -> go2 $ \e1 e2 -> Y.BinOp Y.And e1 e2
@@ -195,9 +197,6 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
       t2 <- runType t2
       return $ Y.Call (Y.Function "jikka::scanl" [t1, t2]) [e1, e2, e3]
     X.Len _ -> go1 $ \e -> Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
-    X.Tabulate t -> go2' $ \n f -> do
-      t <- runType t
-      return $ Y.Call (Y.Function "jikka::tabulate" [t]) [n, f]
     X.Map t1 t2 -> go2' $ \f xs -> do
       t1 <- runType t1
       t2 <- runType t2

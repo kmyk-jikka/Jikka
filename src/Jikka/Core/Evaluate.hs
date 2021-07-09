@@ -5,7 +5,7 @@
 
 -- |
 -- Module      : Jikka.Core.Evaluate
--- Description : exexutes the expr of our core language.
+-- Description : executes the expr of our core language. / core 言語の式を実行します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -107,15 +107,12 @@ readInput t tokens = case (t, tokens) of
 -- -----------------------------------------------------------------------------
 -- builtins
 
-natind :: MonadError Error m => Value -> Value -> Integer -> m Value
-natind _ _ n | n < 0 = throwRuntimeError $ "negative number for mathematical induction: " ++ show n
-natind base _ 0 = return base
-natind base step n = do
-  val <- natind base step (n - 1)
-  callValue step [val]
-
-tabulate :: MonadError Error m => Integer -> Value -> m (V.Vector Value)
-tabulate n f = V.fromList <$> mapM (\i -> callValue f [ValInt i]) [0 .. n - 1]
+iterate' :: MonadError Error m => Integer -> Value -> Value -> m Value
+iterate' n _ _ | n < 0 = throwRuntimeError $ "negative number of iteration: " ++ show n
+iterate' 0 _ base = return base
+iterate' n step base = do
+  base <- callValue step [base]
+  iterate' (n - 1) step base
 
 map' :: MonadError Error m => Value -> V.Vector Value -> m (V.Vector Value)
 map' f a = V.fromList <$> mapM (\val -> callValue f [val]) (V.toList a)
@@ -209,14 +206,13 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     CeilDiv -> go2' valueToInt valueToInt ValInt ceilDiv
     CeilMod -> go2' valueToInt valueToInt ValInt ceilMod
     Pow -> go2 valueToInt valueToInt ValInt (^)
-    -- induction functions
-    NatInd _ -> go3' pure pure valueToInt id $ \base step n -> natind base step n
     -- advanced arithmetical functions
     Abs -> go1 valueToInt ValInt abs
     Gcd -> go2 valueToInt valueToInt ValInt gcd
     Lcm -> go2 valueToInt valueToInt ValInt lcm
     Min2 _ -> go2 pure pure id minValue
     Max2 _ -> go2 pure pure id maxValue
+    Iterate _ -> go3' valueToInt pure pure id $ \n step base -> iterate' n step base
     -- logical functions
     Not -> go1 valueToBool ValBool not
     And -> go2 valueToBool valueToBool ValBool (&&)
@@ -255,7 +251,6 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Foldl _ _ -> go3' pure pure valueToList id $ \f x a -> V.foldM (\x y -> callValue f [x, y]) x a
     Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
     Len _ -> go1 valueToList ValInt (fromIntegral . V.length)
-    Tabulate _ -> go2' valueToInt pure ValList tabulate
     Map _ _ -> go2' pure valueToList ValList map'
     Filter _ -> go2' pure valueToList ValList $ \f xs -> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) xs
     At _ -> go2' valueToList valueToInt id atEither
@@ -315,7 +310,7 @@ evaluateExpr env = \case
   Var x -> case lookup x env of
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just val -> return val
-  Lit lit -> return $ literalToValue lit
+  Lit lit -> literalToValue lit
   e@(App _ _) -> do
     let (f, args) = curryApp e
     f <- evaluateExpr env f

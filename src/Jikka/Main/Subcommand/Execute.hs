@@ -1,6 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- |
+-- Module      : Jikka.Subcommand.Execute
+-- Description : is the entry point of @execute@ subcommand. / @execute@ サブコマンドのエントリポイントです。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Main.Subcommand.Execute (run) where
 
 import Control.Monad.Except

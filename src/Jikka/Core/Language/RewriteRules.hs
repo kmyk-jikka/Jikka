@@ -1,6 +1,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- |
+-- Module      : Jikka.Core.Language.RewriteRules
+-- Description : provides functions for rewrite rules. / 書き換え規則のための関数を提供します。
+-- Copyright   : (c) Kimiyuki Onaka, 2021
+-- License     : Apache License 2.0
+-- Maintainer  : kimiyuki95@gmail.com
+-- Stability   : experimental
+-- Portability : portable
 module Jikka.Core.Language.RewriteRules
   ( RewriteRule (..),
     pureRewriteRule,
