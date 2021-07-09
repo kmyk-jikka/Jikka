@@ -28,6 +28,7 @@ import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
+import qualified Jikka.Core.Convert.SpecializeFoldl as SpecializeFoldl
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
@@ -43,6 +44,7 @@ run' prog = do
   prog <- TrivialLetElimination.run prog
   prog <- UnpackTuple.run prog
   prog <- MatrixExponentiation.run prog
+  prog <- SpecializeFoldl.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog
