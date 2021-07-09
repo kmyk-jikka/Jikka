@@ -753,9 +753,6 @@ Any :: Builtin
 Sorted :: Type -> Builtin
 
 -- | &lt;math&gt;
-List :: Type -> Builtin
-
--- | &lt;math&gt;
 Reversed :: Type -> Builtin
 
 -- | &lt;math&gt;
@@ -971,7 +968,6 @@ pattern ArgMax' :: Type -> Expr -> Expr
 pattern All' :: Expr -> Expr
 pattern Any' :: Expr -> Expr
 pattern Sorted' :: Type -> Expr -> Expr
-pattern List' :: Type -> Expr -> Expr
 pattern Reversed' :: Type -> Expr -> Expr
 pattern Range1' :: Expr -> Expr
 pattern Range2' :: Expr -> Expr -> Expr
@@ -1243,35 +1239,6 @@ module Jikka.Core.Convert.SpecializeFoldl
 --   <li><a>Iterate</a> &lt;math&gt;</li>
 --   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
-module Jikka.Core.Convert.ConstantPropagation
-
--- | <a>run</a> does constant propagation. This assumes that the program is
---   alpha-converted.
---   
---   For example, this converts the following:
---   
---   <pre>
---   let x = 1
---   in let f = fun y -&gt; y
---   in x + x + f(x)
---   </pre>
---   
---   to:
---   
---   <pre>
---   let f = fun y -&gt; y
---   in 1 + 1 + f(1)
---   </pre>
---   
---   NOTE: this doesn't constant folding.
-run :: MonadError Error m => Program -> m Program
-run' :: Program -> Program
-
--- | <a>isSmallExpr</a> checks whether given exprs are suitable to
---   propagate.
-isSmallExpr :: Expr -> Bool
 
 
 -- | &lt;math&gt;
@@ -1573,7 +1540,6 @@ module Jikka.Core.Convert.ShortCutFusion
 --   <li><a>Filter</a> &lt;math&gt;</li>
 --   <li><a>Reversed</a> &lt;math&gt;</li>
 --   <li><a>Sorted</a> &lt;math&gt;</li>
---   <li><a>List</a> &lt;math&gt;</li>
 --   </ul>
 --   
 --   <h3>Fold functions</h3>
@@ -1735,6 +1701,35 @@ module Jikka.Core.Convert.ImmediateAppToLet
 --   let x = a in x + x
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+
+module Jikka.Core.Convert.ConstantPropagation
+
+-- | <a>run</a> does constant propagation. This assumes that the program is
+--   alpha-converted.
+--   
+--   For example, this converts the following:
+--   
+--   <pre>
+--   let x = 1
+--   in let f = fun y -&gt; y
+--   in x + x + f(x)
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let f = fun y -&gt; y
+--   in 1 + 1 + f(1)
+--   </pre>
+--   
+--   NOTE: this doesn't constant folding.
+run :: MonadError Error m => Program -> m Program
+run' :: Program -> Program
+
+-- | <a>isConstantTimeExpr</a> checks whether given exprs are suitable to
+--   propagate.
+isConstantTimeExpr :: Expr -> Bool
 
 
 -- | &lt;math&gt;
