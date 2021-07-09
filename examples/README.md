@@ -12,7 +12,7 @@
 ### Toy scripts
 
 -   [x] `sum.py`
-    -   A simple sum. This is compiled to a closed-form expr. ([Wolfram&bar;Alpha](https://www.wolframalpha.com/input/?i=%5Csum_x%5E%7Bn+-+1%7D+%28ax+%2B+b%29))
+    -   A simple sum. This is compiled to a closed-form expr. ([Wolfram&#124;Alpha](https://www.wolframalpha.com/input/?i=%5Csum_x%5E%7Bn+-+1%7D+%28ax+%2B+b%29))
 -   [x] `fib.py`
     -   Fibonacci sequence. This is compiled to matrix eponentiation.
 -   [ ] `fact.py`
