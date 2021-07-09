@@ -143,7 +143,7 @@ reduceFoldMap =
         Foldl' _ t3 g init (Map' t1 _ f xs) -> do
           x3 <- genVarName'
           x1 <- genVarName'
-          return' $ Foldl' t1 t3 (Lam2 x3 t3 x1 t1 (App2 g (Var x1) (App f (Var x1)))) init xs
+          return' $ Foldl' t1 t3 (Lam2 x3 t3 x1 t1 (App2 g (Var x3) (App f (Var x1)))) init xs
         -- others
         _ -> return Nothing
 
