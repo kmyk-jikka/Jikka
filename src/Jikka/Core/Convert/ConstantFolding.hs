@@ -62,16 +62,38 @@ reduceConstArithmeticalExpr =
   let return' = Just . LitInt'
    in simpleRewriteRule $ \case
         Negate' (LitInt' a) -> return' $ - a
+        Plus' a (LitInt' 0) -> Just a
+        Plus' (LitInt' 0) b -> Just b
         Plus' (LitInt' a) (LitInt' b) -> return' $ a + b
+        Minus' a (LitInt' 0) -> Just a
+        Minus' (LitInt' 0) b -> Just (Negate' b)
         Minus' (LitInt' a) (LitInt' b) -> return' $ a - b
+        Mult' _ (LitInt' 0) -> return' 0
+        Mult' a (LitInt' 1) -> Just a
+        Mult' (LitInt' 0) _ -> return' 0
+        Mult' (LitInt' 1) b -> Just b
         Mult' (LitInt' a) (LitInt' b) -> return' $ a * b
+        FloorDiv' a (LitInt' 1) -> Just a
         FloorDiv' (LitInt' a) (LitInt' b) -> Just . fromRight (Bottom' IntTy "division by zero") . (LitInt' <$>) $ floorDiv a b
+        FloorMod' _ (LitInt' 1) -> return' 0
         FloorMod' (LitInt' a) (LitInt' b) -> Just . fromRight (Bottom' IntTy "modulo by zero") . (LitInt' <$>) $ floorMod a b
+        CeilDiv' a (LitInt' 1) -> Just a
         CeilDiv' (LitInt' a) (LitInt' b) -> Just . fromRight (Bottom' IntTy "division by zero") . (LitInt' <$>) $ ceilDiv a b
+        CeilMod' _ (LitInt' 1) -> return' 0
         CeilMod' (LitInt' a) (LitInt' b) -> Just . fromRight (Bottom' IntTy "modulo by zero") . (LitInt' <$>) $ ceilMod a b
+        Pow' _ (LitInt' 0) -> return' 1
+        Pow' a (LitInt' 1) -> Just a
         Pow' (LitInt' a) (LitInt' b) | b >= 0 && fromInteger b * log (abs (fromInteger a)) < 100 -> return' $ a ^ b
         Abs' (LitInt' a) -> return' $ abs a
+        Gcd' a (LitInt' 0) -> Just a
+        Gcd' _ (LitInt' 1) -> return' 1
+        Gcd' (LitInt' 0) b -> Just b
+        Gcd' (LitInt' 1) _ -> return' 1
         Gcd' (LitInt' a) (LitInt' b) -> return' $ gcd a b
+        Lcm' _ (LitInt' 0) -> return' 0
+        Lcm' a (LitInt' 1) -> Just a
+        Lcm' (LitInt' 0) _ -> return' 0
+        Lcm' (LitInt' 1) b -> Just b
         Lcm' (LitInt' a) (LitInt' b) -> return' $ lcm a b
         _ -> Nothing
 
@@ -103,9 +125,18 @@ reduceConstMaxExpr = simpleRewriteRule $ \case
 reduceConstBooleanExpr :: Monad m => RewriteRule m
 reduceConstBooleanExpr = simpleRewriteRule $ \case
   Not' (LitBool' a) -> Just $ LitBool' (not a)
-  And' (LitBool' a) (LitBool' b) -> Just $ LitBool' (a && b)
-  Or' (LitBool' a) (LitBool' b) -> Just $ LitBool' (a || b)
-  Implies' (LitBool' a) (LitBool' b) -> Just $ LitBool' (not a || b)
+  And' _ LitFalse -> Just LitFalse
+  And' a LitTrue -> Just a
+  And' LitFalse _ -> Just LitFalse
+  And' LitTrue b -> Just b
+  Or' a LitFalse -> Just a
+  Or' _ LitTrue -> Just LitTrue
+  Or' LitFalse b -> Just b
+  Or' LitTrue _ -> Just LitTrue
+  Implies' a LitFalse -> Just $ Not' a
+  Implies' _ LitTrue -> Just LitTrue
+  Implies' LitFalse _ -> Just LitTrue
+  Implies' LitTrue a -> Just a
   If' _ (LitBool' a) e1 e2 -> Just $ if a then e1 else e2
   _ -> Nothing
 
@@ -122,15 +153,31 @@ reduceConstBooleanExpr = simpleRewriteRule $ \case
 -- * `BitRightShift` \(: \int \to \int \to \int\)
 reduceConstBitExpr :: Monad m => RewriteRule m
 reduceConstBitExpr =
-  simpleRewriteRule $
-    (LitInt' <$>) . \case
-      BitNot' (LitInt' a) -> Just $ complement a
-      BitAnd' (LitInt' a) (LitInt' b) -> Just $ a .&. b
-      BitOr' (LitInt' a) (LitInt' b) -> Just $ a .|. b
-      BitXor' (LitInt' a) (LitInt' b) -> Just $ a `xor` b
-      BitLeftShift' (LitInt' a) (LitInt' b) | - 100 < b && b < 100 -> Just $ a `shift` fromInteger b
-      BitRightShift' (LitInt' a) (LitInt' b) | - 100 < b && b < 100 -> Just $ a `shift` fromInteger (- b)
-      _ -> Nothing
+  let return' = Just . LitInt'
+   in simpleRewriteRule $ \case
+        BitNot' (LitInt' a) -> return' $ complement a
+        BitAnd' _ (LitInt' 0) -> return' 0
+        BitAnd' a (LitInt' (-1)) -> Just a
+        BitAnd' (LitInt' 0) _ -> return' 0
+        BitAnd' (LitInt' (-1)) b -> Just b
+        BitAnd' (LitInt' a) (LitInt' b) -> return' $ a .&. b
+        BitOr' a (LitInt' 0) -> Just a
+        BitOr' _ (LitInt' (-1)) -> return' $ -1
+        BitOr' (LitInt' 0) b -> Just b
+        BitOr' (LitInt' (-1)) _ -> return' $ -1
+        BitOr' (LitInt' a) (LitInt' b) -> return' $ a .|. b
+        BitXor' a (LitInt' 0) -> Just a
+        BitXor' a (LitInt' (-1)) -> Just $ BitNot' a
+        BitXor' (LitInt' 0) b -> Just b
+        BitXor' (LitInt' (-1)) b -> Just $ BitNot' b
+        BitXor' (LitInt' a) (LitInt' b) -> return' $ a `xor` b
+        BitLeftShift' a (LitInt' 0) -> Just a
+        BitLeftShift' (LitInt' 0) _ -> return' 0
+        BitLeftShift' (LitInt' a) (LitInt' b) | - 100 < b && b < 100 -> return' $ a `shift` fromInteger b
+        BitRightShift' a (LitInt' 0) -> Just a
+        BitRightShift' (LitInt' 0) _ -> return' 0
+        BitRightShift' (LitInt' a) (LitInt' b) | - 100 < b && b < 100 -> return' $ a `shift` fromInteger (- b)
+        _ -> Nothing
 
 -- |
 -- == List of functions which are reduced
