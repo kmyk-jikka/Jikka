@@ -7,7 +7,10 @@
 -   [ ] `abc127_e.py`
 -   [ ] `abc134_c.py`
 -   [ ] `codefestival_2015_final_d.py`
+-   [ ] `dp_a.py`
+-   [ ] `dp_b.py`
 -   [ ] `m_solutions2019_e.py`
+-   [ ] `static_range_sum.py`
 
 ### Toy scripts
 
