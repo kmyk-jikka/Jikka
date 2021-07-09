@@ -94,12 +94,30 @@ runBuiltin builtin =
         X.BuiltinList t -> return $ Y.Lam "xs" (Y.ListTy (runType t)) (Y.Var "xs")
         X.BuiltinTuple ts -> f $ Y.Tuple (map runType ts)
         X.BuiltinLen t -> f $ Y.Len (runType t)
-        X.BuiltinMap _ _ -> throwInternalError "runBuiltin TODO"
+        X.BuiltinMap ts ret -> return $ case ts of
+          [] -> Y.Nil' (runType ret)
+          _ ->
+            let ts' = map runType ts
+                ret' = runType ret
+                var i = Y.VarName ("xs" ++ show i)
+                lam body = Y.Lam "f" (Y.curryFunTy ts' ret') (foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts'))
+                len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts'))
+                body = Y.Map' Y.IntTy ret' (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "f") (map (Y.Var . var) [0 .. length ts' - 1]))) (Y.Range1' len)
+             in lam body
         X.BuiltinSorted t -> f $ Y.Sorted (runType t)
         X.BuiltinReversed t -> f $ Y.Reversed (runType t)
-        X.BuiltinEnumerate _ -> throwInternalError "runBuiltin TODO"
-        X.BuiltinFilter _ -> throwInternalError "runBuiltin TODO"
-        X.BuiltinZip _ -> throwInternalError "runBuiltin TODO"
+        X.BuiltinEnumerate t ->
+          let t' = runType t
+              body = Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' [Y.IntTy, t']) [Y.Var "i", Y.At' t' (Y.Var "xs") (Y.Var "i")])
+           in return $ Y.Lam "xs" (Y.ListTy t') (Y.Map' (Y.ListTy t') (Y.ListTy (Y.TupleTy [Y.IntTy, t'])) body (Y.Range1' (Y.Len' t' (Y.Var "xs"))))
+        X.BuiltinFilter t -> f $ Y.Filter (runType t)
+        X.BuiltinZip ts ->
+          let ts' = map runType ts
+              var i = Y.VarName ("xs" ++ show i)
+              lam body = foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts')
+              len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts'))
+              body = Y.Map' Y.IntTy (Y.TupleTy ts') (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts') (map (Y.Var . var) [0 .. length ts' - 1]))) (Y.Range1' len)
+           in return $ lam body
         X.BuiltinAll -> f Y.All
         X.BuiltinAny -> f Y.Any
         X.BuiltinSum -> f Y.Sum
