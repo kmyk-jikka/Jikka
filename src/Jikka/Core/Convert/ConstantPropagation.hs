@@ -100,7 +100,6 @@ isConstantTimeBuiltin = \case
   All -> False
   Any -> False
   Sorted _ -> False
-  List _ -> False
   Reversed _ -> False
   Range1 -> False
   Range2 -> False

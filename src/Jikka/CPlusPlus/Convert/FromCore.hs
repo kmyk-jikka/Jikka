@@ -232,7 +232,6 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.Sorted t -> go1' $ \e -> do
       t <- runType t
       return $ Y.Call (Y.Function "jikka::sort" [t]) [e]
-    X.List _ -> go1 id
     X.Reversed t -> go1' $ \e -> do
       t <- runType t
       return $ Y.Call (Y.Function "jikka::reverse" [t]) [e]

@@ -85,8 +85,6 @@ reduceMap =
         -- reduce `Filter`
         Filter' t (Lam _ _ LitFalse) _ -> return' (Nil' t)
         Filter' _ (Lam _ _ LitTrue) xs -> return' xs
-        -- reduce `List`
-        List' _ xs -> return' xs
         -- others
         _ -> return Nothing
 
@@ -219,7 +217,6 @@ runProgram = applyRewriteRuleProgram' rule
 -- * `Filter` \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)
 -- * `Reversed` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
 -- * `Sorted` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
--- * `List` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
 --
 -- === Fold functions
 --

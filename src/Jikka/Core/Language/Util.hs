@@ -94,7 +94,6 @@ mapTypeInBuiltin f = \case
   All -> All
   Any -> Any
   Sorted t -> Sorted (f t)
-  List t -> List (f t)
   Reversed t -> Reversed (f t)
   Range1 -> Range1
   Range2 -> Range2

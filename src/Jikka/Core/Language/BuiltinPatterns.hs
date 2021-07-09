@@ -149,8 +149,6 @@ pattern Any' e = AppBuiltin Any e
 
 pattern Sorted' t e = AppBuiltin (Sorted t) e
 
-pattern List' t e = AppBuiltin (List t) e
-
 pattern Reversed' t e = AppBuiltin (Reversed t) e
 
 pattern Range1' e = AppBuiltin Range1 e
