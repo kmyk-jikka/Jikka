@@ -267,7 +267,6 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     All -> go1 valueToBoolList ValBool and
     Any -> go1 valueToBoolList ValBool or
     Sorted _ -> go1 valueToList ValList sortVector
-    List _ -> go1 valueToList ValList id
     Reversed _ -> go1 valueToList ValList V.reverse
     Range1 -> go1' valueToInt ValList range1
     Range2 -> go2' valueToInt valueToInt ValList range2

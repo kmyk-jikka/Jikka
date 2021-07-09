@@ -89,7 +89,6 @@ builtinToType = \case
   All -> FunLTy BoolTy
   Any -> FunLTy BoolTy
   Sorted t -> Fun1STy (ListTy t)
-  List t -> Fun1STy (ListTy t)
   Reversed t -> Fun1STy (ListTy t)
   Range1 -> FunTy IntTy (ListTy IntTy)
   Range2 -> Fun2Ty IntTy IntTy (ListTy IntTy)

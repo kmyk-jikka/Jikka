@@ -130,7 +130,6 @@ analyzeBuiltin = \case
   All -> fun "all"
   Any -> fun "any"
   Sorted t -> Fun [t] "sort"
-  List t -> Fun [t] "list"
   Reversed t -> Fun [t] "reverse"
   Range1 -> fun "range1"
   Range2 -> fun "range2"

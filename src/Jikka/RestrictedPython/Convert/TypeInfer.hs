@@ -141,7 +141,7 @@ formularizeExpr e0 = case value' e0 of
     formularize from
     formularize to
     formularize step
-    return t'
+    return (ListTy t')
 
 formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr' -> Type -> m ()
 formularizeExpr' e0 t = do

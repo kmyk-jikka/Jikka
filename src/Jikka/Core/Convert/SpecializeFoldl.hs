@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.SpecializeFoldl
--- Description : specializes @foldl@ with concrete functions like @sum@ and @product. / @sum@ や @product@ のような具体的な関数で @foldl@ を特殊化します。
+-- Description : specializes @foldl@ with concrete functions like @sum@ and @product@. / @sum@ や @product@ のような具体的な関数で @foldl@ を特殊化します。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com

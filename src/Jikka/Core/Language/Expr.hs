@@ -198,8 +198,6 @@ data Builtin
   | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
     Sorted Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
-    List Type
-  | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
     Reversed Type
   | -- | \(: \int \to \list(\int)\)
     Range1
