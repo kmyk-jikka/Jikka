@@ -34,6 +34,7 @@ builtinToType = \case
   Lcm -> Fun2STy IntTy
   Min2 t -> Fun2STy t
   Max2 t -> Fun2STy t
+  Iterate t -> Fun3Ty IntTy (FunTy t t) t t
   -- logical functions
   Not -> Fun1STy BoolTy
   And -> Fun2STy BoolTy
@@ -71,7 +72,6 @@ builtinToType = \case
   Cons t -> Fun2Ty t (ListTy t) (ListTy t)
   Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
-  Iterate t -> Fun3Ty IntTy (FunTy t t) t t
   Len t -> FunTy (ListTy t) IntTy
   Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
   Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)

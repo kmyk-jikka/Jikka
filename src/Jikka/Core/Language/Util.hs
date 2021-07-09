@@ -39,6 +39,7 @@ mapTypeInBuiltin f = \case
   Lcm -> Lcm
   Min2 t -> Min2 (f t)
   Max2 t -> Max2 (f t)
+  Iterate t -> Iterate (f t)
   -- logical functionslogical
   Not -> Not
   And -> And
@@ -76,7 +77,6 @@ mapTypeInBuiltin f = \case
   Cons t -> Cons (f t)
   Foldl t1 t2 -> Foldl (f t1) (f t2)
   Scanl t1 t2 -> Scanl (f t1) (f t2)
-  Iterate t -> Iterate (f t)
   Len t -> Len (f t)
   Map t1 t2 -> Map (f t1) (f t2)
   Filter t -> Filter (f t)

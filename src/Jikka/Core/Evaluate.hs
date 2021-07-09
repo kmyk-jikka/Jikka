@@ -212,6 +212,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Lcm -> go2 valueToInt valueToInt ValInt lcm
     Min2 _ -> go2 pure pure id minValue
     Max2 _ -> go2 pure pure id maxValue
+    Iterate _ -> go3' valueToInt pure pure id $ \n step base -> iterate' n step base
     -- logical functions
     Not -> go1 valueToBool ValBool not
     And -> go2 valueToBool valueToBool ValBool (&&)
@@ -249,7 +250,6 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Cons _ -> go2 pure valueToList ValList V.cons
     Foldl _ _ -> go3' pure pure valueToList id $ \f x a -> V.foldM (\x y -> callValue f [x, y]) x a
     Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
-    Iterate _ -> go3' valueToInt pure pure id $ \n step base -> iterate' n step base
     Len _ -> go1 valueToList ValInt (fromIntegral . V.length)
     Map _ _ -> go2' pure valueToList ValList map'
     Filter _ -> go2' pure valueToList ValList $ \f xs -> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) xs

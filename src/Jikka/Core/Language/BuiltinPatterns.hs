@@ -45,6 +45,8 @@ pattern Min2' t e1 e2 = AppBuiltin2 (Min2 t) e1 e2
 
 pattern Max2' t e1 e2 = AppBuiltin2 (Max2 t) e1 e2
 
+pattern Iterate' t n step base = AppBuiltin3 (Iterate t) n step base
+
 -- logical functions
 pattern Not' e = AppBuiltin Not e
 
@@ -112,8 +114,6 @@ pattern Cons' t e1 e2 = AppBuiltin2 (Cons t) e1 e2
 pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 
 pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3
-
-pattern Iterate' t n step base = AppBuiltin3 (Iterate t) n step base
 
 pattern Len' t e = AppBuiltin (Len t) e
 

@@ -148,6 +148,9 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.Max2 t -> go2' $ \e1 e2 -> do
       t <- runType t
       return $ Y.Call (Y.Function "std::max" [t]) [e1, e2]
+    X.Iterate t -> go3' $ \n step base -> do
+      t <- runType t
+      return $ Y.Call (Y.Function "jikka::iterate" [t]) [n, step, base]
     -- logical functions
     X.Not -> go1 $ \e -> Y.UnOp Y.Not e
     X.And -> go2 $ \e1 e2 -> Y.BinOp Y.And e1 e2
@@ -193,9 +196,6 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
       t1 <- runType t1
       t2 <- runType t2
       return $ Y.Call (Y.Function "jikka::scanl" [t1, t2]) [e1, e2, e3]
-    X.Iterate t -> go3' $ \n step base -> do
-      t <- runType t
-      return $ Y.Call (Y.Function "jikka::iterate" [t]) [n, step, base]
     X.Len _ -> go1 $ \e -> Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
     X.Map t1 t2 -> go2' $ \f xs -> do
       t1 <- runType t1

@@ -87,6 +87,8 @@ data Builtin
     Min2 Type
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \alpha\)
     Max2 Type
+  | -- | iterated application \((\lambda k f x. f^k(x)): \forall \alpha. \int \to (\alpha \to \alpha) \to \alpha \to \alpha\)
+    Iterate Type
   | -- logical functions
 
     -- | \(: \bool \to \bool\)
@@ -161,8 +163,6 @@ data Builtin
     Foldl Type Type
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
     Scanl Type Type
-  | -- | iterated application \((\lambda k f x. f^k(x)): \forall \alpha. \int \to (\alpha \to \alpha) \to \alpha \to \alpha\)
-    Iterate Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)
