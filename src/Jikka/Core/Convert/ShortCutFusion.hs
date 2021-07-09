@@ -60,12 +60,19 @@ reduceMapBuild =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
         -- reduce `Sorted`
+        Sorted' _ (Nil' t) -> return' $ Nil' t
         Sorted' _ (Range1' n) -> return' $ Range1' n
         -- reduce `Reversed`
+        Reversed' _ (Nil' t) -> return' $ Nil' t
         Reversed' _ (Range1' n) -> do
           x <- genVarName'
           let f = Lam x IntTy (Minus' (Minus' n (Var x)) (LitInt' 1))
           return' $ Map' IntTy IntTy f n
+        -- reduce `Filter`
+        Filter' _ _ (Nil' t) -> return' $ Nil' t
+        -- reduce `Map`
+        Map' _ _ _ (Nil' t) -> return' $ Nil' t
+        Map' t1 t2 f (Cons' _ x xs) -> return' $ Cons' t2 (App f x) (Map' t1 t2 f xs)
         -- others
         _ -> return Nothing
 

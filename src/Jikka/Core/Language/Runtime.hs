@@ -22,7 +22,10 @@ ceilMod a b = return (a - ((a + b - 1) `div` b) * b)
 
 modinv :: MonadError Error m => Integer -> Integer -> m Integer
 modinv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
-modinv _ _ = throwInternalError "TODO: implement inv()"
+modinv a m = go a m 0 1 1 0
+  where
+    go 0 b x y _ _ = if a * x + m * y == b && b == 1 then return x else throwRuntimeError "Jikka.Core.Language.Runtime.modinv: something wrong"
+    go a b x y u v = let q = b `div` a in go (b - q * a) a u v (x - q * u) (y - q * v)
 
 modpow :: MonadError Error m => Integer -> Integer -> Integer -> m Integer
 modpow _ _ m | m <= 0 = throwRuntimeError $ "invalid argument for modpow: MOD = " ++ show m

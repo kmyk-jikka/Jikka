@@ -34,70 +34,109 @@ import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
+import Jikka.Core.Language.Util
 
-reduceSum :: Monad m => RewriteRule m
-reduceSum = simpleRewriteRule $ \case
-  -- reduce list build functions
-  Sum' (Nil' _) -> Just Lit0
-  Sum' (Cons' _ x xs) -> Just $ Plus' x (Sum' xs)
-  Sum' (Range1' n) -> Just $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
-  -- reduce list map functions
-  Sum' (Reversed' _ xs) -> Just $ Sum' xs
-  Sum' (Sorted' _ xs) -> Just $ Sum' xs
-  Sum' (Map' t1 IntTy (Lam x _ body) xs) -> case (body, xs) of
-    (e, xs) | x `isUnusedVar` e -> Just $ Mult' (Len' t1 xs) e
-    (body, Range1' n) | body == Var x -> Just $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
-    (body, Range1' n) | body == Mult' (Var x) (Var x) || body == Pow' (Var x) (LitInt' 2) -> Just $ FloorDiv' (Mult' n (Mult' (Minus' n Lit1) (Minus' (Mult' Lit2 (Var x)) Lit1))) (LitInt' 6)
-    (Negate' e, xs) -> Just $ Negate' (Sum' (Map' t1 IntTy (Lam x t1 e) xs))
-    (Plus' e1 e2, xs) -> Just $ Plus' (Sum' (Map' t1 IntTy (Lam x t1 e1) xs)) (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
-    (Minus' e1 e2, xs) -> Just $ Minus' (Sum' (Map' t1 IntTy (Lam x t1 e1) xs)) (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
-    (Mult' e1 e2, xs) | x `isUnusedVar` e1 -> Just $ Mult' e1 (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
-    (Mult' e1 e2, xs) | x `isUnusedVar` e2 -> Just $ Mult' e2 (Sum' (Map' t1 IntTy (Lam x t1 e1) xs))
-    _ -> Nothing
-  -- others
-  _ -> Nothing
+reduceSum :: MonadAlpha m => RewriteRule m
+reduceSum =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        Sum' xs -> case xs of
+          -- reduce list build functions
+          Nil' _ -> return' Lit0
+          Cons' _ x xs -> return' $ Plus' x (Sum' xs)
+          Range1' n -> return' $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
+          -- reduce list map functions
+          Reversed' _ xs -> return' $ Sum' xs
+          Sorted' _ xs -> return' $ Sum' xs
+          Filter' _ g (Map' t1 _ f xs) -> do
+            x <- genVarName'
+            let h = Lam x t1 (If' IntTy (App g (App f (Var x))) (App f (Var x)) Lit0)
+            return' $ Sum' (Map' t1 IntTy h xs)
+          Map' t1 IntTy (Lam x _ body) xs -> case (body, xs) of
+            (e, xs) | x `isUnusedVar` e -> return' $ Mult' (Len' t1 xs) e
+            (body, Range1' n) | body == Var x -> return' $ FloorDiv' (Mult' n (Minus' n Lit1)) Lit2
+            (body, Range1' n) | body == Mult' (Var x) (Var x) || body == Pow' (Var x) (LitInt' 2) -> return' $ FloorDiv' (Mult' n (Mult' (Minus' n Lit1) (Minus' (Mult' Lit2 (Var x)) Lit1))) (LitInt' 6)
+            (Negate' e, xs) -> return' $ Negate' (Sum' (Map' t1 IntTy (Lam x t1 e) xs))
+            (Plus' e1 e2, xs) -> return' $ Plus' (Sum' (Map' t1 IntTy (Lam x t1 e1) xs)) (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
+            (Minus' e1 e2, xs) -> return' $ Minus' (Sum' (Map' t1 IntTy (Lam x t1 e1) xs)) (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
+            (Mult' e1 e2, xs) | x `isUnusedVar` e1 -> return' $ Mult' e1 (Sum' (Map' t1 IntTy (Lam x t1 e2) xs))
+            (Mult' e1 e2, xs) | x `isUnusedVar` e2 -> return' $ Mult' e2 (Sum' (Map' t1 IntTy (Lam x t1 e1) xs))
+            _ -> return Nothing
+          -- others
+          _ -> return Nothing
+        _ -> return Nothing
 
+-- | TODO: implement this.
 reduceProduct :: Monad m => RewriteRule m
 reduceProduct = simpleRewriteRule $ \case
-  -- reduce list build functions
-  Product' (Nil' _) -> Just Lit1
-  Product' (Cons' _ x xs) -> Just $ Mult' x (Product' xs)
-  Product' (Range1' n) -> Just $ If' IntTy (Equal' IntTy n Lit0) Lit1 Lit0
-  -- reduce list map functions
-  Product' (Reversed' _ xs) -> Just $ Product' xs
-  Product' (Sorted' _ xs) -> Just $ Product' xs
-  Product' (Map' t1 _ (Lam x _ e) xs) | x `isUnusedVar` e -> Just $ Pow' e (Len' t1 xs)
-  Product' (Map' t1 t2 (Lam x t (Negate' e)) xs) -> Just $ Mult' (Pow' (Negate' Lit0) (Len' t1 xs)) (Product' (Map' t1 t2 (Lam x t e) xs))
-  Product' (Map' t1 t2 (Lam x t (Mult' e1 e2)) xs) -> Just $ Mult' (Product' (Map' t1 t2 (Lam x t e1) xs)) (Product' (Map' t1 t2 (Lam x t e2) xs))
-  -- others
+  Product' xs -> case xs of
+    -- reduce list build functions
+    Nil' _ -> Just Lit1
+    Cons' _ x xs -> Just $ Mult' x (Product' xs)
+    Range1' n -> Just $ If' IntTy (Equal' IntTy n Lit0) Lit1 Lit0
+    -- reduce list map functions
+    Reversed' _ xs -> Just $ Product' xs
+    Sorted' _ xs -> Just $ Product' xs
+    Map' t1 _ (Lam x _ e) xs | x `isUnusedVar` e -> Just $ Pow' e (Len' t1 xs)
+    Map' t1 t2 (Lam x t (Negate' e)) xs -> Just $ Mult' (Pow' (Negate' Lit0) (Len' t1 xs)) (Product' (Map' t1 t2 (Lam x t e) xs))
+    Map' t1 t2 (Lam x t (Mult' e1 e2)) xs -> Just $ Mult' (Product' (Map' t1 t2 (Lam x t e1) xs)) (Product' (Map' t1 t2 (Lam x t e2) xs))
+    -- others
+    _ -> Nothing
   _ -> Nothing
 
-reduceModSum :: Monad m => RewriteRule m
-reduceModSum = simpleRewriteRule $ \case
-  -- the corner case
-  ModSum' _ Lit1 -> Just Lit0
-  -- reduce list build functions
-  ModSum' (Nil' _) _ -> Just Lit0
-  ModSum' (Cons' _ x xs) m -> Just $ ModPlus' x (ModSum' xs m) m
-  ModSum' (Range1' n) m -> Just $ FloorMod' (FloorDiv' (Mult' n (Plus' n Lit1)) Lit2) m
-  -- reduce list map functions
-  ModSum' (Reversed' _ xs) m -> Just $ ModSum' xs m
-  ModSum' (Sorted' _ xs) m -> Just $ ModSum' xs m
-  -- others
-  _ -> Nothing
+-- |
+-- * This assumes that `ModFloor` is already propagated.
+reduceModSum :: MonadAlpha m => RewriteRule m
+reduceModSum =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        ModSum' xs m -> case xs of
+          -- the corner case
+          _ | m == Lit1 -> return' Lit0
+          -- reduce list build functions
+          Nil' _ -> return' Lit0
+          Cons' _ x xs -> return' $ ModPlus' x (ModSum' xs m) m
+          Range1' n -> return' $ ModMult' (ModMult' n (ModPlus' n Lit1 m) m) (ModInv' Lit2 m) m
+          -- reduce list map functions
+          Reversed' _ xs -> return' $ ModSum' xs m
+          Sorted' _ xs -> return' $ ModSum' xs m
+          Filter' _ g (Map' t1 _ f xs) -> do
+            x <- genVarName'
+            let h = Lam x t1 (If' IntTy (App g (App f (Var x))) (App f (Var x)) Lit0)
+            return' $ ModSum' (Map' t1 IntTy h xs) m
+          Map' t1 IntTy (Lam x _ body) xs -> do
+            let go body = case (body, xs) of
+                  (e, xs) | x `isUnusedVar` e -> return' $ ModMult' (Len' t1 xs) e m
+                  (body, Range1' n) | body == Var x -> return' $ ModMult' (ModMult' n (ModMinus' n Lit1 m) m) (ModInv' Lit2 m) m
+                  (body, Range1' n) | body == ModMult' (Var x) (Var x) m || body == ModPow' (Var x) (LitInt' 2) m -> return' $ ModMult' (ModMult' n (ModMult' (ModMinus' n Lit1 m) (ModMinus' (ModMult' Lit2 n m) Lit1 m) m) m) (ModInv' (LitInt' 6) m) m
+                  (ModNegate' e m', xs) | m' == m -> return' $ ModNegate' (ModSum' (Map' t1 IntTy (Lam x t1 e) xs) m) m
+                  (ModPlus' e1 e2 m', xs) | m' == m -> return' $ ModPlus' (ModSum' (Map' t1 IntTy (Lam x t1 e1) xs) m) (ModSum' (Map' t1 IntTy (Lam x t1 e2) xs) m) m
+                  (ModMinus' e1 e2 m', xs) | m' == m -> return' $ ModMinus' (ModSum' (Map' t1 IntTy (Lam x t1 e1) xs) m) (ModSum' (Map' t1 IntTy (Lam x t1 e2) xs) m) m
+                  (ModMult' e1 e2 m', xs) | x `isUnusedVar` e1 && m' == m -> return' $ ModMult' e1 (ModSum' (Map' t1 IntTy (Lam x t1 e2) xs) m) m
+                  (ModMult' e1 e2 m', xs) | x `isUnusedVar` e2 && m' == m -> return' $ ModMult' e2 (ModSum' (Map' t1 IntTy (Lam x t1 e1) xs) m) m
+                  _ -> return Nothing
+            case body of
+              FloorMod' body m' | m' == m -> go body -- We shouldn't remove FloorMod not to introduce loops of rewrite rules between Jikka.Core.Convert.PropagateMod.
+              _ -> go body
+          -- others
+          _ -> return Nothing
+        _ -> return Nothing
 
+-- | TODO: implement this.
 reduceModProduct :: Monad m => RewriteRule m
 reduceModProduct = simpleRewriteRule $ \case
-  -- the corner case
-  ModProduct' _ Lit1 -> Just Lit0
-  -- reduce list build functions
-  ModProduct' (Nil' _) m -> Just $ FloorMod' Lit1 m
-  ModProduct' (Cons' _ x xs) m -> Just $ ModMult' x (ModProduct' xs m) m
-  ModProduct' (Range1' n) m -> Just $ If' IntTy (Equal' IntTy n Lit0) (FloorMod' Lit1 m) Lit0
-  -- reduce list map functions
-  ModProduct' (Reversed' _ xs) m -> Just $ ModProduct' xs m
-  ModProduct' (Sorted' _ xs) m -> Just $ ModProduct' xs m
-  -- others
+  ModProduct' xs m -> case xs of
+    -- the corner case
+    _ | m == Lit1 -> Just Lit0
+    -- reduce list build functions
+    Nil' _ -> Just $ FloorMod' Lit1 m
+    Cons' _ x xs -> Just $ ModMult' x (ModProduct' xs m) m
+    Range1' n -> Just $ If' IntTy (Equal' IntTy n Lit0) (FloorMod' Lit1 m) Lit0
+    -- reduce list map functions
+    Reversed' _ xs -> Just $ ModProduct' xs m
+    Sorted' _ xs -> Just $ ModProduct' xs m
+    -- others
+    _ -> Nothing
   _ -> Nothing
 
 rule :: MonadAlpha m => RewriteRule m
