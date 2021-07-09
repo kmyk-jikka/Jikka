@@ -22,3 +22,16 @@ spec = describe "run" $ do
           ResultExpr $
             LitInt' 100
     run' prog `shouldBe` Right expected
+  it "squashes foldl-map combination" $ do
+    let g = Lam2 "a" IntTy "i" IntTy (Plus' (Var "a") (Var "i"))
+    let f = Lam "j" IntTy (Plus' (Var "j") Lit1)
+    let prog =
+          ResultExpr $
+            Foldl' IntTy IntTy g Lit0 $
+              Map' IntTy IntTy f $
+                Range1' (LitInt' 100)
+    let expected =
+          ResultExpr $
+            Foldl' IntTy IntTy (Lam2 "$0" IntTy "$1" IntTy (App2 g (Var "$0") (App f (Var "$1")))) Lit0 $
+              Range1' (LitInt' 100)
+    run' prog `shouldBe` Right expected
