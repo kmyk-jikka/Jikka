@@ -12,6 +12,6 @@ def solve(n: int, h: List[int], a: List[int]) -> int:
     for i in range(n):
         b = 0
         for j in range(h[i]):
-            b = min(b, h[j])
+            b = max(b, dp[j])
         dp[h[i] - 1] = b + a[i]
-    return dp[n - 1]
+    return max(dp)
