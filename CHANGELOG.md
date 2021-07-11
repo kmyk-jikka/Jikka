@@ -1,5 +1,47 @@
 # Changelog for Jikka
 
+## 2021-07-11: v5.0.8.0
+
+Some optimizers are added.
+Now it can use cumulative sums.
+
+Input:
+
+```python
+# https://judge.yosupo.jp/problem/static_range_sum
+
+from typing import *
+
+def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]:
+    ans = [-1 for _ in range(q)]
+    for i in range(q):
+        ans[i] = sum(a[l[i]:r[i]])
+    return ans
+```
+
+Intermediate output:
+
+```c++
+std::vector<int64_t> solve(int64_t n_1653, int64_t q_1654,
+                           std::vector<int64_t> a_1655,
+                           std::vector<int64_t> l_1656,
+                           std::vector<int64_t> r_1657) {
+  std::vector<int64_t> x1658 = jikka::scanl<int64_t, int64_t>(
+      [=](int64_t b1659) -> std::function<int64_t(int64_t)> {
+        return [=](int64_t b1660) -> int64_t { return b1659 + b1660; };
+      },
+      0, a_1655);
+  return jikka::fmap<int64_t, int64_t>(
+      [=](int64_t b1661) -> int64_t {
+        return x1658[(r_1657[b1661] + (-l_1656[b1661] + l_1656[b1661]))] +
+               -x1658[l_1656[b1661]];
+      },
+      jikka::range1(q_1654));
+}
+```
+
+Output:
+
 ## 2021-07-09: v5.0.7.0
 
 Many internal cleanups are done.

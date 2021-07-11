@@ -11,6 +11,7 @@
 -   [ ] `dp_b.py`
 -   [ ] `m_solutions2019_e.py`
 -   [x] `static_range_sum.py`
+    -   submission at v5.0.8.0: <https://judge.yosupo.jp/submission/52832>
 
 ### Toy scripts
 
