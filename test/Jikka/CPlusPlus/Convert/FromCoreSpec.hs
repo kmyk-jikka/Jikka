@@ -36,20 +36,18 @@ spec = describe "run" $ do
             Y.TyInt64
             "f_0"
             [(Y.TyInt64, "n_1")]
-            [ Y.If
-                (Y.BinOp Y.Equal (Y.Var "n_1") (Y.Lit (Y.LitInt64 0)))
-                [Y.Return (Y.Lit (Y.LitInt64 1))]
-                ( Just
-                    [ Y.Return
-                        ( Y.BinOp
-                            Y.Mul
-                            (Y.Var "n_1")
-                            ( Y.Call
-                                (Y.Callable (Y.Var "f_0"))
-                                [Y.BinOp Y.Sub (Y.Var "n_1") (Y.Lit (Y.LitInt64 1))]
-                            )
+            [ Y.Return
+                ( Y.Cond
+                    (Y.BinOp Y.Equal (Y.Var "n_1") (Y.Lit (Y.LitInt64 0)))
+                    (Y.Lit (Y.LitInt64 1))
+                    ( Y.BinOp
+                        Y.Mul
+                        (Y.Var "n_1")
+                        ( Y.Call
+                            (Y.Callable (Y.Var "f_0"))
+                            [Y.BinOp Y.Sub (Y.Var "n_1") (Y.Lit (Y.LitInt64 1))]
                         )
-                    ]
+                    )
                 )
             ]
     let expectedSolve =

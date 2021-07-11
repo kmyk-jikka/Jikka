@@ -117,6 +117,18 @@ literalToType = \case
   LitNil t -> ListTy t
   LitBottom t _ -> t
 
+arityOfBuiltin :: Builtin -> Int
+arityOfBuiltin = \case
+  Min2 _ -> 2
+  Max2 _ -> 2
+  Foldl _ _ -> 3
+  Iterate _ -> 3
+  At _ -> 2
+  Min1 _ -> 1
+  Max1 _ -> 1
+  Proj _ _ -> 1
+  builtin -> length (fst (uncurryFunTy (builtinToType builtin)))
+
 type TypeEnv = [(VarName, Type)]
 
 -- | `typecheckExpr` checks that the given `Expr` has the correct types.
