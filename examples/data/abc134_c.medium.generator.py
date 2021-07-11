@@ -5,7 +5,7 @@ import random
 def main() -> None:
     parser = argparse.ArgumentParser()
     # parser.add_argument('-n', type=int, default=random.randint(2, 200000))
-    parser.add_argument('-n', type=int, default=random.randint(2, 1000))
+    parser.add_argument('-n', type=int, default=random.randint(2, 100))
     args = parser.parse_args()
 
     n = args.n
