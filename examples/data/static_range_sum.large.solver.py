@@ -1,6 +1,6 @@
 from typing import *
 
-def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> None:
+def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]:
     b = [0] * (n + 1)
     for i in range(n):
         b[i + 1] = b[i] + a[i]
