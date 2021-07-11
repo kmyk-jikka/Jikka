@@ -19,6 +19,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.Beta as Beta
+import qualified Jikka.Core.Convert.BubbleLet as BubbleLet
 import qualified Jikka.Core.Convert.CloseAll as CloseAll
 import qualified Jikka.Core.Convert.CloseMin as CloseMin
 import qualified Jikka.Core.Convert.CloseSum as CloseSum
@@ -57,6 +58,7 @@ run' prog = do
   prog <- CloseAll.run prog
   prog <- CloseMin.run prog
   prog <- CumulativeSum.run prog
+  prog <- BubbleLet.run prog
   prog <- StrengthReduction.run prog
   Eta.run prog
 
