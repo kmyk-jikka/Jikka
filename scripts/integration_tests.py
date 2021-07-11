@@ -41,14 +41,14 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
             outputcase = tempdir / "{}.{}-{}.out".format(script.stem, testset_name, i)
             with open(inputcase, 'wb') as fh:
                 try:
-                    subprocess.check_call([sys.executable, str(generator_path)], stdout=fh, timeout=2)
+                    subprocess.check_call([sys.executable, str(generator_path)], stdout=fh, timeout=5)
                 except subprocess.SubprocessError as e:
                     logger.error('%s: %s: failed to generate an input of a random case: %s', str(script), str(inputcase), e)
                     return []
             with open(inputcase, 'rb') as fh1:
                 with open(outputcase, 'wb') as fh2:
                     try:
-                        subprocess.check_call([sys.executable, str(solver_path)], stdin=fh1, stdout=fh2, timeout=2)
+                        subprocess.check_call([sys.executable, str(solver_path)], stdin=fh1, stdout=fh2, timeout=5)
                     except subprocess.SubprocessError as e:
                         logger.error('%s: %s: failed to generate an output of a random case: %s', str(script), str(inputcase), e)
                         return []
@@ -64,12 +64,12 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
         logger.info('%s: compiling...', str(script))
         with open(tempdir / 'main.cpp', 'wb') as fh:
             try:
-                subprocess.check_call([str(executable), 'convert', str(script)], stdout=fh, timeout=10)
+                subprocess.check_call([str(executable), 'convert', str(script)], stdout=fh, timeout=20)
             except subprocess.SubprocessError as e:
                 logger.error('%s: failed to compile from Python to C++: %s', str(script), e)
                 return False
         try:
-            subprocess.check_call(['g++', '-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-o', str(tempdir / 'a.exe'), str(tempdir / 'main.cpp')], timeout=10)
+            subprocess.check_call(['g++', '-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-o', str(tempdir / 'a.exe'), str(tempdir / 'main.cpp')], timeout=20)
         except subprocess.SubprocessError as e:
             logger.error('%s: failed to compile from C++ to executable: %s', str(script), e)
             return False
@@ -98,7 +98,7 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
                 logger.info('%s: %s: running as %s...', str(script), str(inputcase), title)
                 with open(inputcase, 'rb') as fh:
                     try:
-                        actual = subprocess.check_output(command, stdin=fh, timeout=10)
+                        actual = subprocess.check_output(command, stdin=fh, timeout=20)
                     except subprocess.SubprocessError as e:
                         logger.error('%s: %s: failed to run as %s: %s', str(script), str(inputcase), title, e)
                         return False
