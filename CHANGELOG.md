@@ -19,7 +19,7 @@ def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]
     return ans
 ```
 
-Intermediate output:
+Output:
 
 ```c++
 std::vector<int64_t> solve(int64_t n_1653, int64_t q_1654,
@@ -39,8 +39,6 @@ std::vector<int64_t> solve(int64_t n_1653, int64_t q_1654,
       jikka::range1(q_1654));
 }
 ```
-
-Output:
 
 ## 2021-07-09: v5.0.7.0
 
