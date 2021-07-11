@@ -1,4 +1,4 @@
-# [examples/](https://github.com/kmyk/Jikka/tree/master/examples)
+# examples/
 
 ## Scripts
 
@@ -10,7 +10,7 @@
 -   [ ] `dp_a.py`
 -   [ ] `dp_b.py`
 -   [ ] `m_solutions2019_e.py`
--   [ ] `static_range_sum.py`
+-   [x] `static_range_sum.py`
 
 ### Toy scripts
 

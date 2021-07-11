@@ -24,7 +24,6 @@ import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
-import qualified Jikka.Core.Language.Beta as X
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
 import qualified Jikka.Core.Language.TypeCheck as X
@@ -262,59 +261,66 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.Permute -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::permute" []) [e1, e2]
     X.MultiChoose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
 
-runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m ([Y.Statement], Y.Expr)
 runExpr env = \case
-  X.Var x -> Y.Var <$> lookupVarName env x
-  X.Lit lit -> runLiteral lit
+  X.Var x -> do
+    y <- lookupVarName env x
+    return ([], Y.Var y)
+  X.Lit lit -> do
+    lit <- runLiteral lit
+    return ([], lit)
+  X.If' _ e1 e2 e3 -> do
+    (stmts1, e1) <- runExpr env e1
+    (stmts2, e2) <- runExpr env e2
+    (stmts3, e3) <- runExpr env e3
+    case (stmts2, stmts3) of
+      ([], []) ->
+        return (stmts1, Y.Cond e1 e2 e3)
+      _ -> do
+        phi <- newFreshName LocalNameKind ""
+        let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
+        return (stmts1 ++ [Y.If e1 (stmts2 ++ [assign e2]) (Just (stmts3 ++ [assign e3]))], Y.Var phi)
   e@(X.App _ _) -> do
     let (f, args) = X.curryApp e
     args <- mapM (runExpr env) args
-    (e, args) <- case f of
+    case f of
       X.Lit (X.LitBuiltin builtin) -> do
         let arity = arityOfBuiltin builtin
         if length args < arity
           then do
-            e <- runExpr env e
             let (ts, ret) = X.uncurryFunTy (X.builtinToType builtin)
             ts <- mapM runType ts
             ret <- runType ret
-            xs <- replicateM (arity - length args) (renameVarName LocalArgumentNameKind "_")
+            xs <- replicateM (arity - length args) (newFreshName LocalArgumentNameKind "")
+            e <- runAppBuiltin builtin (map snd args ++ map Y.Var xs)
             let (_, e') = foldr (\(t, x) (ret, e) -> (Y.TyFunction ret [t], Y.Lam [(t, x)] ret [Y.Return e])) (ret, e) (zip (drop (length args) ts) xs)
-            return (e', [])
-          else do
-            e <- runAppBuiltin builtin (take arity args)
-            return (e, drop arity args)
-      e -> do
-        e <- runExpr env e
-        return (e, args)
-    return $ foldl (\e arg -> Y.Call (Y.Callable e) [arg]) e args
+            return (concatMap fst args, e')
+          else
+            if length args == arity
+              then do
+                e <- runAppBuiltin builtin (map snd args)
+                return (concatMap fst args, e)
+              else do
+                e <- runAppBuiltin builtin (take arity (map snd args))
+                return (concatMap fst args, Y.Call (Y.Callable e) (drop arity (map snd args)))
+      _ -> do
+        (stmts, f) <- runExpr env f
+        return (stmts ++ concatMap fst args, Y.Call (Y.Callable f) (map snd args))
   e@(X.Lam _ _ _) -> do
     let (args, body) = X.uncurryLam e
     ys <- mapM (renameVarName LocalArgumentNameKind . fst) args
     let env' = reverse (zipWith (\(x, t) y -> (x, t, y)) args ys) ++ env
     ret <- runType =<< typecheckExpr env' body
-    body <- runExprToStatements env' body
+    (stmts, body) <- runExpr env' body
     ts <- mapM (runType . snd) args
-    let (_, [Y.Return e]) = foldr (\(t, y) (ret, body) -> (Y.TyFunction ret [t], [Y.Return (Y.Lam [(t, y)] ret body)])) (ret, body) (zip ts ys)
-    return e
-  X.Let x _ e1 e2 -> runExpr env =<< X.substitute x e1 e2
-
-runExprToStatements :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m [Y.Statement]
-runExprToStatements env = \case
+    let (_, [Y.Return e]) = foldr (\(t, y) (ret, body) -> (Y.TyFunction ret [t], [Y.Return (Y.Lam [(t, y)] ret body)])) (ret, stmts ++ [Y.Return body]) (zip ts ys)
+    return ([], e)
   X.Let x t e1 e2 -> do
     y <- renameVarName LocalNameKind x
     t' <- runType t
-    e1 <- runExpr env e1
-    e2 <- runExprToStatements ((x, t, y) : env) e2
-    return $ Y.Declare t' y (Just e1) : e2
-  X.If' _ e1 e2 e3 -> do
-    e1 <- runExpr env e1
-    e2 <- runExprToStatements env e2
-    e3 <- runExprToStatements env e3
-    return [Y.If e1 e2 (Just e3)]
-  e -> do
-    e <- runExpr env e
-    return [Y.Return e]
+    (stmts1, e1) <- runExpr env e1
+    (stmts2, e2) <- runExpr ((x, t, y) : env) e2
+    return (stmts1 ++ Y.Declare t' y (Just e1) : stmts2, e2)
 
 runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelFunDef env f args ret body = do
@@ -322,17 +328,19 @@ runToplevelFunDef env f args ret body = do
   args <- forM args $ \(x, t) -> do
     y <- renameVarName ArgumentNameKind x
     return (x, t, y)
-  body <- runExprToStatements (reverse args ++ env) body
+  (stmts, result) <- runExpr (reverse args ++ env) body
   args <- forM args $ \(_, t, y) -> do
     t <- runType t
     return (t, y)
-  return [Y.FunDef ret f args body]
+  return [Y.FunDef ret f args (stmts ++ [Y.Return result])]
 
 runToplevelVarDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelVarDef env x t e = do
   t <- runType t
-  e <- runExpr env e
-  return [Y.VarDef t x e]
+  (stmts, e) <- runExpr env e
+  case stmts of
+    [] -> return [Y.VarDef t x e]
+    _ -> return [Y.VarDef t x (Y.Call (Y.Callable (Y.Lam [] t (stmts ++ [Y.Return e]))) [])]
 
 runMainRead :: (MonadAlpha m, MonadError Error m) => Y.VarName -> Y.Type -> m [Y.Statement]
 runMainRead x t = do
@@ -431,8 +439,8 @@ runToplevelExpr env = \case
             args <- forM args $ \(x, t) -> do
               y <- renameVarName ArgumentNameKind x
               return (x, t, y)
-            e <- runExpr (reverse args ++ env) body
-            let body = [Y.Return e]
+            (stmts, e) <- runExpr (reverse args ++ env) body
+            let body = stmts ++ [Y.Return e]
             args' <- forM args $ \(_, t, y) -> do
               t <- runType t
               return (t, y)
@@ -442,8 +450,8 @@ runToplevelExpr env = \case
               t <- runType t
               y <- newFreshName ArgumentNameKind ""
               return (t, y)
-            e <- runExpr env e
-            let body = [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
+            (stmts, e) <- runExpr env e
+            let body = stmts ++ [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
             return (args, body)
         ret <- runType ret
         let solve = [Y.FunDef ret f args body]
