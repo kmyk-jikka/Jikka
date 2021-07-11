@@ -4,6 +4,7 @@
 
 module Jikka.Core.Language.ArithmeticalExpr where
 
+import Control.Arrow
 import Control.Monad
 import Control.Monad.ST
 import Control.Monad.Trans
@@ -189,6 +190,7 @@ isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
 isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 1
 
+-- | `unNPlusKPattern` recognizes a pattern of \(x + k\) for a variable \(x\) and an integer constant \(k \in \mathbb{Z}\).
 unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
 unNPlusKPattern e = case normalizeArithmeticalExpr e of
   SumExpr
@@ -201,3 +203,8 @@ unNPlusKPattern e = case normalizeArithmeticalExpr e of
       sumExprConst = k
     } -> Just (x, k)
   _ -> Nothing
+
+-- | `makeAffineFunctionFromArithmeticalExpr` is a specialized version of `makeVectorFromArithmeticalExpr`.
+-- This function returns \(a, b\) for a given variable \(x\) and a given expr \(e = a x + b\) where \(a, b\) which doesn't use \(x\) free.
+makeAffineFunctionFromArithmeticalExpr :: VarName -> ArithmeticalExpr -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
+makeAffineFunctionFromArithmeticalExpr x es = first V.head <$> makeVectorFromArithmeticalExpr (V.singleton x) es
