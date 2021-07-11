@@ -24,6 +24,7 @@ import qualified Jikka.Core.Convert.CloseMin as CloseMin
 import qualified Jikka.Core.Convert.CloseSum as CloseSum
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
+import qualified Jikka.Core.Convert.Eta as Eta
 import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
@@ -54,7 +55,8 @@ run' prog = do
   prog <- CloseSum.run prog
   prog <- CloseAll.run prog
   prog <- CloseMin.run prog
-  StrengthReduction.run prog
+  prog <- StrengthReduction.run prog
+  Eta.run prog
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog =
