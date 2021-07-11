@@ -4,33 +4,59 @@
 
 ### Real tasks of competitive programming
 
--   [ ] `abc127_e.py`
--   [ ] `abc134_c.py`
--   [ ] `codefestival_2015_final_d.py`
--   [ ] `dp_a.py`
--   [ ] `dp_b.py`
--   [ ] `m_solutions2019_e.py`
--   [x] `static_range_sum.py`
+-   :heavy_check_mark: AC `static_range_sum.py`
+    -   Library Checker [Static Range Sum](https://judge.yosupo.jp/problem/static_range_sum)
+    -   A simple cumulative sum / 単純な累積和
     -   submission at v5.0.8.0: <https://judge.yosupo.jp/submission/52832>
+-   :hourglass: TLE `dp_a.py`
+    -   Educational DP Contest [A - Frog 1](https://atcoder.jp/contests/dp/tasks/dp_a)
+    -   AC with a naive solution / 愚直解が AC
+-   :hourglass: TLE `dp_q.py`
+    -   Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
+    -   A lazy propagation segment tree / 遅延伝播セグメント木
+-   :hourglass: TLE `abc134_c.py`
+    -   AtCoder Beginner Contest 134 [C - Exception Handling](https://atcoder.jp/contests/abc134/tasks/abc134_c)
+    -   Cumulative sums from both sides / 両側からの累積和
+-   :hourglass: TLE `abc127_e.py`
+    -   AtCoder Beginner Contest 127 [E - Cell Distance](https://atcoder.jp/contests/abc127/tasks/abc127_e)
+-   :hourglass: TLE `codefestival_2015_final_d.py`
+    -   CODE FESTIVAL 2015 決勝 [D - 足ゲームII](https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d)
+-   :hourglass: TLE `m_solutions2019_e.py`
+    -   M-SOLUTIONS Programming Contest [E - Product of Arithmetic Progression](https://atcoder.jp/contests/m-solutions2019/tasks/m_solutions2019_e?lang=ja)
+-   :warning: CE `wip/point_add_range_sum.py`
+    -   Library Checker [Point Add Range Sum](https://judge.yosupo.jp/problem/point_add_range_sum)
+    -   A normal segment tree / 通常のセグメント木
+-   :warning: CE `dp_b.py`
+    -   Educational DP Contest [B - Frog 2](https://atcoder.jp/contests/dp/tasks/dp_b)
+    -   AC with a naive solution / 愚直解が AC
+-   :warning: CE `wip/dp_c.py`
+    -   Educational DP Contest [C - Vacation](https://atcoder.jp/contests/dp/tasks/dp_c)
+-   :warning: CE `wip/dp_w.py`
+    -   Educational DP Contest [W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
+    -   A lazy propagation segment tree / 遅延伝播セグメント木
+-   :warning: CE `wip/dp_z.py`
+    -   Educational DP Contest [Z - Frog 3](https://atcoder.jp/contests/dp/tasks/dp_z)
+    -   Convex hull trick
 
 ### Toy scripts
 
--   [x] `sum.py`
+-   :heavy_check_mark: AC `sum.py`
     -   A simple sum. This is compiled to a closed-form expr. ([Wolfram&#124;Alpha](https://www.wolframalpha.com/input/?i=%5Csum_x%5E%7Bn+-+1%7D+%28ax+%2B+b%29))
--   [x] `fib.py`
+-   :heavy_check_mark: AC `fib.py`
     -   Fibonacci sequence. This is compiled to matrix eponentiation.
--   [ ] `fact.py`
+-   :hourglass: TLE `fact.py`
     -   Factorial.
+    -   TODO: This should be compiled to a loop from a recursion.
 
 ### Examples for debug
 
--   [x] `higher_order_function.py`
+-   :heavy_check_mark: AC `higher_order_function.py`
     -   An example of higher order functions.
--   [x] `ifs.py`
+-   :heavy_check_mark: AC `ifs.py`
     -   An example with many if-statements.
--   [x] `list_literal.py`
+-   :heavy_check_mark: AC `list_literal.py`
     -   An example of list literals.
--   [x] `errors/type_errors.py`
+-   :heavy_check_mark: AC `errors/type_errors.py`
     -   An example of type errors.
--   [x] `errors/undefined_identifiers.py`
+-   :heavy_check_mark: AC `errors/undefined_identifiers.py`
     -   An example of symbol errors.
