@@ -1072,7 +1072,16 @@ normalizeArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
 makeVectorFromArithmeticalExpr :: Vector VarName -> ArithmeticalExpr -> Maybe (Vector ArithmeticalExpr, ArithmeticalExpr)
 isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
+
+-- | <a>unNPlusKPattern</a> recognizes a pattern of &lt;math&gt; for a
+--   variable &lt;math&gt; and an integer constant &lt;math&gt;.
 unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
+
+-- | <a>makeAffineFunctionFromArithmeticalExpr</a> is a specialized version
+--   of <a>makeVectorFromArithmeticalExpr</a>. This function returns
+--   &lt;math&gt; for a given variable &lt;math&gt; and a given expr
+--   &lt;math&gt; where &lt;math&gt; which doesn't use &lt;math&gt; free.
+makeAffineFunctionFromArithmeticalExpr :: VarName -> ArithmeticalExpr -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
 instance GHC.Read.Read Jikka.Core.Language.ArithmeticalExpr.ProductExpr
 instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.ProductExpr
 instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.ProductExpr
@@ -1187,6 +1196,7 @@ instance GHC.Classes.Eq Jikka.Core.Format.Builtin'
 module Jikka.Core.Language.TypeCheck
 builtinToType :: Builtin -> Type
 literalToType :: Literal -> Type
+arityOfBuiltin :: Builtin -> Int
 type TypeEnv = [(VarName, Type)]
 
 -- | <a>typecheckExpr</a> checks that the given <a>Expr</a> has the correct
@@ -1373,7 +1383,6 @@ module Jikka.Core.Convert.CloseMin
 --   <h3>List Map functions</h3>
 --   
 --   <ul>
---   <li><a>Scanl</a> &lt;math&gt;</li>
 --   <li><a>Map</a> &lt;math&gt;</li>
 --   <li><a>Filter</a> &lt;math&gt;</li>
 --   <li><a>Reversed</a> &lt;math&gt;</li>
@@ -1381,51 +1390,19 @@ module Jikka.Core.Convert.CloseMin
 --   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: Monad m => RewriteRule m
+reduceMin :: Monad m => RewriteRule m
+reduceMax :: Monad m => RewriteRule m
+
+-- | TODO: implement this
+reduceArgMin :: Monad m => RewriteRule m
+
+-- | TODO: implement this
+reduceArgMax :: Monad m => RewriteRule m
 
 
-module Jikka.Core.Convert.CloseAll
-
--- | <a>run</a> reduces <a>All</a> and <a>Any</a>.
---   
---   <h2>List of builtin functions which are reduced</h2>
---   
---   &lt;math&gt;
---   
---   <h3>Target functions</h3>
---   
---   <ul>
---   <li><a>All</a> &lt;math&gt;</li>
---   <li><a>Any</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>Boolean functions</h3>
---   
---   <ul>
---   <li><a>Not</a> &lt;math&gt;</li>
---   <li><a>And</a> &lt;math&gt;</li>
---   <li><a>Or</a> &lt;math&gt;</li>
---   <li><a>Implies</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>List Build functions</h3>
---   
---   <ul>
---   <li><tt>Nil</tt> &lt;math&gt;</li>
---   <li><a>Cons</a> &lt;math&gt;</li>
---   <li><a>Range1</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>List Map functions</h3>
---   
---   <ul>
---   <li><a>Scanl</a> &lt;math&gt;</li>
---   <li><a>Map</a> &lt;math&gt;</li>
---   <li><a>Filter</a> &lt;math&gt;</li>
---   <li><a>Reversed</a> &lt;math&gt;</li>
---   <li><a>Sorted</a> &lt;math&gt;</li>
---   </ul>
+module Jikka.Core.Convert.BubbleLet
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: Monad m => RewriteRule m
+rule :: MonadAlpha m => RewriteRule m
 
 
 module Jikka.Core.Convert.Beta
@@ -1753,6 +1730,16 @@ module Jikka.Core.Convert.MakeEager
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
+module Jikka.Core.Convert.Eta
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+
+
+module Jikka.Core.Convert.CumulativeSum
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+
+
 module Jikka.Core.Convert.ConstantPropagation
 
 -- | <a>run</a> does constant propagation. This assumes that the program is
@@ -1833,7 +1820,6 @@ module Jikka.Core.Convert.CloseSum
 --   <h3>List Map functions</h3>
 --   
 --   <ul>
---   <li><a>Scanl</a> &lt;math&gt;</li>
 --   <li><a>Map</a> &lt;math&gt;</li>
 --   <li><a>Filter</a> &lt;math&gt;</li>
 --   <li><a>Reversed</a> &lt;math&gt;</li>
@@ -1853,6 +1839,51 @@ reduceModSum :: MonadAlpha m => RewriteRule m
 
 -- | TODO: implement this.
 reduceModProduct :: Monad m => RewriteRule m
+
+
+module Jikka.Core.Convert.CloseAll
+
+-- | <a>run</a> reduces <a>All</a> and <a>Any</a>.
+--   
+--   <h2>List of builtin functions which are reduced</h2>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Target functions</h3>
+--   
+--   <ul>
+--   <li><a>All</a> &lt;math&gt;</li>
+--   <li><a>Any</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Boolean functions</h3>
+--   
+--   <ul>
+--   <li><a>Not</a> &lt;math&gt;</li>
+--   <li><a>And</a> &lt;math&gt;</li>
+--   <li><a>Or</a> &lt;math&gt;</li>
+--   <li><a>Implies</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>List Build functions</h3>
+--   
+--   <ul>
+--   <li><tt>Nil</tt> &lt;math&gt;</li>
+--   <li><a>Cons</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>List Map functions</h3>
+--   
+--   <ul>
+--   <li><a>Map</a> &lt;math&gt;</li>
+--   <li><a>Filter</a> &lt;math&gt;</li>
+--   <li><a>Reversed</a> &lt;math&gt;</li>
+--   <li><a>Sorted</a> &lt;math&gt;</li>
+--   </ul>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+reduceAll :: MonadAlpha m => RewriteRule m
+reduceAny :: MonadAlpha m => RewriteRule m
 
 
 -- | <a>Convert</a> is a module to combine other all optimizers.
