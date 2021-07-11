@@ -187,7 +187,7 @@ isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
 isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
 
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
-isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
+isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 1
 
 unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
 unNPlusKPattern e = case normalizeArithmeticalExpr e of
