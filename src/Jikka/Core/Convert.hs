@@ -18,12 +18,13 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
+import qualified Jikka.Core.Convert.Beta as Beta
 import qualified Jikka.Core.Convert.CloseAll as CloseAll
 import qualified Jikka.Core.Convert.CloseMin as CloseMin
 import qualified Jikka.Core.Convert.CloseSum as CloseSum
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
-import qualified Jikka.Core.Convert.ImmediateAppToLet as ImmediateAppToLet
+import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
@@ -40,11 +41,12 @@ run' prog = do
   prog <- Alpha.run prog
   prog <- TypeInfer.run prog
   prog <- RemoveUnusedVars.run prog
-  prog <- ImmediateAppToLet.run prog
+  prog <- Beta.run prog
   prog <- TrivialLetElimination.run prog
   prog <- UnpackTuple.run prog
   prog <- MatrixExponentiation.run prog
   prog <- SpecializeFoldl.run prog
+  prog <- MakeScanl.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog

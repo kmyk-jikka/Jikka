@@ -11,6 +11,9 @@
 -- Portability : portable
 module Jikka.Core.Convert.UnpackTuple
   ( run,
+
+    -- * internal rules
+    rule,
   )
 where
 

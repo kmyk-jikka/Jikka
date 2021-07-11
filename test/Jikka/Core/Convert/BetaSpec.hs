@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jikka.Core.Convert.ImmediateAppToLetSpec
+module Jikka.Core.Convert.BetaSpec
   ( spec,
   )
 where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Convert.ImmediateAppToLet (run)
+import Jikka.Core.Convert.Beta (run)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Test.Hspec
@@ -33,11 +33,6 @@ spec = describe "run" $ do
             ( Lam
                 "a$0"
                 IntTy
-                ( Let
-                    "x$1"
-                    IntTy
-                    (Var "a$0")
-                    (Plus' (Var "x$1") (Var "x$1"))
-                )
+                (Plus' (Var "a$0") (Var "a$0"))
             )
     run' prog `shouldBe` Right expected

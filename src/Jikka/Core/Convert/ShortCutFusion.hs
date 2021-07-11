@@ -9,6 +9,12 @@
 -- Maintainer  : kimiyuki95@gmail.com
 -- Stability   : experimental
 -- Portability : portable
+--
+-- \[
+--     \newcommand\int{\mathbf{int}}
+--     \newcommand\bool{\mathbf{bool}}
+--     \newcommand\list{\mathbf{list}}
+-- \]
 module Jikka.Core.Convert.ShortCutFusion
   ( run,
 
@@ -91,14 +97,12 @@ reduceMap =
 -- |
 -- * Functions are reordered as:
 --   * `Sort` and `Reversed` (functions to reorder) are lastly applied to lists
---   * `Map` and `SetAt` (functions to modify lists)
+--   * `Map` (functions to modify lists)
 --   * `Filter` (funcitons to reduce lengths) is firstly applied to lists
 reduceMapMap :: MonadAlpha m => RewriteRule m
 reduceMapMap =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
-        -- reduce `Scanl`
-        -- reduce `SetAt`
         -- reduce `Map`
         Map' _ _ (LamId _ _) xs -> return' xs
         Map' _ t3 g (Map' t1 _ f xs) -> do
@@ -192,14 +196,9 @@ runProgram = applyRewriteRuleProgram' rule
 -- | `run` does short cut fusion.
 --
 -- * This function is mainly for polymorphic reductions. This dosn't do much about concrete things, e.g., arithmetical operations.
+-- * This doesn't do nothing about `Scanl` or `SetAt`.
 --
 -- == List of builtin functions which are reduced
---
--- \[
---     \newcommand\int{\mathbf{int}}
---     \newcommand\bool{\mathbf{bool}}
---     \newcommand\list{\mathbf{list}}
--- \]
 --
 -- === Build functions
 --
@@ -211,8 +210,6 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- === Map functions
 --
--- * `SetAt` \(: \forall \alpha. \list(\alpha) \to \int \to \alpha \to \list(\alpha)\)
--- * `Scanl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
 -- * `Map` \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)
 -- * `Filter` \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)
 -- * `Reversed` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)

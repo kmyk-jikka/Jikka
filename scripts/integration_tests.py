@@ -12,6 +12,46 @@ from typing import *
 logger = getLogger(__name__)
 
 
+def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[pathlib.Path]:
+    inputcases: List[pathlib.Path] = []
+
+    # text files
+    for path in pathlib.Path('examples', 'data').iterdir():
+        if path.name[:-len(''.join(path.suffixes))] != script.stem:
+            continue
+        if path.suffix != '.in':
+            continue
+        inputcases.append(path)
+
+    # using generators
+    generator_path = pathlib.Path('examples', 'data', script.stem + '.generator.py')
+    solver_path = pathlib.Path('examples', 'data', script.stem + '.solver.py')
+    if generator_path.exists():
+        if not solver_path.exists():
+            logger.error('%s: failed to find the solver', str(script))
+            return []
+
+        for i in range(10):
+            inputcase = tempdir / "{}.random-large-{}.in".format(script.stem, i)
+            outputcase = tempdir / "{}.random-large-{}.out".format(script.stem, i)
+            with open(inputcase, 'wb') as fh:
+                try:
+                    subprocess.check_call([sys.executable, str(generator_path)], stdout=fh, timeout=2)
+                except subprocess.SubprocessError as e:
+                    logger.error('%s: failed to generate an input of a random case: %s', str(script), e)
+                    return []
+            with open(inputcase, 'rb') as fh1:
+                with open(outputcase, 'wb') as fh2:
+                    try:
+                        subprocess.check_call([sys.executable, str(solver_path)], stdin=fh1, stdout=fh2, timeout=2)
+                    except subprocess.SubprocessError as e:
+                        logger.error('%s: failed to generate an output of a random case: %s', str(script), e)
+                        return []
+            inputcases.append(inputcase)
+
+    return inputcases
+
+
 def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> bool:
     with tempfile.TemporaryDirectory() as tempdir_:
         tempdir = pathlib.Path(tempdir_)
@@ -29,14 +69,10 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
             logger.error('%s: failed to compile from C++ to executable: %s', str(script), e)
             return False
 
-        inputcases: List[pathlib.Path] = []
-        for path in pathlib.Path('examples', 'data').iterdir():
-            if path.name[:-len(''.join(path.suffixes))] != script.stem:
-                continue
-            if path.suffix != '.in':
-                continue
-            inputcases.append(path)
-
+        inputcases = collect_input_cases(script, tempdir=tempdir)
+        if not inputcases:
+            logger.error('%s: no input cases', str(script))
+            return False
         for inputcase in inputcases:
             outputcase = inputcase.with_suffix('.out')
             with open(outputcase, 'rb') as fh:
