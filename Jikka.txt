@@ -1072,6 +1072,7 @@ normalizeArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
 makeVectorFromArithmeticalExpr :: Vector VarName -> ArithmeticalExpr -> Maybe (Vector ArithmeticalExpr, ArithmeticalExpr)
 isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
+unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
 instance GHC.Read.Read Jikka.Core.Language.ArithmeticalExpr.ProductExpr
 instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.ProductExpr
 instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.ProductExpr
@@ -1427,6 +1428,11 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: Monad m => RewriteRule m
 
 
+module Jikka.Core.Convert.Beta
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+
+
 module Jikka.Core.Convert.UnpackTuple
 
 -- | <a>run</a> removes unnecessary introductions and eliminations of
@@ -1455,6 +1461,7 @@ module Jikka.Core.Convert.UnpackTuple
 --   tuple (foldl (fun x y -&gt; x + y) 0 [1, 2, 3])
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 module Jikka.Core.Convert.TypeInfer
@@ -1508,6 +1515,7 @@ run :: MonadError Error m => Program -> m Program
 run' :: Program -> Program
 
 
+-- | &lt;math&gt;
 module Jikka.Core.Convert.ShortCutFusion
 
 -- | <a>run</a> does short cut fusion.
@@ -1515,11 +1523,10 @@ module Jikka.Core.Convert.ShortCutFusion
 --   <ul>
 --   <li>This function is mainly for polymorphic reductions. This dosn't do
 --   much about concrete things, e.g., arithmetical operations.</li>
+--   <li>This doesn't do nothing about <a>Scanl</a> or <a>SetAt</a>.</li>
 --   </ul>
 --   
 --   <h2>List of builtin functions which are reduced</h2>
---   
---   &lt;math&gt;
 --   
 --   <h3>Build functions</h3>
 --   
@@ -1534,8 +1541,6 @@ module Jikka.Core.Convert.ShortCutFusion
 --   <h3>Map functions</h3>
 --   
 --   <ul>
---   <li><a>SetAt</a> &lt;math&gt;</li>
---   <li><a>Scanl</a> &lt;math&gt;</li>
 --   <li><a>Map</a> &lt;math&gt;</li>
 --   <li><a>Filter</a> &lt;math&gt;</li>
 --   <li><a>Reversed</a> &lt;math&gt;</li>
@@ -1567,7 +1572,7 @@ reduceMap :: Monad m => RewriteRule m
 --   <li>Functions are reordered as:</li>
 --   <li><tt>Sort</tt> and <a>Reversed</a> (functions to reorder) are
 --   lastly applied to lists</li>
---   <li><a>Map</a> and <a>SetAt</a> (functions to modify lists)</li>
+--   <li><a>Map</a> (functions to modify lists)</li>
 --   <li><a>Filter</a> (funcitons to reduce lengths) is firstly applied to
 --   lists</li>
 --   </ul>
@@ -1655,6 +1660,68 @@ module Jikka.Core.Convert.MatrixExponentiation
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
+-- | &lt;math&gt;
+module Jikka.Core.Convert.MakeScanl
+
+-- | <a>run</a> replaces <a>Foldl</a> with <a>Scanl</a>.
+--   
+--   <h2>List of builtin functions which are reduced</h2>
+--   
+--   <h3>Build functions</h3>
+--   
+--   <ul>
+--   <li><tt>Nil</tt> &lt;math&gt;</li>
+--   <li><a>Cons</a> &lt;math&gt;</li>
+--   <li><a>Range1</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Map functions</h3>
+--   
+--   <ul>
+--   <li><a>Scanl</a> &lt;math&gt;</li>
+--   <li><a>SetAt</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Fold functions</h3>
+--   
+--   <ul>
+--   <li><a>At</a> &lt;math&gt;</li>
+--   </ul>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+
+-- | <h2>List of builtin functions which are reduced</h2>
+--   
+--   <ul>
+--   <li><tt>Nil</tt> &lt;math&gt;</li>
+--   <li><a>Cons</a> &lt;math&gt;</li>
+--   <li><a>Scanl</a> &lt;math&gt;</li>
+--   </ul>
+reduceScanlBuild :: Monad m => RewriteRule m
+
+-- | <ul>
+--   <li>This assumes that <a>Range2</a> and <a>Range3</a> are already
+--   converted to <a>Range1</a> (<a>ShortCutFusion</a>).</li>
+--   <li>This assumes that combinations <a>Foldl</a> and <a>Map</a>
+--   squashed (<a>ShortCutFusion</a>).</li>
+--   <li>This assumes that constants are already folded
+--   (<a>ConstantFolding</a>).</li>
+--   </ul>
+reduceFoldlSetAt :: MonadAlpha m => RewriteRule m
+
+-- | <a>getRecurrenceFormulaBase</a> makes a pair <tt>((a_0, ..., a_{k -
+--   1}), a)</tt> from <tt>setat (... (setat a 0 a_0) ...) (k - 1) a_{k -
+--   1})</tt>.
+getRecurrenceFormulaBase :: Expr -> ([Expr], Expr)
+
+-- | <a>getRecurrenceFormulaStep1</a> removes <a>At</a> in <tt>a</tt>.
+getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
+
+-- | <a>getRecurrenceFormulaStep</a> replaces <a>At</a> in <tt>a</tt> with
+--   <a>Proj</a>.
+getRecurrenceFormulaStep :: MonadAlpha m => Int -> Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
+
+
 module Jikka.Core.Convert.MakeEager
 
 -- | <a>run</a> wraps some exprs with lambda redundant things from AST.
@@ -1682,23 +1749,6 @@ module Jikka.Core.Convert.MakeEager
 --           fun -&gt; n * fact (n - 1)
 --       )()
 --   in fact 10
---   </pre>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
-module Jikka.Core.Convert.ImmediateAppToLet
-
--- | <a>run</a> does beta-reductions in given programs. For example, this
---   converts the following:
---   
---   <pre>
---   (fun x -&gt; x + x) a
---   </pre>
---   
---   to the follwoing:
---   
---   <pre>
---   let x = a in x + x
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
