@@ -20,6 +20,7 @@ module Jikka.Common.Error
     wrapError,
     wrapError',
     wrapAt,
+    wrapAt',
     maybeToError,
     eitherToError,
 
@@ -52,19 +53,26 @@ module Jikka.Common.Error
     throwLexicalErrorAt,
     throwSyntaxError,
     throwSyntaxErrorAt,
+    throwSyntaxErrorAt',
     throwSymbolError,
     throwSymbolErrorAt,
+    throwSymbolErrorAt',
     throwTypeError,
     throwTypeErrorAt,
+    throwTypeErrorAt',
     throwSemanticError,
     throwSemanticErrorAt,
+    throwSemanticErrorAt',
     throwEvaluationError,
     throwRuntimeError,
+    throwRuntimeErrorAt,
+    throwRuntimeErrorAt',
     throwAssertionError,
     throwCommandLineError,
     throwWrongInputError,
     throwInternalError,
     throwInternalErrorAt,
+    throwInternalErrorAt',
 
     -- * utilities for other types of errors
     bug,
@@ -131,6 +139,9 @@ wrapError' message f = wrapError (WithWrapped message) f
 
 wrapAt :: MonadError Error m => Loc -> m a -> m a
 wrapAt loc = wrapError (WithLocation loc)
+
+wrapAt' :: MonadError Error m => Maybe Loc -> m a -> m a
+wrapAt' loc = maybe id wrapAt loc
 
 maybeToError :: MonadError a m => a -> Maybe b -> m b
 maybeToError a Nothing = throwError a
@@ -218,11 +229,17 @@ throwSyntaxError = throwError . WithGroup SyntaxError . Error
 throwSyntaxErrorAt :: MonadError Error m => Loc -> String -> m a
 throwSyntaxErrorAt loc = throwError . WithLocation loc . WithGroup SyntaxError . Error
 
+throwSyntaxErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwSyntaxErrorAt' loc = throwError . maybe id WithLocation loc . WithGroup SyntaxError . Error
+
 throwSymbolError :: MonadError Error m => String -> m a
 throwSymbolError = throwError . WithGroup SymbolError . Error
 
 throwSymbolErrorAt :: MonadError Error m => Loc -> String -> m a
 throwSymbolErrorAt loc = throwError . WithLocation loc . WithGroup SymbolError . Error
+
+throwSymbolErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwSymbolErrorAt' loc = throwError . maybe id WithLocation loc . WithGroup SymbolError . Error
 
 throwTypeError :: MonadError Error m => String -> m a
 throwTypeError = throwError . WithGroup TypeError . Error
@@ -230,17 +247,29 @@ throwTypeError = throwError . WithGroup TypeError . Error
 throwTypeErrorAt :: MonadError Error m => Loc -> String -> m a
 throwTypeErrorAt loc = throwError . WithLocation loc . WithGroup TypeError . Error
 
+throwTypeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwTypeErrorAt' loc = throwError . maybe id WithLocation loc . WithGroup TypeError . Error
+
 throwSemanticError :: MonadError Error m => String -> m a
 throwSemanticError = throwError . WithGroup SemanticError . Error
 
 throwSemanticErrorAt :: MonadError Error m => Loc -> String -> m a
 throwSemanticErrorAt loc = throwError . WithLocation loc . WithGroup SemanticError . Error
 
+throwSemanticErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwSemanticErrorAt' loc = throwError . maybe id WithLocation loc . WithGroup SemanticError . Error
+
 throwEvaluationError :: MonadError Error m => String -> m a
 throwEvaluationError = throwError . WithGroup EvaluationError . Error
 
 throwRuntimeError :: MonadError Error m => String -> m a
 throwRuntimeError = throwError . WithGroup RuntimeError . Error
+
+throwRuntimeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwRuntimeErrorAt loc = throwError . WithLocation loc . WithGroup RuntimeError . Error
+
+throwRuntimeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwRuntimeErrorAt' loc = throwError . maybe id WithLocation loc . WithGroup RuntimeError . Error
 
 throwAssertionError :: MonadError Error m => String -> m a
 throwAssertionError = throwError . WithGroup AssertionError . Error
@@ -256,6 +285,9 @@ throwInternalError = throwError . WithGroup InternalError . Error
 
 throwInternalErrorAt :: MonadError Error m => Loc -> String -> m a
 throwInternalErrorAt loc = throwError . WithLocation loc . WithGroup InternalError . Error
+
+throwInternalErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwInternalErrorAt' loc = throwError . maybe id WithLocation loc . WithGroup InternalError . Error
 
 bug :: String -> a
 bug msg = error $ "Fatal Error (implementation's bug): " ++ msg

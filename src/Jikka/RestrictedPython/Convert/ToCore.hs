@@ -150,7 +150,7 @@ runBuiltin builtin =
         X.BuiltinModInv -> f Y.ModInv
 
 runAttribute :: MonadError Error m => X.Attribute' -> m Y.Expr
-runAttribute a = maybe id wrapAt (loc' a) $ do
+runAttribute a = wrapAt' (loc' a) $ do
   case value' a of
     X.UnresolvedAttribute a -> throwInternalError $ "unresolved attribute: " ++ X.unAttributeName a
     X.BuiltinCount t -> do
@@ -241,7 +241,7 @@ runListComp e (X.Comprehension x iter pred) = do
   Y.Map' t1 t2 <$> (Y.Lam y t1 <$> runAssign x (Y.Var y) (pure e)) <*> pure iter
 
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Expr
-runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
+runExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
   X.BoolOp e1 op e2 -> Y.AppBuiltin2 (runBoolOp op) <$> runExpr e1 <*> runExpr e2
   X.BinOp e1 op e2 -> Y.AppBuiltin2 <$> runOperator op <*> runExpr e1 <*> runExpr e2
   X.UnaryOp op e -> Y.App (runUnaryOp op) <$> runExpr e

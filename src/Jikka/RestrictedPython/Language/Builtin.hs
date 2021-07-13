@@ -95,7 +95,7 @@ resolveUniqueBuiltin x = do
 
 resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> Int -> m Expr'
 resolveBuiltin x _ | value' x `S.notMember` builtinNames = return $ WithLoc' (loc' x) (Name x)
-resolveBuiltin x n = maybe id wrapAt (loc' x) . wrapError' "Jikka.RestrictedPython.Language.Builtin.resolveBuiltin" $ do
+resolveBuiltin x n = wrapAt' (loc' x) . wrapError' "Jikka.RestrictedPython.Language.Builtin.resolveBuiltin" $ do
   let f = return . WithLoc' (loc' x) . Constant . ConstBuiltin
   when (n < 0) $ do
     throwInternalError $ "negative arity: " ++ show n
@@ -258,7 +258,7 @@ attributeNames =
     ]
 
 resolveAttribute :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
-resolveAttribute x = maybe id wrapAt (loc' x) $ case value' x of
+resolveAttribute x = wrapAt' (loc' x) $ case value' x of
   UnresolvedAttribute x' ->
     if x' `S.notMember` attributeNames
       then throwSymbolError $ "unknown attribute: " ++ unAttributeName x'

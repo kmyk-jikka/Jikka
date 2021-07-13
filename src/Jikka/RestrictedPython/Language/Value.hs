@@ -107,7 +107,7 @@ lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
 lookupGlobal x global =
   case M.lookup (value' x) (unGlobal global) of
     Just y -> return y
-    Nothing -> maybe id wrapAt (loc' x) . throwSymbolError $ "undefined variable: " ++ unVarName (value' x)
+    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
 
 makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr'
 makeEntryPointIO f global = do
@@ -116,7 +116,7 @@ makeEntryPointIO f global = do
     ClosureVal _ args _ -> do
       args <- mapM (readValueIO . snd) args
       return $ Call (withoutLoc (Name f)) args
-    _ -> maybe id wrapAt (loc' f) . throwSymbolError $ "not a function: " ++ unVarName (value' f)
+    _ -> throwSymbolErrorAt' (loc' f) $ "not a function: " ++ unVarName (value' f)
 
 formatValue :: Value -> String
 formatValue = \case

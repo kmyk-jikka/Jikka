@@ -42,11 +42,11 @@ lookupLocal x = do
   local <- get
   case M.lookup (value' x) (unLocal local) of
     Just v -> return v
-    Nothing -> maybe id wrapAt (loc' x) . throwInternalError $ "undefined variable: " ++ unVarName (value' x)
+    Nothing -> throwInternalErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
 
 assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Expr' -> Value -> m ()
-assignSubscriptedTarget f index v = maybe id wrapAt (loc' f) $ do
-  let go f indices = maybe id wrapAt (loc' f) $ case value' f of
+assignSubscriptedTarget f index v = wrapAt' (loc' f) $ do
+  let go f indices = wrapAt' (loc' f) $ case value' f of
         SubscriptTrg f index -> go f (index : indices)
         NameTrg x -> return (x, indices)
         TupleTrg _ -> throwInternalError "cannot subscript a tuple target"
@@ -65,7 +65,7 @@ assignSubscriptedTarget f index v = maybe id wrapAt (loc' f) $ do
   assign (value' x) f
 
 assignTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Value -> m ()
-assignTarget x0 v = maybe id wrapAt (loc' x0) $ case value' x0 of
+assignTarget x0 v = wrapAt' (loc' x0) $ case value' x0 of
   SubscriptTrg f index -> do
     assignSubscriptedTarget f index v
   NameTrg x -> do
@@ -80,7 +80,7 @@ assignTarget x0 v = maybe id wrapAt (loc' x0) $ case value' x0 of
       _ -> throwInternalError "cannot unpack non-tuple value"
 
 evalTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> m Value
-evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
+evalTarget x0 = wrapAt' (loc' x0) $ case value' x0 of
   SubscriptTrg f index -> do
     f <- evalTarget f
     index <- evalExpr index
@@ -172,7 +172,7 @@ evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
 --
 -- === Rules for \(e \lbrack e? \colon e? \colon e? \rbrack\)
 evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> m Value
-evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
+evalExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
   BoolOp e1 op e2 -> do
     v1 <- evalExpr e1
     case (v1, op) of
@@ -285,7 +285,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
       _ -> throwInternalError "type error"
 
 evalCall :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> [Expr'] -> m Value
-evalCall f args = maybe id wrapAt (loc' f) $ do
+evalCall f args = wrapAt' (loc' f) $ do
   f <- evalExpr f
   args <- mapM evalExpr args
   evalCall' f args
@@ -441,14 +441,14 @@ evalStatement = \case
                 Just v -> return $ Just v
                 Nothing -> go iter
         go (V.toList iter)
-      _ -> maybe id wrapAt (loc' x) $ do
+      _ -> wrapAt' (loc' x) $ do
         throwInternalError "type error"
   If pred body1 body2 -> do
     pred <- evalExpr pred
     if pred /= BoolVal False
       then evalStatements body1
       else evalStatements body2
-  Assert e -> maybe id wrapAt (loc' e) $ do
+  Assert e -> wrapAt' (loc' e) $ do
     v <- evalExpr e
     when (v == BoolVal False) $ do
       throwRuntimeError "assertion failure"
