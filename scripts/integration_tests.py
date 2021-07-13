@@ -112,10 +112,19 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
 
 def run_integration_test_about_error(script: pathlib.Path, *, executable: pathlib.Path) -> bool:
     logger.info('%s: compiling...', str(script))
-    proc = subprocess.run([str(executable), 'convert', str(script)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = subprocess.run([str(executable), 'convert', str(script)], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     if proc.returncode == 0:
         logger.info('%s: unexpectedly succeeded to compile', str(script))
         return False
+
+    actual_lines = proc.stderr.splitlines()
+    with open(pathlib.Path('examples', 'data', script.stem + '.txt'), 'rb') as fh:
+        expected_lines = fh.read().splitlines()
+    for line in expected_lines:
+        if line not in actual_lines:
+            logger.info("%s: expectedly failed to compile, but didn't print expected error messages: expected = %s, actual = %s", str(script), expected_lines, actual_lines)
+            return False
+
     logger.info('%s: expectedly failed to compile', str(script))
     return True
 
