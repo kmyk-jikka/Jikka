@@ -194,6 +194,7 @@ runExpr e0 =
       Compare e1 op e2 -> Compare <$> runExpr e1 <*> return op <*> runExpr e2
       Call f args -> Call <$> runExpr f <*> mapM runExpr args
       Constant const -> return $ Constant const
+      Attribute e x -> Attribute <$> runExpr e <*> pure x
       Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
       Name x -> Name <$> lookupName' x
       List t es -> List t <$> mapM runExpr es

@@ -56,6 +56,8 @@
     -   An example with many if-statements.
 -   :heavy_check_mark: AC `list_literal.py`
     -   An example of list literals.
+-   :heavy_check_mark: AC `method_calls.py`
+    -   An example of method calls.
 -   :heavy_check_mark: AC `errors/type_errors.py`
     -   An example of type errors.
 -   :heavy_check_mark: AC `errors/undefined_identifiers.py`

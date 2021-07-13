@@ -28,6 +28,9 @@ import qualified Jikka.RestrictedPython.Language.Util as Y (genType)
 runIdent :: X.Ident' -> Y.VarName'
 runIdent (WithLoc loc (X.Ident x)) = WithLoc' (Just loc) (Y.VarName x)
 
+runAttribute :: X.Ident' -> Y.Attribute'
+runAttribute (WithLoc loc (X.Ident x)) = WithLoc' (Just loc) (Y.UnresolvedAttribute (Y.AttributeName x))
+
 runType :: (MonadAlpha m, MonadError Error m) => X.Type' -> m Y.Type
 runType t = wrapAt (loc t) $ case value t of
   X.Constant (X.ConstString _) -> Y.genType
@@ -129,6 +132,7 @@ runExpr e =
     X.Compare e1 e2 -> runCompareExpr e1 e2
     X.Call f args [] -> Y.Call <$> runExpr f <*> mapM runExpr args
     X.Constant const -> Y.Constant <$> runConstant const
+    X.Attribute e x -> Y.Attribute <$> runExpr e <*> pure (runAttribute x)
     X.Subscript e1 e2 -> case value e2 of
       X.Slice from to step -> Y.SubscriptSlice <$> runExpr e1 <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
       _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2

@@ -87,7 +87,7 @@ formularizeExpr e0 = case value' e0 of
   Lambda args body -> do
     mapM_ (uncurry formularizeVarName) args
     ret <- genType
-    formularizeExpr body
+    formularizeExpr' body ret
     return $ CallableTy (map snd args) ret
   IfExp e1 e2 e3 -> do
     formularizeExpr' e1 BoolTy
@@ -118,6 +118,10 @@ formularizeExpr e0 = case value' e0 of
       ConstInt _ -> IntTy
       ConstBool _ -> BoolTy
       ConstBuiltin b -> typeBuiltin b
+  Attribute e x -> do
+    let (t1, t2) = typeAttribute (value' x)
+    formularizeExpr' e t1
+    return t2
   Subscript e1 e2 -> do
     t <- genType
     formularizeExpr' e1 (ListTy t)
@@ -272,6 +276,13 @@ substUnit = \case
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
 
+substConstant :: Subst -> Constant -> Constant
+substConstant sigma = \case
+  ConstNone -> ConstNone
+  ConstInt n -> ConstInt n
+  ConstBool p -> ConstBool p
+  ConstBuiltin b -> ConstBuiltin (mapTypeBuiltin (subst' sigma) b)
+
 substTarget :: Subst -> Target' -> Target'
 substTarget sigma = fmap $ \case
   SubscriptTrg f index -> SubscriptTrg (substTarget sigma f) (substExpr sigma index)
@@ -290,7 +301,8 @@ substExpr sigma = go
       ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma x) (go iter) (fmap go pred))
       Compare e1 op e2 -> Compare (go e1) op (go e2)
       Call f args -> Call (go f) (map go args)
-      Constant const -> Constant const
+      Constant const -> Constant (substConstant sigma const)
+      Attribute e a -> Attribute (go e) (mapTypeAttribute (subst' sigma) <$> a)
       Subscript e1 e2 -> Subscript (go e1) (go e2)
       Name x -> Name x
       List t es -> List (subst' sigma t) (map go es)
@@ -317,14 +329,17 @@ substProgram sigma prog = map (substToplevelStatement sigma) prog
 
 -- | `run` infers types of given programs.
 --
--- There must be no name conflicts in given programs. They must be alpha-converted.
---
 -- As the interface, you can understand this function does the following:
 --
 -- 1. Finds a type environment \(\Gamma\) s.t. for all statement \(\mathrm{stmt}\) in the given program, \(\Gamma \vdash \mathrm{stmt}\) holds, and
 -- 2. Annotates each variable in the program using the \(\Gamma\).
 --
 -- In its implementation, this is just something like a Hindley-Milner type inference.
+--
+-- == Requirements
+--
+-- * There must be no name conflicts in given programs. They must be alpha-converted. (`Jikka.RestrictedPython.Convert.Alpha`)
+-- * All names must be resolved. (`Jikka.RestrictedPython.Convert.ResolveBuiltin`)
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.RestrictedPython.Convert.TypeInfer" $ do
   eqns <- formularizeProgram prog

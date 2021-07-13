@@ -56,3 +56,21 @@ spec = do
                 ]
             ]
       run' parsed `shouldBe` Right expected
+    it "works on builtin functions" $ do
+      let parsed =
+            [ ToplevelFunctionDef
+                "solve"
+                []
+                (ListTy BoolTy)
+                [ Return (withoutLoc (Call (constBuiltinExp (BuiltinMap [VarTy "t1"] (VarTy "t2"))) [withoutLoc (Lambda [("x", VarTy "t3")] (name "x")), withoutLoc (List (VarTy "t4") [])]))
+                ]
+            ]
+      let expected =
+            [ ToplevelFunctionDef
+                "solve"
+                []
+                (ListTy BoolTy)
+                [ Return (withoutLoc (Call (constBuiltinExp (BuiltinMap [BoolTy] BoolTy)) [withoutLoc (Lambda [("x", BoolTy)] (name "x")), withoutLoc (List BoolTy [])]))
+                ]
+            ]
+      run' parsed `shouldBe` Right expected

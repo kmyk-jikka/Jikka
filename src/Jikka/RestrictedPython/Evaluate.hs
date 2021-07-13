@@ -29,7 +29,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
 import Jikka.Common.Combinatorics
 import Jikka.Common.Error
-import Jikka.RestrictedPython.Format (formatBuiltin, formatOperator)
+import Jikka.RestrictedPython.Format (formatAttribute, formatBuiltin, formatOperator)
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
 import Jikka.RestrictedPython.Language.Value
@@ -247,6 +247,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
       ConstInt v -> IntVal v
       ConstBool v -> BoolVal v
       ConstBuiltin v -> BuiltinVal v
+  Attribute e a -> AttributeVal <$> evalExpr e <*> pure (value' a)
   Subscript e1 e2 -> do
     v1 <- evalExpr e1
     v2 <- evalExpr e2
@@ -291,6 +292,8 @@ evalCall f args = maybe id wrapAt (loc' f) $ do
 
 evalCall' :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Value -> [Value] -> m Value
 evalCall' f actualArgs = case f of
+  AttributeVal v a -> do
+    evalAttribute v a actualArgs
   BuiltinVal b -> do
     evalBuiltin b actualArgs
   ClosureVal local formalArgs body -> do
@@ -612,3 +615,21 @@ evalBuiltin b args = wrapError' ("calling " ++ formatBuiltin b) $ do
     BuiltinChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ choose n r else throwRuntimeError "invalid argument"
     BuiltinPermute -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ permute n r else throwRuntimeError "invalid argument"
     BuiltinMultiChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ multichoose n r else throwRuntimeError "invalid argument"
+
+evalAttribute :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Value -> Attribute -> [Value] -> m Value
+evalAttribute v0 a args = wrapError' ("calling " ++ formatAttribute a) $ do
+  let go0' t0 ret f = case args of
+        [] -> ret <$> (f =<< t0 v0)
+        _ -> throwInternalError $ "expected 0 arguments, got " ++ show (length args)
+  let go0 t0 ret f = go0' t0 ret (return . f)
+  let go1' t0 t1 ret f = case args of
+        [v1] -> ret <$> join (f <$> t0 v0 <*> t1 v1)
+        _ -> throwInternalError $ "expected 1 argument, got " ++ show (length args)
+  let go1 t0 t1 ret f = go1' t0 t1 ret ((return .) . f)
+  case a of
+    UnresolvedAttribute a -> throwInternalError $ "Jikka.RestrictedPython.Evaluate.evalAttribute: unresolved attribute: " ++ unAttributeName a
+    BuiltinCount _ -> go1 toList pure IntVal $ \xs x -> toInteger (V.length (V.filter (== x) xs))
+    BuiltinIndex _ -> go1' toList pure IntVal $ \xs x -> case V.elemIndex x xs of
+      Nothing -> throwRuntimeError $ "not in list: " ++ formatValue x
+      Just i -> return (toInteger i)
+    BuiltinCopy _ -> go0 toList ListVal id

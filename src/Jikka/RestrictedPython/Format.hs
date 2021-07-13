@@ -16,6 +16,7 @@ module Jikka.RestrictedPython.Format
     formatType,
     formatOperator,
     formatBuiltin,
+    formatAttribute,
   )
 where
 
@@ -120,6 +121,7 @@ formatExpr (WithLoc' _ e0) = case e0 of
     [WithLoc' _ (ListComp e comp)] -> formatExpr f ++ "(" ++ formatExpr e ++ " " ++ formatComprehension comp ++ ")"
     _ -> formatExpr f ++ "(" ++ intercalate ", " (map formatExpr args) ++ ")"
   Constant const -> formatConstant const
+  Attribute e (WithLoc' _ x) -> formatExpr e ++ "." ++ formatAttribute x
   Subscript e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
   Name x -> unVarName (value' x)
   List _ es -> "[" ++ intercalate ", " (map formatExpr es) ++ "]"

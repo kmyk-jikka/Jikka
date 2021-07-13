@@ -149,6 +149,18 @@ runBuiltin builtin =
         X.BuiltinMultiChoose -> f Y.MultiChoose
         X.BuiltinModInv -> f Y.ModInv
 
+runAttribute :: MonadError Error m => X.Attribute' -> m Y.Expr
+runAttribute a = maybe id wrapAt (loc' a) $ do
+  case value' a of
+    X.UnresolvedAttribute a -> throwInternalError $ "unresolved attribute: " ++ X.unAttributeName a
+    X.BuiltinCount t -> do
+      let t' = runType t
+      return $ Y.Lam2 "xs" (Y.ListTy t') "x" t' (Y.Len' t' (Y.Filter' t' (Y.Lam "y" t' (Y.Equal' t' (Y.Var "x") (Y.Var "y"))) (Y.Var "xs")))
+    X.BuiltinIndex t -> do
+      let t' = runType t
+      return $ Y.Lam2 "xs" (Y.ListTy t') "x" t' (Y.Min1' Y.IntTy (Y.Filter' Y.IntTy (Y.Lam "i" Y.IntTy (Y.Equal' t' (Y.At' t' (Y.Var "xs") (Y.Var "i")) (Y.Var "x"))) (Y.Range1' (Y.Len' t' (Y.Var "xs")))))
+    X.BuiltinCopy t -> return $ Y.Lam "x" (runType t) (Y.Var "x")
+
 runBoolOp :: X.BoolOp -> Y.Builtin
 runBoolOp = \case
   X.And -> Y.And
@@ -244,6 +256,10 @@ runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
   X.Compare e1 op e2 -> Y.App2 (runCmpOp op) <$> runExpr e1 <*> runExpr e2
   X.Call f args -> Y.uncurryApp <$> runExpr f <*> mapM runExpr args
   X.Constant const -> runConstant const
+  X.Attribute e a -> do
+    e <- runExpr e
+    a <- runAttribute a
+    return $ Y.App a e
   X.Subscript e1 e2 -> Y.AppBuiltin2 <$> (Y.At <$> Y.genType) <*> runExpr e1 <*> runExpr e2
   X.Name x -> return $ Y.Var (runVarName x)
   X.List t es -> do
