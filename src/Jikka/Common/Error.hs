@@ -64,6 +64,7 @@ module Jikka.Common.Error
     throwCommandLineError,
     throwWrongInputError,
     throwInternalError,
+    throwInternalErrorAt,
 
     -- * utilities for other types of errors
     bug,
@@ -252,6 +253,9 @@ throwWrongInputError = throwError . WithGroup WrongInputError . Error
 
 throwInternalError :: MonadError Error m => String -> m a
 throwInternalError = throwError . WithGroup InternalError . Error
+
+throwInternalErrorAt :: MonadError Error m => Loc -> String -> m a
+throwInternalErrorAt loc = throwError . WithLocation loc . WithGroup InternalError . Error
 
 bug :: String -> a
 bug msg = error $ "Fatal Error (implementation's bug): " ++ msg
