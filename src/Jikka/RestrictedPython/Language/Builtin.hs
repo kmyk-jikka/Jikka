@@ -207,6 +207,48 @@ typeBuiltin = \case
   BuiltinTuple ts -> CallableTy [TupleTy ts] (TupleTy ts)
   BuiltinZip ts -> CallableTy (map ListTy ts) (TupleTy ts)
 
+mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
+mapTypeBuiltin f = \case
+  BuiltinAbs -> BuiltinAbs
+  BuiltinPow -> BuiltinPow
+  BuiltinModPow -> BuiltinModPow
+  BuiltinAll -> BuiltinAll
+  BuiltinAny -> BuiltinAny
+  BuiltinArgMax t -> BuiltinArgMax (f t)
+  BuiltinArgMin t -> BuiltinArgMin (f t)
+  BuiltinBool t -> BuiltinBool (f t)
+  BuiltinCeilDiv -> BuiltinCeilDiv
+  BuiltinCeilMod -> BuiltinCeilMod
+  BuiltinChoose -> BuiltinChoose
+  BuiltinDivMod -> BuiltinDivMod
+  BuiltinEnumerate t -> BuiltinEnumerate (f t)
+  BuiltinFact -> BuiltinFact
+  BuiltinFilter t -> BuiltinFilter (f t)
+  BuiltinFloorDiv -> BuiltinFloorDiv
+  BuiltinFloorMod -> BuiltinFloorMod
+  BuiltinGcd -> BuiltinGcd
+  BuiltinInt t -> BuiltinInt (f t)
+  BuiltinModInv -> BuiltinModInv
+  BuiltinLcm -> BuiltinLcm
+  BuiltinLen t -> BuiltinLen (f t)
+  BuiltinList t -> BuiltinList (f t)
+  BuiltinMap args ret -> BuiltinMap (map f args) (f ret)
+  BuiltinMax t n -> BuiltinMax (f t) n
+  BuiltinMax1 t -> BuiltinMax1 (f t)
+  BuiltinMin t n -> BuiltinMin (f t) n
+  BuiltinMin1 t -> BuiltinMin1 (f t)
+  BuiltinMultiChoose -> BuiltinMultiChoose
+  BuiltinPermute -> BuiltinPermute
+  BuiltinProduct -> BuiltinProduct
+  BuiltinRange1 -> BuiltinRange1
+  BuiltinRange2 -> BuiltinRange2
+  BuiltinRange3 -> BuiltinRange3
+  BuiltinReversed t -> BuiltinReversed (f t)
+  BuiltinSorted t -> BuiltinSorted (f t)
+  BuiltinSum -> BuiltinSum
+  BuiltinTuple ts -> BuiltinTuple (map f ts)
+  BuiltinZip ts -> BuiltinZip (map f ts)
+
 attributeNames :: S.Set AttributeName
 attributeNames =
   S.fromList
@@ -241,3 +283,10 @@ typeAttribute = \case
   BuiltinCount t -> (ListTy t, CallableTy [t] IntTy)
   BuiltinIndex t -> (ListTy t, CallableTy [t] IntTy)
   BuiltinCopy t -> (ListTy t, CallableTy [] (ListTy t))
+
+mapTypeAttribute :: (Type -> Type) -> Attribute -> Attribute
+mapTypeAttribute f = \case
+  UnresolvedAttribute x -> UnresolvedAttribute x
+  BuiltinCount t -> BuiltinCount (f t)
+  BuiltinIndex t -> BuiltinIndex (f t)
+  BuiltinCopy t -> BuiltinCopy (f t)

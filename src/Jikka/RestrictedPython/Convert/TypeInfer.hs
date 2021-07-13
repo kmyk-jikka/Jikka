@@ -276,6 +276,13 @@ substUnit = \case
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
 
+substConstant :: Subst -> Constant -> Constant
+substConstant sigma = \case
+  ConstNone -> ConstNone
+  ConstInt n -> ConstInt n
+  ConstBool p -> ConstBool p
+  ConstBuiltin b -> ConstBuiltin (mapTypeBuiltin (subst' sigma) b)
+
 substTarget :: Subst -> Target' -> Target'
 substTarget sigma = fmap $ \case
   SubscriptTrg f index -> SubscriptTrg (substTarget sigma f) (substExpr sigma index)
@@ -294,8 +301,8 @@ substExpr sigma = go
       ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma x) (go iter) (fmap go pred))
       Compare e1 op e2 -> Compare (go e1) op (go e2)
       Call f args -> Call (go f) (map go args)
-      Constant const -> Constant const
-      Attribute e a -> Attribute (go e) a
+      Constant const -> Constant (substConstant sigma const)
+      Attribute e a -> Attribute (go e) (mapTypeAttribute (subst' sigma) <$> a)
       Subscript e1 e2 -> Subscript (go e1) (go e2)
       Name x -> Name x
       List t es -> List (subst' sigma t) (map go es)
