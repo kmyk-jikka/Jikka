@@ -453,6 +453,9 @@ evalStatement = \case
     when (v == BoolVal False) $ do
       throwRuntimeError "assertion failure"
     return Nothing
+  Expr' e -> do
+    _ <- evalExpr e
+    return Nothing
 
 -- | `evalStatements` evaluates sequences of statements of our restricted Python-like language.
 --

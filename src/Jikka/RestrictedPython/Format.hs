@@ -148,6 +148,7 @@ formatStatement = \case
        in ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent, "el" ++ elif] ++ cont
     _ -> ["if " ++ formatExpr e ++ ":", indent] ++ concatMap formatStatement body1 ++ [dedent, "else:", indent] ++ concatMap formatStatement body2 ++ [dedent]
   Assert e -> ["assert " ++ formatExpr e]
+  Expr' e -> [formatExpr e]
 
 formatToplevelStatement :: ToplevelStatement -> [String]
 formatToplevelStatement = \case

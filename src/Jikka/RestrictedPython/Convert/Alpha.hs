@@ -233,6 +233,7 @@ runStatement = \case
       runStatements body2
     return $ If e body1 body2
   Assert e -> Assert <$> runExpr e
+  Expr' e -> Expr' <$> runExpr e
 
 runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [Statement] -> m [Statement]
 runStatements stmts = reportErrors =<< mapM (catchError' . runStatement) stmts

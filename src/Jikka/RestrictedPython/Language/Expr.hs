@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- |
 -- Module      : Jikka.RestrictedPython.Language.Expr
@@ -13,6 +14,7 @@ module Jikka.RestrictedPython.Language.Expr
     TypeName (..),
     unTypeName,
     Type (..),
+    pattern NoneTy,
 
     -- * operators
     UnaryOp (..),
@@ -91,6 +93,8 @@ data Type
   | TupleTy [Type]
   | CallableTy [Type] Type
   deriving (Eq, Ord, Show, Read)
+
+pattern NoneTy = TupleTy []
 
 data Constant
   = ConstNone
@@ -276,6 +280,8 @@ data Statement
   | For Target' Expr' [Statement]
   | If Expr' [Statement] [Statement]
   | Assert Expr'
+  | -- | expression statements
+    Expr' Expr'
   deriving (Eq, Ord, Show, Read)
 
 -- | `TopLevelStatement` represents the statements of our restricted Python-like language.

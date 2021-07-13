@@ -372,6 +372,7 @@ runStatements (stmt : stmts) cont = case stmt of
   X.For x iter body -> runForStatement x iter body stmts cont
   X.If e body1 body2 -> runIfStatement e body1 body2 stmts cont
   X.Assert _ -> runStatements stmts cont
+  X.Expr' _ -> runStatements stmts cont
 
 runToplevelStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
 runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
