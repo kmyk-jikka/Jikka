@@ -2634,6 +2634,21 @@ BuiltinMultiChoose :: Builtin
 
 -- | modulo inverse &lt;math&gt;
 BuiltinModInv :: Builtin
+newtype AttributeName
+AttributeName :: String -> AttributeName
+unAttributeName :: AttributeName -> String
+data Attribute
+UnresolvedAttribute :: AttributeName -> Attribute
+
+-- | "list.count" &lt;math&gt;
+BuiltinCount :: Type -> Attribute
+
+-- | "list.index" &lt;math&gt;
+BuiltinIndex :: Type -> Attribute
+
+-- | "list.copy" &lt;math&gt;
+BuiltinCopy :: Type -> Attribute
+type Attribute' = WithLoc' Attribute
 newtype VarName
 VarName :: String -> VarName
 unVarName :: VarName -> String
@@ -2653,6 +2668,7 @@ ListComp :: Expr' -> Comprehension -> Expr
 Compare :: Expr' -> CmpOp' -> Expr' -> Expr
 Call :: Expr' -> [Expr'] -> Expr
 Constant :: Constant -> Expr
+Attribute :: Expr' -> Attribute' -> Expr
 Subscript :: Expr' -> Expr' -> Expr
 Name :: VarName' -> Expr
 List :: Type -> [Expr'] -> Expr
@@ -2708,6 +2724,11 @@ instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.TypeName
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.TypeName
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.TypeName
 instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.TypeName
+instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.AttributeName
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.AttributeName
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.AttributeName
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.AttributeName
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.AttributeName
 instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Type
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Type
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Type
@@ -2720,6 +2741,10 @@ instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Constant
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Constant
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Constant
 instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Constant
+instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.Attribute
+instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.Attribute
+instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.Attribute
+instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.Attribute
 instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.CmpOp'
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.CmpOp'
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.CmpOp'
@@ -2807,6 +2832,12 @@ resolveUniqueBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> m Expr
 resolveBuiltin :: (MonadAlpha m, MonadError Error m) => VarName' -> Int -> m Expr'
 formatBuiltin :: Builtin -> String
 typeBuiltin :: Builtin -> Type
+mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
+attributeNames :: Set AttributeName
+resolveAttribute :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
+formatAttribute :: Attribute -> String
+typeAttribute :: Attribute -> (Type, Type)
+mapTypeAttribute :: (Type -> Type) -> Attribute -> Attribute
 
 
 module Jikka.RestrictedPython.Format
@@ -2815,14 +2846,12 @@ run' :: Program -> String
 formatType :: Type -> String
 formatOperator :: Operator -> String
 formatBuiltin :: Builtin -> String
+formatAttribute :: Attribute -> String
 
 
 module Jikka.RestrictedPython.Convert.TypeInfer
 
 -- | <a>run</a> infers types of given programs.
---   
---   There must be no name conflicts in given programs. They must be
---   alpha-converted.
 --   
 --   As the interface, you can understand this function does the following:
 --   
@@ -2835,6 +2864,14 @@ module Jikka.RestrictedPython.Convert.TypeInfer
 --   
 --   In its implementation, this is just something like a Hindley-Milner
 --   type inference.
+--   
+--   <h2>Requirements</h2>
+--   
+--   <ul>
+--   <li>There must be no name conflicts in given programs. They must be
+--   alpha-converted. (<a>Alpha</a>)</li>
+--   <li>All names must be resolved. (<a>ResolveBuiltin</a>)</li>
+--   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 data Equation
 TypeEquation :: Type -> Type -> Maybe Loc -> Equation
@@ -2931,6 +2968,7 @@ ListVal :: Vector Value -> Value
 TupleVal :: [Value] -> Value
 ClosureVal :: Local -> [(VarName, Type)] -> [Statement] -> Value
 BuiltinVal :: Builtin -> Value
+AttributeVal :: Value -> Attribute -> Value
 newtype Local
 Local :: Map VarName Value -> Local
 [unLocal] :: Local -> Map VarName Value
