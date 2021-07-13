@@ -34,6 +34,7 @@ data Value
   | TupleVal [Value]
   | ClosureVal Local [(VarName, Type)] [Statement]
   | BuiltinVal Builtin
+  | AttributeVal Value Attribute
   deriving (Eq, Ord, Show, Read)
 
 newtype Local = Local
@@ -126,6 +127,7 @@ formatValue = \case
   TupleVal xs -> "(" ++ intercalate ", " (map formatValue xs) ++ ")"
   f@ClosureVal {} -> show f
   BuiltinVal b -> show b
+  AttributeVal x a -> "(" ++ formatValue x ++ ")." ++ show a
 
 writeValueIO :: Value -> IO ()
 writeValueIO = \case
@@ -137,3 +139,4 @@ writeValueIO = \case
   TupleVal xs -> mapM_ writeValueIO xs
   f@ClosureVal {} -> print f
   BuiltinVal b -> print b
+  AttributeVal x a -> writeValueIO x >> print a

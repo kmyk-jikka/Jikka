@@ -102,6 +102,7 @@ freeVars' (WithLoc' _ e0) = case e0 of
   Compare e1 _ e2 -> freeVars' e1 ++ freeVars' e2
   Call f args -> concatMap freeVars' (f : args)
   Constant _ -> []
+  Attribute e _ -> freeVars' e
   Subscript e1 e2 -> freeVars' e1 ++ freeVars' e2
   Name x -> [x]
   List _ es -> concatMap freeVars' es
@@ -156,6 +157,7 @@ mapSubExprM f = go
         Compare e1 op e2 -> Compare <$> go e1 <*> return op <*> go e2
         Call g args -> Call <$> go g <*> mapM go args
         Constant const -> return $ Constant const
+        Attribute e x -> Attribute <$> go e <*> pure x
         Subscript e1 e2 -> Subscript <$> go e1 <*> go e2
         Name x -> return $ Name x
         List t es -> List t <$> mapM go es

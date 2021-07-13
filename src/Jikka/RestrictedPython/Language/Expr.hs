@@ -22,6 +22,10 @@ module Jikka.RestrictedPython.Language.Expr
     CmpOp' (..),
     Constant (..),
     Builtin (..),
+    AttributeName (..),
+    unAttributeName,
+    Attribute (..),
+    Attribute',
 
     -- * exprs
     VarName (..),
@@ -56,6 +60,11 @@ newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, IsString)
 
 unTypeName :: TypeName -> String
 unTypeName (TypeName x) = x
+
+newtype AttributeName = AttributeName String deriving (Eq, Ord, Show, Read, IsString)
+
+unAttributeName :: AttributeName -> String
+unAttributeName (AttributeName x) = x
 
 -- | `Type` represents the types of our restricted Python-like language.
 --
@@ -171,6 +180,18 @@ data Builtin
     BuiltinModInv
   deriving (Eq, Ord, Show, Read)
 
+data Attribute
+  = UnresolvedAttribute AttributeName
+  | -- | "list.count" \(: \forall \alpha. \list(\alpha) \to \alpha \to \int\)
+    BuiltinCount Type
+  | -- | "list.index" \(: \forall \alpha. \list(\alpha) \to \alpha \to \int\)
+    BuiltinIndex Type
+  | -- | "list.copy" \(: \forall \alpha. \list(\alpha) \to \epsilon \to \list(\alpha)\)
+    BuiltinCopy Type
+  deriving (Eq, Ord, Show, Read)
+
+type Attribute' = WithLoc' Attribute
+
 -- | `Target` represents the lvalue of our restricted Python-like language.
 --
 -- \[
@@ -225,6 +246,7 @@ data Expr
   | Compare Expr' CmpOp' Expr'
   | Call Expr' [Expr']
   | Constant Constant
+  | Attribute Expr' Attribute'
   | Subscript Expr' Expr'
   | Name VarName'
   | List Type [Expr']

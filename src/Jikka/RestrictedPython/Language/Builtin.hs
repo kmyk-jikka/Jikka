@@ -206,3 +206,38 @@ typeBuiltin = \case
   BuiltinSum -> CallableTy [ListTy IntTy] IntTy
   BuiltinTuple ts -> CallableTy [TupleTy ts] (TupleTy ts)
   BuiltinZip ts -> CallableTy (map ListTy ts) (TupleTy ts)
+
+attributeNames :: S.Set AttributeName
+attributeNames =
+  S.fromList
+    [ "count",
+      "index",
+      "copy"
+    ]
+
+resolveAttribute :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
+resolveAttribute x = maybe id wrapAt (loc' x) $ case value' x of
+  UnresolvedAttribute x' ->
+    if x' `S.notMember` attributeNames
+      then throwSymbolError $ "unknown attribute: " ++ unAttributeName x'
+      else wrapError' "Jikka.RestrictedPython.Language.Builtin.resolveAttribute" $ do
+        WithLoc' (loc' x) <$> case x' of
+          "count" -> BuiltinCount <$> genType
+          "index" -> BuiltinIndex <$> genType
+          "copy" -> BuiltinCopy <$> genType
+          _ -> throwInternalError $ "not exhaustive: " ++ unAttributeName x'
+  _ -> return x
+
+formatAttribute :: Attribute -> String
+formatAttribute = \case
+  UnresolvedAttribute x -> unAttributeName x
+  BuiltinCount _ -> "count"
+  BuiltinIndex _ -> "index"
+  BuiltinCopy _ -> "copy"
+
+typeAttribute :: Attribute -> (Type, Type)
+typeAttribute = \case
+  UnresolvedAttribute x -> error $ "Jikka.RestrictedPython.Language.Builtin.typeAttribute: attributes must be resolved: " ++ unAttributeName x
+  BuiltinCount t -> (ListTy t, CallableTy [t] IntTy)
+  BuiltinIndex t -> (ListTy t, CallableTy [t] IntTy)
+  BuiltinCopy t -> (ListTy t, CallableTy [] (ListTy t))
