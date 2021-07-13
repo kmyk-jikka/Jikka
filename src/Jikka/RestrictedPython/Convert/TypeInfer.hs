@@ -87,7 +87,7 @@ formularizeExpr e0 = case value' e0 of
   Lambda args body -> do
     mapM_ (uncurry formularizeVarName) args
     ret <- genType
-    formularizeExpr body
+    formularizeExpr' body ret
     return $ CallableTy (map snd args) ret
   IfExp e1 e2 e3 -> do
     formularizeExpr' e1 BoolTy
