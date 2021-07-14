@@ -65,14 +65,14 @@ parseAnnAssign x _ e = do
   case e of
     -- int(input())
     CallBuiltin
-      (BuiltinInt StringTy)
+      (BuiltinInt _)
       [CallBuiltin BuiltinInput []] -> do
         (x, indices) <- subscriptTrg x
         return (Seq [], Nothing, Seq [packSubscriptedVar' x indices, Newline])
     -- map(int, input().split())
     ( CallBuiltin
-        (BuiltinMap [StringTy] IntTy)
-        [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt StringTy))),
+        (BuiltinMap [_] _)
+        [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt _))),
           CallMethod
             (CallBuiltin BuiltinInput [])
             (WithLoc' _ BuiltinSplit)
@@ -83,10 +83,10 @@ parseAnnAssign x _ e = do
         return (Seq [], Nothing, Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline]))
     -- list(map(int, input().split()))
     CallBuiltin
-      (BuiltinList IntTy)
+      (BuiltinList _)
       [ CallBuiltin
-          (BuiltinMap [StringTy] IntTy)
-          [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt StringTy))),
+          (BuiltinMap [_] _)
+          [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt _))),
             CallMethod
               (CallBuiltin BuiltinInput [])
               (WithLoc' _ BuiltinSplit)
@@ -100,7 +100,7 @@ parseAnnAssign x _ e = do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
       return (Seq [], Just (inputs, output), Seq [])
-    _ -> throwSemanticErrorAt' (loc' e) $ "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)': " ++ formatExpr e
+    e -> throwSemanticErrorAt' (loc' e) $ "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)': " ++ formatExpr e ++ show e
 
 parseFor :: MonadError Error m => ([Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)) -> Target' -> Expr' -> [Statement] -> m (FormatTree, FormatTree)
 parseFor go x e body = do

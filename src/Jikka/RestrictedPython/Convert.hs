@@ -27,7 +27,7 @@ run' prog = do
   prog <- return $ RemoveUnbalancedIf.run prog
   prog <- ResolveBuiltin.run prog
   prog <- Alpha.run prog
-  (format, prog) <- ParseMain.run prog
+  (format, prog) <- ParseMain.run prog -- Run ParseMain before type inference because main function has different semantics.
   prog <- TypeInfer.run prog
   prog <- SplitLoops.run prog
   format <- maybe (DefaultMain.run prog) return format
