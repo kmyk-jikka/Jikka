@@ -245,7 +245,7 @@ runToplevelStatement stmt = wrapAt (loc stmt) $ case value stmt of
       [WithLoc _ (X.Expr' (WithLoc _ (X.Call (WithLoc _ (X.Name (WithLoc _ (X.Ident "main")))) [] [])))],
       []
       ) -> return []
-    _ -> throwSemanticError "Only `if __name__ == \"__main__\": main()' is allowed for if statements at toplevel"
+    _ -> throwSemanticError "only `if __name__ == \"__main__\": main()' is allowed for if statements at toplevel"
   X.With _ _ -> throwSemanticError "with statement is not allowed at toplevel"
   X.AsyncWith _ _ -> throwSemanticError "async-with statement is not allowed at toplevel"
   X.Raise _ _ -> throwSemanticError "raise statement is not allowed at toplevel"
@@ -259,7 +259,7 @@ runToplevelStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.Nonlocal _ -> throwSemanticError "nonlocal statement is not allowed at toplevel"
   X.Expr' e -> case e of
     WithLoc _ (X.Call (WithLoc _ (X.Name (WithLoc _ (X.Ident "main")))) [] []) -> return []
-    _ -> throwSemanticError "Only `main()' is allowed for expression statements at toplevel"
+    _ -> throwSemanticError "only `main()' is allowed for expression statements at toplevel"
   X.Pass -> return []
   X.Break -> throwSemanticError "break statement is not allowed at toplevel"
   X.Continue -> throwSemanticError "continue statement is not allowed at toplevel"
