@@ -100,7 +100,7 @@ parseAnnAssign x _ e = do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
       return (Seq [], Just (inputs, output), Seq [])
-    _ -> throwSemanticErrorAt' (loc' e) $ "assingments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)': " ++ formatExpr e
+    _ -> throwSemanticErrorAt' (loc' e) $ "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)': " ++ formatExpr e
 
 parseFor :: MonadError Error m => ([Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)) -> Target' -> Expr' -> [Statement] -> m (FormatTree, FormatTree)
 parseFor go x e body = do
