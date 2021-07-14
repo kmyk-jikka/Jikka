@@ -11,3 +11,11 @@ def solve(h: int, w: int, k: int) -> int:
                     if (y1, x1) < (y2, x2):
                         ans += choose(h * w - 2, k - 2) * (abs(y2 - y1) + abs(x2 - x1))
     return ans % MOD
+
+def main() -> None:
+    n, m, k = map(int, input().split())
+    ans = solve(n, m, k)
+    print(ans)
+
+if __name__ == '__main__':
+    main()
