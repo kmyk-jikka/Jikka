@@ -113,6 +113,7 @@ formatProductExpr e =
       k' e' = case productExprConst e of
         0 -> LitInt' 0
         1 -> e'
+        -1 -> Negate' e'
         _ -> Mult' e' k
    in case productExprList e of
         [] -> k
