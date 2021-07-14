@@ -17,7 +17,6 @@ module Jikka.CPlusPlus.Convert.FromCore
   )
 where
 
-import Data.Char (isAlphaNum)
 import qualified Jikka.CPlusPlus.Format as Y (formatType)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import qualified Jikka.CPlusPlus.Language.Util as Y
@@ -32,32 +31,8 @@ import qualified Jikka.Core.Language.Util as X
 --------------------------------------------------------------------------------
 -- monad
 
-data NameKind
-  = LocalNameKind
-  | LocalArgumentNameKind
-  | ConstantNameKind
-  | FunctionNameKind
-  | ArgumentNameKind
-  deriving (Eq, Ord, Show, Read)
-
-fromNameKind :: NameKind -> String
-fromNameKind = \case
-  LocalNameKind -> "x"
-  LocalArgumentNameKind -> "b"
-  ConstantNameKind -> "c"
-  FunctionNameKind -> "f"
-  ArgumentNameKind -> "a"
-
-newFreshName :: MonadAlpha m => NameKind -> String -> m Y.VarName
-newFreshName kind hint = do
-  i <- nextCounter
-  let prefix = case takeWhile (\c -> isAlphaNum c || c == '_') hint of
-        "" -> fromNameKind kind
-        hint' -> hint' ++ "_"
-  return (Y.VarName (prefix ++ show i))
-
-renameVarName :: MonadAlpha m => NameKind -> X.VarName -> m Y.VarName
-renameVarName kind x = newFreshName kind (X.unVarName x)
+renameVarName' :: MonadAlpha m => Y.NameKind -> X.VarName -> m Y.VarName
+renameVarName' kind x = Y.renameVarName kind (X.unVarName x)
 
 type Env = [(X.VarName, X.Type, Y.VarName)]
 
@@ -277,7 +252,7 @@ runExpr env = \case
       ([], []) ->
         return (stmts1, Y.Cond e1 e2 e3)
       _ -> do
-        phi <- newFreshName LocalNameKind ""
+        phi <- Y.newFreshName Y.LocalNameKind
         let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
         return (stmts1 ++ [Y.If e1 (stmts2 ++ [assign e2]) (Just (stmts3 ++ [assign e3]))], Y.Var phi)
   e@(X.App _ _) -> do
@@ -291,7 +266,7 @@ runExpr env = \case
             let (ts, ret) = X.uncurryFunTy (X.builtinToType builtin)
             ts <- mapM runType ts
             ret <- runType ret
-            xs <- replicateM (arity - length args) (newFreshName LocalArgumentNameKind "")
+            xs <- replicateM (arity - length args) (Y.newFreshName Y.LocalArgumentNameKind)
             e <- runAppBuiltin builtin (map snd args ++ map Y.Var xs)
             let (_, e') = foldr (\(t, x) (ret, e) -> (Y.TyFunction ret [t], Y.Lam [(t, x)] ret [Y.Return e])) (ret, e) (zip (drop (length args) ts) xs)
             return (concatMap fst args, e')
@@ -308,7 +283,7 @@ runExpr env = \case
         return (stmts ++ concatMap fst args, Y.Call (Y.Callable f) (map snd args))
   e@(X.Lam _ _ _) -> do
     let (args, body) = X.uncurryLam e
-    ys <- mapM (renameVarName LocalArgumentNameKind . fst) args
+    ys <- mapM (renameVarName' Y.LocalArgumentNameKind . fst) args
     let env' = reverse (zipWith (\(x, t) y -> (x, t, y)) args ys) ++ env
     ret <- runType =<< typecheckExpr env' body
     (stmts, body) <- runExpr env' body
@@ -316,7 +291,7 @@ runExpr env = \case
     let (_, [Y.Return e]) = foldr (\(t, y) (ret, body) -> (Y.TyFunction ret [t], [Y.Return (Y.Lam [(t, y)] ret body)])) (ret, stmts ++ [Y.Return body]) (zip ts ys)
     return ([], e)
   X.Let x t e1 e2 -> do
-    y <- renameVarName LocalNameKind x
+    y <- renameVarName' Y.LocalNameKind x
     t' <- runType t
     (stmts1, e1) <- runExpr env e1
     (stmts2, e2) <- runExpr ((x, t, y) : env) e2
@@ -326,7 +301,7 @@ runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [
 runToplevelFunDef env f args ret body = do
   ret <- runType ret
   args <- forM args $ \(x, t) -> do
-    y <- renameVarName ArgumentNameKind x
+    y <- renameVarName' Y.ArgumentNameKind x
     return (x, t, y)
   (stmts, result) <- runExpr (reverse args ++ env) body
   args <- forM args $ \(_, t, y) -> do
@@ -356,15 +331,15 @@ runMainRead' x = \case
   Y.TyInt64 -> do
     return [cinStatement (Y.fromLeftExpr x)]
   Y.TyBool -> do
-    s <- newFreshName LocalNameKind ""
+    s <- Y.newFreshName Y.LocalNameKind
     return
       [ Y.Declare Y.TyString s Nothing,
         cinStatement (Y.Var s),
         Y.Assign (Y.AssignExpr Y.SimpleAssign x (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "No"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
       ]
   Y.TyVector t -> do
-    n <- newFreshName LocalNameKind ""
-    i <- newFreshName LocalNameKind ""
+    n <- Y.newFreshName Y.LocalNameKind
+    i <- Y.newFreshName Y.LocalNameKind
     body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
     return
       [ Y.Declare Y.TyInt32 n Nothing,
@@ -373,7 +348,7 @@ runMainRead' x = \case
         Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Var n)) (Y.AssignIncr (Y.LeftVar i)) body
       ]
   Y.TyArray t n -> do
-    i <- newFreshName LocalNameKind ""
+    i <- Y.newFreshName Y.LocalNameKind
     body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
     return
       [ Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) body
@@ -391,13 +366,13 @@ runMainWrite e = \case
   Y.TyInt64 -> return [coutStatement e]
   Y.TyBool -> return [coutStatement e]
   Y.TyVector t -> do
-    i <- newFreshName LocalNameKind ""
+    i <- Y.newFreshName Y.LocalNameKind
     let size = coutStatement (Y.Call (Y.Method e "size") [])
     let loop body = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Cast Y.TyInt32 (Y.Call (Y.Method e "size") []))) (Y.AssignIncr (Y.LeftVar i)) body
     body <- runMainWrite (Y.At e (Y.Var i)) t
     return [size, loop body]
   Y.TyArray t n -> do
-    i <- newFreshName LocalNameKind ""
+    i <- Y.newFreshName Y.LocalNameKind
     let loop body = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) body
     body <- runMainWrite (Y.At e (Y.Var i)) t
     return [loop body]
@@ -411,12 +386,12 @@ runMain solve t = do
   (body, ans, t) <- case X.uncurryFunTy t of
     (ts@(_ : _), ret) -> do
       body <- forM ts $ \t -> do
-        x <- newFreshName LocalNameKind ""
+        x <- Y.newFreshName Y.LocalNameKind
         t <- runType t
         stmts <- runMainRead x t
         return (stmts, x)
       let body' = concatMap fst body
-      ans <- newFreshName LocalNameKind ""
+      ans <- Y.newFreshName Y.LocalNameKind
       let func = Y.Function (Y.FunName (Y.unVarName solve)) []
       let args = map (Y.Var . snd) body
       ret' <- runType ret
@@ -437,7 +412,7 @@ runToplevelExpr env = \case
           (args, body) | length args == length ts -> do
             -- merge two sets of arguments which introduced by @FunTy@ and @Lam@
             args <- forM args $ \(x, t) -> do
-              y <- renameVarName ArgumentNameKind x
+              y <- renameVarName' Y.ArgumentNameKind x
               return (x, t, y)
             (stmts, e) <- runExpr (reverse args ++ env) body
             let body = stmts ++ [Y.Return e]
@@ -448,7 +423,7 @@ runToplevelExpr env = \case
           _ -> do
             args <- forM ts $ \t -> do
               t <- runType t
-              y <- newFreshName ArgumentNameKind ""
+              y <- Y.newFreshName Y.ArgumentNameKind
               return (t, y)
             (stmts, e) <- runExpr env e
             let body = stmts ++ [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
@@ -464,7 +439,7 @@ runToplevelExpr env = \case
         return $ ans ++ main
   X.ToplevelLet x t e cont -> case (X.uncurryLam e, X.uncurryFunTy t) of
     ((args@(_ : _), body), (ts@(_ : _), ret)) -> do
-      g <- renameVarName FunctionNameKind x
+      g <- renameVarName' Y.FunctionNameKind x
       (args, body) <-
         if length args < length ts
           then do
@@ -477,12 +452,12 @@ runToplevelExpr env = \case
       cont <- runToplevelExpr ((x, t, g) : env) cont
       return $ stmt ++ cont
     _ -> do
-      y <- renameVarName ConstantNameKind x
+      y <- renameVarName' Y.ConstantNameKind x
       stmt <- runToplevelVarDef env y t e
       cont <- runToplevelExpr ((x, t, y) : env) cont
       return $ stmt ++ cont
   X.ToplevelLetRec f args ret body cont -> do
-    g <- renameVarName FunctionNameKind f
+    g <- renameVarName' Y.FunctionNameKind f
     let t = X.curryFunTy (map snd args) ret
     stmt <- runToplevelFunDef ((f, t, g) : env) g args ret body
     cont <- runToplevelExpr ((f, t, g) : env) cont
