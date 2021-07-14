@@ -81,3 +81,6 @@ instance (MonadAlpha m, Monoid w) => MonadAlpha (WriterT w m) where
 
 evalAlpha :: AlphaT Identity a -> Int -> a
 evalAlpha f i = runIdentity (evalAlphaT f i)
+
+resetAlphaT :: Monad m => Int -> AlphaT m ()
+resetAlphaT i = AlphaT $ \_ -> return ((), i)
