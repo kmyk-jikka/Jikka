@@ -34,7 +34,7 @@ runAttribute (WithLoc loc (X.Ident x)) = WithLoc' (Just loc) (Y.UnresolvedAttrib
 runType :: (MonadAlpha m, MonadError Error m) => X.Type' -> m Y.Type
 runType t = wrapAt (loc t) $ case value t of
   X.Constant (X.ConstString _) -> Y.genType
-  X.Name (WithLoc _ (X.Ident "None")) -> return $ Y.TupleTy []
+  X.Constant X.ConstNone -> return Y.NoneTy
   X.Name (WithLoc _ (X.Ident "int")) -> return Y.IntTy
   X.Name (WithLoc _ (X.Ident "bool")) -> return Y.BoolTy
   X.Subscript (WithLoc _ (X.Name (WithLoc _ (X.Ident f)))) e -> case (f, e) of
