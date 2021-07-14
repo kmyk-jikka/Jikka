@@ -221,6 +221,7 @@ subst sigma = \case
   ListTy t -> ListTy (subst sigma t)
   TupleTy ts -> TupleTy (map (subst sigma) ts)
   CallableTy ts ret -> CallableTy (map (subst sigma) ts) (subst sigma ret)
+  StringTy -> StringTy
 
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
@@ -273,6 +274,7 @@ substUnit = \case
   ListTy t -> ListTy (substUnit t)
   TupleTy ts -> TupleTy (map substUnit ts)
   CallableTy ts ret -> CallableTy (map substUnit ts) (substUnit ret)
+  StringTy -> StringTy
 
 -- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type

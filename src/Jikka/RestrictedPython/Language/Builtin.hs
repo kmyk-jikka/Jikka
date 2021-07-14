@@ -23,6 +23,7 @@ standardBuiltinNames =
       "divmod",
       "enumerate",
       "filter",
+      "input",
       "int",
       "len",
       "list",
@@ -30,6 +31,7 @@ standardBuiltinNames =
       "max",
       "min",
       "pow",
+      "print",
       "range",
       "reversed",
       "sorted",
@@ -72,6 +74,7 @@ resolveUniqueBuiltin x = do
     "enumerate" -> f . BuiltinEnumerate =<< genType
     "filter" -> f . BuiltinFilter =<< genType
     "int" -> f . BuiltinInt =<< genType
+    "input" -> f BuiltinInput
     "len" -> f . BuiltinLen =<< genType
     "list" -> f . BuiltinList =<< genType
     "reversed" -> f . BuiltinReversed =<< genType
@@ -111,6 +114,7 @@ resolveBuiltin x n = wrapAt' (loc' x) . wrapError' "Jikka.RestrictedPython.Langu
       if n == 3
         then f BuiltinModPow
         else f BuiltinPow
+    "print" -> f . BuiltinPrint =<< replicateM n genType
     "range" -> case n of
       1 -> f BuiltinRange1
       2 -> f BuiltinRange2
@@ -164,6 +168,8 @@ formatBuiltin = \case
   BuiltinMultiChoose -> "multichoose"
   BuiltinPermute -> "permute"
   BuiltinProduct -> "product"
+  BuiltinInput -> "input"
+  BuiltinPrint _ -> "print"
 
 typeBuiltin :: Builtin -> Type
 typeBuiltin = \case
@@ -206,6 +212,8 @@ typeBuiltin = \case
   BuiltinSum -> CallableTy [ListTy IntTy] IntTy
   BuiltinTuple ts -> CallableTy [TupleTy ts] (TupleTy ts)
   BuiltinZip ts -> CallableTy (map ListTy ts) (TupleTy ts)
+  BuiltinInput -> CallableTy [] StringTy
+  BuiltinPrint ts -> CallableTy ts NoneTy
 
 mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
 mapTypeBuiltin f = \case
@@ -248,13 +256,16 @@ mapTypeBuiltin f = \case
   BuiltinSum -> BuiltinSum
   BuiltinTuple ts -> BuiltinTuple (map f ts)
   BuiltinZip ts -> BuiltinZip (map f ts)
+  BuiltinInput -> BuiltinInput
+  BuiltinPrint ts -> BuiltinPrint (map f ts)
 
 attributeNames :: S.Set AttributeName
 attributeNames =
   S.fromList
     [ "count",
       "index",
-      "copy"
+      "copy",
+      "split"
     ]
 
 resolveAttribute :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
@@ -267,6 +278,7 @@ resolveAttribute x = wrapAt' (loc' x) $ case value' x of
           "count" -> BuiltinCount <$> genType
           "index" -> BuiltinIndex <$> genType
           "copy" -> BuiltinCopy <$> genType
+          "split" -> return BuiltinSplit
           _ -> throwInternalError $ "not exhaustive: " ++ unAttributeName x'
   _ -> return x
 
@@ -276,6 +288,7 @@ formatAttribute = \case
   BuiltinCount _ -> "count"
   BuiltinIndex _ -> "index"
   BuiltinCopy _ -> "copy"
+  BuiltinSplit -> "split"
 
 typeAttribute :: Attribute -> (Type, Type)
 typeAttribute = \case
@@ -283,6 +296,7 @@ typeAttribute = \case
   BuiltinCount t -> (ListTy t, CallableTy [t] IntTy)
   BuiltinIndex t -> (ListTy t, CallableTy [t] IntTy)
   BuiltinCopy t -> (ListTy t, CallableTy [] (ListTy t))
+  BuiltinSplit -> (StringTy, CallableTy [] (ListTy StringTy))
 
 mapTypeAttribute :: (Type -> Type) -> Attribute -> Attribute
 mapTypeAttribute f = \case
@@ -290,3 +304,4 @@ mapTypeAttribute f = \case
   BuiltinCount t -> BuiltinCount (f t)
   BuiltinIndex t -> BuiltinIndex (f t)
   BuiltinCopy t -> BuiltinCopy (f t)
+  BuiltinSplit -> BuiltinSplit

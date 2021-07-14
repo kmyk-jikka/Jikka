@@ -2,16 +2,17 @@
 
 module Jikka.Core.EvaluateSpec (spec) where
 
+import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Evaluate (Token (..), Value (..), run')
+import Jikka.Core.Evaluate
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Value (formatValue)
 import Test.Hspec
 
-run'' :: [Token] -> Program -> Either Error Value
-run'' = (flip evalAlphaT 0 .) . run'
+run'' :: Program -> [Value] -> Either Error Value
+run'' = (flip evalAlphaT 0 .) . run
 
 spec :: Spec
 spec = describe "run" $ do
@@ -26,14 +27,17 @@ spec = describe "run" $ do
                 (Len' IntTy (Var "xs"))
             )
             (ResultExpr (Var "solve"))
-    let tokens =
-          [ Token "3",
-            Token "1",
-            Token "2",
-            Token "5"
+    let args =
+          [ ValList
+              ( V.fromList
+                  [ ValInt 1,
+                    ValInt 2,
+                    ValInt 5
+                  ]
+              )
           ]
     let expected = ValInt 11
-    (formatValue <$> run'' tokens prog) `shouldBe` Right (formatValue expected)
+    (formatValue <$> run'' prog args) `shouldBe` Right (formatValue expected)
   it "works on a recursive function" $ do
     let prog =
           ToplevelLetRec
@@ -57,8 +61,8 @@ spec = describe "run" $ do
                 (Tuple' [])
             )
             (ResultExpr (Var "fact"))
-    let tokens =
-          [ Token "10"
+    let args =
+          [ ValInt 10
           ]
     let expected = ValInt 3628800
-    (formatValue <$> run'' tokens prog) `shouldBe` Right (formatValue expected)
+    (formatValue <$> run'' prog args) `shouldBe` Right (formatValue expected)

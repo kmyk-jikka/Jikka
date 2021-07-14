@@ -10,9 +10,9 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import Jikka.Common.Error
+import Jikka.Common.IOFormat
 import Jikka.Common.Matrix
 import Jikka.RestrictedPython.Language.Expr
-import Jikka.RestrictedPython.Language.Util
 
 -- | `Value` is the values of our restricted Python-like language.
 --
@@ -95,29 +95,6 @@ compareValues a b = case (a, b) of
 compareValues' :: Value -> Value -> Ordering
 compareValues' a b = fromMaybe EQ (compareValues a b)
 
-newtype Global = Global
-  { unGlobal :: M.Map VarName Value
-  }
-  deriving (Eq, Ord, Show, Read)
-
-initialGlobal :: Global
-initialGlobal = Global M.empty
-
-lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
-lookupGlobal x global =
-  case M.lookup (value' x) (unGlobal global) of
-    Just y -> return y
-    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
-
-makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr'
-makeEntryPointIO f global = do
-  v <- lookupGlobal f global
-  withoutLoc <$> case v of
-    ClosureVal _ args _ -> do
-      args <- mapM (readValueIO . snd) args
-      return $ Call (withoutLoc (Name f)) args
-    _ -> throwSymbolErrorAt' (loc' f) $ "not a function: " ++ unVarName (value' f)
-
 formatValue :: Value -> String
 formatValue = \case
   IntVal n -> show n
@@ -129,14 +106,8 @@ formatValue = \case
   BuiltinVal b -> show b
   AttributeVal x a -> "(" ++ formatValue x ++ ")." ++ show a
 
-writeValueIO :: Value -> IO ()
-writeValueIO = \case
-  IntVal n -> print n
-  BoolVal p -> putStrLn (if p then "Yes" else "No")
-  ListVal xs -> do
-    print (V.length xs)
-    mapM_ writeValueIO (V.toList xs)
-  TupleVal xs -> mapM_ writeValueIO xs
-  f@ClosureVal {} -> print f
-  BuiltinVal b -> print b
-  AttributeVal x a -> writeValueIO x >> print a
+readValueIO :: (MonadIO m, MonadError Error m) => IOFormat -> m ([Value], M.Map String Value)
+readValueIO = makeReadValueIO toInt IntVal toList ListVal
+
+writeValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> M.Map String Value -> Value -> m ()
+writeValueIO = makeWriteValueIO toTuple IntVal toInt toList

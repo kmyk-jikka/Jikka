@@ -11,6 +11,8 @@
 -- Portability : portable
 module Jikka.RestrictedPython.Evaluate
   ( run,
+
+    -- * internal functions
     makeGlobal,
     runWithGlobal,
     evalExpr,
@@ -495,21 +497,40 @@ execToplevelStatement = \case
     when (v /= BoolVal True) $ do
       throwRuntimeError "assertion failure"
 
+newtype Global = Global
+  { unGlobal :: M.Map VarName Value
+  }
+  deriving (Eq, Ord, Show, Read)
+
+initialGlobal :: Global
+initialGlobal = Global M.empty
+
+lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
+lookupGlobal x global =
+  case M.lookup (value' x) (unGlobal global) of
+    Just y -> return y
+    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
+
 runWithGlobal :: MonadError Error m => Global -> Expr' -> m Value
-runWithGlobal global e = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
+runWithGlobal global e = do
   runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
+
+runWithGlobal' :: MonadError Error m => Global -> Value -> [Value] -> m Value
+runWithGlobal' global solve args = do
+  runReaderT (evalStateT (evalCall' solve args) (Local M.empty)) global
 
 -- | `makeGlobal` packs toplevel definitions into `Global`.
 -- This assumes `doesntHaveLeakOfLoopCounters`.
 makeGlobal :: MonadError Error m => Program -> m Global
-makeGlobal prog = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
+makeGlobal prog = do
   ensureDoesntHaveLeakOfLoopCounters prog
   execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
-run :: MonadError Error m => Program -> Expr' -> m Value
-run prog e = do
+run :: MonadError Error m => Program -> [Value] -> m Value
+run prog args = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
   global <- makeGlobal prog
-  runWithGlobal global e
+  solve <- lookupGlobal (withoutLoc (VarName "solve")) global
+  runWithGlobal' global solve args
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value
 evalBinOp v1 op v2 = wrapError' ("calculating " ++ formatOperator op ++ " operator") $ do
@@ -618,6 +639,8 @@ evalBuiltin b args = wrapError' ("calling " ++ formatBuiltin b) $ do
     BuiltinChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ choose n r else throwRuntimeError "invalid argument"
     BuiltinPermute -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ permute n r else throwRuntimeError "invalid argument"
     BuiltinMultiChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ multichoose n r else throwRuntimeError "invalid argument"
+    BuiltinInput -> throwSemanticError "cannot use `input' out of main function"
+    BuiltinPrint _ -> throwSemanticError "cannot use `print' out of main function"
 
 evalAttribute :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Value -> Attribute -> [Value] -> m Value
 evalAttribute v0 a args = wrapError' ("calling " ++ formatAttribute a) $ do
@@ -636,3 +659,4 @@ evalAttribute v0 a args = wrapError' ("calling " ++ formatAttribute a) $ do
       Nothing -> throwRuntimeError $ "not in list: " ++ formatValue x
       Just i -> return (toInteger i)
     BuiltinCopy _ -> go0 toList ListVal id
+    BuiltinSplit -> throwSemanticError "cannot use `split' out of main function"

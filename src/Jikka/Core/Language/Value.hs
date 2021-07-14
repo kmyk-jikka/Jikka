@@ -5,9 +5,11 @@ module Jikka.Core.Language.Value where
 
 import Data.Char (toLower)
 import Data.List (intercalate)
+import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector as V
 import Jikka.Common.Error
+import Jikka.Common.IOFormat
 import Jikka.Common.Matrix
 import Jikka.Common.ModInt
 import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
@@ -119,13 +121,8 @@ formatValue = \case
   ValBuiltin builtin args -> formatBuiltinIsolated builtin ++ "(" ++ intercalate ", " (map formatValue args) ++ ")"
   ValLambda _ _ x t body -> formatExpr (Lam x t body) -- Don't show env because it may be cyclic.
 
-writeValueIO :: Value -> IO ()
-writeValueIO = \case
-  ValInt n -> print n
-  ValBool p -> putStrLn (if p then "Yes" else "No")
-  ValList xs -> do
-    print (V.length xs)
-    mapM_ writeValueIO xs
-  ValTuple xs -> mapM_ writeValueIO xs
-  f@(ValBuiltin _ _) -> putStrLn (formatValue f)
-  f@ValLambda {} -> putStrLn (formatValue f)
+readValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> m ([Value], M.Map String Value)
+readValueIO = makeReadValueIO valueToInt ValInt valueToList ValList
+
+writeValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> M.Map String Value -> Value -> m ()
+writeValueIO = makeWriteValueIO valueToTuple ValInt valueToInt valueToList

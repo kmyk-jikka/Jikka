@@ -13,18 +13,18 @@ spec = describe "run" $ do
   it "works with recursion" $ do
     let prog =
           [ ToplevelFunctionDef
-              "fact"
+              "solve"
               [("n", IntTy)]
               IntTy
               [ If
                   (eqExp IntTy (name "n") (constIntExp 0))
                   [Return (constIntExp 1)]
-                  [Return (binOp (name "n") Mult (call (name "fact") [binOp (name "n") Sub (constIntExp 1)]))]
+                  [Return (binOp (name "n") Mult (call (name "solve") [binOp (name "n") Sub (constIntExp 1)]))]
               ]
           ]
-    let e = call (name "fact") [constIntExp 10]
+    let args = [IntVal 10]
     let expected = IntVal 3628800
-    run prog e `shouldBe` Right expected
+    run prog args `shouldBe` Right expected
   it "works with for-loop and assignment" $ do
     let prog =
           [ ToplevelFunctionDef
@@ -40,6 +40,6 @@ spec = describe "run" $ do
                 Return (call (constBuiltinExp BuiltinSum) [name "a"])
               ]
           ]
-    let e = call (name "solve") [constIntExp 100]
+    let args = [IntVal 100]
     let expected = IntVal 328350
-    run prog e `shouldBe` Right expected
+    run prog args `shouldBe` Right expected

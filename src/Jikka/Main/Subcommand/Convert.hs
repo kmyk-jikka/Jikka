@@ -32,14 +32,14 @@ runRestrictedPython :: FilePath -> Text -> Either Error Text
 runRestrictedPython path input = flip evalAlphaT 0 $ do
   prog <- ParsePython.run path input
   prog <- ToRestrictedPython.run prog
-  prog <- ToCore.run' prog
+  (prog, _) <- ToCore.run' prog
   FormatRestrictedPython.run prog
 
 runCore :: FilePath -> Text -> Either Error Text
 runCore path input = flip evalAlphaT 0 $ do
   prog <- ParsePython.run path input
   prog <- ToRestrictedPython.run prog
-  prog <- ToCore.run prog
+  (prog, _) <- ToCore.run prog
   prog <- Convert.run prog
   FormatCore.run prog
 
@@ -47,7 +47,7 @@ runCPlusPlus :: FilePath -> Text -> Either Error Text
 runCPlusPlus path input = flip evalAlphaT 0 $ do
   prog <- ParsePython.run path input
   prog <- ToRestrictedPython.run prog
-  prog <- ToCore.run prog
+  (prog, _) <- ToCore.run prog
   prog <- Convert.run prog
   prog <- FromCore.run prog
   FormatCPlusPlus.run prog

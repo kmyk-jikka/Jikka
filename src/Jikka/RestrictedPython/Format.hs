@@ -17,6 +17,8 @@ module Jikka.RestrictedPython.Format
     formatOperator,
     formatBuiltin,
     formatAttribute,
+    formatExpr,
+    formatTarget,
   )
 where
 
@@ -32,9 +34,10 @@ formatType t = case t of
   IntTy -> "int"
   BoolTy -> "bool"
   ListTy t -> "List[" ++ formatType t ++ "]"
-  TupleTy [] -> "None"
+  NoneTy -> "None"
   TupleTy ts -> "Tuple[" ++ intercalate ", " (map formatType ts) ++ "]"
   CallableTy ts ret -> "Callable[[" ++ intercalate ", " (map formatType ts) ++ "], " ++ formatType ret ++ "]"
+  StringTy -> "str"
 
 formatConstant :: Constant -> String
 formatConstant = \case

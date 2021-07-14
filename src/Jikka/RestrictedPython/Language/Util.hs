@@ -5,6 +5,7 @@ module Jikka.RestrictedPython.Language.Util
   ( -- * generating symbols
     genType,
     genVarName,
+    genVarName',
 
     -- * free variables
     freeTyVars,
@@ -48,9 +49,6 @@ module Jikka.RestrictedPython.Language.Util
 
     -- * programs
     toplevelMainDef,
-
-    -- * IO
-    readValueIO,
   )
 where
 
@@ -58,8 +56,6 @@ import Control.Monad.Identity
 import Control.Monad.Writer.Strict
 import Data.List (delete, nub)
 import Jikka.Common.Alpha
-import Jikka.Common.Error
-import Jikka.Common.IO
 import Jikka.Common.Location
 import Jikka.RestrictedPython.Language.Expr
 
@@ -74,6 +70,9 @@ genVarName x = do
   let base = if unVarName (value' x) == "_" then "" else takeWhile (/= '$') (unVarName (value' x))
   return $ WithLoc' (loc' x) (VarName (base ++ '$' : show i))
 
+genVarName' :: MonadAlpha m => m VarName'
+genVarName' = genVarName (withoutLoc (VarName "_"))
+
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
   where
@@ -84,6 +83,7 @@ freeTyVars = nub . go
       ListTy t -> go t
       TupleTy ts -> concat $ mapM go ts
       CallableTy ts ret -> concat $ mapM go (ret : ts)
+      StringTy -> []
 
 -- | `freeVars'` reports all free variables.
 freeVars :: Expr' -> [VarName]
@@ -324,26 +324,3 @@ hasBareNameTrg (WithLoc' _ x) = case x of
 
 toplevelMainDef :: [Statement] -> Program
 toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]
-
-readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr'
-readValueIO = \case
-  VarTy _ -> throwRuntimeError "cannot read values of type variables"
-  IntTy -> do
-    n <- read <$> liftIO getWord
-    return . withoutLoc $ Constant (ConstInt n)
-  BoolTy -> do
-    p <- liftIO getWord
-    p <-
-      if p == "Yes"
-        then return True
-        else
-          if p == "No"
-            then return False
-            else throwRuntimeError $ "boolean must be \"Yes\" or \"No\": " ++ show p
-    return . withoutLoc $ Constant (ConstBool p)
-  ListTy t -> do
-    n <- read <$> liftIO getWord
-    xs <- replicateM n (readValueIO t)
-    return . withoutLoc $ List t xs
-  TupleTy ts -> withoutLoc . Tuple <$> mapM readValueIO ts
-  CallableTy _ _ -> throwRuntimeError "cannot read functions"
