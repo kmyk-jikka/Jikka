@@ -49,6 +49,7 @@ runCPlusPlus path input = flip evalAlphaT 0 $ do
   prog <- ToRestrictedPython.run prog
   (prog, format) <- ToCore.run prog
   prog <- Convert.run prog
+  resetAlphaT 0 -- to make generated C++ code cleaner
   prog <- FromCore.run prog format
   FormatCPlusPlus.run prog
 

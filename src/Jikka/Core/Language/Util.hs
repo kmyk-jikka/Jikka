@@ -217,3 +217,107 @@ sizeOfMatrixTy :: Type -> Maybe (Int, Int)
 sizeOfMatrixTy = \case
   TupleTy ts@(TupleTy ts' : _) | all (== IntTy) ts' && all (== TupleTy ts') ts -> Just (length ts, length ts')
   _ -> Nothing
+
+isConstantTimeBuiltin :: Builtin -> Bool
+isConstantTimeBuiltin = \case
+  -- arithmetical functions
+  Negate -> True
+  Plus -> True
+  Minus -> True
+  Mult -> True
+  FloorDiv -> True
+  FloorMod -> True
+  CeilDiv -> True
+  CeilMod -> True
+  Pow -> True
+  -- advanced arithmetical functions
+  Abs -> True
+  Gcd -> True
+  Lcm -> True
+  Min2 _ -> True
+  Max2 _ -> True
+  Iterate _ -> False
+  -- logical functions
+  Not -> True
+  And -> True
+  Or -> True
+  Implies -> True
+  If _ -> True
+  -- bitwise functions
+  BitNot -> True
+  BitAnd -> True
+  BitOr -> True
+  BitXor -> True
+  BitLeftShift -> True
+  BitRightShift -> True
+  -- matrix functions
+  MatAp _ _ -> True
+  MatZero _ -> True
+  MatOne _ -> True
+  MatAdd _ _ -> True
+  MatMul _ _ _ -> True
+  MatPow _ -> True
+  VecFloorMod _ -> True
+  MatFloorMod _ _ -> True
+  -- modular functions
+  ModNegate -> True
+  ModPlus -> True
+  ModMinus -> True
+  ModMult -> True
+  ModInv -> True
+  ModPow -> True
+  ModMatAp _ _ -> True
+  ModMatAdd _ _ -> True
+  ModMatMul _ _ _ -> True
+  ModMatPow _ -> True
+  -- list functions
+  Cons _ -> False
+  Foldl _ _ -> False
+  Scanl _ _ -> False
+  Len _ -> True
+  Map _ _ -> False
+  Filter _ -> False
+  At _ -> True
+  SetAt _ -> False
+  Elem _ -> False
+  Sum -> False
+  Product -> False
+  ModSum -> False
+  ModProduct -> False
+  Min1 _ -> False
+  Max1 _ -> False
+  ArgMin _ -> False
+  ArgMax _ -> False
+  All -> False
+  Any -> False
+  Sorted _ -> False
+  Reversed _ -> False
+  Range1 -> False
+  Range2 -> False
+  Range3 -> False
+  -- tuple functions
+  Tuple _ -> True
+  Proj _ _ -> True
+  -- comparison
+  LessThan _ -> True
+  LessEqual _ -> True
+  GreaterThan _ -> True
+  GreaterEqual _ -> True
+  Equal _ -> True
+  NotEqual _ -> True
+  -- combinational functions
+  Fact -> True
+  Choose -> True
+  Permute -> True
+  MultiChoose -> True
+
+-- | `isConstantTimeExpr` checks whether given exprs are suitable to propagate.
+isConstantTimeExpr :: Expr -> Bool
+isConstantTimeExpr = \case
+  Var _ -> True
+  Lit _ -> True
+  e@(App _ _) -> case curryApp e of
+    (Lit (LitBuiltin f), args) -> isConstantTimeBuiltin f && all isConstantTimeExpr args
+    _ -> False
+  Lam _ _ _ -> True
+  Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2

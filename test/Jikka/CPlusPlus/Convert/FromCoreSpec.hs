@@ -36,25 +36,33 @@ spec = describe "run" $ do
             Y.TyInt64
             "f_0"
             [(Y.TyInt64, "n_1")]
-            [ Y.Return
-                ( Y.Cond
-                    (Y.BinOp Y.Equal (Y.Var "n_1") (Y.Lit (Y.LitInt64 0)))
-                    (Y.Lit (Y.LitInt64 1))
-                    ( Y.BinOp
-                        Y.Mul
-                        (Y.Var "n_1")
-                        ( Y.Call
-                            (Y.Callable (Y.Var "f_0"))
-                            [Y.BinOp Y.Sub (Y.Var "n_1") (Y.Lit (Y.LitInt64 1))]
+            [ Y.Declare Y.TyInt64 "x2" Nothing,
+              Y.If
+                (Y.BinOp Y.Equal (Y.Var "n_1") (Y.Lit (Y.LitInt64 0)))
+                [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar "x2") (Y.Lit (Y.LitInt64 1)))]
+                ( Just
+                    [ Y.Assign
+                        ( Y.AssignExpr
+                            Y.SimpleAssign
+                            (Y.LeftVar "x2")
+                            ( Y.BinOp
+                                Y.Mul
+                                (Y.Var "n_1")
+                                ( Y.Call
+                                    (Y.Callable (Y.Var "f_0"))
+                                    [Y.BinOp Y.Sub (Y.Var "n_1") (Y.Lit (Y.LitInt64 1))]
+                                )
+                            )
                         )
-                    )
-                )
+                    ]
+                ),
+              Y.Return (Y.Var "x2")
             ]
     let expectedSolve =
           Y.FunDef
             Y.TyInt64
             "solve"
-            [(Y.TyInt64, "a2")]
-            [Y.Return (Y.Call (Y.Callable (Y.Var "f_0")) [Y.Var "a2"])]
+            [(Y.TyInt64, "a3")]
+            [Y.Return (Y.Call (Y.Callable (Y.Var "f_0")) [Y.Var "a3"])]
     let expected = Y.Program [expectedF, expectedSolve]
     run' prog `shouldBe` Right expected

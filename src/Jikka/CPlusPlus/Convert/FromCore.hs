@@ -235,6 +235,31 @@ runAppBuiltin f args = wrapError' ("converting builtin " ++ X.formatBuiltinIsola
     X.Permute -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::permute" []) [e1, e2]
     X.MultiChoose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
 
+runExprFunction :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
+runExprFunction env f e = case f of
+  X.Lam x t body -> do
+    y <- renameVarName' Y.LocalArgumentNameKind x
+    (stmts, body) <- runExpr ((x, t, y) : env) body
+    let stmts' = map (Y.replaceStatement y e) stmts
+    let body' = Y.replaceExpr y e body
+    return ([], stmts', body')
+  f -> do
+    (stmts, f) <- runExpr env f
+    return (stmts, [], Y.callExpr f [e])
+
+runExprFunction2 :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
+runExprFunction2 env f e1 e2 = case f of
+  X.Lam2 x1 t1 x2 t2 body -> do
+    y1 <- renameVarName' Y.LocalArgumentNameKind x1
+    y2 <- renameVarName' Y.LocalArgumentNameKind x2
+    (stmts, body) <- runExpr ((x2, t2, y2) : (x1, t1, y1) : env) body
+    let stmts' = map (Y.replaceStatement y2 e2 . Y.replaceStatement y1 e1) stmts
+    let body' = Y.replaceExpr y2 e2 $ Y.replaceExpr y1 e1 body
+    return ([], stmts', body')
+  f -> do
+    (stmts, f) <- runExpr env f
+    return (stmts, [], Y.callExpr (Y.callExpr f [e1]) [e2])
+
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m ([Y.Statement], Y.Expr)
 runExpr env = \case
   X.Var x -> do
@@ -243,17 +268,74 @@ runExpr env = \case
   X.Lit lit -> do
     lit <- runLiteral lit
     return ([], lit)
-  X.If' _ e1 e2 e3 -> do
-    (stmts1, e1) <- runExpr env e1
-    (stmts2, e2) <- runExpr env e2
-    (stmts3, e3) <- runExpr env e3
+  X.If' t e1 e2 e3 -> do
+    (stmts1, e1') <- runExpr env e1
+    (stmts2, e2') <- runExpr env e2
+    (stmts3, e3') <- runExpr env e3
     case (stmts2, stmts3) of
-      ([], []) ->
-        return (stmts1, Y.Cond e1 e2 e3)
+      ([], [])
+        | X.isConstantTimeExpr e2 && X.isConstantTimeExpr e3 ->
+          return (stmts1, Y.Cond e1' e2' e3')
       _ -> do
+        t <- runType t
         phi <- Y.newFreshName Y.LocalNameKind
         let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
-        return (stmts1 ++ [Y.If e1 (stmts2 ++ [assign e2]) (Just (stmts3 ++ [assign e3]))], Y.Var phi)
+        return ([Y.Declare t phi Nothing] ++ stmts1 ++ [Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))], Y.Var phi)
+  X.Map' _ t2 f xs -> do
+    (stmts', xs) <- runExpr env xs
+    t2 <- runType t2
+    ys <- Y.newFreshName Y.LocalNameKind
+    i <- Y.newFreshName Y.LoopCounterNameKind
+    (stmts, body, f) <- runExprFunction env f (Y.fastAt xs (Y.Var i))
+    return
+      ( stmts'
+          ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.fastSize xs]))]
+          ++ stmts
+          ++ [ Y.repStatement
+                 i
+                 (Y.Cast Y.TyInt32 (Y.fastSize xs))
+                 (body ++ [Y.assignAt ys (Y.Var i) f])
+             ],
+        Y.Var ys
+      )
+  X.Foldl' _ t2 f init xs -> do
+    (stmts', init) <- runExpr env init
+    (stmts'', xs) <- runExpr env xs
+    t2 <- runType t2
+    y <- Y.newFreshName Y.LocalNameKind
+    i <- Y.newFreshName Y.LoopCounterNameKind
+    (stmts, body, f) <- runExprFunction2 env f (Y.Var y) (Y.fastAt xs (Y.Var i))
+    return
+      ( stmts' ++ stmts''
+          ++ [Y.Declare t2 y (Just init)]
+          ++ stmts
+          ++ [ Y.repStatement
+                 i
+                 (Y.Cast Y.TyInt32 (Y.fastSize xs))
+                 (body ++ [Y.assignSimple y f])
+             ],
+        Y.Var y
+      )
+  X.Scanl' _ t2 f init xs -> do
+    (stmts', init) <- runExpr env init
+    (stmts'', xs) <- runExpr env xs
+    t2 <- runType t2
+    ys <- Y.newFreshName Y.LocalNameKind
+    i <- Y.newFreshName Y.LoopCounterNameKind
+    (stmts, body, f) <- runExprFunction2 env f (Y.fastAt (Y.Var ys) (Y.Var i)) (Y.fastAt xs (Y.Var i))
+    return
+      ( stmts' ++ stmts''
+          ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.fastSize xs)])),
+               Y.assignAt ys (Y.litInt32 0) init
+             ]
+          ++ stmts
+          ++ [ Y.repStatement
+                 i
+                 (Y.Cast Y.TyInt32 (Y.fastSize xs))
+                 (body ++ [Y.assignAt ys (Y.incrExpr (Y.Var i)) f])
+             ],
+        Y.Var ys
+      )
   e@(X.App _ _) -> do
     let (f, args) = X.curryApp e
     args <- mapM (runExpr env) args
