@@ -12,3 +12,13 @@ def solve(n: int, h: List[int]) -> int:
     for i in range(2, n):
         dp[i] = min(dp[i - 1] + abs(h[i] - h[i - 1]), dp[i - 2] + abs(h[i] - h[i - 2]))
     return dp[n - 1]
+
+def main() -> None:
+    n = int(input())
+    h = list(map(int, input().split()))
+    assert len(h) == n
+    ans = solve(n, h)
+    print(ans)
+
+if __name__ == '__main__':
+    main()
