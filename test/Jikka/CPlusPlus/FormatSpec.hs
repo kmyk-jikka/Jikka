@@ -38,7 +38,6 @@ spec = describe "run" $ do
               "#include <string>",
               "#include <tuple>",
               "#include <vector>",
-              "#include \"jikka/all.hpp\"",
               "int64_t solve(int32_t n) {",
               "    int64_t x = 0;",
               "    for (int32_t i = 0; i < n; ++ i) {",

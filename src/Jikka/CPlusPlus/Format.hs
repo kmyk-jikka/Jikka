@@ -19,7 +19,7 @@ module Jikka.CPlusPlus.Format
   )
 where
 
-import Data.List (intercalate)
+import Data.List (intercalate, isInfixOf)
 import Data.Text (Text, pack)
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.CPlusPlus.Language.Util
@@ -299,19 +299,22 @@ formatToplevelStatement = \case
      in [ret' ++ " " ++ unVarName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
 
 formatProgram :: Program -> [Code]
-formatProgram prog = headers ++ concatMap formatToplevelStatement (decls prog)
-  where
-    headers =
-      [ "#include <algorithm>",
-        "#include <cstdint>",
-        "#include <functional>",
-        "#include <iostream>",
-        "#include <numeric>",
-        "#include <string>",
-        "#include <tuple>",
-        "#include <vector>",
-        "#include \"jikka/all.hpp\""
-      ]
+formatProgram prog =
+  let body = concatMap formatToplevelStatement (decls prog)
+      standardHeaders =
+        [ "#include <algorithm>",
+          "#include <cstdint>",
+          "#include <functional>",
+          "#include <iostream>",
+          "#include <numeric>",
+          "#include <string>",
+          "#include <tuple>",
+          "#include <vector>"
+        ]
+      additionalHeader = "#include \"jikka/all.hpp\""
+   in if "jikka::" `isInfixOf` unlines body
+        then standardHeaders ++ [additionalHeader] ++ body
+        else standardHeaders ++ body
 
 run' :: Program -> String
 run' = unlines . makeIndentFromBraces 4 . formatProgram
