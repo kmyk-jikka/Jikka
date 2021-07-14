@@ -24,15 +24,6 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Common.IOFormat as F
 
-cinStatement :: Expr -> Statement
-cinStatement e = ExprStatement (BinOp BitRightShift (Var "std::cin") e)
-
-coutStatement :: Expr -> Statement
-coutStatement e = ExprStatement (BinOp BitLeftShift (BinOp BitLeftShift (Var "std::cout") e) (Lit (LitChar ' ')))
-
-forStatement :: VarName -> Expr -> [Statement] -> Statement
-forStatement i n body = For TyInt32 i (Lit (LitInt32 0)) (BinOp LessThan (Var i) n) (AssignIncr (LeftVar i)) body
-
 lookup' :: (MonadState (M.Map String VarName) m, MonadError Error m) => String -> m VarName
 lookup' x = do
   y <- gets $ M.lookup x
@@ -91,7 +82,7 @@ runMainInput format decls = do
           modify' $ M.insert i j
           n <- runFormatExpr n
           (body, initialized) <- go initialized body
-          return ([forStatement j n body], initialized)
+          return ([repStatement j n body], initialized)
   let decls' = map snd $ filter (\(deps, _) -> S.null deps) decls
   stmts <- fst <$> go S.empty (F.inputTree format)
   return $ decls' ++ stmts
@@ -124,7 +115,7 @@ runMainOutput format = go (F.outputTree format)
         modify' $ M.insert i j
         n <- runFormatExpr n
         body <- go body
-        return [forStatement j n body]
+        return [repStatement j n body]
 
 runMain :: (MonadAlpha m, MonadError Error m) => F.IOFormat -> m ToplevelStatement
 runMain format = do
