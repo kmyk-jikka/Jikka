@@ -192,6 +192,7 @@ AlphaT :: (Int -> m (a, Int)) -> AlphaT m a
 liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
 evalAlphaT :: Functor m => AlphaT m a -> Int -> m a
 evalAlpha :: AlphaT Identity a -> Int -> a
+resetAlphaT :: Monad m => Int -> AlphaT m ()
 instance GHC.Base.Monad m => Jikka.Common.Alpha.MonadAlpha (Jikka.Common.Alpha.AlphaT m)
 instance GHC.Base.Functor m => GHC.Base.Functor (Jikka.Common.Alpha.AlphaT m)
 instance GHC.Base.Monad m => GHC.Base.Applicative (Jikka.Common.Alpha.AlphaT m)
@@ -218,6 +219,30 @@ fromNameKind :: NameKind -> String
 newFreshName :: MonadAlpha m => NameKind -> m VarName
 renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
 freeVars :: Expr -> [VarName]
+cinStatement :: Expr -> Statement
+coutStatement :: Expr -> Statement
+repStatement :: VarName -> Expr -> [Statement] -> Statement
+litInt32 :: Integer -> Expr
+incrExpr :: Expr -> Expr
+
+-- | <a>fastSize</a> calls <tt>vector<a>T</a>::size()</tt> method with an
+--   optimization aroung <a>Range1</a>.
+fastSize :: Expr -> Expr
+
+-- | <a>fastAt</a> is subscription with an optimization aroung
+--   <a>Range1</a>.
+fastAt :: Expr -> Expr -> Expr
+assignSimple :: VarName -> Expr -> Statement
+assignAt :: VarName -> Expr -> Expr -> Statement
+callExpr :: Expr -> [Expr] -> Expr
+callFunction :: FunName -> [Type] -> [Expr] -> Expr
+mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
+mapExprStatementFunctionM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Function -> m Function
+mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
+mapExprStatementAssignExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> AssignExpr -> m AssignExpr
+mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Statement -> m Statement
+replaceExpr :: VarName -> Expr -> Expr -> Expr
+replaceStatement :: VarName -> Expr -> Statement -> Statement
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Util.NameKind
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Util.NameKind
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Util.NameKind
@@ -1212,6 +1237,11 @@ sizeOfVectorTy :: Type -> Maybe Int
 isMatrixTy :: Type -> Bool
 isMatrixTy' :: [Type] -> Bool
 sizeOfMatrixTy :: Type -> Maybe (Int, Int)
+isConstantTimeBuiltin :: Builtin -> Bool
+
+-- | <a>isConstantTimeExpr</a> checks whether given exprs are suitable to
+--   propagate.
+isConstantTimeExpr :: Expr -> Bool
 
 
 module Jikka.Core.Language.RewriteRules
@@ -1838,10 +1868,6 @@ module Jikka.Core.Convert.ConstantPropagation
 --   NOTE: this doesn't constant folding.
 run :: MonadError Error m => Program -> m Program
 run' :: Program -> Program
-
--- | <a>isConstantTimeExpr</a> checks whether given exprs are suitable to
---   propagate.
-isConstantTimeExpr :: Expr -> Bool
 
 
 -- | &lt;math&gt;
