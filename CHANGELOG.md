@@ -34,7 +34,7 @@ if __name__ == '__main__':
     main()
 ```
 
-Output:
+Output (<https://atcoder.jp/contests/dp/submissions/24221651>):
 
 ```c++
 #include "jikka/all.hpp"
@@ -100,7 +100,7 @@ def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]
     return ans
 ```
 
-Output:
+Output (<https://judge.yosupo.jp/submission/52832>):
 
 ```c++
 std::vector<int64_t> solve(int64_t n_1653, int64_t q_1654,
