@@ -8,9 +8,10 @@
     -   Library Checker [Static Range Sum](https://judge.yosupo.jp/problem/static_range_sum)
     -   A simple cumulative sum / 単純な累積和
     -   submission at v5.0.8.0: <https://judge.yosupo.jp/submission/52832>
--   :hourglass: TLE `dp_a.py`
+-   :heavy_check_mark: AC `dp_a.py`
     -   Educational DP Contest [A - Frog 1](https://atcoder.jp/contests/dp/tasks/dp_a)
     -   AC with a naive solution / 愚直解が AC
+    -   submission at v5.0.9.0: <https://atcoder.jp/contests/dp/submissions/24221651>
 -   :hourglass: TLE `dp_q.py`
     -   Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
     -   A lazy propagation segment tree / 遅延伝播セグメント木
