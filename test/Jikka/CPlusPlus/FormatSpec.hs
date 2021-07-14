@@ -42,7 +42,7 @@ spec = describe "run" $ do
               "int64_t solve(int32_t n) {",
               "    int64_t x = 0;",
               "    for (int32_t i = 0; i < n; ++ i) {",
-              "        x += static_cast<int64_t>(i);",
+              "        x += int64_t(i);",
               "    }",
               "    return x;",
               "}"

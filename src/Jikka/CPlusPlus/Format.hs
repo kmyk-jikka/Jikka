@@ -235,7 +235,7 @@ formatExpr = \case
   Cast t e ->
     let t' = formatType t
         e' = formatExpr' ParenPrec e
-     in ("static_cast<" ++ t' ++ ">(" ++ e' ++ ")", FunCallPrec)
+     in (t' ++ "(" ++ e' ++ ")", FunCallPrec)
 
 formatLeftExpr :: LeftExpr -> (Code, Prec)
 formatLeftExpr = formatExpr . fromLeftExpr
