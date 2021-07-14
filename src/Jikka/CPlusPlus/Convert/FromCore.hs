@@ -17,7 +17,6 @@ module Jikka.CPlusPlus.Convert.FromCore
   )
 where
 
-import qualified Jikka.CPlusPlus.Format as Y (formatType)
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
@@ -317,90 +316,6 @@ runToplevelVarDef env x t e = do
     [] -> return [Y.VarDef t x e]
     _ -> return [Y.VarDef t x (Y.Call (Y.Callable (Y.Lam [] t (stmts ++ [Y.Return e]))) [])]
 
-runMainRead :: (MonadAlpha m, MonadError Error m) => Y.VarName -> Y.Type -> m [Y.Statement]
-runMainRead x t = do
-  let decl = Y.Declare t x Nothing
-  stmts <- runMainRead' (Y.LeftVar x) t
-  return (decl : stmts)
-
-cinStatement :: Y.Expr -> Y.Statement
-cinStatement e = Y.ExprStatement (Y.BinOp Y.BitRightShift (Y.Var "std::cin") e)
-
-runMainRead' :: (MonadAlpha m, MonadError Error m) => Y.LeftExpr -> Y.Type -> m [Y.Statement]
-runMainRead' x = \case
-  Y.TyInt64 -> do
-    return [cinStatement (Y.fromLeftExpr x)]
-  Y.TyBool -> do
-    s <- Y.newFreshName Y.LocalNameKind
-    return
-      [ Y.Declare Y.TyString s Nothing,
-        cinStatement (Y.Var s),
-        Y.Assign (Y.AssignExpr Y.SimpleAssign x (Y.Cond (Y.BinOp Y.NotEqual (Y.Var s) (Y.Lit (Y.LitString "No"))) (Y.Lit (Y.LitBool True)) (Y.Lit (Y.LitBool False))))
-      ]
-  Y.TyVector t -> do
-    n <- Y.newFreshName Y.LocalNameKind
-    i <- Y.newFreshName Y.LocalNameKind
-    body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
-    return
-      [ Y.Declare Y.TyInt32 n Nothing,
-        cinStatement (Y.Var n),
-        Y.ExprStatement (Y.Call (Y.Method (Y.fromLeftExpr x) "resize") [Y.Var n]),
-        Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Var n)) (Y.AssignIncr (Y.LeftVar i)) body
-      ]
-  Y.TyArray t n -> do
-    i <- Y.newFreshName Y.LocalNameKind
-    body <- runMainRead' (Y.LeftAt x (Y.Var i)) t
-    return
-      [ Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) body
-      ]
-  Y.TyTuple ts -> do
-    fmap concat . forM (zip [0 ..] ts) $ \(i, t) -> do
-      runMainRead' (Y.LeftGet i x) t
-  t -> throwInternalError $ "cannot read inputs of type: " ++ Y.formatType t
-
-coutStatement :: Y.Expr -> Y.Statement
-coutStatement e = Y.ExprStatement (Y.BinOp Y.BitLeftShift (Y.BinOp Y.BitLeftShift (Y.Var "std::cout") e) (Y.Lit (Y.LitChar '\n')))
-
-runMainWrite :: (MonadAlpha m, MonadError Error m) => Y.Expr -> Y.Type -> m [Y.Statement]
-runMainWrite e = \case
-  Y.TyInt64 -> return [coutStatement e]
-  Y.TyBool -> return [coutStatement e]
-  Y.TyVector t -> do
-    i <- Y.newFreshName Y.LocalNameKind
-    let size = coutStatement (Y.Call (Y.Method e "size") [])
-    let loop body = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Cast Y.TyInt32 (Y.Call (Y.Method e "size") []))) (Y.AssignIncr (Y.LeftVar i)) body
-    body <- runMainWrite (Y.At e (Y.Var i)) t
-    return [size, loop body]
-  Y.TyArray t n -> do
-    i <- Y.newFreshName Y.LocalNameKind
-    let loop body = Y.For Y.TyInt32 i (Y.Lit (Y.LitInt32 0)) (Y.BinOp Y.LessThan (Y.Var i) (Y.Lit (Y.LitInt32 n))) (Y.AssignIncr (Y.LeftVar i)) body
-    body <- runMainWrite (Y.At e (Y.Var i)) t
-    return [loop body]
-  Y.TyTuple ts -> do
-    fmap concat . forM (zip [0 ..] ts) $ \(i, t) -> do
-      runMainWrite (Y.Call (Y.Function "std::get" [Y.TyIntValue i]) [e]) t
-  t -> throwInternalError $ "cannot write outputs of type: " ++ Y.formatType t
-
-runMain :: (MonadAlpha m, MonadError Error m) => Y.VarName -> X.Type -> m [Y.ToplevelStatement]
-runMain solve t = do
-  (body, ans, t) <- case X.uncurryFunTy t of
-    (ts@(_ : _), ret) -> do
-      body <- forM ts $ \t -> do
-        x <- Y.newFreshName Y.LocalNameKind
-        t <- runType t
-        stmts <- runMainRead x t
-        return (stmts, x)
-      let body' = concatMap fst body
-      ans <- Y.newFreshName Y.LocalNameKind
-      let func = Y.Function (Y.FunName (Y.unVarName solve)) []
-      let args = map (Y.Var . snd) body
-      ret' <- runType ret
-      return (body' ++ [Y.Declare ret' ans (Just (Y.Call func args))], ans, ret)
-    _ -> return ([], solve, t)
-  t <- runType t
-  body' <- runMainWrite (Y.Var ans) t
-  return [Y.FunDef Y.TyInt (Y.VarName "main") [] (body ++ body')]
-
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case
   X.ResultExpr e -> do
@@ -429,14 +344,8 @@ runToplevelExpr env = \case
             let body = stmts ++ [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
             return (args, body)
         ret <- runType ret
-        let solve = [Y.FunDef ret f args body]
-        main <- runMain f t
-        return $ solve ++ main
-      _ -> do
-        let x = Y.VarName "ans"
-        ans <- runToplevelVarDef env x t e
-        main <- runMain x t
-        return $ ans ++ main
+        return [Y.FunDef ret f args body]
+      _ -> throwInternalError "solve function must be a function" -- TODO: add check in restricted Python
   X.ToplevelLet x t e cont -> case (X.uncurryLam e, X.uncurryFunTy t) of
     ((args@(_ : _), body), (ts@(_ : _), ret)) -> do
       g <- renameVarName' Y.FunctionNameKind x

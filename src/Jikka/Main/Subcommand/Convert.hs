@@ -47,9 +47,9 @@ runCPlusPlus :: FilePath -> Text -> Either Error Text
 runCPlusPlus path input = flip evalAlphaT 0 $ do
   prog <- ParsePython.run path input
   prog <- ToRestrictedPython.run prog
-  (prog, _) <- ToCore.run prog
+  (prog, format) <- ToCore.run prog
   prog <- Convert.run prog
-  prog <- FromCore.run prog
+  prog <- FromCore.run prog format
   FormatCPlusPlus.run prog
 
 run :: Target -> FilePath -> Text -> Either Error Text

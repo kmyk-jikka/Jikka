@@ -16,6 +16,7 @@ fromLeftExpr = \case
 data NameKind
   = LocalNameKind
   | LocalArgumentNameKind
+  | LoopCounterNameKind
   | ConstantNameKind
   | FunctionNameKind
   | ArgumentNameKind
@@ -25,6 +26,7 @@ fromNameKind :: NameKind -> String
 fromNameKind = \case
   LocalNameKind -> "x"
   LocalArgumentNameKind -> "b"
+  LoopCounterNameKind -> "i"
   ConstantNameKind -> "c"
   FunctionNameKind -> "f"
   ArgumentNameKind -> "a"
@@ -39,3 +41,16 @@ renameVarName kind hint = do
         "" -> fromNameKind kind
         hint' -> hint' ++ "_"
   return (VarName (prefix ++ show i))
+
+freeVars :: Expr -> [VarName]
+freeVars = \case
+  Var x -> [x]
+  Lit _ -> []
+  UnOp _ e -> freeVars e
+  BinOp _ e1 e2 -> freeVars e1 ++ freeVars e2
+  Cond e1 e2 e3 -> freeVars e1 ++ freeVars e2 ++ freeVars e3
+  Lam _ _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
+  Call _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
+  VecExt _ es -> concatMap freeVars es
+  At e1 e2 -> freeVars e1 ++ freeVars e2
+  Cast _ e -> freeVars e
