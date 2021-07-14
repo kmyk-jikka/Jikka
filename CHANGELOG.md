@@ -1,5 +1,86 @@
 # Changelog for Jikka
 
+## 2021-07-14: v5.0.9.0
+
+-   The generated C++ stops being functional and becomes natural.
+-   The restricted Python allows to write `main` function and uses it to analyze input/output format.
+
+Input:
+
+```python
+# https://atcoder.jp/contests/dp/tasks/dp_a
+from typing import *
+
+def solve(n: int, h: List[int]) -> int:
+    assert 2 <= n <= 10 ** 5
+    assert len(h) == n
+    assert all(1 <= h_i <= 10 ** 4 for h_i in h)
+
+    dp = [-1 for _ in range(n)]
+    dp[0] = 0
+    dp[1] = abs(h[1] - h[0])
+    for i in range(2, n):
+        dp[i] = min(dp[i - 1] + abs(h[i] - h[i - 1]), dp[i - 2] + abs(h[i] - h[i - 2]))
+    return dp[n - 1]
+
+def main() -> None:
+    n = int(input())
+    h = list(map(int, input().split()))
+    assert len(h) == n
+    ans = solve(n, h)
+    print(ans)
+
+if __name__ == '__main__':
+    main()
+```
+
+Output:
+
+```c++
+#include "jikka/all.hpp"
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <tuple>
+#include <vector>
+int64_t solve(int64_t n_0, std::vector<int64_t> h_1) {
+  int64_t x6;
+  if (n_0 + -1 == 0) {
+    x6 = 0;
+  } else {
+    std::vector<std::array<int64_t, 2>> x2 =
+        std::vector<std::array<int64_t, 2>>(n_0 + -2 + 1);
+    x2[0] = jikka::make_array<int64_t>(
+        0, std::max<int64_t>(-h_1[0] + h_1[1], h_1[0] + -h_1[1]));
+    for (int32_t i3 = 0; i3 < int32_t(n_0 + -2); ++i3) {
+      x2[(i3 + 1)] = jikka::make_array<int64_t>(
+          x2[i3][1],
+          std::min<int64_t>(
+              x2[i3][1] + std::max<int64_t>(-h_1[(i3 + 1)] + h_1[(i3 + 2)],
+                                            h_1[(i3 + 1)] + -h_1[(i3 + 2)]),
+              x2[i3][0] + std::max<int64_t>(-h_1[i3] + h_1[(i3 + 2)],
+                                            h_1[i3] + -h_1[(i3 + 2)])));
+    }
+    x6 = x2[(n_0 + -2)][1];
+  }
+  return x6;
+}
+int main() {
+  int64_t n_7 = -1;
+  std::cin >> n_7;
+  std::vector<int64_t> h_8 = std::vector<int64_t>(n_7, -1);
+  for (int32_t i9 = 0; i9 < n_7; ++i9) {
+    std::cin >> h_8[i9];
+  }
+  auto ans_10 = solve(n_7, h_8);
+  std::cout << ans_10 << ' ';
+  std::cout << '\n' << ' ';
+}
+```
+
 ## 2021-07-11: v5.0.8.0
 
 Some optimizers are added.
