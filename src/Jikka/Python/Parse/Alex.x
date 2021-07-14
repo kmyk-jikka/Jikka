@@ -17,6 +17,7 @@ module Jikka.Python.Parse.Alex
     ( run
     ) where
 
+import Data.Char (chr, isHexDigit, isOctDigit)
 import Jikka.Common.Error
 import Jikka.Common.Location
 import Jikka.Common.Parse.JoinLines (joinLinesWithParens, removeEmptyLines)
@@ -41,6 +42,10 @@ $bindigit = [0-1]
 $octdigit = [0-7]
 $hexdigit = [0-9a-fA-F]
 
+$shortstringchar_single = [^ \\ \r \n ']
+$shortstringchar_double = [^ \\ \r \n ']
+@stringescapeseq = $backslash .
+
 tokens :-
 
     $space +        ;
@@ -58,6 +63,9 @@ tokens :-
     "0" [bB] ("_" ? $bindigit) +        { tok' parseInt }
     "0" [oO] ("_" ? $octdigit) +        { tok' parseInt }
     "0" [xX] ("_" ? $hexdigit) +        { tok' parseInt }
+
+    "'" ($shortstringchar_single | @stringescapeseq) * "'"  { tok'' parseString }
+    $doublequote ($shortstringchar_double | @stringescapeseq) * $doublequote  { tok'' parseString }
 
     "def"           { tok Def }
     "if"            { tok If }
@@ -173,15 +181,16 @@ type Token'' = Either Error Token'
 alexEOF :: Alex (Maybe Token'')
 alexEOF = return Nothing
 
-tok' :: (String -> Token) -> AlexAction (Maybe Token'')
-tok' f (AlexPn _ line column, _, _, s) n = return . Just . Right $ WithLoc
-    { value = f (take n s)
-    , loc = Loc
-        { line = line
-        , column = column
-        , width = n
-        }
+tok'' :: (Loc -> String -> Token'') -> AlexAction (Maybe Token'')
+tok'' f (AlexPn _ line column, _, _, s) n = return . Just $ f loc (take n s) where
+  loc = Loc
+    { line = line
+    , column = column
+    , width = n
     }
+
+tok' :: (String -> Token) -> AlexAction (Maybe Token'')
+tok' f = tok'' (\loc s -> Right (WithLoc loc (f s)))
 
 tok :: Token -> AlexAction (Maybe Token'')
 tok token = tok' (const token)
@@ -195,6 +204,26 @@ parseInt s' = Int $ case filter (/= '_') s' of
   s@('0' : 'x' : _) -> read s
   s@('0' : 'X' : _) -> read s
   s -> read s
+
+parseString :: Loc -> String -> Token''
+parseString loc s = WithLoc loc . String <$> go (tail (init s)) where
+  go "" = Right ""
+  go ('\\' : s) = case s of
+    [] -> throwInternalErrorAt loc "invalid escape sequence"
+    'a' : s -> ('\a' :) <$> go s
+    'b' : s -> ('\b' :) <$> go s
+    'f' : s -> ('\f' :) <$> go s
+    'n' : s -> ('\n' :) <$> go s
+    'r' : s -> ('\r' :) <$> go s
+    't' : s -> ('\t' :) <$> go s
+    'v' : s -> ('\v' :) <$> go s
+    o1 : o2 : o3 : s | isOctDigit o1 && isOctDigit o2 && isOctDigit o3 -> (chr (read ("0o" ++ [o1, o2, o3])) :) <$> go s
+    o1 : o2 : s | isOctDigit o1 && isOctDigit o2 -> (chr (read ("0o" ++ [o1, o2])) :) <$> go s
+    o1 : s | isOctDigit o1 -> (chr (read ("0o" ++ [o1])) :) <$> go s
+    'x' : h1 : h2 : s | isHexDigit h1 && isHexDigit h2 -> (chr (read ("0x" ++ [h1, h2])) :) <$> go s
+    'x' : _ -> throwLexicalErrorAt loc "truncated \\xXX escape"
+    c : s -> (c :) <$> go s
+  go (c : s) = (c :) <$> go s
 
 skip' :: AlexAction (Maybe Token'')
 skip' (AlexPn _ line column, _, _, s) n = return (Just (Left err)) where

@@ -204,6 +204,41 @@ Each expression or each value uniquely belongs to its type, i.e., it's Church-st
 -   You must take care of the fact that the values of `List[T]` are immutable.
 
 
+## Entry points
+
+### `solve` function
+
+`solve` function is the entry point of a program.
+
+-   You must define the function named as `solve` in all programs.
+-   The types of arguments of `solve` function must be one of `int`, `List[int]`, `List[List[int]]`, `List[List[List[int]]]`, ....
+-   The types of return values of `solve` function must be one of `int`, `List[int]`, `List[List[int]]`, `List[List[List[int]]]`, ..., or `Tuple` of these types.
+
+### `main` function
+
+`main` function is the special function to specify input/output format.
+
+-   You can write a program without `main` function.
+-   `main` function must have no arguments.
+-   The type of the return value of `main` function must be `None`.
+-   You can use only the following statements in `main` function.
+    -   `x = int(input())`
+    -   `x, y, z = map(int, input().split())`
+    -   `xs = list(map(int, input().split())); assert len(xs) == n`
+    -   `x, y, z = solve(a, b, c)`
+    -   `print(x, y, z)`
+    -   `for i in range(n): ...`
+
+### Toplevel expression statements
+
+You can call `main` function in the toplevel of a program.
+
+It must be either of the following statements:
+
+-   `main()`
+-   `if __name__ == "__main__": main()`
+
+
 ## Standard Library
 
 ### builtin operators from Python

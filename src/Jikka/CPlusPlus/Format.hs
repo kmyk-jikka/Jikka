@@ -284,6 +284,7 @@ formatStatement = \case
           Nothing -> ""
           Just e -> " = " ++ resolvePrecRight AssignPrec (formatExpr e)
      in [t' ++ " " ++ unVarName x ++ e' ++ ";"]
+  DeclareDestructure xs e -> ["auto [" ++ intercalate ", " (map unVarName xs) ++ "] = " ++ resolvePrecRight AssignPrec (formatExpr e) ++ ";"]
   Assign e -> [resolvePrec ParenPrec (formatAssignExpr e) ++ ";"]
   Assert e -> ["assert (" ++ formatExpr' ParenPrec e ++ ");"]
   Return e -> ["return " ++ formatExpr' ParenPrec e ++ ";"]

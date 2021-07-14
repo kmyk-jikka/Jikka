@@ -125,6 +125,7 @@ data Statement
   | ForEach Type VarName Expr [Statement]
   | While Expr [Statement]
   | Declare Type VarName (Maybe Expr)
+  | DeclareDestructure [VarName] Expr
   | Assign AssignExpr
   | Assert Expr
   | Return Expr

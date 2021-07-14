@@ -34,7 +34,7 @@ runAttribute (WithLoc loc (X.Ident x)) = WithLoc' (Just loc) (Y.UnresolvedAttrib
 runType :: (MonadAlpha m, MonadError Error m) => X.Type' -> m Y.Type
 runType t = wrapAt (loc t) $ case value t of
   X.Constant (X.ConstString _) -> Y.genType
-  X.Name (WithLoc _ (X.Ident "None")) -> return $ Y.TupleTy []
+  X.Constant X.ConstNone -> return Y.NoneTy
   X.Name (WithLoc _ (X.Ident "int")) -> return Y.IntTy
   X.Name (WithLoc _ (X.Ident "bool")) -> return Y.BoolTy
   X.Subscript (WithLoc _ (X.Name (WithLoc _ (X.Ident f)))) e -> case (f, e) of
@@ -195,7 +195,9 @@ runStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.ImportFrom _ _ -> throwSemanticError "import-from statement is not allowed in def statement"
   X.Global _ -> throwSemanticError "global statement is not allowed in def statement"
   X.Nonlocal _ -> throwSemanticError "nonlocal statement is not allowed in def statement"
-  X.Expr' _ -> throwSemanticError "expression statement is not allowed in def statement"
+  X.Expr' e -> do
+    e <- runExpr e
+    return [Y.Expr' e]
   X.Pass -> return []
   X.Break -> throwSemanticError "break statement is not allowed in def statement"
   X.Continue -> throwSemanticError "continue statement is not allowed in def statement"
@@ -238,7 +240,12 @@ runToplevelStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.For _ _ _ _ -> throwSemanticError "for statement is not allowed at toplevel"
   X.AsyncFor _ _ _ _ -> throwSemanticError "async-for statement is not allowed at toplevel"
   X.While _ _ _ -> throwSemanticError "while statement is not allowed at toplevel"
-  X.If _ _ _ -> throwSemanticError "if statement is not allowed at toplevel"
+  X.If e body1 body2 -> case (e, body1, body2) of
+    ( WithLoc _ (X.Compare (WithLoc _ (X.Name (WithLoc _ (X.Ident "__name__")))) [(X.Eq', WithLoc _ (X.Constant (X.ConstString "__main__")))]),
+      [WithLoc _ (X.Expr' (WithLoc _ (X.Call (WithLoc _ (X.Name (WithLoc _ (X.Ident "main")))) [] [])))],
+      []
+      ) -> return []
+    _ -> throwSemanticError "only `if __name__ == \"__main__\": main()' is allowed for if statements at toplevel"
   X.With _ _ -> throwSemanticError "with statement is not allowed at toplevel"
   X.AsyncWith _ _ -> throwSemanticError "async-with statement is not allowed at toplevel"
   X.Raise _ _ -> throwSemanticError "raise statement is not allowed at toplevel"
@@ -250,7 +257,9 @@ runToplevelStatement stmt = wrapAt (loc stmt) $ case value stmt of
   X.ImportFrom _ _ -> return []
   X.Global _ -> throwSemanticError "global statement is not allowed at toplevel"
   X.Nonlocal _ -> throwSemanticError "nonlocal statement is not allowed at toplevel"
-  X.Expr' _ -> throwSemanticError "expression statement is not allowed at toplevel"
+  X.Expr' e -> case e of
+    WithLoc _ (X.Call (WithLoc _ (X.Name (WithLoc _ (X.Ident "main")))) [] []) -> return []
+    _ -> throwSemanticError "only `main()' is allowed for expression statements at toplevel"
   X.Pass -> return []
   X.Break -> throwSemanticError "break statement is not allowed at toplevel"
   X.Continue -> throwSemanticError "continue statement is not allowed at toplevel"

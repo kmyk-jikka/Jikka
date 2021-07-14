@@ -202,7 +202,44 @@ Python とほとんど同じです。
 -   非負整数 `n` および任意の型 `T1`, `T2`, ..., `Tn`, `R` に対し、`Callable[[T1, T2, ..., Tn], R]` は型です。この型は `T1`, `T2`, ..., `Tn` に対応する集合から `Tn` に対応する集合への `n` 変数関数の全体からなる集合に対応します。
 -   以上で書かれたもののみが型です。
 
+また、`None` という表記は `Tuple[]` という型の略記です。
+
 すべての式や値はちょうどひとつの型に所属します (つまり Church-style です)。
+
+
+## Entry points
+
+### `solve` function
+
+`solve` 関数はプログラムのエントリポイントです。
+
+-   すべてのプログラムには `solve` という名前の関数が定義されていなければなりません。
+-   `solve` 関数のそれぞれの引数の型は `int`, `List[int]`, `List[List[int]]`, `List[List[List[int]]]`, ... のいずれかでなければなりません。
+-   `solve` 関数の戻り値の型は `int`, `List[int]`, `List[List[int]]`, `List[List[List[int]]]`, ... のいずれか、あるいはそれらからなる `Tuple` でなければなりません。
+
+### `main` function
+
+`main` 関数は入出力フォーマットを指定するための特殊な関数です。
+
+-   `main` という名前の関数は定義されていなくてもかまいません。
+-   `main` 関数は引数を取ってはいけません。
+-   `main` 関数の戻り値の型は `None` でなければなりません。
+-   `main` 関数の中では以下に挙げる形の文のみが利用できます。
+    -   `x = int(input())`
+    -   `x, y, z = map(int, input().split())`
+    -   `xs = list(map(int, input().split())); assert len(xs) == n`
+    -   `x, y, z = solve(a, b, c)`
+    -   `print(x, y, z)`
+    -   `for i in range(n): ...`
+
+### Toplevel expression statements
+
+プログラムのトップレベルには `main` 関数の呼び出し文を書くことができます。
+
+これは以下のいずれかの形をしていなければなりません。
+
+-   `main()`
+-   `if __name__ == "__main__": main()`
 
 
 ## Standard Library

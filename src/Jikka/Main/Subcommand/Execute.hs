@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Module      : Jikka.Subcommand.Execute
@@ -33,21 +32,21 @@ runRestrictedPython path = flip evalAlphaT 0 $ do
   prog <- liftIO $ T.readFile path
   prog <- liftEither $ FromPython.run path prog
   prog <- ToRestrictedPython.run prog
-  prog <- ToCore.run' prog
-  global <- EvaluateRestrictedPython.makeGlobal prog
-  entrypoint <- ValueRestrictedPythong.makeEntryPointIO "solve" global
-  value <- EvaluateRestrictedPython.runWithGlobal global entrypoint
-  liftIO $ ValueRestrictedPythong.writeValueIO value
+  (prog, format) <- ToCore.run' prog
+  (args, env) <- ValueRestrictedPythong.readValueIO format
+  result <- EvaluateRestrictedPython.run prog args
+  ValueRestrictedPythong.writeValueIO format env result
 
 runCore :: FilePath -> ExceptT Error IO ()
 runCore path = flip evalAlphaT 0 $ do
   prog <- liftIO $ T.readFile path
   prog <- liftEither $ FromPython.run path prog
   prog <- ToRestrictedPython.run prog
-  prog <- ToCore.run prog
+  (prog, format) <- ToCore.run prog
   prog <- ConvertCore.run prog
-  value <- EvaluateCore.run prog
-  liftIO $ ValueCore.writeValueIO value
+  (args, env) <- ValueCore.readValueIO format
+  result <- EvaluateCore.run prog args
+  ValueCore.writeValueIO format env result
 
 runCPlusPlus :: FilePath -> ExceptT Error IO ()
 runCPlusPlus _ = throwCommandLineError "cannot execute C++"

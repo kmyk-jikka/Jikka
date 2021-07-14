@@ -327,7 +327,8 @@ expression_list :: { ([Expr'], Bool) }
 
 -- 7. Simple statements
 simple_stmt :: { Statement' }
-    : assert_stmt                                           { $1 }
+    : expression_stmt                                       { $1 }
+    | assert_stmt                                           { $1 }
     | assignment_stmt                                       { $1 }
     | augmented_assignment_stmt                             { $1 }
     | annotated_assignment_stmt                             { $1 }
@@ -341,6 +342,10 @@ simple_stmt :: { Statement' }
     | import_stmt                                           { $1 }
     | global_stmt                                           { $1 }
     | nonlocal_stmt                                         { $1 }
+
+-- 7.1. Expression statements
+expression_stmt :: { Statement' }
+    : expression                                            { $1 @> Expr' $1 }
 
 -- 7.2. Assignment statements
 assignment_stmt :: { Statement' }

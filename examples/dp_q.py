@@ -15,3 +15,15 @@ def solve(n: int, h: List[int], a: List[int]) -> int:
             b = max(b, dp[j])
         dp[h[i] - 1] = b + a[i]
     return max(dp)
+
+def main() -> None:
+    n = int(input())
+    h = list(map(int, input().split()))
+    assert len(h) == n
+    a = list(map(int, input().split()))
+    assert len(a) == n
+    ans = solve(n, h, a)
+    print(ans)
+
+if __name__ == '__main__':
+    main()

@@ -5,6 +5,7 @@ module Jikka.RestrictedPython.Language.Util
   ( -- * generating symbols
     genType,
     genVarName,
+    genVarName',
 
     -- * free variables
     freeTyVars,
@@ -48,9 +49,6 @@ module Jikka.RestrictedPython.Language.Util
 
     -- * programs
     toplevelMainDef,
-
-    -- * IO
-    readValueIO,
   )
 where
 
@@ -58,8 +56,6 @@ import Control.Monad.Identity
 import Control.Monad.Writer.Strict
 import Data.List (delete, nub)
 import Jikka.Common.Alpha
-import Jikka.Common.Error
-import Jikka.Common.IO
 import Jikka.Common.Location
 import Jikka.RestrictedPython.Language.Expr
 
@@ -74,6 +70,9 @@ genVarName x = do
   let base = if unVarName (value' x) == "_" then "" else takeWhile (/= '$') (unVarName (value' x))
   return $ WithLoc' (loc' x) (VarName (base ++ '$' : show i))
 
+genVarName' :: MonadAlpha m => m VarName'
+genVarName' = genVarName (withoutLoc (VarName "_"))
+
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
   where
@@ -84,6 +83,7 @@ freeTyVars = nub . go
       ListTy t -> go t
       TupleTy ts -> concat $ mapM go ts
       CallableTy ts ret -> concat $ mapM go (ret : ts)
+      StringTy -> []
 
 -- | `freeVars'` reports all free variables.
 freeVars :: Expr' -> [VarName]
@@ -126,6 +126,7 @@ doesAlwaysReturn = \case
   For _ _ _ -> False
   If _ body1 body2 -> any doesAlwaysReturn body1 && any doesAlwaysReturn body2
   Assert _ -> False
+  Expr' _ -> False
 
 doesPossiblyReturn :: Statement -> Bool
 doesPossiblyReturn = \case
@@ -135,6 +136,7 @@ doesPossiblyReturn = \case
   For _ _ body -> any doesPossiblyReturn body
   If _ body1 body2 -> any doesPossiblyReturn body1 || any doesPossiblyReturn body2
   Assert _ -> False
+  Expr' _ -> False
 
 -- | `mapSubExprM` replaces all exprs in a given expr using a given function.
 -- This may breaks various constraints.
@@ -186,6 +188,7 @@ mapExprStatementM f = \case
   For x iter body -> For <$> mapExprTargetM f x <*> f iter <*> mapM (mapExprStatementM f) body
   If e body1 body2 -> If <$> f e <*> mapM (mapExprStatementM f) body1 <*> mapM (mapExprStatementM f) body2
   Assert e -> Assert <$> f e
+  Expr' e -> Expr' <$> f e
 
 mapExprToplevelStatementM :: Monad m => (Expr' -> m Expr') -> ToplevelStatement -> m ToplevelStatement
 mapExprToplevelStatementM f = \case
@@ -216,6 +219,7 @@ mapStatementStatementM f = \case
     body2 <- concat <$> mapM (mapStatementStatementM f) body2
     f $ If e body1 body2
   Assert e -> f $ Assert e
+  Expr' e -> f $ Expr' e
 
 mapStatementToplevelStatementM :: Monad m => (Statement -> m [Statement]) -> ToplevelStatement -> m ToplevelStatement
 mapStatementToplevelStatementM go = \case
@@ -243,6 +247,7 @@ mapLargeStatementM fIf fFor = mapStatementM go
       For x iter body -> fFor x iter body
       If e body1 body2 -> fIf e body1 body2
       Assert e -> return [Assert e]
+      Expr' e -> return [Expr' e]
 
 mapLargeStatement :: (Expr' -> [Statement] -> [Statement] -> [Statement]) -> (Target' -> Expr' -> [Statement] -> [Statement]) -> Program -> Program
 mapLargeStatement fIf fFor = runIdentity . mapLargeStatementM fIf' fFor'
@@ -273,6 +278,7 @@ mapStatementsToplevelStatementM go = \case
             body2 <- go body2
             return [If e body1 body2]
           Assert e -> return [Assert e]
+          Expr' e -> return [Expr' e]
     body <- concat <$> mapM (mapStatementStatementM go') body
     body <- go body
     return $ ToplevelFunctionDef f args ret body
@@ -318,26 +324,3 @@ hasBareNameTrg (WithLoc' _ x) = case x of
 
 toplevelMainDef :: [Statement] -> Program
 toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]
-
-readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr'
-readValueIO = \case
-  VarTy _ -> throwRuntimeError "cannot read values of type variables"
-  IntTy -> do
-    n <- read <$> liftIO getWord
-    return . withoutLoc $ Constant (ConstInt n)
-  BoolTy -> do
-    p <- liftIO getWord
-    p <-
-      if p == "Yes"
-        then return True
-        else
-          if p == "No"
-            then return False
-            else throwRuntimeError $ "boolean must be \"Yes\" or \"No\": " ++ show p
-    return . withoutLoc $ Constant (ConstBool p)
-  ListTy t -> do
-    n <- read <$> liftIO getWord
-    xs <- replicateM n (readValueIO t)
-    return . withoutLoc $ List t xs
-  TupleTy ts -> withoutLoc . Tuple <$> mapM readValueIO ts
-  CallableTy _ _ -> throwRuntimeError "cannot read functions"

@@ -6,7 +6,7 @@ def main() -> None:
     n = random.randint(2, 10 ** 3)
     h = [random.randint(1, 10 ** 4) for _ in range(n)]
     print(n)
-    print(len(h), *h)
+    print(*h)
 
 if __name__ == '__main__':
     main()

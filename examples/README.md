@@ -62,3 +62,5 @@
     -   An example of type errors.
 -   :heavy_check_mark: AC `errors/undefined_identifiers.py`
     -   An example of symbol errors.
+-   :heavy_check_mark: AC `errors/toplevel_expr_statements.py`
+    -   An example of expr statements in toplevel.

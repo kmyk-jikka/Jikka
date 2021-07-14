@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- |
 -- Module      : Jikka.RestrictedPython.Language.Expr
@@ -13,6 +14,7 @@ module Jikka.RestrictedPython.Language.Expr
     TypeName (..),
     unTypeName,
     Type (..),
+    pattern NoneTy,
 
     -- * operators
     UnaryOp (..),
@@ -72,6 +74,7 @@ unAttributeName (AttributeName x) = x
 --     \newcommand\int{\mathbf{int}}
 --     \newcommand\bool{\mathbf{bool}}
 --     \newcommand\list{\mathbf{list}}
+--     \newcommand\string{\mathbf{string}}
 --     \begin{array}{rl}
 --         \tau ::= & \alpha \\
 --         \vert & \int \\
@@ -79,6 +82,7 @@ unAttributeName (AttributeName x) = x
 --         \vert & \list(\tau) \\
 --         \vert & \tau \times \tau \times \dots \times \tau \\
 --         \vert & \tau \times \tau \times \dots \times \tau \to \tau
+--         \vert & \string
 --     \end{array}
 -- \]
 --
@@ -90,7 +94,10 @@ data Type
   | ListTy Type
   | TupleTy [Type]
   | CallableTy [Type] Type
+  | StringTy
   deriving (Eq, Ord, Show, Read)
+
+pattern NoneTy = TupleTy []
 
 data Constant
   = ConstNone
@@ -178,6 +185,10 @@ data Builtin
     BuiltinMultiChoose
   | -- | modulo inverse \((\lambda x m. x^{-1} \bmod m): \int \times \int \to \int\)
     BuiltinModInv
+  | -- | "input" \(: \epsilon \to \string\)
+    BuiltinInput
+  | -- | "print" \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \alpha _ {n - 1} \to \epsilon\)
+    BuiltinPrint [Type]
   deriving (Eq, Ord, Show, Read)
 
 data Attribute
@@ -188,6 +199,8 @@ data Attribute
     BuiltinIndex Type
   | -- | "list.copy" \(: \forall \alpha. \list(\alpha) \to \epsilon \to \list(\alpha)\)
     BuiltinCopy Type
+  | -- | "str.split" \(: \forall \alpha. \string \to \epsilon \to \list(\string)\)
+    BuiltinSplit
   deriving (Eq, Ord, Show, Read)
 
 type Attribute' = WithLoc' Attribute
@@ -276,6 +289,8 @@ data Statement
   | For Target' Expr' [Statement]
   | If Expr' [Statement] [Statement]
   | Assert Expr'
+  | -- | expression statements
+    Expr' Expr'
   deriving (Eq, Ord, Show, Read)
 
 -- | `TopLevelStatement` represents the statements of our restricted Python-like language.

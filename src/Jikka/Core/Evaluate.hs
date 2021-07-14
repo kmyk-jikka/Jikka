@@ -17,18 +17,12 @@
 -- The implementation assumes that all variable names don't conflict even when their scopes are distinct.
 module Jikka.Core.Evaluate
   ( run,
-    run',
     callProgram,
-    makeArguments,
-    makeArgumentsIO,
     Value (..),
-    Token (..),
-    tokenize,
   )
 where
 
 import Control.Monad.Except
-import Control.Monad.State.Strict
 import Data.Bits
 import Data.List (maximumBy, minimumBy, sortBy)
 import qualified Data.Vector as V
@@ -40,69 +34,8 @@ import Jikka.Core.Format (formatBuiltinIsolated)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Runtime
-import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 import Jikka.Core.Language.Value
-import Text.Read (readEither)
-
--- -----------------------------------------------------------------------------
--- inputs
-
-newtype Token = Token {unToken :: String}
-  deriving (Eq, Ord, Show, Read)
-
-tokenize :: String -> [Token]
-tokenize = map Token . words
-
-readToken :: (MonadError Error m, Read a) => Token -> m a
-readToken token = case readEither (unToken token) of
-  Left msg -> throwWrongInputError msg
-  Right a -> return a
-
-readInputList :: MonadError Error m => Type -> Int -> [Token] -> m ([Value], [Token])
-readInputList t = go
-  where
-    go n _ | n < 0 = throwWrongInputError "negative size of list in input"
-    go 0 tokens = return ([], tokens)
-    go n tokens = do
-      (x, tokens) <- readInput t tokens
-      (xs, tokens) <- go (n - 1) tokens
-      return (x : xs, tokens)
-
-readInputMap :: MonadError Error m => [Type] -> [Token] -> m ([Value], [Token])
-readInputMap ts tokens = case ts of
-  [] -> return ([], tokens)
-  (t : ts) -> do
-    (val, tokens) <- readInput t tokens
-    (vals, tokens) <- readInputMap ts tokens
-    return (val : vals, tokens)
-
-readInput :: MonadError Error m => Type -> [Token] -> m (Value, [Token])
-readInput t tokens = case (t, tokens) of
-  (VarTy a, _) -> throwInternalError $ "input type is undetermined: type variable " ++ unTypeName a
-  (IntTy, token : tokens) -> do
-    n <- readToken token
-    return (ValInt n, tokens)
-  (BoolTy, token : tokens) -> do
-    p <-
-      if unToken token == "Yes"
-        then return True
-        else
-          if unToken token == "No"
-            then return False
-            else throwRuntimeError $ "boolean must be \"Yes\" or \"No\": " ++ show (unToken token)
-    return (ValBool p, tokens)
-  (ListTy t, token : tokens) -> do
-    n <- readToken token
-    (a, tokens) <- readInputList t n tokens
-    return (ValList (V.fromList a), tokens)
-  (TupleTy ts, _) -> do
-    let readInput' :: MonadError Error m => Type -> StateT [Token] m Value
-        readInput' t = StateT (readInput t)
-    (values, tokens) <- runStateT (mapM readInput' ts) tokens
-    return (ValTuple values, tokens)
-  (FunTy _ _, _) -> throwWrongInputError "we cannot use functions as inputs"
-  (_, []) -> throwWrongInputError "it reaches EOF"
 
 -- -----------------------------------------------------------------------------
 -- builtins
@@ -344,29 +277,7 @@ callProgram prog args = wrapError' "Jikka.Core.Evaluate" $ do
 -- -----------------------------------------------------------------------------
 -- run
 
-makeArguments :: MonadError Error m => [Token] -> Program -> m [Value]
-makeArguments tokens prog = wrapError' "Jikka.Core.Evaluate" $ do
-  t <- typecheckProgram prog
-  let (ts, _) = uncurryFunTy t
-  (args, tokens) <- readInputMap ts tokens
-  unless (null tokens) $ do
-    throwRuntimeError $ "unused tokens: " ++ unwords (map unToken tokens)
-  return args
-
-makeArgumentsIO :: (MonadIO m, MonadError Error m) => Program -> m [Value]
-makeArgumentsIO prog = do
-  contents <- liftIO getContents
-  let tokens = tokenize contents
-  makeArguments tokens prog
-
-run' :: (MonadFix m, MonadAlpha m, MonadError Error m) => [Token] -> Program -> m Value
-run' tokens prog = do
-  args <- makeArguments tokens prog
-  prog <- MakeEager.run prog
-  callProgram prog args
-
-run :: (MonadIO m, MonadAlpha m, MonadFix m, MonadError Error m) => Program -> m Value
-run prog = do
-  args <- makeArgumentsIO prog
+run :: (MonadAlpha m, MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
+run prog args = do
   prog <- MakeEager.run prog
   callProgram prog args

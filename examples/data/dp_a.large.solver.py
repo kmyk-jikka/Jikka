@@ -11,7 +11,7 @@ def solve(n: int, h: List[int]) -> int:
 
 def main() -> None:
     n = int(input())
-    _, *h = map(int, input().split())
+    h = list(map(int, input().split()))
     print(solve(n, h))
 
 if __name__ == '__main__':

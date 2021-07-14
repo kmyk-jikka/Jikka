@@ -114,7 +114,7 @@ formularizeExpr e0 = case value' e0 of
     return ret
   Constant const ->
     return $ case const of
-      ConstNone -> TupleTy []
+      ConstNone -> NoneTy
       ConstInt _ -> IntTy
       ConstBool _ -> BoolTy
       ConstBuiltin b -> typeBuiltin b
@@ -173,6 +173,8 @@ formularizeStatement ret = \case
     mapM_ (formularizeStatement ret) body2
   Assert e -> do
     formularizeExpr' e BoolTy
+  Expr' e -> do
+    formularizeExpr' e NoneTy
 
 formularizeToplevelStatement :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelStatement -> m ()
 formularizeToplevelStatement = \case
@@ -219,6 +221,7 @@ subst sigma = \case
   ListTy t -> ListTy (subst sigma t)
   TupleTy ts -> TupleTy (map (subst sigma) ts)
   CallableTy ts ret -> CallableTy (map (subst sigma) ts) (subst sigma ret)
+  StringTy -> StringTy
 
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
@@ -265,12 +268,13 @@ solveEquations eqns = wrapError' "failed to solve type equations" $ do
 -- | `substUnit` replaces all undetermined type variables with the unit type.
 substUnit :: Type -> Type
 substUnit = \case
-  VarTy _ -> TupleTy []
+  VarTy _ -> NoneTy
   IntTy -> IntTy
   BoolTy -> BoolTy
   ListTy t -> ListTy (substUnit t)
   TupleTy ts -> TupleTy (map substUnit ts)
   CallableTy ts ret -> CallableTy (map substUnit ts) (substUnit ret)
+  StringTy -> StringTy
 
 -- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type
@@ -317,6 +321,7 @@ substStatement sigma = \case
   For x iter body -> For (substTarget sigma x) (substExpr sigma iter) (map (substStatement sigma) body)
   If pred body1 body2 -> If (substExpr sigma pred) (map (substStatement sigma) body1) (map (substStatement sigma) body2)
   Assert e -> Assert (substExpr sigma e)
+  Expr' e -> Expr' (substExpr sigma e)
 
 substToplevelStatement :: Subst -> ToplevelStatement -> ToplevelStatement
 substToplevelStatement sigma = \case

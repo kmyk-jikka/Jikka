@@ -92,7 +92,7 @@ renameLocalCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m)
 renameLocalCompletelyNew x = do
   env <- get
   case lookupLocalName x env of
-    Just _ -> maybe id wrapAt (loc' x) . throwSemanticError $ "cannot redefine variable: " ++ unVarName (value' x)
+    Just _ -> throwSemanticErrorAt' (loc' x) $ "cannot redefine variable: " ++ unVarName (value' x)
     Nothing -> renameLocalNew x
 
 -- | `renameToplevel` records given variables to the `Env` without actual renaming.
@@ -105,7 +105,7 @@ renameToplevel x = do
             if value' x `S.member` builtinNames
               then "cannot assign to builtin function: " ++ unVarName (value' x)
               else "cannot redefine variable in toplevel: " ++ unVarName (value' x)
-      maybe id wrapAt (loc' x) $ throwSemanticError msg
+      throwSemanticErrorAt' (loc' x) msg
     Nothing -> do
       when (unVarName (value' x) /= "_") $ do
         put $
@@ -142,7 +142,7 @@ lookupName' x = do
   env <- get
   case lookupName x env of
     Just y -> return y
-    Nothing -> maybe id wrapAt (loc' x) . throwSymbolError $ "undefined identifier: " ++ unVarName (value' x)
+    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined identifier: " ++ unVarName (value' x)
 
 -- | `runAnnTarget` renames targets of annotated assignments.
 runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'
@@ -171,7 +171,7 @@ popTarget (WithLoc' _ x) = case x of
 
 runExpr :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Expr' -> m Expr'
 runExpr e0 =
-  maybe id wrapAt (loc' e0) $
+  wrapAt' (loc' e0) $
     WithLoc' (loc' e0) <$> case value' e0 of
       BoolOp e1 op e2 -> BoolOp <$> runExpr e1 <*> return op <*> runExpr e2
       BinOp e1 op e2 -> BinOp <$> runExpr e1 <*> return op <*> runExpr e2
@@ -233,6 +233,7 @@ runStatement = \case
       runStatements body2
     return $ If e body1 body2
   Assert e -> Assert <$> runExpr e
+  Expr' e -> Expr' <$> runExpr e
 
 runStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [Statement] -> m [Statement]
 runStatements stmts = reportErrors =<< mapM (catchError' . runStatement) stmts

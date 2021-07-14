@@ -18,7 +18,6 @@ module Jikka.RestrictedPython.Convert.ToCore
   )
 where
 
-import Control.Arrow ((***))
 import Control.Monad.State.Strict
 import Data.List (intersect, union)
 import Jikka.Common.Alpha
@@ -50,14 +49,15 @@ withScope f = do
 runVarName :: X.VarName' -> Y.VarName
 runVarName (X.WithLoc' _ (X.VarName x)) = Y.VarName x
 
-runType :: X.Type -> Y.Type
+runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
-  X.VarTy (X.TypeName x) -> Y.VarTy (Y.TypeName x)
-  X.IntTy -> Y.IntTy
-  X.BoolTy -> Y.BoolTy
-  X.ListTy t -> Y.ListTy (runType t)
-  X.TupleTy ts -> Y.TupleTy (map runType ts)
-  X.CallableTy args ret -> Y.curryFunTy (map runType args) (runType ret)
+  X.VarTy (X.TypeName x) -> return $ Y.VarTy (Y.TypeName x)
+  X.IntTy -> return Y.IntTy
+  X.BoolTy -> return Y.BoolTy
+  X.ListTy t -> Y.ListTy <$> runType t
+  X.TupleTy ts -> Y.TupleTy <$> mapM runType ts
+  X.CallableTy args ret -> Y.curryFunTy <$> mapM runType args <*> runType ret
+  X.StringTy -> throwSemanticError "cannot use `str' type out of main function"
 
 runConstant :: MonadError Error m => X.Constant -> m Y.Expr
 runConstant = \case
@@ -87,37 +87,39 @@ runBuiltin builtin =
         X.BuiltinBool t -> case t of
           X.IntTy -> return $ Y.Lam "x" Y.IntTy (Y.If' Y.BoolTy (Y.Equal' Y.IntTy (Y.Var "x") Y.Lit0) Y.LitFalse Y.LitTrue)
           X.BoolTy -> return $ Y.Lam "p" Y.BoolTy (Y.Var "p")
-          X.ListTy t ->
-            let t' = runType t
-             in return $ Y.Lam "xs" (Y.ListTy t') (Y.If' Y.BoolTy (Y.Equal' (Y.ListTy t') (Y.Var "xs") (Y.Lit (Y.LitNil t'))) Y.LitFalse Y.LitTrue)
+          X.ListTy t -> do
+            t <- runType t
+            return $ Y.Lam "xs" (Y.ListTy t) (Y.If' Y.BoolTy (Y.Equal' (Y.ListTy t) (Y.Var "xs") (Y.Lit (Y.LitNil t))) Y.LitFalse Y.LitTrue)
           _ -> throwTypeError "the argument of bool must be bool, int, or list(a)"
-        X.BuiltinList t -> return $ Y.Lam "xs" (Y.ListTy (runType t)) (Y.Var "xs")
-        X.BuiltinTuple ts -> f $ Y.Tuple (map runType ts)
-        X.BuiltinLen t -> f $ Y.Len (runType t)
-        X.BuiltinMap ts ret -> return $ case ts of
-          [] -> Y.Nil' (runType ret)
-          _ ->
-            let ts' = map runType ts
-                ret' = runType ret
-                var i = Y.VarName ("xs" ++ show i)
-                lam body = Y.Lam "f" (Y.curryFunTy ts' ret') (foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts'))
-                len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts'))
-                body = Y.Map' Y.IntTy ret' (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "f") (map (Y.Var . var) [0 .. length ts' - 1]))) (Y.Range1' len)
-             in lam body
-        X.BuiltinSorted t -> f $ Y.Sorted (runType t)
-        X.BuiltinReversed t -> f $ Y.Reversed (runType t)
-        X.BuiltinEnumerate t ->
-          let t' = runType t
-              body = Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' [Y.IntTy, t']) [Y.Var "i", Y.At' t' (Y.Var "xs") (Y.Var "i")])
-           in return $ Y.Lam "xs" (Y.ListTy t') (Y.Map' (Y.ListTy t') (Y.ListTy (Y.TupleTy [Y.IntTy, t'])) body (Y.Range1' (Y.Len' t' (Y.Var "xs"))))
-        X.BuiltinFilter t -> f $ Y.Filter (runType t)
-        X.BuiltinZip ts ->
-          let ts' = map runType ts
-              var i = Y.VarName ("xs" ++ show i)
-              lam body = foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts')
-              len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts'))
-              body = Y.Map' Y.IntTy (Y.TupleTy ts') (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts') (map (Y.Var . var) [0 .. length ts' - 1]))) (Y.Range1' len)
-           in return $ lam body
+        X.BuiltinList t -> do
+          t <- runType t
+          return $ Y.Lam "xs" (Y.ListTy t) (Y.Var "xs")
+        X.BuiltinTuple ts -> f . Y.Tuple =<< mapM runType ts
+        X.BuiltinLen t -> f . Y.Len =<< runType t
+        X.BuiltinMap ts ret -> case ts of
+          [] -> Y.Nil' <$> runType ret
+          _ -> do
+            ts <- mapM runType ts
+            ret <- runType ret
+            let var i = Y.VarName ("xs" ++ show i)
+            let lam body = Y.Lam "f" (Y.curryFunTy ts ret) (foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts))
+            let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts))
+            let body = Y.Map' Y.IntTy ret (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "f") (map (Y.Var . var) [0 .. length ts - 1]))) (Y.Range1' len)
+            return $ lam body
+        X.BuiltinSorted t -> f . Y.Sorted =<< runType t
+        X.BuiltinReversed t -> f . Y.Reversed =<< runType t
+        X.BuiltinEnumerate t -> do
+          t <- runType t
+          let body = Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' [Y.IntTy, t]) [Y.Var "i", Y.At' t (Y.Var "xs") (Y.Var "i")])
+          return $ Y.Lam "xs" (Y.ListTy t) (Y.Map' (Y.ListTy t) (Y.ListTy (Y.TupleTy [Y.IntTy, t])) body (Y.Range1' (Y.Len' t (Y.Var "xs"))))
+        X.BuiltinFilter t -> f . Y.Filter =<< runType t
+        X.BuiltinZip ts -> do
+          ts <- mapM runType ts
+          let var i = Y.VarName ("xs" ++ show i)
+          let lam body = foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts)
+          let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts))
+          let body = Y.Map' Y.IntTy (Y.TupleTy ts) (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts) (map (Y.Var . var) [0 .. length ts - 1]))) (Y.Range1' len)
+          return $ lam body
         X.BuiltinAll -> f Y.All
         X.BuiltinAny -> f Y.Any
         X.BuiltinSum -> f Y.Sum
@@ -125,41 +127,44 @@ runBuiltin builtin =
         X.BuiltinRange1 -> f Y.Range1
         X.BuiltinRange2 -> f Y.Range2
         X.BuiltinRange3 -> f Y.Range1
-        X.BuiltinMax1 t -> f $ Y.Max1 (runType t)
-        X.BuiltinMax t n ->
-          if n < 2
-            then throwTypeError $ "max expected 2 or more arguments, got " ++ show n
-            else
-              let t' = runType t
-                  args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
-               in return $ Y.curryLam (map (,t') args) (foldr1 (Y.Max2' t') (map Y.Var args))
-        X.BuiltinMin1 t -> f $ Y.Min1 (runType t)
-        X.BuiltinMin t n ->
-          if n < 2
-            then throwTypeError $ "max min 2 or more arguments, got " ++ show n
-            else
-              let t' = runType t
-                  args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
-               in return $ Y.curryLam (map (,t') args) (foldr1 (Y.Min2' t') (map Y.Var args))
-        X.BuiltinArgMax t -> f $ Y.ArgMax (runType t)
-        X.BuiltinArgMin t -> f $ Y.ArgMin (runType t)
+        X.BuiltinMax1 t -> f . Y.Max1 =<< runType t
+        X.BuiltinMax t n -> do
+          when (n < 2) $ do
+            throwTypeError $ "max expected 2 or more arguments, got " ++ show n
+          t <- runType t
+          let args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
+          return $ Y.curryLam (map (,t) args) (foldr1 (Y.Max2' t) (map Y.Var args))
+        X.BuiltinMin1 t -> f . Y.Min1 =<< runType t
+        X.BuiltinMin t n -> do
+          when (n < 2) $ do
+            throwTypeError $ "max min 2 or more arguments, got " ++ show n
+          t <- runType t
+          let args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
+          return $ Y.curryLam (map (,t) args) (foldr1 (Y.Min2' t) (map Y.Var args))
+        X.BuiltinArgMax t -> f . Y.ArgMax =<< runType t
+        X.BuiltinArgMin t -> f . Y.ArgMin =<< runType t
         X.BuiltinFact -> f Y.Fact
         X.BuiltinChoose -> f Y.Choose
         X.BuiltinPermute -> f Y.Permute
         X.BuiltinMultiChoose -> f Y.MultiChoose
         X.BuiltinModInv -> f Y.ModInv
+        X.BuiltinInput -> throwSemanticError "cannot use `input' out of main function"
+        X.BuiltinPrint _ -> throwSemanticError "cannot use `print' out of main function"
 
 runAttribute :: MonadError Error m => X.Attribute' -> m Y.Expr
-runAttribute a = maybe id wrapAt (loc' a) $ do
+runAttribute a = wrapAt' (loc' a) $ do
   case value' a of
     X.UnresolvedAttribute a -> throwInternalError $ "unresolved attribute: " ++ X.unAttributeName a
     X.BuiltinCount t -> do
-      let t' = runType t
-      return $ Y.Lam2 "xs" (Y.ListTy t') "x" t' (Y.Len' t' (Y.Filter' t' (Y.Lam "y" t' (Y.Equal' t' (Y.Var "x") (Y.Var "y"))) (Y.Var "xs")))
+      t <- runType t
+      return $ Y.Lam2 "xs" (Y.ListTy t) "x" t (Y.Len' t (Y.Filter' t (Y.Lam "y" t (Y.Equal' t (Y.Var "x") (Y.Var "y"))) (Y.Var "xs")))
     X.BuiltinIndex t -> do
-      let t' = runType t
-      return $ Y.Lam2 "xs" (Y.ListTy t') "x" t' (Y.Min1' Y.IntTy (Y.Filter' Y.IntTy (Y.Lam "i" Y.IntTy (Y.Equal' t' (Y.At' t' (Y.Var "xs") (Y.Var "i")) (Y.Var "x"))) (Y.Range1' (Y.Len' t' (Y.Var "xs")))))
-    X.BuiltinCopy t -> return $ Y.Lam "x" (runType t) (Y.Var "x")
+      t <- runType t
+      return $ Y.Lam2 "xs" (Y.ListTy t) "x" t (Y.Min1' Y.IntTy (Y.Filter' Y.IntTy (Y.Lam "i" Y.IntTy (Y.Equal' t (Y.At' t (Y.Var "xs") (Y.Var "i")) (Y.Var "x"))) (Y.Range1' (Y.Len' t (Y.Var "xs")))))
+    X.BuiltinCopy t -> do
+      t <- runType t
+      return $ Y.Lam "x" t (Y.Var "x")
+    X.BuiltinSplit -> throwSemanticError "cannot use `split' out of main function"
 
 runBoolOp :: X.BoolOp -> Y.Builtin
 runBoolOp = \case
@@ -196,21 +201,21 @@ runOperator = \case
   X.Max -> return $ Y.Max2 Y.IntTy
   X.Min -> return $ Y.Min2 Y.IntTy
 
-runCmpOp :: X.CmpOp' -> Y.Expr
-runCmpOp (X.CmpOp' op t) =
-  let t' = runType t
-      f = Y.Lit . Y.LitBuiltin
-   in case op of
-        X.Lt -> f $ Y.LessThan t'
-        X.LtE -> f $ Y.LessEqual t'
-        X.Gt -> f $ Y.GreaterThan t'
-        X.GtE -> f $ Y.GreaterEqual t'
-        X.Eq' -> f $ Y.Equal t'
-        X.NotEq -> f $ Y.NotEqual t'
-        X.Is -> f $ Y.Equal t'
-        X.IsNot -> f $ Y.NotEqual t'
-        X.In -> f $ Y.Elem t'
-        X.NotIn -> Y.curryLam [("x", t'), ("xs", Y.ListTy t')] (Y.Not' (Y.Elem' t' (Y.Var "x") (Y.Var "xs")))
+runCmpOp :: MonadError Error m => X.CmpOp' -> m Y.Expr
+runCmpOp (X.CmpOp' op t) = do
+  t <- runType t
+  let f = Y.Lit . Y.LitBuiltin
+  return $ case op of
+    X.Lt -> f $ Y.LessThan t
+    X.LtE -> f $ Y.LessEqual t
+    X.Gt -> f $ Y.GreaterThan t
+    X.GtE -> f $ Y.GreaterEqual t
+    X.Eq' -> f $ Y.Equal t
+    X.NotEq -> f $ Y.NotEqual t
+    X.Is -> f $ Y.Equal t
+    X.IsNot -> f $ Y.NotEqual t
+    X.In -> f $ Y.Elem t
+    X.NotIn -> Y.curryLam [("x", t), ("xs", Y.ListTy t)] (Y.Not' (Y.Elem' t (Y.Var "x") (Y.Var "xs")))
 
 runTargetExpr :: (MonadAlpha m, MonadError Error m) => X.Target' -> m Y.Expr
 runTargetExpr (WithLoc' _ x) = case x of
@@ -241,11 +246,11 @@ runListComp e (X.Comprehension x iter pred) = do
   Y.Map' t1 t2 <$> (Y.Lam y t1 <$> runAssign x (Y.Var y) (pure e)) <*> pure iter
 
 runExpr :: (MonadAlpha m, MonadError Error m) => X.Expr' -> m Y.Expr
-runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
+runExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
   X.BoolOp e1 op e2 -> Y.AppBuiltin2 (runBoolOp op) <$> runExpr e1 <*> runExpr e2
   X.BinOp e1 op e2 -> Y.AppBuiltin2 <$> runOperator op <*> runExpr e1 <*> runExpr e2
   X.UnaryOp op e -> Y.App (runUnaryOp op) <$> runExpr e
-  X.Lambda args body -> Y.curryLam (map (runVarName *** runType) args) <$> runExpr body
+  X.Lambda args body -> Y.curryLam <$> mapM (\(x, t) -> (runVarName x,) <$> runType t) args <*> runExpr body
   X.IfExp e1 e2 e3 -> do
     e1 <- runExpr e1
     e2 <- runExpr e2
@@ -253,7 +258,7 @@ runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
     t <- Y.genType
     return $ Y.If' t e1 e2 e3
   X.ListComp x comp -> runListComp x comp
-  X.Compare e1 op e2 -> Y.App2 (runCmpOp op) <$> runExpr e1 <*> runExpr e2
+  X.Compare e1 op e2 -> Y.App2 <$> runCmpOp op <*> runExpr e1 <*> runExpr e2
   X.Call f args -> Y.uncurryApp <$> runExpr f <*> mapM runExpr args
   X.Constant const -> runConstant const
   X.Attribute e a -> do
@@ -263,8 +268,8 @@ runExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
   X.Subscript e1 e2 -> Y.AppBuiltin2 <$> (Y.At <$> Y.genType) <*> runExpr e1 <*> runExpr e2
   X.Name x -> return $ Y.Var (runVarName x)
   X.List t es -> do
-    let t' = runType t
-    foldr (Y.Cons' t') (Y.Lit (Y.LitNil t')) <$> mapM runExpr es
+    t <- runType t
+    foldr (Y.Cons' t) (Y.Lit (Y.LitNil t)) <$> mapM runExpr es
   X.Tuple es -> Y.uncurryApp <$> (Y.Tuple' <$> mapM (const Y.genType) es) <*> mapM runExpr es
   X.SubscriptSlice e from to step -> do
     e <- runExpr e
@@ -372,6 +377,7 @@ runStatements (stmt : stmts) cont = case stmt of
   X.For x iter body -> runForStatement x iter body stmts cont
   X.If e body1 body2 -> runIfStatement e body1 body2 stmts cont
   X.Assert _ -> runStatements stmts cont
+  X.Expr' _ -> runStatements stmts cont
 
 runToplevelStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
 runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")
@@ -380,14 +386,17 @@ runToplevelStatements (stmt : stmts) = case stmt of
     e <- runExpr e
     defineVar (X.value' x)
     cont <- runToplevelStatements stmts
-    return $ Y.ToplevelLet (runVarName x) (runType t) e cont
+    t <- runType t
+    return $ Y.ToplevelLet (runVarName x) t e cont
   X.ToplevelFunctionDef f args ret body -> do
     defineVar (X.value' f)
     body <- withScope $ do
       mapM_ (defineVar . X.value' . fst) args
       runStatements body []
     cont <- runToplevelStatements stmts
-    return $ Y.ToplevelLetRec (runVarName f) (map (runVarName *** runType) args) (runType ret) body cont
+    args <- mapM (\(x, t) -> (runVarName x,) <$> runType t) args
+    ret <- runType ret
+    return $ Y.ToplevelLetRec (runVarName f) args ret body cont
   X.ToplevelAssert _ -> runToplevelStatements stmts -- TOOD: use assertions as hints
 
 -- | `run` converts programs of our restricted Python-like language to programs of our core language.

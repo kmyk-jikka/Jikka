@@ -11,6 +11,8 @@
 -- Portability : portable
 module Jikka.RestrictedPython.Evaluate
   ( run,
+
+    -- * internal functions
     makeGlobal,
     runWithGlobal,
     evalExpr,
@@ -42,11 +44,11 @@ lookupLocal x = do
   local <- get
   case M.lookup (value' x) (unLocal local) of
     Just v -> return v
-    Nothing -> maybe id wrapAt (loc' x) . throwInternalError $ "undefined variable: " ++ unVarName (value' x)
+    Nothing -> throwInternalErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
 
 assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Expr' -> Value -> m ()
-assignSubscriptedTarget f index v = maybe id wrapAt (loc' f) $ do
-  let go f indices = maybe id wrapAt (loc' f) $ case value' f of
+assignSubscriptedTarget f index v = wrapAt' (loc' f) $ do
+  let go f indices = wrapAt' (loc' f) $ case value' f of
         SubscriptTrg f index -> go f (index : indices)
         NameTrg x -> return (x, indices)
         TupleTrg _ -> throwInternalError "cannot subscript a tuple target"
@@ -65,7 +67,7 @@ assignSubscriptedTarget f index v = maybe id wrapAt (loc' f) $ do
   assign (value' x) f
 
 assignTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Value -> m ()
-assignTarget x0 v = maybe id wrapAt (loc' x0) $ case value' x0 of
+assignTarget x0 v = wrapAt' (loc' x0) $ case value' x0 of
   SubscriptTrg f index -> do
     assignSubscriptedTarget f index v
   NameTrg x -> do
@@ -80,7 +82,7 @@ assignTarget x0 v = maybe id wrapAt (loc' x0) $ case value' x0 of
       _ -> throwInternalError "cannot unpack non-tuple value"
 
 evalTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> m Value
-evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
+evalTarget x0 = wrapAt' (loc' x0) $ case value' x0 of
   SubscriptTrg f index -> do
     f <- evalTarget f
     index <- evalExpr index
@@ -172,7 +174,7 @@ evalTarget x0 = maybe id wrapAt (loc' x0) $ case value' x0 of
 --
 -- === Rules for \(e \lbrack e? \colon e? \colon e? \rbrack\)
 evalExpr :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> m Value
-evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
+evalExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
   BoolOp e1 op e2 -> do
     v1 <- evalExpr e1
     case (v1, op) of
@@ -285,7 +287,7 @@ evalExpr e0 = maybe id wrapAt (loc' e0) $ case value' e0 of
       _ -> throwInternalError "type error"
 
 evalCall :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Expr' -> [Expr'] -> m Value
-evalCall f args = maybe id wrapAt (loc' f) $ do
+evalCall f args = wrapAt' (loc' f) $ do
   f <- evalExpr f
   args <- mapM evalExpr args
   evalCall' f args
@@ -441,17 +443,20 @@ evalStatement = \case
                 Just v -> return $ Just v
                 Nothing -> go iter
         go (V.toList iter)
-      _ -> maybe id wrapAt (loc' x) $ do
+      _ -> wrapAt' (loc' x) $ do
         throwInternalError "type error"
   If pred body1 body2 -> do
     pred <- evalExpr pred
     if pred /= BoolVal False
       then evalStatements body1
       else evalStatements body2
-  Assert e -> maybe id wrapAt (loc' e) $ do
+  Assert e -> wrapAt' (loc' e) $ do
     v <- evalExpr e
     when (v == BoolVal False) $ do
       throwRuntimeError "assertion failure"
+    return Nothing
+  Expr' e -> do
+    _ <- evalExpr e
     return Nothing
 
 -- | `evalStatements` evaluates sequences of statements of our restricted Python-like language.
@@ -492,21 +497,40 @@ execToplevelStatement = \case
     when (v /= BoolVal True) $ do
       throwRuntimeError "assertion failure"
 
+newtype Global = Global
+  { unGlobal :: M.Map VarName Value
+  }
+  deriving (Eq, Ord, Show, Read)
+
+initialGlobal :: Global
+initialGlobal = Global M.empty
+
+lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
+lookupGlobal x global =
+  case M.lookup (value' x) (unGlobal global) of
+    Just y -> return y
+    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
+
 runWithGlobal :: MonadError Error m => Global -> Expr' -> m Value
-runWithGlobal global e = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
+runWithGlobal global e = do
   runReaderT (evalStateT (evalExpr e) (Local M.empty)) global
+
+runWithGlobal' :: MonadError Error m => Global -> Value -> [Value] -> m Value
+runWithGlobal' global solve args = do
+  runReaderT (evalStateT (evalCall' solve args) (Local M.empty)) global
 
 -- | `makeGlobal` packs toplevel definitions into `Global`.
 -- This assumes `doesntHaveLeakOfLoopCounters`.
 makeGlobal :: MonadError Error m => Program -> m Global
-makeGlobal prog = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
+makeGlobal prog = do
   ensureDoesntHaveLeakOfLoopCounters prog
   execStateT (mapM_ execToplevelStatement prog) initialGlobal
 
-run :: MonadError Error m => Program -> Expr' -> m Value
-run prog e = do
+run :: MonadError Error m => Program -> [Value] -> m Value
+run prog args = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
   global <- makeGlobal prog
-  runWithGlobal global e
+  solve <- lookupGlobal (withoutLoc (VarName "solve")) global
+  runWithGlobal' global solve args
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value
 evalBinOp v1 op v2 = wrapError' ("calculating " ++ formatOperator op ++ " operator") $ do
@@ -615,6 +639,8 @@ evalBuiltin b args = wrapError' ("calling " ++ formatBuiltin b) $ do
     BuiltinChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ choose n r else throwRuntimeError "invalid argument"
     BuiltinPermute -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ permute n r else throwRuntimeError "invalid argument"
     BuiltinMultiChoose -> go2' toInt toInt IntVal $ \n r -> if 0 <= r && r <= n then return $ multichoose n r else throwRuntimeError "invalid argument"
+    BuiltinInput -> throwSemanticError "cannot use `input' out of main function"
+    BuiltinPrint _ -> throwSemanticError "cannot use `print' out of main function"
 
 evalAttribute :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Value -> Attribute -> [Value] -> m Value
 evalAttribute v0 a args = wrapError' ("calling " ++ formatAttribute a) $ do
@@ -633,3 +659,4 @@ evalAttribute v0 a args = wrapError' ("calling " ++ formatAttribute a) $ do
       Nothing -> throwRuntimeError $ "not in list: " ++ formatValue x
       Just i -> return (toInteger i)
     BuiltinCopy _ -> go0 toList ListVal id
+    BuiltinSplit -> throwSemanticError "cannot use `split' out of main function"
