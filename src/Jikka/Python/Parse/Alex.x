@@ -206,7 +206,7 @@ parseInt s' = Int $ case filter (/= '_') s' of
   s -> read s
 
 parseString :: Loc -> String -> Token''
-parseString loc s = WithLoc loc . String <$> go s where
+parseString loc s = WithLoc loc . String <$> go (tail (init s)) where
   go "" = Right ""
   go ('\\' : s) = case s of
     [] -> throwInternalErrorAt loc "invalid escape sequence"
