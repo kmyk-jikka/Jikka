@@ -113,27 +113,26 @@ formatProductExpr e =
       k' e' = case productExprConst e of
         0 -> LitInt' 0
         1 -> e'
+        -1 -> Negate' e'
         _ -> Mult' e' k
    in case productExprList e of
         [] -> k
         eHead : esTail -> k' (foldl Mult' eHead esTail)
 
 formatSumExpr :: SumExpr -> Expr
-formatSumExpr e =
-  let k = LitInt' (sumExprConst e)
-   in case sumExprList e of
-        [] -> k
-        eHead : esTail ->
-          let op e'
-                | productExprConst e' > 0 = Plus'
-                | productExprConst e' < 0 = Minus'
-                | otherwise = const
-              go e1 e2 = op e2 e1 (formatProductExpr (e2 {productExprConst = abs (productExprConst e2)}))
-              k' e'
-                | sumExprConst e > 0 = Plus' e' k
-                | sumExprConst e < 0 = Minus' e' k
-                | otherwise = e'
-           in k' (foldl go (formatProductExpr eHead) esTail)
+formatSumExpr e = case sumExprList e of
+  [] -> LitInt' (sumExprConst e)
+  eHead : esTail ->
+    let op e'
+          | productExprConst e' > 0 = Plus'
+          | productExprConst e' < 0 = Minus'
+          | otherwise = const
+        go e1 e2 = op e2 e1 (formatProductExpr (e2 {productExprConst = abs (productExprConst e2)}))
+        k' e'
+          | sumExprConst e > 0 = Plus' e' (LitInt' (sumExprConst e))
+          | sumExprConst e < 0 = Minus' e' (LitInt' (abs (sumExprConst e)))
+          | otherwise = e'
+     in k' (foldl go (formatProductExpr eHead) esTail)
 
 formatArithmeticalExpr :: ArithmeticalExpr -> Expr
 formatArithmeticalExpr = formatSumExpr
