@@ -22,6 +22,7 @@ import Jikka.Common.Error
 import Jikka.Common.IOFormat
 import Jikka.RestrictedPython.Format (formatExpr, formatTarget)
 import Jikka.RestrictedPython.Language.Expr
+import Jikka.RestrictedPython.Language.Util
 
 type MainFunction = (Maybe Loc, [(VarName', Type)], Type, [Statement])
 
@@ -43,8 +44,8 @@ pattern CallBuiltin b args <- WithLoc' _ (Call (WithLoc' _ (Constant (ConstBuilt
 
 pattern CallMethod e a args <- WithLoc' _ (Call (WithLoc' _ (Attribute e a)) args)
 
-parseAnnAssign :: MonadError Error m => Target' -> Type -> Expr' -> m (FormatTree, Maybe ([String], Either String [String]))
-parseAnnAssign x _ e = do
+parseAnnAssign :: (MonadAlpha m, MonadError Error m) => Target' -> Type -> Expr' -> Maybe Statement -> m (FormatTree, Maybe ([String], Either String [String]))
+parseAnnAssign x _ e hint = do
   let subscriptTrg x = case value' x of
         NameTrg x -> return (unVarName (value' x), [])
         SubscriptTrg x (WithLoc' _ (Name i)) -> second (++ [unVarName (value' i)]) <$> subscriptTrg x
@@ -94,13 +95,18 @@ parseAnnAssign x _ e = do
             ]
         ] -> do
         (x, indices) <- subscriptTrg x
-        return (Seq [packSubscriptedVar' x indices, Newline], Nothing)
+        case hint of
+          Just (Assert (WithLoc' _ (Compare (CallBuiltin (BuiltinLen _) [WithLoc' _ (Name x')]) (CmpOp' Eq' _) n))) | unVarName (value' x') == x -> do
+            i <- unVarName . value' <$> genVarName'
+            n <- nameExpr n
+            return (Seq [Loop i (Var n) (Exp (At (packSubscriptedVar x indices) i)), Newline], Nothing)
+          _ -> throwSemanticErrorAt' (loc' e) "after `xs = list(map(int, input().split()))', we need to write `assert len(xs) == n`"
     -- solve(...)
     WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName "solve")))) args) -> do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
       return (Seq [], Just (inputs, output))
-    e -> throwSemanticErrorAt' (loc' e) $ "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)': " ++ formatExpr e ++ show e
+    _ -> throwSemanticErrorAt' (loc' e) "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)'"
 
 parseFor :: MonadError Error m => ([Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)) -> Target' -> Expr' -> [Statement] -> m (FormatTree, FormatTree)
 parseFor go x e body = do
@@ -135,7 +141,7 @@ parseExprStatement e = do
       return $ Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline])
     _ -> throwSemanticErrorAt' (loc' e) "only `print(...)' is allowed for expr statements in main function"
 
-parseMain :: MonadError Error m => MainFunction -> m IOFormat
+parseMain :: (MonadAlpha m, MonadError Error m) => MainFunction -> m IOFormat
 parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go body
   where
     pack :: MonadError Error m => (FormatTree, Maybe ([String], Either String [String]), FormatTree) -> m IOFormat
@@ -148,9 +154,9 @@ parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go body
             outputVariables = outputVariables,
             outputTree = outputTree
           }
-    go :: MonadError Error m => [Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
+    go :: (MonadAlpha m, MonadError Error m) => [Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
     go stmts = do
-      formats <- mapM go' stmts
+      formats <- zipWithM go' stmts (map Just (tail stmts) ++ [Nothing])
       let input = Seq (map (\(x, _, _) -> x) formats)
       let outputs = Seq (map (\(_, _, z) -> z) formats)
       solve <- case mapMaybe (\(_, y, _) -> y) formats of
@@ -158,18 +164,18 @@ parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go body
         [solve] -> return $ Just solve
         _ -> throwSemanticError "cannot call solve function twice"
       return (input, solve, outputs)
-    go' :: MonadError Error m => Statement -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
-    go' = \case
+    go' :: (MonadAlpha m, MonadError Error m) => Statement -> Maybe Statement -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
+    go' stmt hint = case stmt of
       Return _ -> throwSemanticError "return statement is not allowd in main function"
       AugAssign _ _ _ -> throwSemanticError "augumented assignment statement is not allowd in main function"
       AnnAssign x t e -> do
-        (inputs, solve) <- parseAnnAssign x t e
+        (inputs, solve) <- parseAnnAssign x t e hint
         return (inputs, solve, Seq [])
       For x e body -> do
         (inputs, outputs) <- parseFor go x e body
         return (inputs, Nothing, outputs)
       If _ _ _ -> throwSemanticError "if statement is not allowd in main function"
-      Assert _ -> throwSemanticError "assert statement is not allowd in main function"
+      Assert _ -> return (Seq [], Nothing, Seq [])
       Expr' e -> do
         output <- parseExprStatement e
         return (Seq [], Nothing, output)
