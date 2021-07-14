@@ -145,11 +145,10 @@ mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(
 mapExprToplevelExprM' pre post env = \case
   ResultExpr e -> ResultExpr <$> mapExprM' pre post env e
   ToplevelLet y t e cont ->
-    let env' = (y, t) : env
-     in ToplevelLet y t <$> mapExprM' pre post env' e <*> mapExprToplevelExprM' pre post env' cont
+    ToplevelLet y t <$> mapExprM' pre post env e <*> mapExprToplevelExprM' pre post ((y, t) : env) cont
   ToplevelLetRec g args ret body cont ->
     let env' = (g, foldr (FunTy . snd) ret args) : env
-     in ToplevelLetRec g args ret <$> mapExprM' pre post (reverse args ++ env) body <*> mapExprToplevelExprM' pre post env' cont
+     in ToplevelLetRec g args ret <$> mapExprM' pre post (reverse args ++ env') body <*> mapExprToplevelExprM' pre post env' cont
 
 mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
 mapExprProgramM' pre post = mapExprToplevelExprM' pre post []
