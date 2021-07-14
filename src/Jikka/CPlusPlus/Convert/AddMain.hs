@@ -28,7 +28,7 @@ cinStatement :: Expr -> Statement
 cinStatement e = ExprStatement (BinOp BitRightShift (Var "std::cin") e)
 
 coutStatement :: Expr -> Statement
-coutStatement e = ExprStatement (BinOp BitLeftShift (BinOp BitLeftShift (Var "std::cout") e) (Lit (LitChar '\n')))
+coutStatement e = ExprStatement (BinOp BitLeftShift (BinOp BitLeftShift (Var "std::cout") e) (Lit (LitChar ' ')))
 
 forStatement :: VarName -> Expr -> [Statement] -> Statement
 forStatement i n body = For TyInt32 i (Lit (LitInt32 0)) (BinOp LessThan (Var i) n) (AssignIncr (LeftVar i)) body
