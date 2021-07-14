@@ -43,7 +43,7 @@ pattern CallBuiltin b args <- WithLoc' _ (Call (WithLoc' _ (Constant (ConstBuilt
 
 pattern CallMethod e a args <- WithLoc' _ (Call (WithLoc' _ (Attribute e a)) args)
 
-parseAnnAssign :: MonadError Error m => Target' -> Type -> Expr' -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
+parseAnnAssign :: MonadError Error m => Target' -> Type -> Expr' -> m (FormatTree, Maybe ([String], Either String [String]))
 parseAnnAssign x _ e = do
   let subscriptTrg x = case value' x of
         NameTrg x -> return (unVarName (value' x), [])
@@ -68,7 +68,7 @@ parseAnnAssign x _ e = do
       (BuiltinInt _)
       [CallBuiltin BuiltinInput []] -> do
         (x, indices) <- subscriptTrg x
-        return (Seq [], Nothing, Seq [packSubscriptedVar' x indices, Newline])
+        return (Seq [packSubscriptedVar' x indices, Newline], Nothing)
     -- map(int, input().split())
     ( CallBuiltin
         (BuiltinMap [_] _)
@@ -80,7 +80,7 @@ parseAnnAssign x _ e = do
           ]
       ) -> do
         outputs <- subscriptTupleTrg x
-        return (Seq [], Nothing, Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline]))
+        return (Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline]), Nothing)
     -- list(map(int, input().split()))
     CallBuiltin
       (BuiltinList _)
@@ -94,12 +94,12 @@ parseAnnAssign x _ e = do
             ]
         ] -> do
         (x, indices) <- subscriptTrg x
-        return (Seq [], Nothing, Seq [packSubscriptedVar' x indices, Newline])
+        return (Seq [packSubscriptedVar' x indices, Newline], Nothing)
     -- solve(...)
     WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName "solve")))) args) -> do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
-      return (Seq [], Just (inputs, output), Seq [])
+      return (Seq [], Just (inputs, output))
     e -> throwSemanticErrorAt' (loc' e) $ "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)': " ++ formatExpr e ++ show e
 
 parseFor :: MonadError Error m => ([Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)) -> Target' -> Expr' -> [Statement] -> m (FormatTree, FormatTree)
@@ -162,7 +162,9 @@ parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go body
     go' = \case
       Return _ -> throwSemanticError "return statement is not allowd in main function"
       AugAssign _ _ _ -> throwSemanticError "augumented assignment statement is not allowd in main function"
-      AnnAssign x t e -> parseAnnAssign x t e
+      AnnAssign x t e -> do
+        (inputs, solve) <- parseAnnAssign x t e
+        return (inputs, solve, Seq [])
       For x e body -> do
         (inputs, outputs) <- parseFor go x e body
         return (inputs, Nothing, outputs)
