@@ -111,6 +111,7 @@ For :: Type -> VarName -> Expr -> Expr -> AssignExpr -> [Statement] -> Statement
 ForEach :: Type -> VarName -> Expr -> [Statement] -> Statement
 While :: Expr -> [Statement] -> Statement
 Declare :: Type -> VarName -> Maybe Expr -> Statement
+DeclareDestructure :: [VarName] -> Expr -> Statement
 Assign :: AssignExpr -> Statement
 Assert :: Expr -> Statement
 Return :: Expr -> Statement
@@ -179,9 +180,6 @@ instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Program
 
-module Jikka.CPlusPlus.Language.Util
-fromLeftExpr :: LeftExpr -> Expr
-
 
 -- | <a>Alpha</a> provides a monad to run alpha-conversion. This monad has
 --   only a feature to make unique numbers.
@@ -206,6 +204,24 @@ instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Contr
 instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Reader.ReaderT r m)
 instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT s m)
 instance (Jikka.Common.Alpha.MonadAlpha m, GHC.Base.Monoid w) => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Writer.Strict.WriterT w m)
+
+module Jikka.CPlusPlus.Language.Util
+fromLeftExpr :: LeftExpr -> Expr
+data NameKind
+LocalNameKind :: NameKind
+LocalArgumentNameKind :: NameKind
+LoopCounterNameKind :: NameKind
+ConstantNameKind :: NameKind
+FunctionNameKind :: NameKind
+ArgumentNameKind :: NameKind
+fromNameKind :: NameKind -> String
+newFreshName :: MonadAlpha m => NameKind -> m VarName
+renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
+freeVars :: Expr -> [VarName]
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Util.NameKind
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Util.NameKind
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Util.NameKind
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Util.NameKind
 
 module Jikka.Common.Combinatorics
 fact :: Integral a => a -> a
@@ -376,6 +392,7 @@ WithResponsibility :: Responsibility -> Error -> Error
 wrapError :: MonadError e m => (e -> e) -> m a -> m a
 wrapError' :: MonadError Error m => String -> m a -> m a
 wrapAt :: MonadError Error m => Loc -> m a -> m a
+wrapAt' :: MonadError Error m => Maybe Loc -> m a -> m a
 maybeToError :: MonadError a m => a -> Maybe b -> m b
 eitherToError :: MonadError a m => Either a b -> m b
 
@@ -404,18 +421,26 @@ throwLexicalError :: MonadError Error m => String -> m a
 throwLexicalErrorAt :: MonadError Error m => Loc -> String -> m a
 throwSyntaxError :: MonadError Error m => String -> m a
 throwSyntaxErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSyntaxErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
 throwSymbolError :: MonadError Error m => String -> m a
 throwSymbolErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSymbolErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
 throwTypeError :: MonadError Error m => String -> m a
 throwTypeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwTypeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
 throwSemanticError :: MonadError Error m => String -> m a
 throwSemanticErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSemanticErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
 throwEvaluationError :: MonadError Error m => String -> m a
 throwRuntimeError :: MonadError Error m => String -> m a
+throwRuntimeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwRuntimeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
 throwAssertionError :: MonadError Error m => String -> m a
 throwCommandLineError :: MonadError Error m => String -> m a
 throwWrongInputError :: MonadError Error m => String -> m a
 throwInternalError :: MonadError Error m => String -> m a
+throwInternalErrorAt :: MonadError Error m => Loc -> String -> m a
+throwInternalErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
 bug :: String -> a
 todo :: String -> a
 instance GHC.Read.Read Jikka.Common.Error.Responsibility
@@ -432,12 +457,62 @@ instance GHC.Classes.Ord Jikka.Common.Error.Error
 instance GHC.Classes.Eq Jikka.Common.Error.Error
 instance GHC.Base.Semigroup Jikka.Common.Error.Error
 
+module Jikka.Common.IOFormat
+data FormatExpr
+Var :: String -> FormatExpr
+Plus :: FormatExpr -> Integer -> FormatExpr
+At :: FormatExpr -> String -> FormatExpr
+Len :: FormatExpr -> FormatExpr
+data FormatTree
+Exp :: FormatExpr -> FormatTree
+Newline :: FormatTree
+Seq :: [FormatTree] -> FormatTree
+Loop :: String -> FormatExpr -> FormatTree -> FormatTree
+data IOFormat
+IOFormat :: [String] -> FormatTree -> Either String [String] -> FormatTree -> IOFormat
+[inputVariables] :: IOFormat -> [String]
+[inputTree] :: IOFormat -> FormatTree
+
+-- | This uses <a>Either</a> to distinguish a type and the 1-tuple of it.
+[outputVariables] :: IOFormat -> Either String [String]
+[outputTree] :: IOFormat -> FormatTree
+mapFormatTreeM :: Monad m => (FormatTree -> m FormatTree) -> FormatTree -> m FormatTree
+mapFormatTree :: (FormatTree -> FormatTree) -> FormatTree -> FormatTree
+normalizeFormatTree :: FormatTree -> FormatTree
+substFormatExpr :: String -> String -> FormatExpr -> FormatExpr
+substFormatTree :: String -> String -> FormatTree -> FormatTree
+hasNewline :: FormatTree -> Bool
+formatFormatExpr :: FormatExpr -> String
+formatFormatTree :: FormatTree -> String
+formatIOFormat :: IOFormat -> String
+packSubscriptedVar :: String -> [String] -> FormatExpr
+packSubscriptedVar' :: String -> [String] -> FormatTree
+unpackSubscriptedVar :: MonadError Error m => FormatExpr -> m (String, [String])
+makeReadValueIO :: (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (Vector value)) -> (Vector value -> value) -> IOFormat -> m ([value], Map String value)
+makeWriteValueIO :: (MonadError Error m, MonadIO m) => (value -> m [value]) -> (Integer -> value) -> (value -> m Integer) -> (value -> m (Vector value)) -> IOFormat -> Map String value -> value -> m ()
+instance GHC.Show.Show Jikka.Common.IOFormat.FormatExpr
+instance GHC.Read.Read Jikka.Common.IOFormat.FormatExpr
+instance GHC.Classes.Ord Jikka.Common.IOFormat.FormatExpr
+instance GHC.Classes.Eq Jikka.Common.IOFormat.FormatExpr
+instance GHC.Show.Show Jikka.Common.IOFormat.FormatTree
+instance GHC.Read.Read Jikka.Common.IOFormat.FormatTree
+instance GHC.Classes.Ord Jikka.Common.IOFormat.FormatTree
+instance GHC.Classes.Eq Jikka.Common.IOFormat.FormatTree
+instance GHC.Show.Show Jikka.Common.IOFormat.IOFormat
+instance GHC.Read.Read Jikka.Common.IOFormat.IOFormat
+instance GHC.Classes.Ord Jikka.Common.IOFormat.IOFormat
+instance GHC.Classes.Eq Jikka.Common.IOFormat.IOFormat
+
 module Jikka.Common.Format.Error
 prettyError :: ColorFlag -> Error -> [String]
 prettyError' :: Error -> [String]
 prettyErrorWithText :: ColorFlag -> Text -> Error -> [String]
 hPrintError :: Handle -> Error -> IO ()
 hPrintErrorWithText :: Handle -> Text -> Error -> IO ()
+
+
+module Jikka.CPlusPlus.Convert.AddMain
+run :: (MonadAlpha m, MonadError Error m) => Program -> IOFormat -> m Program
 
 module Jikka.Common.Matrix
 
@@ -1915,13 +1990,9 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 -- | <a>FromCore</a> converts exprs of our core language to exprs of C++.
 module Jikka.CPlusPlus.Convert.FromCore
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-instance GHC.Read.Read Jikka.CPlusPlus.Convert.FromCore.NameKind
-instance GHC.Show.Show Jikka.CPlusPlus.Convert.FromCore.NameKind
-instance GHC.Classes.Ord Jikka.CPlusPlus.Convert.FromCore.NameKind
-instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.FromCore.NameKind
 
 module Jikka.CPlusPlus.Convert
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> IOFormat -> m Program
 
 module Jikka.Core.Language.Value
 data Value
@@ -1954,7 +2025,8 @@ compareValues' :: Value -> Value -> Ordering
 minValue :: Value -> Value -> Value
 maxValue :: Value -> Value -> Value
 formatValue :: Value -> String
-writeValueIO :: Value -> IO ()
+readValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> m ([Value], Map String Value)
+writeValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> Map String Value -> Value -> m ()
 instance GHC.Read.Read Jikka.Core.Language.Value.Value
 instance GHC.Classes.Eq Jikka.Core.Language.Value.Value
 
@@ -1965,15 +2037,12 @@ instance GHC.Classes.Eq Jikka.Core.Language.Value.Value
 --   The implementation assumes that all variable names don't conflict even
 --   when their scopes are distinct.
 module Jikka.Core.Evaluate
-run :: (MonadIO m, MonadAlpha m, MonadFix m, MonadError Error m) => Program -> m Value
-run' :: (MonadFix m, MonadAlpha m, MonadError Error m) => [Token] -> Program -> m Value
+run :: (MonadAlpha m, MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
 
 -- | <a>callProgram</a> evaluates programs with given arguments. This
 --   function assumes that given programs are ready for eager evaluation
 --   (<tt>ensureEagerlyEvaluatable</tt>).
 callProgram :: (MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
-makeArguments :: MonadError Error m => [Token] -> Program -> m [Value]
-makeArgumentsIO :: (MonadIO m, MonadError Error m) => Program -> m [Value]
 data Value
 ValInt :: Integer -> Value
 ValBool :: Bool -> Value
@@ -1983,14 +2052,6 @@ ValBuiltin :: Builtin -> [Value] -> Value
 
 -- | The <a>Env</a> may contain the <a>ValLambda</a> cyclicly.
 ValLambda :: Maybe VarName -> Env -> VarName -> Type -> Expr -> Value
-newtype Token
-Token :: String -> Token
-[unToken] :: Token -> String
-tokenize :: String -> [Token]
-instance GHC.Read.Read Jikka.Core.Evaluate.Token
-instance GHC.Show.Show Jikka.Core.Evaluate.Token
-instance GHC.Classes.Ord Jikka.Core.Evaluate.Token
-instance GHC.Classes.Eq Jikka.Core.Evaluate.Token
 
 module Jikka.Main.Target
 data Target
@@ -2454,6 +2515,8 @@ BoolTy :: Type
 ListTy :: Type -> Type
 TupleTy :: [Type] -> Type
 CallableTy :: [Type] -> Type -> Type
+StringTy :: Type
+pattern NoneTy :: Type
 data UnaryOp
 
 -- | on int
@@ -2634,6 +2697,12 @@ BuiltinMultiChoose :: Builtin
 
 -- | modulo inverse &lt;math&gt;
 BuiltinModInv :: Builtin
+
+-- | "input" &lt;math&gt;
+BuiltinInput :: Builtin
+
+-- | "print" &lt;math&gt;
+BuiltinPrint :: [Type] -> Builtin
 newtype AttributeName
 AttributeName :: String -> AttributeName
 unAttributeName :: AttributeName -> String
@@ -2648,6 +2717,9 @@ BuiltinIndex :: Type -> Attribute
 
 -- | "list.copy" &lt;math&gt;
 BuiltinCopy :: Type -> Attribute
+
+-- | "str.split" &lt;math&gt;
+BuiltinSplit :: Attribute
 type Attribute' = WithLoc' Attribute
 newtype VarName
 VarName :: String -> VarName
@@ -2699,6 +2771,9 @@ AnnAssign :: Target' -> Type -> Expr' -> Statement
 For :: Target' -> Expr' -> [Statement] -> Statement
 If :: Expr' -> [Statement] -> [Statement] -> Statement
 Assert :: Expr' -> Statement
+
+-- | expression statements
+Expr' :: Expr' -> Statement
 
 -- | <tt>TopLevelStatement</tt> represents the statements of our restricted
 --   Python-like language. They appear in the toplevel of programs.
@@ -2773,6 +2848,7 @@ instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.ToplevelStatement
 module Jikka.RestrictedPython.Language.Util
 genType :: MonadAlpha m => m Type
 genVarName :: MonadAlpha m => VarName' -> m VarName'
+genVarName' :: MonadAlpha m => m VarName'
 freeTyVars :: Type -> [TypeName]
 
 -- | <a>freeVars</a>` reports all free variables.
@@ -2816,7 +2892,6 @@ targetVars' :: Target' -> [VarName']
 hasSubscriptTrg :: Target' -> Bool
 hasBareNameTrg :: Target' -> Bool
 toplevelMainDef :: [Statement] -> Program
-readValueIO :: (MonadIO m, MonadError Error m) => Type -> m Expr'
 
 module Jikka.RestrictedPython.Language.Builtin
 builtinNames :: Set VarName
@@ -2847,6 +2922,8 @@ formatType :: Type -> String
 formatOperator :: Operator -> String
 formatBuiltin :: Builtin -> String
 formatAttribute :: Attribute -> String
+formatExpr :: Expr' -> String
+formatTarget :: Target' -> String
 
 
 module Jikka.RestrictedPython.Convert.TypeInfer
@@ -2953,6 +3030,14 @@ module Jikka.RestrictedPython.Convert.RemoveUnbalancedIf
 run :: Program -> Program
 
 
+module Jikka.RestrictedPython.Convert.ParseMain
+run :: (MonadAlpha m, MonadError Error m) => Program -> m (Maybe IOFormat, Program)
+
+
+module Jikka.RestrictedPython.Convert.DefaultMain
+run :: (MonadAlpha m, MonadError Error m) => Program -> m IOFormat
+
+
 module Jikka.Python.Convert.ToRestrictedPython
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
@@ -2982,14 +3067,9 @@ toMatrix :: MonadError Error m => Value -> m (Matrix Integer)
 fromMatrix :: Matrix Integer -> Value
 compareValues :: Value -> Value -> Maybe Ordering
 compareValues' :: Value -> Value -> Ordering
-newtype Global
-Global :: Map VarName Value -> Global
-[unGlobal] :: Global -> Map VarName Value
-initialGlobal :: Global
-lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
-makeEntryPointIO :: (MonadIO m, MonadError Error m) => VarName' -> Global -> m Expr'
 formatValue :: Value -> String
-writeValueIO :: Value -> IO ()
+readValueIO :: (MonadIO m, MonadError Error m) => IOFormat -> m ([Value], Map String Value)
+writeValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> Map String Value -> Value -> m ()
 instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Value
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Value
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Value
@@ -2998,10 +3078,6 @@ instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Local
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Local
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Local
 instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Value.Local
-instance GHC.Read.Read Jikka.RestrictedPython.Language.Value.Global
-instance GHC.Show.Show Jikka.RestrictedPython.Language.Value.Global
-instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Value.Global
-instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Value.Global
 
 module Jikka.RestrictedPython.Language.VariableAnalysis
 newtype ReadList
@@ -3258,7 +3334,7 @@ ensureDoesntHaveNonResolvedBuiltin :: MonadError Error m => Program -> m ()
 
 
 module Jikka.RestrictedPython.Evaluate
-run :: MonadError Error m => Program -> Expr' -> m Value
+run :: MonadError Error m => Program -> [Value] -> m Value
 
 -- | <a>makeGlobal</a> packs toplevel definitions into <a>Global</a>. This
 --   assumes <a>doesntHaveLeakOfLoopCounters</a>.
@@ -3360,6 +3436,10 @@ evalStatement :: (MonadReader Global m, MonadState Local m, MonadError Error m) 
 --   &lt;math&gt;
 evalStatements :: (MonadReader Global m, MonadState Local m, MonadError Error m) => [Statement] -> m (Maybe Value)
 execToplevelStatement :: (MonadState Global m, MonadError Error m) => ToplevelStatement -> m ()
+instance GHC.Read.Read Jikka.RestrictedPython.Evaluate.Global
+instance GHC.Show.Show Jikka.RestrictedPython.Evaluate.Global
+instance GHC.Classes.Ord Jikka.RestrictedPython.Evaluate.Global
+instance GHC.Classes.Eq Jikka.RestrictedPython.Evaluate.Global
 
 
 module Jikka.RestrictedPython.Convert.ResolveBuiltin
@@ -3590,8 +3670,8 @@ run' :: Program -> Program
 runForLoop :: Target' -> Expr' -> [Statement] -> [Statement]
 
 module Jikka.RestrictedPython.Convert
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m (Program, IOFormat)
+run' :: (MonadAlpha m, MonadError Error m) => Program -> m (Program, IOFormat)
 
 
 module Jikka.Main.Subcommand.Execute

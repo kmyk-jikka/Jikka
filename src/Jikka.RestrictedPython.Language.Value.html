@@ -10,9 +10,9 @@
 </span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">fromMaybe</span></span><span class="hs-special">)</span><span>
 </span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Vector</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">V</span></span><span>
 </span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Matrix.html"><span class="hs-identifier">Jikka.Common.Matrix</span></a></span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
-</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Util.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Util</span></a></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.IOFormat.html"><span class="hs-identifier">Jikka.Common.IOFormat</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Matrix.html"><span class="hs-identifier">Jikka.Common.Matrix</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
 </span><span id="line-16"></span><span>
 </span><span id="line-17"></span><span class="hs-comment">-- | `Value` is the values of our restricted Python-like language.</span><span>
 </span><span id="line-18"></span><span class="hs-comment">--</span><span>
@@ -35,14 +35,14 @@
 </span><span id="line-35"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ClosureVal"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ClosureVal"><span class="hs-identifier hs-var">ClosureVal</span></a></span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Local"><span class="hs-identifier hs-type">Local</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="BuiltinVal"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BuiltinVal"><span class="hs-identifier hs-var">BuiltinVal</span></a></span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Builtin"><span class="hs-identifier hs-type">Builtin</span></a></span><span>
 </span><span id="line-37"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="AttributeVal"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#AttributeVal"><span class="hs-identifier hs-var">AttributeVal</span></a></span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span>
-</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679343710"><span id="local-6989586621679343712"><span class="annot"><span class="annottext">Value -&gt; Value -&gt; Bool
+</span><span id="line-38"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679352176"><span id="local-6989586621679352178"><span class="annot"><span class="annottext">Value -&gt; Value -&gt; Bool
 (Value -&gt; Value -&gt; Bool) -&gt; (Value -&gt; Value -&gt; Bool) -&gt; Eq Value
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Value -&gt; Value -&gt; Bool
 $c/= :: Value -&gt; Value -&gt; Bool
 == :: Value -&gt; Value -&gt; Bool
 $c== :: Value -&gt; Value -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343694"><span id="local-6989586621679343696"><span id="local-6989586621679343698"><span id="local-6989586621679343700"><span id="local-6989586621679343702"><span id="local-6989586621679343704"><span id="local-6989586621679343706"><span class="annot"><span class="annottext">Eq Value
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679352160"><span id="local-6989586621679352162"><span id="local-6989586621679352164"><span id="local-6989586621679352166"><span id="local-6989586621679352168"><span id="local-6989586621679352170"><span id="local-6989586621679352172"><span class="annot"><span class="annottext">Eq Value
 Eq Value
 -&gt; (Value -&gt; Value -&gt; Ordering)
 -&gt; (Value -&gt; Value -&gt; Bool)
@@ -80,7 +80,7 @@ $c&lt; :: Value -&gt; Value -&gt; Bool
 compare :: Value -&gt; Value -&gt; Ordering
 $ccompare :: Value -&gt; Value -&gt; Ordering
 $cp1Ord :: Eq Value
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343687"><span id="local-6989586621679343689"><span id="local-6989586621679343691"><span class="annot"><span class="annottext">Int -&gt; Value -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679352153"><span id="local-6989586621679352155"><span id="local-6989586621679352157"><span class="annot"><span class="annottext">Int -&gt; Value -&gt; ShowS
 [Value] -&gt; ShowS
 Value -&gt; String
 (Int -&gt; Value -&gt; ShowS)
@@ -93,7 +93,7 @@ show :: Value -&gt; String
 $cshow :: Value -&gt; String
 showsPrec :: Int -&gt; Value -&gt; ShowS
 $cshowsPrec :: Int -&gt; Value -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343678"><span id="local-6989586621679343680"><span id="local-6989586621679343682"><span id="local-6989586621679343684"><span class="annot"><span class="annottext">ReadPrec [Value]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679352144"><span id="local-6989586621679352146"><span id="local-6989586621679352148"><span id="local-6989586621679352150"><span class="annot"><span class="annottext">ReadPrec [Value]
 ReadPrec Value
 Int -&gt; ReadS Value
 ReadS [Value]
@@ -119,14 +119,14 @@ $creadsPrec :: Int -&gt; ReadS Value
 </span><span id="line-41"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="unLocal"><span class="annot"><span class="annottext">Local -&gt; Map VarName Value
 </span><a href="Jikka.RestrictedPython.Language.Value.html#unLocal"><span class="hs-identifier hs-var hs-var">unLocal</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span>
 </span><span id="line-42"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-43"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679343671"><span id="local-6989586621679343673"><span class="annot"><span class="annottext">Local -&gt; Local -&gt; Bool
+</span><span id="line-43"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679352137"><span id="local-6989586621679352139"><span class="annot"><span class="annottext">Local -&gt; Local -&gt; Bool
 (Local -&gt; Local -&gt; Bool) -&gt; (Local -&gt; Local -&gt; Bool) -&gt; Eq Local
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 /= :: Local -&gt; Local -&gt; Bool
 $c/= :: Local -&gt; Local -&gt; Bool
 == :: Local -&gt; Local -&gt; Bool
 $c== :: Local -&gt; Local -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343656"><span id="local-6989586621679343658"><span id="local-6989586621679343660"><span id="local-6989586621679343662"><span id="local-6989586621679343664"><span id="local-6989586621679343666"><span id="local-6989586621679343668"><span class="annot"><span class="annottext">Eq Local
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679352122"><span id="local-6989586621679352124"><span id="local-6989586621679352126"><span id="local-6989586621679352128"><span id="local-6989586621679352130"><span id="local-6989586621679352132"><span id="local-6989586621679352134"><span class="annot"><span class="annottext">Eq Local
 Eq Local
 -&gt; (Local -&gt; Local -&gt; Ordering)
 -&gt; (Local -&gt; Local -&gt; Bool)
@@ -164,7 +164,7 @@ $c&lt; :: Local -&gt; Local -&gt; Bool
 compare :: Local -&gt; Local -&gt; Ordering
 $ccompare :: Local -&gt; Local -&gt; Ordering
 $cp1Ord :: Eq Local
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343650"><span id="local-6989586621679343652"><span id="local-6989586621679343654"><span class="annot"><span class="annottext">Int -&gt; Local -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679352116"><span id="local-6989586621679352118"><span id="local-6989586621679352120"><span class="annot"><span class="annottext">Int -&gt; Local -&gt; ShowS
 [Local] -&gt; ShowS
 Local -&gt; String
 (Int -&gt; Local -&gt; ShowS)
@@ -177,7 +177,7 @@ show :: Local -&gt; String
 $cshow :: Local -&gt; String
 showsPrec :: Int -&gt; Local -&gt; ShowS
 $cshowsPrec :: Int -&gt; Local -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343642"><span id="local-6989586621679343644"><span id="local-6989586621679343646"><span id="local-6989586621679343648"><span class="annot"><span class="annottext">ReadPrec [Local]
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679352108"><span id="local-6989586621679352110"><span id="local-6989586621679352112"><span id="local-6989586621679352114"><span class="annot"><span class="annottext">ReadPrec [Local]
 ReadPrec Local
 Int -&gt; ReadS Local
 ReadS [Local]
@@ -199,16 +199,16 @@ readsPrec :: Int -&gt; ReadS Local
 $creadsPrec :: Int -&gt; ReadS Local
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
 </span><span id="line-44"></span><span>
-</span><span id="line-45"></span><span id="local-6989586621679343802"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toInt"><span class="hs-identifier hs-type">toInt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343802"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343802"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span></span><span>
+</span><span id="line-45"></span><span id="local-6989586621679352239"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toInt"><span class="hs-identifier hs-type">toInt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352239"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352239"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span></span><span>
 </span><span id="line-46"></span><span id="toInt"><span class="annot"><span class="annottext">toInt :: Value -&gt; m Integer
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toInt"><span class="hs-identifier hs-var hs-var">toInt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-47"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679343640"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343640"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; m Integer
+</span><span id="line-47"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679352106"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679352106"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; m Integer
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343640"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-48"></span><span>  </span><span id="local-6989586621679343639"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343639"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
+</span><a href="#local-6989586621679352106"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span id="local-6989586621679352105"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352105"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Integer
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
 </span><a href="Jikka.Common.Error.html#throwInternalError"><span class="hs-identifier hs-var">throwInternalError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Integer) -&gt; String -&gt; m Integer
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -217,18 +217,18 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343639"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679352105"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-49"></span><span>
-</span><span id="line-50"></span><span id="local-6989586621679343796"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toBool"><span class="hs-identifier hs-type">toBool</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343796"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343796"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-50"></span><span id="local-6989586621679352233"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toBool"><span class="hs-identifier hs-type">toBool</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352233"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352233"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
 </span><span id="line-51"></span><span id="toBool"><span class="annot"><span class="annottext">toBool :: Value -&gt; m Bool
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toBool"><span class="hs-identifier hs-var hs-var">toBool</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679343635"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343635"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; m Bool
+</span><span id="line-52"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679352101"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679352101"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; m Bool
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343635"><span class="hs-identifier hs-var">p</span></a></span><span>
-</span><span id="line-53"></span><span>  </span><span id="local-6989586621679343634"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343634"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Bool
+</span><a href="#local-6989586621679352101"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-53"></span><span>  </span><span id="local-6989586621679352100"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352100"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Bool
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
 </span><a href="Jikka.Common.Error.html#throwInternalError"><span class="hs-identifier hs-var">throwInternalError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Bool) -&gt; String -&gt; m Bool
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -237,18 +237,18 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343634"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679352100"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-54"></span><span>
-</span><span id="line-55"></span><span id="local-6989586621679343798"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-type">toList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343798"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343798"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-55"></span><span id="local-6989586621679352235"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-type">toList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352235"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352235"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">)</span></span><span>
 </span><span id="line-56"></span><span id="toList"><span class="annot"><span class="annottext">toList :: Value -&gt; m (Vector Value)
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-var hs-var">toList</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-57"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679343632"><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343632"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; m (Vector Value)
+</span><span id="line-57"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679352098"><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679352098"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; m (Vector Value)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343632"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-58"></span><span>  </span><span id="local-6989586621679343631"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343631"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m (Vector Value)
+</span><a href="#local-6989586621679352098"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-58"></span><span>  </span><span id="local-6989586621679352097"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352097"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m (Vector Value)
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
 </span><a href="Jikka.Common.Error.html#throwInternalError"><span class="hs-identifier hs-var">throwInternalError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m (Vector Value)) -&gt; String -&gt; m (Vector Value)
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -257,18 +257,18 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343631"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679352097"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-59"></span><span>
-</span><span id="line-60"></span><span id="local-6989586621679343630"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toTuple"><span class="hs-identifier hs-type">toTuple</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343630"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343630"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-60"></span><span id="local-6989586621679352193"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toTuple"><span class="hs-identifier hs-type">toTuple</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352193"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352193"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">]</span></span><span>
 </span><span id="line-61"></span><span id="toTuple"><span class="annot"><span class="annottext">toTuple :: Value -&gt; m [Value]
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toTuple"><span class="hs-identifier hs-var hs-var">toTuple</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-62"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679343628"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343628"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Value] -&gt; m [Value]
+</span><span id="line-62"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679352095"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679352095"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Value] -&gt; m [Value]
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343628"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-63"></span><span>  </span><span id="local-6989586621679343627"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343627"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m [Value]
+</span><a href="#local-6989586621679352095"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679352094"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352094"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m [Value]
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
 </span><a href="Jikka.Common.Error.html#throwInternalError"><span class="hs-identifier hs-var">throwInternalError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m [Value]) -&gt; String -&gt; m [Value]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -277,12 +277,12 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343627"><span class="hs-identifier hs-var">v</span></a></span><span>
+</span><a href="#local-6989586621679352094"><span class="hs-identifier hs-var">v</span></a></span><span>
 </span><span id="line-64"></span><span>
-</span><span id="line-65"></span><span id="local-6989586621679343791"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toIntList"><span class="hs-identifier hs-type">toIntList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343791"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343791"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-65"></span><span id="local-6989586621679352228"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toIntList"><span class="hs-identifier hs-type">toIntList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352228"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352228"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">)</span></span><span>
 </span><span id="line-66"></span><span id="toIntList"><span class="annot"><span class="annottext">toIntList :: Value -&gt; m (Vector Integer)
-</span><a href="Jikka.RestrictedPython.Language.Value.html#toIntList"><span class="hs-identifier hs-var hs-var">toIntList</span></a></span></span><span> </span><span id="local-6989586621679343625"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343625"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Integer) -&gt; Vector Value -&gt; m (Vector Integer)
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toIntList"><span class="hs-identifier hs-var hs-var">toIntList</span></a></span></span><span> </span><span id="local-6989586621679352092"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352092"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Integer) -&gt; Vector Value -&gt; m (Vector Integer)
 forall (m :: * -&gt; *) a b.
 Monad m =&gt;
 (a -&gt; m b) -&gt; Vector a -&gt; m (Vector b)
@@ -296,12 +296,12 @@ forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 Value -&gt; m (Vector Value)
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343625"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><a href="#local-6989586621679352092"><span class="hs-identifier hs-var">xs</span></a></span><span>
 </span><span id="line-67"></span><span>
-</span><span id="line-68"></span><span id="local-6989586621679343622"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toBoolList"><span class="hs-identifier hs-type">toBoolList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343622"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343622"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-68"></span><span id="local-6989586621679352089"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toBoolList"><span class="hs-identifier hs-type">toBoolList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352089"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352089"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">V.Vector</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span class="hs-special">)</span></span><span>
 </span><span id="line-69"></span><span id="toBoolList"><span class="annot"><span class="annottext">toBoolList :: Value -&gt; m (Vector Bool)
-</span><a href="Jikka.RestrictedPython.Language.Value.html#toBoolList"><span class="hs-identifier hs-var hs-var">toBoolList</span></a></span></span><span> </span><span id="local-6989586621679343620"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343620"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Bool) -&gt; Vector Value -&gt; m (Vector Bool)
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toBoolList"><span class="hs-identifier hs-var hs-var">toBoolList</span></a></span></span><span> </span><span id="local-6989586621679352087"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352087"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Bool) -&gt; Vector Value -&gt; m (Vector Bool)
 forall (m :: * -&gt; *) a b.
 Monad m =&gt;
 (a -&gt; m b) -&gt; Vector a -&gt; m (Vector b)
@@ -315,16 +315,16 @@ forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 Value -&gt; m (Vector Value)
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343620"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><a href="#local-6989586621679352087"><span class="hs-identifier hs-var">xs</span></a></span><span>
 </span><span id="line-70"></span><span>
-</span><span id="line-71"></span><span id="local-6989586621679343619"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toMatrix"><span class="hs-identifier hs-type">toMatrix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343619"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343619"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Matrix.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">)</span></span><span>
+</span><span id="line-71"></span><span id="local-6989586621679352086"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#toMatrix"><span class="hs-identifier hs-type">toMatrix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352086"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352086"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Matrix.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span class="hs-special">)</span></span><span>
 </span><span id="line-72"></span><span id="toMatrix"><span class="annot"><span class="annottext">toMatrix :: Value -&gt; m (Matrix Integer)
-</span><a href="Jikka.RestrictedPython.Language.Value.html#toMatrix"><span class="hs-identifier hs-var hs-var">toMatrix</span></a></span></span><span> </span><span id="local-6989586621679343617"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343617"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector (Vector Integer) -&gt; m (Matrix Integer)
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toMatrix"><span class="hs-identifier hs-var hs-var">toMatrix</span></a></span></span><span> </span><span id="local-6989586621679352084"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352084"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector (Vector Integer) -&gt; m (Matrix Integer)
 forall (m :: * -&gt; *) a.
 (MonadError Error m, Show a) =&gt;
 Vector (Vector a) -&gt; m (Matrix a)
-</span><a href="#local-6989586621679343616"><span class="hs-identifier hs-var">toMatrix'</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector (Vector Integer) -&gt; m (Matrix Integer))
+</span><a href="#local-6989586621679352083"><span class="hs-identifier hs-var">toMatrix'</span></a></span><span> </span><span class="annot"><span class="annottext">(Vector (Vector Integer) -&gt; m (Matrix Integer))
 -&gt; m (Vector (Vector Integer)) -&gt; m (Matrix Integer)
 forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; m a -&gt; m b
 </span><span class="hs-operator hs-var">=&lt;&lt;</span></span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m (Vector Integer))
@@ -344,19 +344,19 @@ forall (m :: * -&gt; *).
 MonadError Error m =&gt;
 Value -&gt; m (Vector Value)
 </span><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343617"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><a href="#local-6989586621679352084"><span class="hs-identifier hs-var">a</span></a></span><span>
 </span><span id="line-73"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-74"></span><span>    </span><span id="local-6989586621679343616"><span class="annot"><span class="annottext">toMatrix' :: Vector (Vector a) -&gt; m (Matrix a)
-</span><a href="#local-6989586621679343616"><span class="hs-identifier hs-var hs-var">toMatrix'</span></a></span></span><span> </span><span id="local-6989586621679343615"><span class="annot"><span class="annottext">Vector (Vector a)
-</span><a href="#local-6989586621679343615"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Vector (Vector a) -&gt; Maybe (Matrix a)
+</span><span id="line-74"></span><span>    </span><span id="local-6989586621679352083"><span class="annot"><span class="annottext">toMatrix' :: Vector (Vector a) -&gt; m (Matrix a)
+</span><a href="#local-6989586621679352083"><span class="hs-identifier hs-var hs-var">toMatrix'</span></a></span></span><span> </span><span id="local-6989586621679352082"><span class="annot"><span class="annottext">Vector (Vector a)
+</span><a href="#local-6989586621679352082"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Vector (Vector a) -&gt; Maybe (Matrix a)
 forall a. Vector (Vector a) -&gt; Maybe (Matrix a)
 </span><a href="Jikka.Common.Matrix.html#makeMatrix"><span class="hs-identifier hs-var">makeMatrix</span></a></span><span> </span><span class="annot"><span class="annottext">Vector (Vector a)
-</span><a href="#local-6989586621679343615"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-75"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679343613"><span class="annot"><span class="annottext">Matrix a
-</span><a href="#local-6989586621679343613"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Matrix a -&gt; m (Matrix a)
+</span><a href="#local-6989586621679352082"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-75"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679352080"><span class="annot"><span class="annottext">Matrix a
+</span><a href="#local-6989586621679352080"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Matrix a -&gt; m (Matrix a)
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Matrix a
-</span><a href="#local-6989586621679343613"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><a href="#local-6989586621679352080"><span class="hs-identifier hs-var">a</span></a></span><span>
 </span><span id="line-76"></span><span>      </span><span class="annot"><span class="annottext">Maybe (Matrix a)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m (Matrix a)
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
@@ -368,12 +368,12 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Vector (Vector a) -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Vector (Vector a)
-</span><a href="#local-6989586621679343615"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><a href="#local-6989586621679352082"><span class="hs-identifier hs-var">a</span></a></span><span>
 </span><span id="line-77"></span><span>
 </span><span id="line-78"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#fromMatrix"><span class="hs-identifier hs-type">fromMatrix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Common.Matrix.html#Matrix"><span class="hs-identifier hs-type">Matrix</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Integer</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span>
 </span><span id="line-79"></span><span id="fromMatrix"><span class="annot"><span class="annottext">fromMatrix :: Matrix Integer -&gt; Value
-</span><a href="Jikka.RestrictedPython.Language.Value.html#fromMatrix"><span class="hs-identifier hs-var hs-var">fromMatrix</span></a></span></span><span> </span><span id="local-6989586621679343610"><span class="annot"><span class="annottext">Matrix Integer
-</span><a href="#local-6989586621679343610"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; Value
+</span><a href="Jikka.RestrictedPython.Language.Value.html#fromMatrix"><span class="hs-identifier hs-var hs-var">fromMatrix</span></a></span></span><span> </span><span id="local-6989586621679352077"><span class="annot"><span class="annottext">Matrix Integer
+</span><a href="#local-6989586621679352077"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; Value
 </span><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-var">ListVal</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Vector Integer -&gt; Value)
 -&gt; Vector (Vector Integer) -&gt; Vector Value
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -387,40 +387,40 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-var">IntVal</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Matrix Integer -&gt; Vector (Vector Integer)
 forall a. Matrix a -&gt; Vector (Vector a)
 </span><a href="Jikka.Common.Matrix.html#unMatrix"><span class="hs-identifier hs-var">unMatrix</span></a></span><span> </span><span class="annot"><span class="annottext">Matrix Integer
-</span><a href="#local-6989586621679343610"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679352077"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-80"></span><span>
 </span><span id="line-81"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#compareValues"><span class="hs-identifier hs-type">compareValues</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ordering</span></span><span>
 </span><span id="line-82"></span><span id="compareValues"><span class="annot"><span class="annottext">compareValues :: Value -&gt; Value -&gt; Maybe Ordering
-</span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues"><span class="hs-identifier hs-var hs-var">compareValues</span></a></span></span><span> </span><span id="local-6989586621679343606"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343606"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679343605"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343605"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343606"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343605"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-83"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679343604"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343604"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679343603"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343603"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering
+</span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues"><span class="hs-identifier hs-var hs-var">compareValues</span></a></span></span><span> </span><span id="local-6989586621679352073"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352073"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679352072"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352072"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352073"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352072"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-83"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679352071"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679352071"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679352070"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679352070"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Ordering -&gt; Maybe Ordering) -&gt; Ordering -&gt; Maybe Ordering
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Integer -&gt; Ordering
 forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343604"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343603"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-84"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679343601"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343601"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679343600"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343600"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering
+</span><a href="#local-6989586621679352071"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679352070"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679352068"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679352068"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679352067"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679352067"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">(Ordering -&gt; Maybe Ordering) -&gt; Ordering -&gt; Maybe Ordering
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Ordering
 forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343601"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343600"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-85"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679343599"><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343599"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679343598"><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343598"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Maybe Ordering] -&gt; Maybe Ordering
+</span><a href="#local-6989586621679352068"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679352067"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-85"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679352066"><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679352066"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679352065"><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679352065"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Maybe Ordering] -&gt; Maybe Ordering
 forall a. Monoid a =&gt; [a] -&gt; a
 </span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector (Maybe Ordering) -&gt; [Maybe Ordering]
 forall a. Vector a -&gt; [a]
@@ -429,8 +429,8 @@ forall a. Vector a -&gt; [a]
 forall a b c. (a -&gt; b -&gt; c) -&gt; Vector a -&gt; Vector b -&gt; Vector c
 </span><span class="hs-identifier hs-var">V.zipWith</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Value -&gt; Maybe Ordering
 </span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues"><span class="hs-identifier hs-var">compareValues</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343599"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343598"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679352066"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679352065"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-86"></span><span>    </span><span class="annot"><span class="annottext">Maybe Ordering
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Ordering
 forall a. Maybe a
@@ -445,27 +445,27 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Ordering
 </span><span class="hs-identifier hs-var">compare</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; Int
 forall a. Vector a -&gt; Int
 </span><span class="hs-identifier hs-var">V.length</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343599"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; Int
+</span><a href="#local-6989586621679352066"><span class="hs-identifier hs-var">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; Int
 forall a. Vector a -&gt; Int
 </span><span class="hs-identifier hs-var">V.length</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343598"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-88"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679343594"><span class="annot"><span class="annottext">Ordering
-</span><a href="#local-6989586621679343594"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering
+</span><a href="#local-6989586621679352065"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-88"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679352061"><span class="annot"><span class="annottext">Ordering
+</span><a href="#local-6989586621679352061"><span class="hs-identifier hs-var">o</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Ordering
-</span><a href="#local-6989586621679343594"><span class="hs-identifier hs-var">o</span></a></span><span>
-</span><span id="line-89"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679343593"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343593"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679343592"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343592"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><a href="#local-6989586621679352061"><span class="hs-identifier hs-var">o</span></a></span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679352060"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679352060"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679352059"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679352059"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
 </span><span id="line-90"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Value] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343593"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679352060"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">[Value] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343592"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><a href="#local-6989586621679352059"><span class="hs-identifier hs-var">b</span></a></span><span>
 </span><span id="line-91"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Maybe Ordering
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
@@ -476,8 +476,8 @@ forall a. Monoid a =&gt; [a] -&gt; a
 forall a b c. (a -&gt; b -&gt; c) -&gt; [a] -&gt; [b] -&gt; [c]
 </span><span class="hs-identifier hs-var">zipWith</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; Value -&gt; Maybe Ordering
 </span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues"><span class="hs-identifier hs-var">compareValues</span></a></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343593"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343592"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679352060"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679352059"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-93"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Value
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Value
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Ordering
@@ -486,246 +486,34 @@ forall a. Maybe a
 </span><span id="line-94"></span><span>
 </span><span id="line-95"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#compareValues%27"><span class="hs-identifier hs-type">compareValues'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Ordering</span></span><span>
 </span><span id="line-96"></span><span id="compareValues%27"><span class="annot"><span class="annottext">compareValues' :: Value -&gt; Value -&gt; Ordering
-</span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues%27"><span class="hs-identifier hs-var hs-var">compareValues'</span></a></span></span><span> </span><span id="local-6989586621679343587"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343587"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679343586"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343586"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering -&gt; Ordering
+</span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues%27"><span class="hs-identifier hs-var hs-var">compareValues'</span></a></span></span><span> </span><span id="local-6989586621679352054"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352054"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span id="local-6989586621679352053"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352053"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Ordering -&gt; Maybe Ordering -&gt; Ordering
 forall a. a -&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromMaybe</span></span><span> </span><span class="annot"><span class="annottext">Ordering
 </span><span class="hs-identifier hs-var">EQ</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Value -&gt; Value -&gt; Maybe Ordering
 </span><a href="Jikka.RestrictedPython.Language.Value.html#compareValues"><span class="hs-identifier hs-var">compareValues</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343587"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343586"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679352054"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352053"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-97"></span><span>
-</span><span id="line-98"></span><span class="hs-keyword">newtype</span><span> </span><span id="Global"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Global"><span class="hs-identifier hs-var">Global</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Global"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Global"><span class="hs-identifier hs-var">Global</span></a></span></span><span>
-</span><span id="line-99"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="unGlobal"><span class="annot"><span class="annottext">Global -&gt; Map VarName Value
-</span><a href="Jikka.RestrictedPython.Language.Value.html#unGlobal"><span class="hs-identifier hs-var hs-var">unGlobal</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span>
-</span><span id="line-100"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-101"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679343580"><span id="local-6989586621679343582"><span class="annot"><span class="annottext">Global -&gt; Global -&gt; Bool
-(Global -&gt; Global -&gt; Bool)
--&gt; (Global -&gt; Global -&gt; Bool) -&gt; Eq Global
-forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
-/= :: Global -&gt; Global -&gt; Bool
-$c/= :: Global -&gt; Global -&gt; Bool
-== :: Global -&gt; Global -&gt; Bool
-$c== :: Global -&gt; Global -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343565"><span id="local-6989586621679343567"><span id="local-6989586621679343569"><span id="local-6989586621679343571"><span id="local-6989586621679343573"><span id="local-6989586621679343575"><span id="local-6989586621679343577"><span class="annot"><span class="annottext">Eq Global
-Eq Global
--&gt; (Global -&gt; Global -&gt; Ordering)
--&gt; (Global -&gt; Global -&gt; Bool)
--&gt; (Global -&gt; Global -&gt; Bool)
--&gt; (Global -&gt; Global -&gt; Bool)
--&gt; (Global -&gt; Global -&gt; Bool)
--&gt; (Global -&gt; Global -&gt; Global)
--&gt; (Global -&gt; Global -&gt; Global)
--&gt; Ord Global
-Global -&gt; Global -&gt; Bool
-Global -&gt; Global -&gt; Ordering
-Global -&gt; Global -&gt; Global
-forall a.
-Eq a
--&gt; (a -&gt; a -&gt; Ordering)
--&gt; (a -&gt; a -&gt; Bool)
--&gt; (a -&gt; a -&gt; Bool)
--&gt; (a -&gt; a -&gt; Bool)
--&gt; (a -&gt; a -&gt; Bool)
--&gt; (a -&gt; a -&gt; a)
--&gt; (a -&gt; a -&gt; a)
--&gt; Ord a
-min :: Global -&gt; Global -&gt; Global
-$cmin :: Global -&gt; Global -&gt; Global
-max :: Global -&gt; Global -&gt; Global
-$cmax :: Global -&gt; Global -&gt; Global
-&gt;= :: Global -&gt; Global -&gt; Bool
-$c&gt;= :: Global -&gt; Global -&gt; Bool
-&gt; :: Global -&gt; Global -&gt; Bool
-$c&gt; :: Global -&gt; Global -&gt; Bool
-&lt;= :: Global -&gt; Global -&gt; Bool
-$c&lt;= :: Global -&gt; Global -&gt; Bool
-&lt; :: Global -&gt; Global -&gt; Bool
-$c&lt; :: Global -&gt; Global -&gt; Bool
-compare :: Global -&gt; Global -&gt; Ordering
-$ccompare :: Global -&gt; Global -&gt; Ordering
-$cp1Ord :: Eq Global
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343559"><span id="local-6989586621679343561"><span id="local-6989586621679343563"><span class="annot"><span class="annottext">Int -&gt; Global -&gt; ShowS
-[Global] -&gt; ShowS
-Global -&gt; String
-(Int -&gt; Global -&gt; ShowS)
--&gt; (Global -&gt; String) -&gt; ([Global] -&gt; ShowS) -&gt; Show Global
-forall a.
-(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
-showList :: [Global] -&gt; ShowS
-$cshowList :: [Global] -&gt; ShowS
-show :: Global -&gt; String
-$cshow :: Global -&gt; String
-showsPrec :: Int -&gt; Global -&gt; ShowS
-$cshowsPrec :: Int -&gt; Global -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679343551"><span id="local-6989586621679343553"><span id="local-6989586621679343555"><span id="local-6989586621679343557"><span class="annot"><span class="annottext">ReadPrec [Global]
-ReadPrec Global
-Int -&gt; ReadS Global
-ReadS [Global]
-(Int -&gt; ReadS Global)
--&gt; ReadS [Global]
--&gt; ReadPrec Global
--&gt; ReadPrec [Global]
--&gt; Read Global
-forall a.
-(Int -&gt; ReadS a)
--&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
-readListPrec :: ReadPrec [Global]
-$creadListPrec :: ReadPrec [Global]
-readPrec :: ReadPrec Global
-$creadPrec :: ReadPrec Global
-readList :: ReadS [Global]
-$creadList :: ReadS [Global]
-readsPrec :: Int -&gt; ReadS Global
-$creadsPrec :: Int -&gt; ReadS Global
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-102"></span><span>
-</span><span id="line-103"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#initialGlobal"><span class="hs-identifier hs-type">initialGlobal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Global"><span class="hs-identifier hs-type">Global</span></a></span><span>
-</span><span id="line-104"></span><span id="initialGlobal"><span class="annot"><span class="annottext">initialGlobal :: Global
-</span><a href="Jikka.RestrictedPython.Language.Value.html#initialGlobal"><span class="hs-identifier hs-var hs-var">initialGlobal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map VarName Value -&gt; Global
-</span><a href="Jikka.RestrictedPython.Language.Value.html#Global"><span class="hs-identifier hs-var">Global</span></a></span><span> </span><span class="annot"><span class="annottext">Map VarName Value
-forall k a. Map k a
-</span><span class="hs-identifier hs-var">M.empty</span></span><span>
-</span><span id="line-105"></span><span>
-</span><span id="line-106"></span><span id="local-6989586621679343752"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#lookupGlobal"><span class="hs-identifier hs-type">lookupGlobal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343752"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName%27"><span class="hs-identifier hs-type">VarName'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Global"><span class="hs-identifier hs-type">Global</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343752"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span></span><span>
-</span><span id="line-107"></span><span id="lookupGlobal"><span class="annot"><span class="annottext">lookupGlobal :: VarName' -&gt; Global -&gt; m Value
-</span><a href="Jikka.RestrictedPython.Language.Value.html#lookupGlobal"><span class="hs-identifier hs-var hs-var">lookupGlobal</span></a></span></span><span> </span><span id="local-6989586621679343547"><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343547"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679343546"><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679343546"><span class="hs-identifier hs-var">global</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-108"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; Map VarName Value -&gt; Maybe Value
-forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
-</span><span class="hs-identifier hs-var">M.lookup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName' -&gt; VarName
-forall a. WithLoc' a -&gt; a
-</span><a href="Jikka.Common.Location.html#value%27"><span class="hs-identifier hs-var hs-var">value'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343547"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Global -&gt; Map VarName Value
-</span><a href="Jikka.RestrictedPython.Language.Value.html#unGlobal"><span class="hs-identifier hs-var hs-var">unGlobal</span></a></span><span> </span><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679343546"><span class="hs-identifier hs-var">global</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-109"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679343543"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343543"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Value -&gt; m Value
-forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
-</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343543"><span class="hs-identifier hs-var">y</span></a></span><span>
-</span><span id="line-110"></span><span>    </span><span class="annot"><span class="annottext">Maybe Value
-</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(m Value -&gt; m Value)
--&gt; (Loc -&gt; m Value -&gt; m Value) -&gt; Maybe Loc -&gt; m Value -&gt; m Value
-forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
-</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">m Value -&gt; m Value
-forall a. a -&gt; a
-</span><span class="hs-identifier hs-var">id</span></span><span> </span><span class="annot"><span class="annottext">Loc -&gt; m Value -&gt; m Value
-forall (m :: * -&gt; *) a. MonadError Error m =&gt; Loc -&gt; m a -&gt; m a
-</span><a href="Jikka.Common.Error.html#wrapAt"><span class="hs-identifier hs-var">wrapAt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName' -&gt; Maybe Loc
-forall a. WithLoc' a -&gt; Maybe Loc
-</span><a href="Jikka.Common.Location.html#loc%27"><span class="hs-identifier hs-var hs-var">loc'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343547"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m Value -&gt; m Value) -&gt; (String -&gt; m Value) -&gt; String -&gt; m Value
-forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; m Value
-forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
-</span><a href="Jikka.Common.Error.html#throwSymbolError"><span class="hs-identifier hs-var">throwSymbolError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Value) -&gt; String -&gt; m Value
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;undefined variable: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
-forall a. [a] -&gt; [a] -&gt; [a]
-</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
-</span><a href="Jikka.RestrictedPython.Language.Expr.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName' -&gt; VarName
-forall a. WithLoc' a -&gt; a
-</span><a href="Jikka.Common.Location.html#value%27"><span class="hs-identifier hs-var hs-var">value'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343547"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-111"></span><span>
-</span><span id="line-112"></span><span id="local-6989586621679343536"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#makeEntryPointIO"><span class="hs-identifier hs-type">makeEntryPointIO</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679343536"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679343536"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#VarName%27"><span class="hs-identifier hs-type">VarName'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Global"><span class="hs-identifier hs-type">Global</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679343536"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-type">Expr'</span></a></span></span><span>
-</span><span id="line-113"></span><span id="makeEntryPointIO"><span class="annot"><span class="annottext">makeEntryPointIO :: VarName' -&gt; Global -&gt; m Expr'
-</span><a href="Jikka.RestrictedPython.Language.Value.html#makeEntryPointIO"><span class="hs-identifier hs-var hs-var">makeEntryPointIO</span></a></span></span><span> </span><span id="local-6989586621679343534"><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343534"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679343533"><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679343533"><span class="hs-identifier hs-var">global</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-114"></span><span>  </span><span id="local-6989586621679343532"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343532"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">VarName' -&gt; Global -&gt; m Value
-forall (m :: * -&gt; *).
-MonadError Error m =&gt;
-VarName' -&gt; Global -&gt; m Value
-</span><a href="Jikka.RestrictedPython.Language.Value.html#lookupGlobal"><span class="hs-identifier hs-var">lookupGlobal</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343534"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Global
-</span><a href="#local-6989586621679343533"><span class="hs-identifier hs-var">global</span></a></span><span>
-</span><span id="line-115"></span><span>  </span><span class="annot"><span class="annottext">Expr -&gt; Expr'
-forall a. a -&gt; WithLoc' a
-</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; Expr') -&gt; m Expr -&gt; m Expr'
-forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
-</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343532"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-116"></span><span>    </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ClosureVal"><span class="hs-identifier hs-type">ClosureVal</span></a></span><span> </span><span class="annot"><span class="annottext">Local
-</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679343529"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679343529"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="annot"><span class="annottext">[Statement]
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-117"></span><span>      </span><span id="local-6989586621679343528"><span class="annot"><span class="annottext">[Expr']
-</span><a href="#local-6989586621679343528"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">((VarName, Type) -&gt; m Expr') -&gt; [(VarName, Type)] -&gt; m [Expr']
-forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
-(Traversable t, Monad m) =&gt;
-(a -&gt; m b) -&gt; t a -&gt; m (t b)
-</span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; m Expr'
-forall (m :: * -&gt; *).
-(MonadIO m, MonadError Error m) =&gt;
-Type -&gt; m Expr'
-</span><a href="Jikka.RestrictedPython.Language.Util.html#readValueIO"><span class="hs-identifier hs-var">readValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">(Type -&gt; m Expr')
--&gt; ((VarName, Type) -&gt; Type) -&gt; (VarName, Type) -&gt; m Expr'
-forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; Type
-forall a b. (a, b) -&gt; b
-</span><span class="hs-identifier hs-var">snd</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679343529"><span class="hs-identifier hs-var">args</span></a></span><span>
-</span><span id="line-118"></span><span>      </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
-forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
-</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Expr' -&gt; [Expr'] -&gt; Expr
-</span><a href="Jikka.RestrictedPython.Language.Expr.html#Call"><span class="hs-identifier hs-var">Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; Expr'
-forall a. a -&gt; WithLoc' a
-</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName' -&gt; Expr
-</span><a href="Jikka.RestrictedPython.Language.Expr.html#Name"><span class="hs-identifier hs-var">Name</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343534"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Expr']
-</span><a href="#local-6989586621679343528"><span class="hs-identifier hs-var">args</span></a></span><span>
-</span><span id="line-119"></span><span>    </span><span class="annot"><span class="annottext">Value
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(m Expr -&gt; m Expr)
--&gt; (Loc -&gt; m Expr -&gt; m Expr) -&gt; Maybe Loc -&gt; m Expr -&gt; m Expr
-forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
-</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">m Expr -&gt; m Expr
-forall a. a -&gt; a
-</span><span class="hs-identifier hs-var">id</span></span><span> </span><span class="annot"><span class="annottext">Loc -&gt; m Expr -&gt; m Expr
-forall (m :: * -&gt; *) a. MonadError Error m =&gt; Loc -&gt; m a -&gt; m a
-</span><a href="Jikka.Common.Error.html#wrapAt"><span class="hs-identifier hs-var">wrapAt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName' -&gt; Maybe Loc
-forall a. WithLoc' a -&gt; Maybe Loc
-</span><a href="Jikka.Common.Location.html#loc%27"><span class="hs-identifier hs-var hs-var">loc'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343534"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(m Expr -&gt; m Expr) -&gt; (String -&gt; m Expr) -&gt; String -&gt; m Expr
-forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; m Expr
-forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
-</span><a href="Jikka.Common.Error.html#throwSymbolError"><span class="hs-identifier hs-var">throwSymbolError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Expr) -&gt; String -&gt; m Expr
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;not a function: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
-forall a. [a] -&gt; [a] -&gt; [a]
-</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
-</span><a href="Jikka.RestrictedPython.Language.Expr.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName' -&gt; VarName
-forall a. WithLoc' a -&gt; a
-</span><a href="Jikka.Common.Location.html#value%27"><span class="hs-identifier hs-var hs-var">value'</span></a></span><span> </span><span class="annot"><span class="annottext">VarName'
-</span><a href="#local-6989586621679343534"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-120"></span><span>
-</span><span id="line-121"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-type">formatValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-122"></span><span id="formatValue"><span class="annot"><span class="annottext">formatValue :: Value -&gt; String
+</span><span id="line-98"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-type">formatValue</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-99"></span><span id="formatValue"><span class="annot"><span class="annottext">formatValue :: Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var hs-var">formatValue</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-123"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679343523"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343523"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; String
+</span><span id="line-100"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679352052"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679352052"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343523"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-124"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679343522"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343522"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; ShowS
+</span><a href="#local-6989586621679352052"><span class="hs-identifier hs-var">n</span></a></span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679352051"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679352051"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Char) -&gt; ShowS
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char
 </span><span class="hs-identifier hs-var">toLower</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343522"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-125"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679343521"><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343521"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679352051"><span class="hs-identifier hs-var">p</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-102"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679352050"><span class="annot"><span class="annottext">Vector Value
+</span><a href="#local-6989586621679352050"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;[&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
@@ -737,22 +525,22 @@ forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; [Value]
 forall a. Vector a -&gt; [a]
 </span><span class="hs-identifier hs-var">V.toList</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343521"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679352050"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;]&quot;</span></span><span>
-</span><span id="line-126"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679343520"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343520"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><span id="line-103"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679352049"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352049"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343520"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679352049"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;,)&quot;</span></span><span>
-</span><span id="line-127"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679343519"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343519"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><span id="line-104"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679352048"><span class="annot"><span class="annottext">[Value]
+</span><a href="#local-6989586621679352048"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; [String] -&gt; String
@@ -762,28 +550,28 @@ forall a. [a] -&gt; [[a]] -&gt; [a]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343519"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679352048"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;)&quot;</span></span><span>
-</span><span id="line-128"></span><span>  </span><span id="local-6989586621679343518"><span class="annot"><span class="annottext">f :: Value
-</span><a href="#local-6989586621679343518"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ClosureVal"><span class="hs-identifier hs-type">ClosureVal</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621679352047"><span class="annot"><span class="annottext">f :: Value
+</span><a href="#local-6989586621679352047"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ClosureVal"><span class="hs-identifier hs-type">ClosureVal</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343518"><span class="hs-identifier hs-var">f</span></a></span><span>
-</span><span id="line-129"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BuiltinVal"><span class="hs-identifier hs-type">BuiltinVal</span></a></span><span> </span><span id="local-6989586621679343517"><span class="annot"><span class="annottext">Builtin
-</span><a href="#local-6989586621679343517"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; String
+</span><a href="#local-6989586621679352047"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-106"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BuiltinVal"><span class="hs-identifier hs-type">BuiltinVal</span></a></span><span> </span><span id="local-6989586621679352046"><span class="annot"><span class="annottext">Builtin
+</span><a href="#local-6989586621679352046"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Builtin
-</span><a href="#local-6989586621679343517"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-130"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#AttributeVal"><span class="hs-identifier hs-type">AttributeVal</span></a></span><span> </span><span id="local-6989586621679343516"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343516"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679343515"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679343515"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679352046"><span class="hs-identifier hs-var">b</span></a></span><span>
+</span><span id="line-107"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#AttributeVal"><span class="hs-identifier hs-type">AttributeVal</span></a></span><span> </span><span id="local-6989586621679352045"><span class="annot"><span class="annottext">Value
+</span><a href="#local-6989586621679352045"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679352044"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679352044"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;(&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; String
 </span><a href="Jikka.RestrictedPython.Language.Value.html#formatValue"><span class="hs-identifier hs-var">formatValue</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343516"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+</span><a href="#local-6989586621679352045"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;).&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
@@ -791,65 +579,62 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; String
 forall a. Show a =&gt; a -&gt; String
 </span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679343515"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-131"></span><span>
-</span><span id="line-132"></span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-type">writeValueIO</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-133"></span><span id="writeValueIO"><span class="annot"><span class="annottext">writeValueIO :: Value -&gt; IO ()
-</span><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var hs-var">writeValueIO</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-134"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-type">IntVal</span></a></span><span> </span><span id="local-6989586621679343513"><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343513"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Integer -&gt; IO ()
-forall a. Show a =&gt; a -&gt; IO ()
-</span><span class="hs-identifier hs-var">print</span></span><span> </span><span class="annot"><span class="annottext">Integer
-</span><a href="#local-6989586621679343513"><span class="hs-identifier hs-var">n</span></a></span><span>
-</span><span id="line-135"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BoolVal"><span class="hs-identifier hs-type">BoolVal</span></a></span><span> </span><span id="local-6989586621679343512"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343512"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; IO ()
-</span><span class="hs-identifier hs-var">putStrLn</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679343512"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;Yes&quot;</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">String
-</span><span class="hs-string">&quot;No&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-136"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-type">ListVal</span></a></span><span> </span><span id="local-6989586621679343510"><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343510"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-137"></span><span>    </span><span class="annot"><span class="annottext">Int -&gt; IO ()
-forall a. Show a =&gt; a -&gt; IO ()
-</span><span class="hs-identifier hs-var">print</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; Int
-forall a. Vector a -&gt; Int
-</span><span class="hs-identifier hs-var">V.length</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343510"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-138"></span><span>    </span><span class="annot"><span class="annottext">(Value -&gt; IO ()) -&gt; [Value] -&gt; IO ()
-forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
-(Foldable t, Monad m) =&gt;
-(a -&gt; m b) -&gt; t a -&gt; m ()
-</span><span class="hs-identifier hs-var">mapM_</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; IO ()
-</span><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var">writeValueIO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Vector Value -&gt; [Value]
-forall a. Vector a -&gt; [a]
-</span><span class="hs-identifier hs-var">V.toList</span></span><span> </span><span class="annot"><span class="annottext">Vector Value
-</span><a href="#local-6989586621679343510"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-139"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#TupleVal"><span class="hs-identifier hs-type">TupleVal</span></a></span><span> </span><span id="local-6989586621679343508"><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343508"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; IO ()) -&gt; [Value] -&gt; IO ()
-forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
-(Foldable t, Monad m) =&gt;
-(a -&gt; m b) -&gt; t a -&gt; m ()
-</span><span class="hs-identifier hs-var">mapM_</span></span><span> </span><span class="annot"><span class="annottext">Value -&gt; IO ()
-</span><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var">writeValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">[Value]
-</span><a href="#local-6989586621679343508"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-140"></span><span>  </span><span id="local-6989586621679343507"><span class="annot"><span class="annottext">f :: Value
-</span><a href="#local-6989586621679343507"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-glyph">@</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#ClosureVal"><span class="hs-identifier hs-type">ClosureVal</span></a></span><span> </span><span class="hs-special">{</span><span class="hs-special">}</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Value -&gt; IO ()
-forall a. Show a =&gt; a -&gt; IO ()
-</span><span class="hs-identifier hs-var">print</span></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343507"><span class="hs-identifier hs-var">f</span></a></span><span>
-</span><span id="line-141"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#BuiltinVal"><span class="hs-identifier hs-type">BuiltinVal</span></a></span><span> </span><span id="local-6989586621679343506"><span class="annot"><span class="annottext">Builtin
-</span><a href="#local-6989586621679343506"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Builtin -&gt; IO ()
-forall a. Show a =&gt; a -&gt; IO ()
-</span><span class="hs-identifier hs-var">print</span></span><span> </span><span class="annot"><span class="annottext">Builtin
-</span><a href="#local-6989586621679343506"><span class="hs-identifier hs-var">b</span></a></span><span>
-</span><span id="line-142"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#AttributeVal"><span class="hs-identifier hs-type">AttributeVal</span></a></span><span> </span><span id="local-6989586621679343505"><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343505"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679343504"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679343504"><span class="hs-identifier hs-var">a</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Value -&gt; IO ()
-</span><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var">writeValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">Value
-</span><a href="#local-6989586621679343505"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">IO () -&gt; IO () -&gt; IO ()
-forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; m b -&gt; m b
-</span><span class="hs-operator hs-var">&gt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; IO ()
-forall a. Show a =&gt; a -&gt; IO ()
-</span><span class="hs-identifier hs-var">print</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679343504"><span class="hs-identifier hs-var">a</span></a></span><span>
-</span><span id="line-143"></span></pre></body></html>
+</span><a href="#local-6989586621679352044"><span class="hs-identifier hs-var">a</span></a></span><span>
+</span><span id="line-108"></span><span>
+</span><span id="line-109"></span><span id="local-6989586621679352043"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#readValueIO"><span class="hs-identifier hs-type">readValueIO</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679352043"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352043"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Common.IOFormat.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352043"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-110"></span><span id="readValueIO"><span class="annot"><span class="annottext">readValueIO :: IOFormat -&gt; m ([Value], Map String Value)
+</span><a href="Jikka.RestrictedPython.Language.Value.html#readValueIO"><span class="hs-identifier hs-var hs-var">readValueIO</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m Integer)
+-&gt; (Integer -&gt; Value)
+-&gt; (Value -&gt; m (Vector Value))
+-&gt; (Vector Value -&gt; Value)
+-&gt; IOFormat
+-&gt; m ([Value], Map String Value)
+forall (m :: * -&gt; *) value.
+(MonadError Error m, MonadIO m) =&gt;
+(value -&gt; m Integer)
+-&gt; (Integer -&gt; value)
+-&gt; (value -&gt; m (Vector value))
+-&gt; (Vector value -&gt; value)
+-&gt; IOFormat
+-&gt; m ([value], Map String value)
+</span><a href="Jikka.Common.IOFormat.html#makeReadValueIO"><span class="hs-identifier hs-var">makeReadValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m Integer
+forall (m :: * -&gt; *). MonadError Error m =&gt; Value -&gt; m Integer
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toInt"><span class="hs-identifier hs-var">toInt</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Value
+</span><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-var">IntVal</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m (Vector Value)
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+Value -&gt; m (Vector Value)
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span> </span><span class="annot"><span class="annottext">Vector Value -&gt; Value
+</span><a href="Jikka.RestrictedPython.Language.Value.html#ListVal"><span class="hs-identifier hs-var">ListVal</span></a></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span id="local-6989586621679352040"><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-type">writeValueIO</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679352040"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadIO</span></span><span> </span><span class="annot"><a href="#local-6989586621679352040"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Common.IOFormat.html#IOFormat"><span class="hs-identifier hs-type">IOFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">M.Map</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Value.html#Value"><span class="hs-identifier hs-type">Value</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679352040"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-113"></span><span id="writeValueIO"><span class="annot"><span class="annottext">writeValueIO :: IOFormat -&gt; Map String Value -&gt; Value -&gt; m ()
+</span><a href="Jikka.RestrictedPython.Language.Value.html#writeValueIO"><span class="hs-identifier hs-var hs-var">writeValueIO</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Value -&gt; m [Value])
+-&gt; (Integer -&gt; Value)
+-&gt; (Value -&gt; m Integer)
+-&gt; (Value -&gt; m (Vector Value))
+-&gt; IOFormat
+-&gt; Map String Value
+-&gt; Value
+-&gt; m ()
+forall (m :: * -&gt; *) value.
+(MonadError Error m, MonadIO m) =&gt;
+(value -&gt; m [value])
+-&gt; (Integer -&gt; value)
+-&gt; (value -&gt; m Integer)
+-&gt; (value -&gt; m (Vector value))
+-&gt; IOFormat
+-&gt; Map String value
+-&gt; value
+-&gt; m ()
+</span><a href="Jikka.Common.IOFormat.html#makeWriteValueIO"><span class="hs-identifier hs-var">makeWriteValueIO</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m [Value]
+forall (m :: * -&gt; *). MonadError Error m =&gt; Value -&gt; m [Value]
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toTuple"><span class="hs-identifier hs-var">toTuple</span></a></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Value
+</span><a href="Jikka.RestrictedPython.Language.Value.html#IntVal"><span class="hs-identifier hs-var">IntVal</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m Integer
+forall (m :: * -&gt; *). MonadError Error m =&gt; Value -&gt; m Integer
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toInt"><span class="hs-identifier hs-var">toInt</span></a></span><span> </span><span class="annot"><span class="annottext">Value -&gt; m (Vector Value)
+forall (m :: * -&gt; *).
+MonadError Error m =&gt;
+Value -&gt; m (Vector Value)
+</span><a href="Jikka.RestrictedPython.Language.Value.html#toList"><span class="hs-identifier hs-var">toList</span></a></span><span>
+</span><span id="line-114"></span></pre></body></html>
