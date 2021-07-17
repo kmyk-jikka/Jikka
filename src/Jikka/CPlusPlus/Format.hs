@@ -101,6 +101,7 @@ formatUnaryOp = \case
   Negate -> ("-", UnaryPrec)
   BitNot -> ("~", UnaryPrec)
   Not -> ("not", UnaryPrec)
+  Deref -> ("*", UnaryPrec)
 
 formatBinaryOp :: BinaryOp -> (Code, Prec)
 formatBinaryOp = \case
@@ -225,8 +226,11 @@ formatExpr = \case
         e2' = resolvePrec CondPrec (formatExpr e2)
         e3' = resolvePrecRight CondPrec (formatExpr e3)
      in (e1' ++ " ? " ++ e2' ++ " : " ++ e3', CondPrec)
+  ArrayExt t es ->
+    let es' = intercalate ", " (map (formatExpr' CommaPrec) es)
+     in ("std::array<" ++ formatType t ++ ", " ++ show (length es) ++ ">{" ++ es' ++ "}", IdentPrec)
   VecExt t es ->
-    let es' = concatMap (formatExpr' CommaPrec) es
+    let es' = intercalate ", " (map (formatExpr' CommaPrec) es)
      in ("std::vector<" ++ formatType t ++ ">{" ++ es' ++ "}", IdentPrec)
   At e1 e2 ->
     let e1' = formatExpr' FunCallPrec e1
@@ -303,6 +307,7 @@ formatProgram prog =
   let body = concatMap formatToplevelStatement (decls prog)
       standardHeaders =
         [ "#include <algorithm>",
+          "#include <array>",
           "#include <cstdint>",
           "#include <functional>",
           "#include <iostream>",

@@ -45,23 +45,8 @@ inline int64_t pow(int64_t x, int64_t k) {
   return y;
 }
 
-template <class T> inline T iterate(int64_t n, std::function<T(T)> f, T x) {
-  if (n < 0) {
-    return x;
-  }
-  while (n--) {
-    x = f(x);
-  }
-  return x;
-}
-
 template <typename T, size_t H, size_t W>
 using matrix = std::array<std::array<T, W>, H>;
-
-template <class T, class... Args>
-std::array<T, sizeof...(Args)> make_array(Args... args) {
-  return {args...};
-}
 
 template <size_t H, size_t W>
 std::array<int64_t, H> matap(const matrix<int64_t, H, W> &a,
@@ -230,154 +215,12 @@ matrix<int64_t, N, N> modmatpow(matrix<int64_t, N, N> x, int64_t k,
   return y;
 }
 
-template <class T> std::vector<T> cons(T x, const std::vector<T> &xs) {
-  std::vector<T> ys(xs.size() + 1);
-  ys[0] = x;
-  std::copy(xs.begin(), xs.end(), ys.begin() + 1);
-  return ys;
-}
-
-template <class T, class U>
-U foldl(std::function<std::function<U(T)>(U)> f, U y,
-        const std::vector<T> &xs) {
-  for (auto &x : xs) {
-    y = f(y)(x);
-  }
-  return y;
-}
-
-template <class T, class U>
-std::vector<U> scanl(std::function<std::function<U(T)>(U)> f, U y,
-                     const std::vector<T> &xs) {
-  std::vector<U> ys(xs.size() + 1);
-  ys[0] = y;
-  for (size_t i = 0; i < xs.size(); ++i) {
-    ys[i + 1] = f(ys[i])(xs[i]);
-  }
-  return ys;
-}
-
-template <class T, class U>
-std::vector<T> fmap(std::function<U(T)> f, const std::vector<T> &xs) {
-  std::vector<U> ys(xs.size());
-  std::transform(xs.begin(), xs.end(), ys.begin(), f);
-  return ys;
-}
-
-template <class T>
-std::vector<T> filter(std::function<bool(T)> pred, const std::vector<T> &xs) {
-  std::vector<T> ys;
-  for (auto &x : xs) {
-    if (pred(x)) {
-      ys.push_back(x);
-    }
-  }
-  return ys;
-}
-
-template <class T> std::vector<T> setat(std::vector<T> xs, int64_t i, T x) {
-  assert(0 <= i and i < static_cast<int64_t>(xs.size()));
-  xs[i] = x;
-  return xs;
-}
-
-template <class T> bool elem(T x, const std::vector<T> &xs) {
-  return std::find(xs.begin(), xs.end(), x) != xs.end();
-}
-
-inline int64_t sum(const std::vector<int64_t> &xs) {
-  return std::accumulate(xs.begin(), xs.end(), static_cast<int64_t>(0));
-}
-
-inline int64_t product(const std::vector<int64_t> &xs) {
-  assert(not xs.empty());
-  return std::accumulate(xs.begin(), xs.end(), 1, std::multiplies<int64_t>());
-}
-
-inline int64_t modsum(const std::vector<int64_t> &xs, int64_t MOD) {
-  assert(not xs.empty());
-  assert(1 <= MOD);
-  int64_t y = 1;
-  for (int64_t x : xs) {
-    y = (y + x) % MOD;
-  }
-  return floormod(y, MOD);
-}
-
-inline int64_t modproduct(const std::vector<int64_t> &xs, int64_t MOD) {
-  assert(not xs.empty());
-  assert(1 <= MOD);
-  int64_t y = 1;
-  for (int64_t x : xs) {
-    y = y * x % MOD;
-  }
-  return floormod(y, MOD);
-}
-
-template <class T> T minimum(const std::vector<T> &xs) {
-  assert(not xs.empty());
-  return *std::min_element(xs.begin(), xs.end());
-}
-
-template <class T> T maximum(const std::vector<T> &xs) {
-  assert(not xs.empty());
-  return *std::max_element(xs.begin(), xs.end());
-}
-
-template <class T> int64_t argmin(const std::vector<T> &xs) {
-  assert(not xs.empty());
-  return std::min_element(xs.begin(), xs.end()) - xs.begin();
-}
-
-template <class T> int64_t argmax(const std::vector<T> &xs) {
-  assert(not xs.empty());
-  return std::max_element(xs.begin(), xs.end()) - xs.begin();
-}
-
-bool all(const std::vector<bool> &xs) {
-  return std::find(xs.begin(), xs.end(), false) == xs.end();
-}
-
-bool any(const std::vector<bool> &xs) {
-  return std::find(xs.begin(), xs.end(), true) != xs.end();
-}
-
-template <class T> std::vector<T> sort(std::vector<T> xs) {
-  std::sort(xs.begin(), xs.end());
-  return xs;
-}
-
-template <class T> std::vector<T> reverse(std::vector<T> xs) {
-  std::reverse(xs.begin(), xs.end());
-  return xs;
-}
-
-inline std::vector<int64_t> range1(int64_t n) {
+inline std::vector<int64_t> range(int64_t n) {
   if (n < 0) {
     return std::vector<int64_t>();
   }
   std::vector<int64_t> xs(n);
   std::iota(xs.begin(), xs.end(), 0);
-  return xs;
-}
-
-inline std::vector<int64_t> range2(int64_t l, int64_t r) {
-  if (l > r) {
-    return std::vector<int64_t>();
-  }
-  std::vector<int64_t> xs(r - l);
-  std::iota(xs.begin(), xs.end(), l);
-  return xs;
-}
-
-inline std::vector<int64_t> range3(int64_t from, int64_t to, int64_t step) {
-  if (from > to) {
-    return std::vector<int64_t>();
-  }
-  std::vector<int64_t> xs;
-  for (int64_t x = from; x < to; x += step) {
-    xs.push_back(x);
-  }
   return xs;
 }
 

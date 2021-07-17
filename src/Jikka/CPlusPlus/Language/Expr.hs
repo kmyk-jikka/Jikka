@@ -54,6 +54,7 @@ data UnaryOp
   | Negate
   | BitNot
   | Not
+  | Deref
   deriving (Eq, Ord, Show, Read)
 
 data BinaryOp
@@ -100,6 +101,7 @@ data Expr
   | Lam [(Type, VarName)] Type [Statement]
   | Call Function [Expr]
   | VecExt Type [Expr]
+  | ArrayExt Type [Expr]
   | At Expr Expr
   | Cast Type Expr
   deriving (Eq, Ord, Show, Read)

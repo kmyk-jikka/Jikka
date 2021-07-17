@@ -52,6 +52,7 @@ freeVars = \case
   Cond e1 e2 e3 -> freeVars e1 ++ freeVars e2 ++ freeVars e3
   Lam _ _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
   Call _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
+  ArrayExt _ es -> concatMap freeVars es
   VecExt _ es -> concatMap freeVars es
   At e1 e2 -> freeVars e1 ++ freeVars e2
   Cast _ e -> freeVars e
@@ -65,6 +66,9 @@ coutStatement e = ExprStatement (BinOp BitLeftShift (BinOp BitLeftShift (Var "st
 repStatement :: VarName -> Expr -> [Statement] -> Statement
 repStatement i n body = For TyInt32 i (Lit (LitInt32 0)) (BinOp LessThan (Var i) n) (AssignIncr (LeftVar i)) body
 
+litInt64 :: Integer -> Expr
+litInt64 n = Lit (LitInt64 n)
+
 litInt32 :: Integer -> Expr
 litInt32 n = Lit (LitInt32 n)
 
@@ -73,12 +77,12 @@ incrExpr e = BinOp Add e (Lit (LitInt32 1))
 
 -- | `fastSize` calls @vector<T>::size()@ method with an optimization aroung `Jikka.Core.Language.Range1`.
 fastSize :: Expr -> Expr
-fastSize (Call (Function "jikka::range1" []) [n]) = n
+fastSize (Call (Function "jikka::range" []) [n]) = n
 fastSize e = Call (Method e "size") []
 
 -- | `fastAt` is subscription with an optimization aroung `Jikka.Core.Language.Range1`.
 fastAt :: Expr -> Expr -> Expr
-fastAt (Call (Function "jikka::range1" []) [_]) i = i
+fastAt (Call (Function "jikka::range" []) [_]) i = i
 fastAt e i = At e i
 
 assignSimple :: VarName -> Expr -> Statement
@@ -93,6 +97,21 @@ callExpr f args = Call (Callable f) args
 callFunction :: FunName -> [Type] -> [Expr] -> Expr
 callFunction f ts args = Call (Function f ts) args
 
+callFunction' :: FunName -> [Type] -> [Expr] -> Statement
+callFunction' = ((ExprStatement .) .) . callFunction
+
+callMethod :: Expr -> FunName -> [Expr] -> Expr
+callMethod e f args = Call (Method e f) args
+
+callMethod' :: Expr -> FunName -> [Expr] -> Statement
+callMethod' = ((ExprStatement .) .) . callMethod
+
+begin :: Expr -> Expr
+begin e = Call (Method e "begin") []
+
+end :: Expr -> Expr
+end e = Call (Method e "end") []
+
 mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
 mapExprStatementExprM f g = go
   where
@@ -104,6 +123,7 @@ mapExprStatementExprM f g = go
       Cond e1 e2 e3 -> f =<< (Cond <$> go e1 <*> go e2 <*> go e3)
       Lam args ret body -> f . Lam args ret =<< mapM (mapExprStatementStatementM f g) body
       Call e args -> f =<< (Call <$> mapExprStatementFunctionM f g e <*> mapM go args)
+      ArrayExt t es -> f . ArrayExt t =<< mapM go es
       VecExt t es -> f . VecExt t =<< mapM go es
       At e1 e2 -> f =<< (At <$> go e1 <*> go e2)
       Cast t e -> f . Cast t =<< go e

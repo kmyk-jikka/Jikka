@@ -31,6 +31,7 @@ spec = describe "run" $ do
     let formatted =
           unlines
             [ "#include <algorithm>",
+              "#include <array>",
               "#include <cstdint>",
               "#include <functional>",
               "#include <iostream>",
