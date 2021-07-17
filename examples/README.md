@@ -12,9 +12,18 @@
     -   Educational DP Contest [A - Frog 1](https://atcoder.jp/contests/dp/tasks/dp_a)
     -   AC with a naive solution / 愚直解が AC
     -   submission at v5.0.9.0: <https://atcoder.jp/contests/dp/submissions/24221651>
+-   :hourglass: TLE `dp_b.py`
+    -   Educational DP Contest [B - Frog 2](https://atcoder.jp/contests/dp/tasks/dp_b)
+    -   AC with a naive solution / 愚直解が AC
+-   :hourglass: TLE `dp_c.py`
+    -   Educational DP Contest [C - Vacation](https://atcoder.jp/contests/dp/tasks/dp_c)
+    -   AC with a naive solution / 愚直解が AC
 -   :hourglass: TLE `dp_q.py`
     -   Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
     -   A lazy propagation segment tree / 遅延伝播セグメント木
+-   :hourglass: TLE `dp_z.py`
+    -   Educational DP Contest [Z - Frog 3](https://atcoder.jp/contests/dp/tasks/dp_z)
+    -   Convex hull trick
 -   :hourglass: TLE `abc134_c.py`
     -   AtCoder Beginner Contest 134 [C - Exception Handling](https://atcoder.jp/contests/abc134/tasks/abc134_c)
     -   Cumulative sums from both sides / 両側からの累積和
@@ -27,17 +36,9 @@
 -   :warning: CE `wip/point_add_range_sum.py`
     -   Library Checker [Point Add Range Sum](https://judge.yosupo.jp/problem/point_add_range_sum)
     -   A normal segment tree / 通常のセグメント木
--   :warning: CE `dp_b.py`
-    -   Educational DP Contest [B - Frog 2](https://atcoder.jp/contests/dp/tasks/dp_b)
-    -   AC with a naive solution / 愚直解が AC
--   :warning: CE `wip/dp_c.py`
-    -   Educational DP Contest [C - Vacation](https://atcoder.jp/contests/dp/tasks/dp_c)
 -   :warning: CE `wip/dp_w.py`
     -   Educational DP Contest [W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
     -   A lazy propagation segment tree / 遅延伝播セグメント木
--   :warning: CE `wip/dp_z.py`
-    -   Educational DP Contest [Z - Frog 3](https://atcoder.jp/contests/dp/tasks/dp_z)
-    -   Convex hull trick
 
 ### Toy scripts
 

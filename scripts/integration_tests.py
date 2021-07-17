@@ -36,6 +36,7 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
             logger.error('%s: failed to find the solver', str(script))
             return []
 
+        logger.info('%s: generating input cases...', str(script))
         for i in range(20):
             inputcase = tempdir / "{}.{}-{}.in".format(script.stem, testset_name, i)
             outputcase = tempdir / "{}.{}-{}.out".format(script.stem, testset_name, i)
