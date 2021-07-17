@@ -228,6 +228,7 @@ Python とほとんど同じです。
     -   `x = int(input())`
     -   `x, y, z = map(int, input().split())`
     -   `xs = list(map(int, input().split())); assert len(xs) == n`
+    -   `xs = list(range(n)); for i in range(n): xs[i] = ...`
     -   `x, y, z = solve(a, b, c)`
     -   `print(x, y, z)`
     -   `for i in range(n): ...`

@@ -9,9 +9,9 @@ def main() -> None:
     r = [random.randint(l[i] + 1, n) for i  in range(q)]
     print(n)
     print(q)
-    print(len(a), *a)
-    print(len(l), *l)
-    print(len(r), *r)
+    print(*a)
+    for i in range(q):
+        print(l[i], r[i])
 
 if __name__ == '__main__':
     main()

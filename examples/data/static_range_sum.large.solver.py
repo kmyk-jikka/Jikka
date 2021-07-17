@@ -12,11 +12,14 @@ def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]
 def main() -> None:
     n = int(input())
     q = int(input())
-    _, *a = map(int, input().split())
-    _, *l = map(int, input().split())
-    _, *r = map(int, input().split())
+    a = list(map(int, input().split()))
+    l = list(range(q))
+    r = list(range(q))
+    for i in range(q):
+        l[i], r[i] = map(int, input().split())
     ans = solve(n, q, a, l, r)
-    print(len(ans), *ans, sep='\n')
+    for i in range(q):
+        print(ans[i])
 
 if __name__ == '__main__':
     main()

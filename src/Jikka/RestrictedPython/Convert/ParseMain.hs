@@ -44,8 +44,39 @@ pattern CallBuiltin b args <- WithLoc' _ (Call (WithLoc' _ (Constant (ConstBuilt
 
 pattern CallMethod e a args <- WithLoc' _ (Call (WithLoc' _ (Attribute e a)) args)
 
-parseAnnAssign :: (MonadAlpha m, MonadError Error m) => Target' -> Type -> Expr' -> Maybe Statement -> m (FormatTree, Maybe ([String], Either String [String]))
-parseAnnAssign x _ e hint = do
+pattern IntInput <-
+  CallBuiltin (BuiltinInt _) [CallBuiltin BuiltinInput []]
+
+pattern MapIntInputSplit <-
+  CallBuiltin
+    (BuiltinMap [_] _)
+    [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt _))),
+      CallMethod
+        (CallBuiltin BuiltinInput [])
+        (WithLoc' _ BuiltinSplit)
+        []
+      ]
+
+pattern ListMapIntInputSplit <-
+  CallBuiltin
+    (BuiltinList _)
+    [ CallBuiltin
+        (BuiltinMap [_] _)
+        [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt _))),
+          CallMethod
+            (CallBuiltin BuiltinInput [])
+            (WithLoc' _ BuiltinSplit)
+            []
+          ]
+      ]
+
+pattern ListRange n <-
+  CallBuiltin
+    (BuiltinList _)
+    [CallBuiltin BuiltinRange1 [WithLoc' _ (Name (WithLoc' _ n))]]
+
+parseAnnAssign :: (MonadAlpha m, MonadError Error m) => Target' -> Type -> Expr' -> [Statement] -> m (FormatTree, Maybe ([String], Either String [String]), [Statement])
+parseAnnAssign x _ e cont = do
   let subscriptTrg x = case value' x of
         NameTrg x -> return (unVarName (value' x), [])
         SubscriptTrg x (WithLoc' _ (Name i)) -> second (++ [unVarName (value' i)]) <$> subscriptTrg x
@@ -65,48 +96,37 @@ parseAnnAssign x _ e hint = do
         _ -> throwSemanticErrorAt' (loc' e) $ "variable is expected, but got: " ++ formatExpr e
   case e of
     -- int(input())
-    CallBuiltin
-      (BuiltinInt _)
-      [CallBuiltin BuiltinInput []] -> do
-        (x, indices) <- subscriptTrg x
-        return (Seq [packSubscriptedVar' x indices, Newline], Nothing)
+    IntInput -> do
+      (x, indices) <- subscriptTrg x
+      return (Seq [packSubscriptedVar' x indices, Newline], Nothing, cont)
     -- map(int, input().split())
-    ( CallBuiltin
-        (BuiltinMap [_] _)
-        [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt _))),
-          CallMethod
-            (CallBuiltin BuiltinInput [])
-            (WithLoc' _ BuiltinSplit)
-            []
-          ]
-      ) -> do
-        outputs <- subscriptTupleTrg x
-        return (Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline]), Nothing)
+    MapIntInputSplit -> do
+      outputs <- subscriptTupleTrg x
+      return (Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline]), Nothing, cont)
     -- list(map(int, input().split()))
-    CallBuiltin
-      (BuiltinList _)
-      [ CallBuiltin
-          (BuiltinMap [_] _)
-          [ WithLoc' _ (Constant (ConstBuiltin (BuiltinInt _))),
-            CallMethod
-              (CallBuiltin BuiltinInput [])
-              (WithLoc' _ BuiltinSplit)
-              []
-            ]
-        ] -> do
-        (x, indices) <- subscriptTrg x
-        case hint of
-          Just (Assert (WithLoc' _ (Compare (CallBuiltin (BuiltinLen _) [WithLoc' _ (Name x')]) (CmpOp' Eq' _) n))) | unVarName (value' x') == x -> do
-            i <- unVarName . value' <$> genVarName'
-            n <- nameExpr n
-            return (Seq [Loop i (Var n) (Exp (At (packSubscriptedVar x indices) i)), Newline], Nothing)
-          _ -> throwSemanticErrorAt' (loc' e) "after `xs = list(map(int, input().split()))', we need to write `assert len(xs) == n`"
+    ListMapIntInputSplit -> do
+      (x, indices) <- subscriptTrg x
+      case cont of
+        Assert (WithLoc' _ (Compare (CallBuiltin (BuiltinLen _) [WithLoc' _ (Name x')]) (CmpOp' Eq' _) n)) : cont | unVarName (value' x') == x -> do
+          i <- unVarName . value' <$> genVarName'
+          n <- nameExpr n
+          return (Seq [Loop i (Var n) (Exp (At (packSubscriptedVar x indices) i)), Newline], Nothing, cont)
+        _ -> throwSemanticErrorAt' (loc' e) "after `xs = list(map(int, input().split()))', we need to write `assert len(xs) == n`"
+    -- list(range(n))
+    ListRange n -> do
+      let isListRange = \case
+            AnnAssign _ _ (ListRange n') | n' == n -> True
+            _ -> False
+      cont <- return $ dropWhile isListRange cont
+      case cont of
+        For _ (CallBuiltin BuiltinRange1 [WithLoc' _ (Name n')]) _ : _ | value' n' == n -> return (Seq [], Nothing, cont) -- TODO: add more strict checks
+        _ -> throwSemanticErrorAt' (loc' e) "after some repetition of `xs = list(range(n))', we need to write `for i in range(n):`"
     -- solve(...)
     WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName "solve")))) args) -> do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
-      return (Seq [], Just (inputs, output))
-    _ -> throwSemanticErrorAt' (loc' e) "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))' or `x, y, z = solve(a, b, c)'"
+      return (Seq [], Just (inputs, output), cont)
+    _ -> throwSemanticErrorAt' (loc' e) "assignments in main function must be `x = int(input())', `x, y, z = map(int, input().split())', `xs = list(map(int, input().split()))', `xs = list(range(n))' or `x, y, z = solve(a, b, c)'"
 
 parseFor :: MonadError Error m => ([Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)) -> Target' -> Expr' -> [Statement] -> m (FormatTree, FormatTree)
 parseFor go x e body = do
@@ -142,7 +162,7 @@ parseExprStatement e = do
     _ -> throwSemanticErrorAt' (loc' e) "only `print(...)' is allowed for expr statements in main function"
 
 parseMain :: (MonadAlpha m, MonadError Error m) => MainFunction -> m IOFormat
-parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go body
+parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go [] body
   where
     pack :: MonadError Error m => (FormatTree, Maybe ([String], Either String [String]), FormatTree) -> m IOFormat
     pack (_, Nothing, _) = throwSemanticError "main function must call solve function"
@@ -154,31 +174,29 @@ parseMain (loc, _, _, body) = wrapAt' loc $ pack =<< go body
             outputVariables = outputVariables,
             outputTree = outputTree
           }
-    go :: (MonadAlpha m, MonadError Error m) => [Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
-    go stmts = do
-      formats <- zipWithM go' stmts (map Just (tail stmts) ++ [Nothing])
-      let input = Seq (map (\(x, _, _) -> x) formats)
-      let outputs = Seq (map (\(_, _, z) -> z) formats)
-      solve <- case mapMaybe (\(_, y, _) -> y) formats of
-        [] -> return Nothing
-        [solve] -> return $ Just solve
-        _ -> throwSemanticError "cannot call solve function twice"
-      return (input, solve, outputs)
-    go' :: (MonadAlpha m, MonadError Error m) => Statement -> Maybe Statement -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
-    go' stmt hint = case stmt of
-      Return _ -> throwSemanticError "return statement is not allowd in main function"
-      AugAssign _ _ _ -> throwSemanticError "augumented assignment statement is not allowd in main function"
-      AnnAssign x t e -> do
-        (inputs, solve) <- parseAnnAssign x t e hint
-        return (inputs, solve, Seq [])
-      For x e body -> do
-        (inputs, outputs) <- parseFor go x e body
-        return (inputs, Nothing, outputs)
-      If _ _ _ -> throwSemanticError "if statement is not allowd in main function"
-      Assert _ -> return (Seq [], Nothing, Seq [])
-      Expr' e -> do
+    go :: (MonadAlpha m, MonadError Error m) => [(FormatTree, Maybe ([String], Either String [String]), FormatTree)] -> [Statement] -> m (FormatTree, Maybe ([String], Either String [String]), FormatTree)
+    go formats = \case
+      Return _ : _ -> throwSemanticError "return statement is not allowd in main function"
+      AugAssign _ _ _ : _ -> throwSemanticError "augumented assignment statement is not allowd in main function"
+      AnnAssign x t e : cont -> do
+        (inputs, solve, cont) <- parseAnnAssign x t e cont
+        go (formats ++ [(inputs, solve, Seq [])]) cont
+      For x e body : cont -> do
+        (inputs, outputs) <- parseFor (go []) x e body
+        go (formats ++ [(inputs, Nothing, outputs)]) cont
+      If _ _ _ : _ -> throwSemanticError "if statement is not allowd in main function"
+      Assert _ : _ -> throwSemanticError "assert statement is allowd only after `xs = list(map(int, input().split()))` in main function"
+      Expr' e : cont -> do
         output <- parseExprStatement e
-        return (Seq [], Nothing, output)
+        go (formats ++ [(Seq [], Nothing, output)]) cont
+      [] -> do
+        let input = Seq (map (\(x, _, _) -> x) formats)
+        let outputs = Seq (map (\(_, _, z) -> z) formats)
+        solve <- case mapMaybe (\(_, y, _) -> y) formats of
+          [] -> return Nothing
+          [solve] -> return $ Just solve
+          _ -> throwSemanticError "cannot call solve function twice"
+        return (input, solve, outputs)
 
 run :: (MonadAlpha m, MonadError Error m) => Program -> m (Maybe IOFormat, Program)
 run prog = wrapError' "Jikka.RestrictedPython.Convert.ParseMain" $ do

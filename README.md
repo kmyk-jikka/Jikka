@@ -41,7 +41,9 @@ for developpers:
 -   [Haddock](https://kmyk.github.io/Jikka/)
 
 
-## Examples (`v5.0.5.0`)
+## Examples
+
+### `examples/fact.py` (`v5.0.5.0`)
 
 Input, O(N):
 
@@ -85,6 +87,89 @@ int main() {
   int64_t x319 = solve(x318);
   std::cout << x319;
   std::cout << '\n';
+}
+```
+
+### `examples/static_range_sum.py` (`v5.0.10.0`)
+
+Input, O(N^2):
+
+```python
+# https://judge.yosupo.jp/problem/static_range_sum
+
+from typing import *
+
+def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]:
+    ans = [-1 for _ in range(q)]
+    for i in range(q):
+        ans[i] = sum(a[l[i]:r[i]])
+    return ans
+
+def main() -> None:
+    n, q = map(int, input().split())
+    a = list(map(int, input().split()))
+    assert len(a) == n
+    l = list(range(q))
+    r = list(range(q))
+    for i in range(q):
+        l[i], r[i] = map(int, input().split())
+    ans = solve(n, q, a, l, r)
+    for i in range(q):
+        print(ans[i])
+
+if __name__ == '__main__':
+    main()
+```
+
+Output, O(N):
+
+```c++
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <tuple>
+#include <vector>
+std::vector<int64_t> solve(int64_t n_0, int64_t q_1, std::vector<int64_t> a_2,
+                           std::vector<int64_t> l_3, std::vector<int64_t> r_4) {
+  std::vector<int64_t> x6 = std::vector<int64_t>(a_2.size() + 1);
+  x6[0] = 0;
+  for (int32_t i7 = 0; i7 < int32_t(a_2.size()); ++i7) {
+    x6[(i7 + 1)] = x6[i7] + a_2[i7];
+  }
+  std::vector<int64_t> x5 = x6;
+  std::vector<int64_t> x10 = std::vector<int64_t>(q_1);
+  for (int32_t i11 = 0; i11 < int32_t(q_1); ++i11) {
+    x10[i11] = -x5[l_3[i11]] + x5[r_4[i11]];
+  }
+  return x10;
+}
+int main() {
+  int64_t n_13 = -1;
+  int64_t q_14 = -1;
+  std::cin >> n_13;
+  std::vector<int64_t> a_15 = std::vector<int64_t>(n_13, -1);
+  std::cin >> q_14;
+  std::vector<int64_t> l_16 = std::vector<int64_t>(q_14, -1);
+  std::vector<int64_t> r_17 = std::vector<int64_t>(q_14, -1);
+  for (int32_t i18 = 0; i18 < n_13; ++i18) {
+    std::cin >> a_15[i18];
+  }
+  for (int32_t i_19 = 0; i_19 < q_14; ++i_19) {
+    std::cin >> l_16[i_19];
+    std::cin >> r_17[i_19];
+  }
+  for (int32_t i_20 = 0; i_20 < q_14; ++i_20) {
+  }
+  auto ans_21 = solve(n_13, q_14, a_15, l_16, r_17);
+  for (int32_t i_22 = 0; i_22 < q_14; ++i_22) {
+  }
+  for (int32_t i_23 = 0; i_23 < q_14; ++i_23) {
+    std::cout << ans_21[i_23] << ' ';
+    std::cout << '\n' << ' ';
+  }
 }
 ```
 
