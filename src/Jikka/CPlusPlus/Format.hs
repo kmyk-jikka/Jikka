@@ -227,7 +227,7 @@ formatExpr = \case
         e3' = resolvePrecRight CondPrec (formatExpr e3)
      in (e1' ++ " ? " ++ e2' ++ " : " ++ e3', CondPrec)
   VecExt t es ->
-    let es' = concatMap (formatExpr' CommaPrec) es
+    let es' = intercalate ", " (map (formatExpr' CommaPrec) es)
      in ("std::vector<" ++ formatType t ++ ">{" ++ es' ++ "}", IdentPrec)
   At e1 e2 ->
     let e1' = formatExpr' FunCallPrec e1
