@@ -459,7 +459,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       ts <- mapM runType ts
       return $
         if not (null ts) && ts == replicate (length ts) (head ts)
-          then Y.Call (Y.Function "jikka::make_array" [head ts]) es
+          then Y.ArrayExt (head ts) es
           else Y.Call (Y.Function "std::tuple" ts) es
     X.Proj ts n -> go1 $ \e ->
       if not (null ts) && ts == replicate (length ts) (head ts)

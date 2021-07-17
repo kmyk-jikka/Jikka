@@ -48,11 +48,6 @@ inline int64_t pow(int64_t x, int64_t k) {
 template <typename T, size_t H, size_t W>
 using matrix = std::array<std::array<T, W>, H>;
 
-template <class T, class... Args>
-std::array<T, sizeof...(Args)> make_array(Args... args) {
-  return {args...};
-}
-
 template <size_t H, size_t W>
 std::array<int64_t, H> matap(const matrix<int64_t, H, W> &a,
                              const std::array<int64_t, W> &b) {

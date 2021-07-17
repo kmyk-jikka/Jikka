@@ -52,6 +52,7 @@ freeVars = \case
   Cond e1 e2 e3 -> freeVars e1 ++ freeVars e2 ++ freeVars e3
   Lam _ _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
   Call _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
+  ArrayExt _ es -> concatMap freeVars es
   VecExt _ es -> concatMap freeVars es
   At e1 e2 -> freeVars e1 ++ freeVars e2
   Cast _ e -> freeVars e
@@ -122,6 +123,7 @@ mapExprStatementExprM f g = go
       Cond e1 e2 e3 -> f =<< (Cond <$> go e1 <*> go e2 <*> go e3)
       Lam args ret body -> f . Lam args ret =<< mapM (mapExprStatementStatementM f g) body
       Call e args -> f =<< (Call <$> mapExprStatementFunctionM f g e <*> mapM go args)
+      ArrayExt t es -> f . ArrayExt t =<< mapM go es
       VecExt t es -> f . VecExt t =<< mapM go es
       At e1 e2 -> f =<< (At <$> go e1 <*> go e2)
       Cast t e -> f . Cast t =<< go e
