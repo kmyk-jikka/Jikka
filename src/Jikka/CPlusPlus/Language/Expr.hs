@@ -54,6 +54,7 @@ data UnaryOp
   | Negate
   | BitNot
   | Not
+  | Deref
   deriving (Eq, Ord, Show, Read)
 
 data BinaryOp

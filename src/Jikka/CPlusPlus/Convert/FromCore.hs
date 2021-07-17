@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.FromCore
@@ -90,35 +91,35 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       go1'' f = case args of
         [e1] -> f e1
         _ -> throwInternalError $ "expected 1 argument, got " ++ show (length args)
-  let go1' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> m Y.Expr) -> m ([Y.Statement], Y.Expr)
+  let go1' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
       go1' f = go1'' $ \e1 -> do
         (stmts1, e1) <- runExpr env e1
-        e <- f e1
-        return (stmts1, e)
-  let go1 f = go1' (return . f)
+        (stmts, e) <- f e1
+        return (stmts1 ++ stmts, e)
+  let go1 f = go1' (return . ([],) . f)
   let go2'' :: (MonadAlpha m, MonadError Error m) => (X.Expr -> X.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
       go2'' f = case args of
         [e1, e2] -> f e1 e2
         _ -> throwInternalError $ "expected 2 arguments, got " ++ show (length args)
-  let go2' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> m Y.Expr) -> m ([Y.Statement], Y.Expr)
+  let go2' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
       go2' f = go2'' $ \e1 e2 -> do
         (stmts1, e1) <- runExpr env e1
         (stmts2, e2) <- runExpr env e2
-        e <- f e1 e2
-        return (stmts1 ++ stmts2, e)
-  let go2 f = go2' ((return .) . f)
+        (stmts, e) <- f e1 e2
+        return (stmts1 ++ stmts2 ++ stmts, e)
+  let go2 f = go2' (((return . ([],)) .) . f)
   let go3'' :: (MonadAlpha m, MonadError Error m) => (X.Expr -> X.Expr -> X.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
       go3'' f = case args of
         [e1, e2, e3] -> f e1 e2 e3
         _ -> throwInternalError $ "expected 3 arguments, got " ++ show (length args)
-  let go3' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> Y.Expr -> m Y.Expr) -> m ([Y.Statement], Y.Expr)
+  let go3' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
       go3' f = go3'' $ \e1 e2 e3 -> do
         (stmts1, e1) <- runExpr env e1
         (stmts2, e2) <- runExpr env e2
         (stmts3, e3) <- runExpr env e3
-        e <- f e1 e2 e3
-        return (stmts1 ++ stmts2 ++ stmts3, e)
-  let go3 f = go3' (((return .) .) . f)
+        (stmts, e) <- f e1 e2 e3
+        return (stmts1 ++ stmts2 ++ stmts3 ++ stmts, e)
+  let go3 f = go3' ((((return . ([],)) .) .) . f)
   let goN' :: (MonadAlpha m, MonadError Error m) => ([Y.Expr] -> m Y.Expr) -> m ([Y.Statement], Y.Expr)
       goN' f = do
         args <- mapM (runExpr env) args
@@ -141,13 +142,28 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Lcm -> go2 $ \e1 e2 -> Y.Call (Y.Function "std::lcm" []) [e1, e2]
     X.Min2 t -> go2' $ \e1 e2 -> do
       t <- runType t
-      return $ Y.Call (Y.Function "std::min" [t]) [e1, e2]
+      return ([], Y.Call (Y.Function "std::min" [t]) [e1, e2])
     X.Max2 t -> go2' $ \e1 e2 -> do
       t <- runType t
-      return $ Y.Call (Y.Function "std::max" [t]) [e1, e2]
-    X.Iterate t -> go3' $ \n step base -> do
+      return ([], Y.Call (Y.Function "std::max" [t]) [e1, e2])
+    X.Iterate t -> go3'' $ \n f x -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::iterate" [t]) [n, step, base]
+      (stmtsN, n) <- runExpr env n
+      (stmtsX, x) <- runExpr env x
+      y <- Y.newFreshName Y.LocalNameKind
+      i <- Y.newFreshName Y.LoopCounterNameKind
+      (stmtsF, body, f) <- runExprFunction env f (Y.Var y)
+      return
+        ( stmtsN ++ stmtsX
+            ++ [Y.Declare t y (Just x)]
+            ++ stmtsF
+            ++ [ Y.repStatement
+                   i
+                   (Y.Cast Y.TyInt32 n)
+                   (body ++ [Y.assignSimple y f])
+               ],
+          Y.Var y
+        )
     -- logical functions
     X.Not -> go1 $ \e -> Y.UnOp Y.Not e
     X.And -> go2 $ \e1 e2 -> Y.BinOp Y.And e1 e2
@@ -194,40 +210,49 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.ModMatMul h n w -> go3 $ \f g m -> Y.Call (Y.Function "jikka::modmatmul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g, m]
     X.ModMatPow n -> go3 $ \f k m -> Y.Call (Y.Function "jikka::modmatpow" [Y.TyIntValue (fromIntegral n)]) [f, k, m]
     -- list functions
-    X.Cons t -> go2' $ \e1 e2 -> do
+    X.Cons t -> go2' $ \x xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::cons" [t]) [e1, e2]
-    X.Foldl _ t2 -> go3'' $ \f init xs -> do
-      (stmts', init) <- runExpr env init
-      (stmts'', xs) <- runExpr env xs
+      ys <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare (Y.TyVector t) ys Nothing,
+            Y.callMethod' (Y.Var ys) "push_back" [x],
+            Y.callMethod' (Y.Var ys) "insert" [Y.end (Y.Var ys), Y.begin xs, Y.end xs]
+          ],
+          Y.Var ys
+        )
+    X.Foldl t1 t2 -> go3'' $ \f init xs -> do
+      (stmtsInit, init) <- runExpr env init
+      (stmtsXs, xs) <- runExpr env xs
+      t1 <- runType t1
       t2 <- runType t2
       y <- Y.newFreshName Y.LocalNameKind
-      i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmts, body, f) <- runExprFunction2 env f (Y.Var y) (Y.fastAt xs (Y.Var i))
+      x <- Y.newFreshName Y.LocalNameKind
+      (stmtsF, body, f) <- runExprFunction2 env f (Y.Var y) (Y.Var x)
       return
-        ( stmts' ++ stmts''
+        ( stmtsInit ++ stmtsXs
             ++ [Y.Declare t2 y (Just init)]
-            ++ stmts
-            ++ [ Y.repStatement
-                   i
-                   (Y.Cast Y.TyInt32 (Y.fastSize xs))
+            ++ stmtsF
+            ++ [ Y.ForEach
+                   t1
+                   x
+                   xs
                    (body ++ [Y.assignSimple y f])
                ],
           Y.Var y
         )
     X.Scanl _ t2 -> go3'' $ \f init xs -> do
-      (stmts', init) <- runExpr env init
-      (stmts'', xs) <- runExpr env xs
+      (stmtsInit, init) <- runExpr env init
+      (stmtsXs, xs) <- runExpr env xs
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmts, body, f) <- runExprFunction2 env f (Y.fastAt (Y.Var ys) (Y.Var i)) (Y.fastAt xs (Y.Var i))
+      (stmtsF, body, f) <- runExprFunction2 env f (Y.fastAt (Y.Var ys) (Y.Var i)) (Y.fastAt xs (Y.Var i))
       return
-        ( stmts' ++ stmts''
+        ( stmtsInit ++ stmtsXs
             ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.fastSize xs)])),
                  Y.assignAt ys (Y.litInt32 0) init
                ]
-            ++ stmts
+            ++ stmtsF
             ++ [ Y.repStatement
                    i
                    (Y.Cast Y.TyInt32 (Y.fastSize xs))
@@ -237,15 +262,15 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
         )
     X.Len _ -> go1 $ \e -> Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
     X.Map _ t2 -> go2'' $ \f xs -> do
-      (stmts', xs) <- runExpr env xs
+      (stmtsXs, xs) <- runExpr env xs
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmts, body, f) <- runExprFunction env f (Y.fastAt xs (Y.Var i))
+      (stmtsF, body, f) <- runExprFunction env f (Y.fastAt xs (Y.Var i))
       return
-        ( stmts'
+        ( stmtsXs
             ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.fastSize xs]))]
-            ++ stmts
+            ++ stmtsF
             ++ [ Y.repStatement
                    i
                    (Y.Cast Y.TyInt32 (Y.fastSize xs))
@@ -253,43 +278,182 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
                ],
           Y.Var ys
         )
-    X.Filter t -> go2' $ \f xs -> do
+    X.Filter t -> go2'' $ \f xs -> do
+      (stmtsXs, xs) <- runExpr env xs
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::filter" [t]) [f, xs]
+      ys <- Y.newFreshName Y.LocalNameKind
+      x <- Y.newFreshName Y.LocalNameKind
+      (stmtsF, body, f) <- runExprFunction env f (Y.Var x)
+      return
+        ( stmtsXs
+            ++ [Y.Declare (Y.TyVector t) ys Nothing]
+            ++ stmtsF
+            ++ [ Y.ForEach
+                   t
+                   x
+                   xs
+                   ( body
+                       ++ [ Y.If
+                              f
+                              [Y.callMethod' (Y.Var ys) "push_back" [Y.Var x]]
+                              Nothing
+                          ]
+                   )
+               ],
+          Y.Var ys
+        )
     X.At _ -> go2 $ \e1 e2 -> Y.At e1 e2
-    X.SetAt t -> go3' $ \e1 e2 e3 -> do
+    X.SetAt t -> go3' $ \xs i x -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::setat" [t]) [e1, e2, e3]
-    X.Elem t -> go2' $ \e1 e2 -> do
+      ys <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+            Y.assignAt ys i x
+          ],
+          Y.Var ys
+        )
+    X.Elem _ -> go2' $ \xs x -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyBool y (Just (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
+          ],
+          Y.Var y
+        )
+    X.Sum -> go1' $ \xs -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyInt64 y (Just (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0]))
+          ],
+          Y.Var y
+        )
+    X.ModSum -> go2' $ \xs m -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      x <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyInt64 y (Just (Y.litInt64 0)),
+            Y.ForEach
+              Y.TyInt64
+              x
+              xs
+              [Y.Assign (Y.AssignExpr Y.AddAssign (Y.LeftVar y) (Y.callFunction "jikka::floormod" [] [Y.Var x, m]))]
+          ],
+          Y.callFunction "jikka::floormod" [] [Y.Var y, m]
+        )
+    X.Product -> go1' $ \xs -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      x <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyInt64 y (Just (Y.litInt64 1)),
+            Y.ForEach
+              Y.TyInt64
+              x
+              xs
+              [Y.Assign (Y.AssignExpr Y.MulAssign (Y.LeftVar y) (Y.Var x))]
+          ],
+          Y.Var y
+        )
+    X.ModProduct -> go2' $ \xs m -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      x <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyInt64 y (Just (Y.litInt64 1)),
+            Y.ForEach
+              Y.TyInt64
+              x
+              xs
+              [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::modmult" [] [Y.Var y, Y.Var x, m]))]
+          ],
+          Y.Var y
+        )
+    X.Min1 t -> go1' $ \xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::elem" [t]) [e1, e2]
-    X.Sum -> go1 $ \e -> Y.Call (Y.Function "jikka::sum" []) [e]
-    X.ModSum -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modsum" []) [e1, e2]
-    X.Product -> go1 $ \e -> Y.Call (Y.Function "jikka::product" []) [e]
-    X.ModProduct -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modproduct" []) [e1, e2]
-    X.Min1 t -> go1' $ \e -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare t y (Just (Y.UnOp Y.Deref (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs])))
+          ],
+          Y.Var y
+        )
+    X.Max1 t -> go1' $ \xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::minimum" [t]) [e]
-    X.Max1 t -> go1' $ \e -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare t y (Just (Y.UnOp Y.Deref (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs])))
+          ],
+          Y.Var y
+        )
+    X.ArgMin t -> go1' $ \xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::maximum" [t]) [e]
-    X.ArgMin t -> go1' $ \e -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare t y (Just (Y.BinOp Y.Sub (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+          ],
+          Y.Var y
+        )
+    X.ArgMax t -> go1' $ \xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::argmin" [t]) [e]
-    X.ArgMax t -> go1' $ \e -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare t y (Just (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+          ],
+          Y.Var y
+        )
+    X.All -> go1' $ \xs -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyBool y (Just (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
+          ],
+          Y.Var y
+        )
+    X.Any -> go1' $ \xs -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare Y.TyBool y (Just (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
+          ],
+          Y.Var y
+        )
+    X.Sorted t -> go1' $ \xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::argmax" [t]) [e]
-    X.All -> go1 $ \e -> Y.Call (Y.Function "jikka::all" []) [e]
-    X.Any -> go1 $ \e -> Y.Call (Y.Function "jikka::any" []) [e]
-    X.Sorted t -> go1' $ \e -> do
+      ys <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+            Y.callFunction' "std::sort" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
+          ],
+          Y.Var ys
+        )
+    X.Reversed t -> go1' $ \xs -> do
       t <- runType t
-      return $ Y.Call (Y.Function "jikka::sort" [t]) [e]
-    X.Reversed t -> go1' $ \e -> do
-      t <- runType t
-      return $ Y.Call (Y.Function "jikka::reverse" [t]) [e]
-    X.Range1 -> go1 $ \e -> Y.Call (Y.Function "jikka::range1" []) [e]
-    X.Range2 -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::range2" []) [e1, e2]
-    X.Range3 -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::range3" []) [e1, e2, e3]
+      ys <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+            Y.callFunction' "std::reverse" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
+          ],
+          Y.Var ys
+        )
+    X.Range1 -> go1 $ \n -> Y.callFunction "jikka::range" [] [n] -- TODO: inline this without breaking `fastAt` and `fastSize`
+    X.Range2 -> go2' $ \from to -> do
+      ys <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys (Just (Y.callFunction "std::vector" [Y.TyInt64] [Y.BinOp Y.Sub to from])),
+            Y.callFunction' "std::iota" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys), from]
+          ],
+          Y.Var ys
+        )
+    X.Range3 -> go3' $ \from to step -> do
+      ys <- Y.newFreshName Y.LocalNameKind
+      i <- Y.newFreshName Y.LoopCounterNameKind
+      return
+        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys Nothing,
+            Y.For
+              Y.TyInt32
+              i
+              from
+              (Y.BinOp Y.LessThan (Y.Var i) to)
+              (Y.AssignExpr Y.AddAssign (Y.LeftVar i) step)
+              [ Y.callMethod' (Y.Var ys) "push_back" [Y.Var i]
+              ]
+          ],
+          Y.Var ys
+        )
     -- tuple functions
     X.Tuple ts -> goN' $ \es -> do
       ts <- mapM runType ts

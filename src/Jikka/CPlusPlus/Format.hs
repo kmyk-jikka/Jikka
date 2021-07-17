@@ -101,6 +101,7 @@ formatUnaryOp = \case
   Negate -> ("-", UnaryPrec)
   BitNot -> ("~", UnaryPrec)
   Not -> ("not", UnaryPrec)
+  Deref -> ("*", UnaryPrec)
 
 formatBinaryOp :: BinaryOp -> (Code, Prec)
 formatBinaryOp = \case
