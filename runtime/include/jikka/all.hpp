@@ -237,33 +237,6 @@ template <class T> std::vector<T> cons(T x, const std::vector<T> &xs) {
   return ys;
 }
 
-template <class T, class U>
-U foldl(std::function<std::function<U(T)>(U)> f, U y,
-        const std::vector<T> &xs) {
-  for (auto &x : xs) {
-    y = f(y)(x);
-  }
-  return y;
-}
-
-template <class T, class U>
-std::vector<U> scanl(std::function<std::function<U(T)>(U)> f, U y,
-                     const std::vector<T> &xs) {
-  std::vector<U> ys(xs.size() + 1);
-  ys[0] = y;
-  for (size_t i = 0; i < xs.size(); ++i) {
-    ys[i + 1] = f(ys[i])(xs[i]);
-  }
-  return ys;
-}
-
-template <class T, class U>
-std::vector<T> fmap(std::function<U(T)> f, const std::vector<T> &xs) {
-  std::vector<U> ys(xs.size());
-  std::transform(xs.begin(), xs.end(), ys.begin(), f);
-  return ys;
-}
-
 template <class T>
 std::vector<T> filter(std::function<bool(T)> pred, const std::vector<T> &xs) {
   std::vector<T> ys;
