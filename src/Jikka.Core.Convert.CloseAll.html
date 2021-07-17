@@ -417,39 +417,49 @@ forall (m :: * -&gt; *). MonadAlpha m =&gt; RewriteRule m
 </span><span id="line-91"></span><span>
 </span><span id="line-92"></span><span class="hs-comment">-- | `run` reduces `All` and `Any`.</span><span>
 </span><span id="line-93"></span><span class="hs-comment">--</span><span>
-</span><span id="line-94"></span><span class="hs-comment">-- == List of builtin functions which are reduced</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- == Examples</span><span>
 </span><span id="line-95"></span><span class="hs-comment">--</span><span>
-</span><span id="line-96"></span><span class="hs-comment">-- \[</span><span>
-</span><span id="line-97"></span><span class="hs-comment">--     \newcommand\int{\mathbf{int}}</span><span>
-</span><span id="line-98"></span><span class="hs-comment">--     \newcommand\bool{\mathbf{bool}}</span><span>
-</span><span id="line-99"></span><span class="hs-comment">--     \newcommand\list{\mathbf{list}}</span><span>
-</span><span id="line-100"></span><span class="hs-comment">-- \]</span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- Before:</span><span>
+</span><span id="line-97"></span><span class="hs-comment">--</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- &gt; any (filter (fun x -&gt; x || f x) xs)</span><span>
+</span><span id="line-99"></span><span class="hs-comment">--</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- After:</span><span>
 </span><span id="line-101"></span><span class="hs-comment">--</span><span>
-</span><span id="line-102"></span><span class="hs-comment">-- === Target functions</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- &gt; any xs || any (map f xs)</span><span>
 </span><span id="line-103"></span><span class="hs-comment">--</span><span>
-</span><span id="line-104"></span><span class="hs-comment">-- * `All` \(: \list(\bool) \to \bool\)</span><span>
-</span><span id="line-105"></span><span class="hs-comment">-- * `Any` \(: \list(\bool) \to \bool\)</span><span>
-</span><span id="line-106"></span><span class="hs-comment">--</span><span>
-</span><span id="line-107"></span><span class="hs-comment">-- === Boolean functions</span><span>
-</span><span id="line-108"></span><span class="hs-comment">--</span><span>
-</span><span id="line-109"></span><span class="hs-comment">-- * `Not` \(: \bool \to \bool\)</span><span>
-</span><span id="line-110"></span><span class="hs-comment">-- * `And` \(: \bool \to \bool \to \bool\)</span><span>
-</span><span id="line-111"></span><span class="hs-comment">-- * `Or` \(: \bool \to \bool \to \bool\)</span><span>
-</span><span id="line-112"></span><span class="hs-comment">-- * `Implies` \(: \bool \to \bool \to \bool\)</span><span>
+</span><span id="line-104"></span><span class="hs-comment">-- == List of builtin functions which are reduced</span><span>
+</span><span id="line-105"></span><span class="hs-comment">--</span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- \[</span><span>
+</span><span id="line-107"></span><span class="hs-comment">--     \newcommand\int{\mathbf{int}}</span><span>
+</span><span id="line-108"></span><span class="hs-comment">--     \newcommand\bool{\mathbf{bool}}</span><span>
+</span><span id="line-109"></span><span class="hs-comment">--     \newcommand\list{\mathbf{list}}</span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- \]</span><span>
+</span><span id="line-111"></span><span class="hs-comment">--</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- === Target functions</span><span>
 </span><span id="line-113"></span><span class="hs-comment">--</span><span>
-</span><span id="line-114"></span><span class="hs-comment">-- === List Build functions</span><span>
-</span><span id="line-115"></span><span class="hs-comment">--</span><span>
-</span><span id="line-116"></span><span class="hs-comment">-- * `Nil` \(: \forall \alpha. \list(\alpha)\)</span><span>
-</span><span id="line-117"></span><span class="hs-comment">-- * `Cons` \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)</span><span>
+</span><span id="line-114"></span><span class="hs-comment">-- * `All` \(: \list(\bool) \to \bool\)</span><span>
+</span><span id="line-115"></span><span class="hs-comment">-- * `Any` \(: \list(\bool) \to \bool\)</span><span>
+</span><span id="line-116"></span><span class="hs-comment">--</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- === Boolean functions</span><span>
 </span><span id="line-118"></span><span class="hs-comment">--</span><span>
-</span><span id="line-119"></span><span class="hs-comment">-- === List Map functions</span><span>
-</span><span id="line-120"></span><span class="hs-comment">--</span><span>
-</span><span id="line-121"></span><span class="hs-comment">-- * `Map` \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)</span><span>
-</span><span id="line-122"></span><span class="hs-comment">-- * `Filter` \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)</span><span>
-</span><span id="line-123"></span><span class="hs-comment">-- * `Reversed` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)</span><span>
-</span><span id="line-124"></span><span class="hs-comment">-- * `Sorted` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)</span><span>
-</span><span id="line-125"></span><span id="local-6989586621679312798"><span class="annot"><a href="Jikka.Core.Convert.CloseAll.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312798"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312798"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679312798"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
-</span><span id="line-126"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><span id="line-119"></span><span class="hs-comment">-- * `Not` \(: \bool \to \bool\)</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- * `And` \(: \bool \to \bool \to \bool\)</span><span>
+</span><span id="line-121"></span><span class="hs-comment">-- * `Or` \(: \bool \to \bool \to \bool\)</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- * `Implies` \(: \bool \to \bool \to \bool\)</span><span>
+</span><span id="line-123"></span><span class="hs-comment">--</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- === List Build functions</span><span>
+</span><span id="line-125"></span><span class="hs-comment">--</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- * `Nil` \(: \forall \alpha. \list(\alpha)\)</span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- * `Cons` \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)</span><span>
+</span><span id="line-128"></span><span class="hs-comment">--</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- === List Map functions</span><span>
+</span><span id="line-130"></span><span class="hs-comment">--</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- * `Map` \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- * `Filter` \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)</span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- * `Reversed` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- * `Sorted` \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)</span><span>
+</span><span id="line-135"></span><span id="local-6989586621679312798"><span class="annot"><a href="Jikka.Core.Convert.CloseAll.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312798"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679312798"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679312798"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-136"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.CloseAll.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679312797"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679312797"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
@@ -457,31 +467,31 @@ forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><span class="hs-string">&quot;Jikka.Core.Convert.CloseAll&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-127"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
+</span><span id="line-137"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#precondition"><span class="hs-identifier hs-var">precondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-128"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><span id="line-138"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679312797"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-129"></span><span>  </span><span id="local-6989586621679312793"><span class="annot"><span class="annottext">Program
+</span><span id="line-139"></span><span>  </span><span id="local-6989586621679312793"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679312793"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *). MonadAlpha m =&gt; Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.CloseAll.html#runProgram"><span class="hs-identifier hs-var">runProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679312797"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-130"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
+</span><span id="line-140"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#postcondition"><span class="hs-identifier hs-var">postcondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-131"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><span id="line-141"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679312793"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-132"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+</span><span id="line-142"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679312793"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-133"></span></pre></body></html>
+</span><span id="line-143"></span></pre></body></html>

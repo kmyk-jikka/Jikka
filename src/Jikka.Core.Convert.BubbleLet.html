@@ -3,7 +3,7 @@
 </span><span id="line-3"></span><span>
 </span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
 </span><span id="line-5"></span><span class="hs-comment">-- Module      : Jikka.Core.Convert.BubbleLet</span><span>
-</span><span id="line-6"></span><span class="hs-comment">-- Description : bubbles let-exprs in higher-order functions. / &#39640;&#38542;&#38306;&#25968;&#20013;&#12398; let &#24335;&#12434;&#28014;&#12365;&#19978;&#12364;&#12425;&#12379;&#12414;&#12377;&#12290;</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : makes let-exprs rise in higher-order functions. / &#39640;&#38542;&#38306;&#25968;&#20013;&#12398; let &#24335;&#12434;&#28014;&#12365;&#19978;&#12364;&#12425;&#12379;&#12414;&#12377;&#12290;</span><span>
 </span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2021</span><span>
 </span><span id="line-8"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
 </span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
@@ -174,8 +174,19 @@ RewriteRule m -&gt; Program -&gt; m Program
 forall (m :: * -&gt; *). MonadAlpha m =&gt; RewriteRule m
 </span><a href="Jikka.Core.Convert.BubbleLet.html#rule"><span class="hs-identifier hs-var">rule</span></a></span><span>
 </span><span id="line-43"></span><span>
-</span><span id="line-44"></span><span id="local-6989586621679310393"><span class="annot"><a href="Jikka.Core.Convert.BubbleLet.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310393"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310393"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679310393"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
-</span><span id="line-45"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><span id="line-44"></span><span class="hs-comment">-- | `run` moves let-exprs in lambdas passed to higher-order functions to the outer of the higher-order functions.</span><span>
+</span><span id="line-45"></span><span class="hs-comment">--</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- == Examples</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- Before:</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- &gt; map (fun x -&gt; let c = 12345 in c * x) xs</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- After:</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- &gt; let c = 12345 in map (fun x -&gt; c * x) xs</span><span>
+</span><span id="line-55"></span><span id="local-6989586621679310393"><span class="annot"><a href="Jikka.Core.Convert.BubbleLet.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310393"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310393"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679310393"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-56"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.BubbleLet.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679310392"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679310392"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
@@ -183,31 +194,31 @@ forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><span class="hs-string">&quot;Jikka.Core.Convert.BubbleLet&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-46"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
+</span><span id="line-57"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#precondition"><span class="hs-identifier hs-var">precondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-47"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><span id="line-58"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679310392"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-48"></span><span>  </span><span id="local-6989586621679310388"><span class="annot"><span class="annottext">Program
+</span><span id="line-59"></span><span>  </span><span id="local-6989586621679310388"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679310388"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *). MonadAlpha m =&gt; Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.BubbleLet.html#runProgram"><span class="hs-identifier hs-var">runProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679310392"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-49"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
+</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#postcondition"><span class="hs-identifier hs-var">postcondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-50"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679310388"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-51"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+</span><span id="line-62"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679310388"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-52"></span></pre></body></html>
+</span><span id="line-63"></span></pre></body></html>

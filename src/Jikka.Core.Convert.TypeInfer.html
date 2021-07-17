@@ -974,9 +974,22 @@ a b c -&gt; a (d, b) (d, c)
 </span><a href="Jikka.Core.Convert.TypeInfer.html#substToplevelExpr"><span class="hs-identifier hs-var">substToplevelExpr</span></a></span><span>
 </span><span id="line-203"></span><span>
 </span><span id="line-204"></span><span class="hs-comment">-- | `run` does type inference.</span><span>
-</span><span id="line-205"></span><span class="hs-comment">-- This assumes that program has no name conflicts.</span><span>
-</span><span id="line-206"></span><span id="local-6989586621679310670"><span class="annot"><a href="Jikka.Core.Convert.TypeInfer.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310670"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310670"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679310670"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
-</span><span id="line-207"></span><span id="run"><span class="annot"><span class="annottext">run :: ToplevelExpr -&gt; m ToplevelExpr
+</span><span id="line-205"></span><span class="hs-comment">--</span><span>
+</span><span id="line-206"></span><span class="hs-comment">-- * This assumes that program has no name conflicts.</span><span>
+</span><span id="line-207"></span><span class="hs-comment">--</span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- Before:</span><span>
+</span><span id="line-209"></span><span class="hs-comment">--</span><span>
+</span><span id="line-210"></span><span class="hs-comment">-- &gt; let f = fun y -&gt; y</span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- &gt; in let x = 1</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- &gt; in f(x + x)</span><span>
+</span><span id="line-213"></span><span class="hs-comment">--</span><span>
+</span><span id="line-214"></span><span class="hs-comment">-- After:</span><span>
+</span><span id="line-215"></span><span class="hs-comment">--</span><span>
+</span><span id="line-216"></span><span class="hs-comment">-- &gt; let f: int -&gt; int = fun y: int -&gt; y</span><span>
+</span><span id="line-217"></span><span class="hs-comment">-- &gt; in let x: int = 1</span><span>
+</span><span id="line-218"></span><span class="hs-comment">-- &gt; in f(x + x)</span><span>
+</span><span id="line-219"></span><span id="local-6989586621679310670"><span class="annot"><a href="Jikka.Core.Convert.TypeInfer.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310670"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679310670"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679310670"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-220"></span><span id="run"><span class="annot"><span class="annottext">run :: ToplevelExpr -&gt; m ToplevelExpr
 </span><a href="Jikka.Core.Convert.TypeInfer.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679310669"><span class="annot"><span class="annottext">ToplevelExpr
 </span><a href="#local-6989586621679310669"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m ToplevelExpr -&gt; m ToplevelExpr
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
@@ -985,21 +998,21 @@ forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 -&gt; m ToplevelExpr -&gt; m ToplevelExpr
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-208"></span><span>  </span><span id="local-6989586621679310668"><span class="annot"><span class="annottext">[Equation]
+</span><span id="line-221"></span><span>  </span><span id="local-6989586621679310668"><span class="annot"><span class="annottext">[Equation]
 </span><a href="#local-6989586621679310668"><span class="hs-identifier hs-var">eqns</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m [Equation]
 forall (m :: * -&gt; *). MonadAlpha m =&gt; ToplevelExpr -&gt; m [Equation]
 </span><a href="Jikka.Core.Convert.TypeInfer.html#formularizeProgram"><span class="hs-identifier hs-var">formularizeProgram</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
 </span><a href="#local-6989586621679310669"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-209"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679310667"><span class="annot"><span class="annottext">[(Type, Type)]
+</span><span id="line-222"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679310667"><span class="annot"><span class="annottext">[(Type, Type)]
 </span><a href="#local-6989586621679310667"><span class="hs-identifier hs-var">eqns'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679310666"><span class="annot"><span class="annottext">[(VarName, Type)]
 </span><a href="#local-6989586621679310666"><span class="hs-identifier hs-var">assertions</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Equation] -&gt; ([(Type, Type)], [(VarName, Type)])
 </span><a href="Jikka.Core.Convert.TypeInfer.html#sortEquations"><span class="hs-identifier hs-var">sortEquations</span></a></span><span> </span><span class="annot"><span class="annottext">[Equation]
 </span><a href="#local-6989586621679310668"><span class="hs-identifier hs-var">eqns</span></a></span><span>
-</span><span id="line-210"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679310665"><span class="annot"><span class="annottext">eqns'' :: [(Type, Type)]
+</span><span id="line-223"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679310665"><span class="annot"><span class="annottext">eqns'' :: [(Type, Type)]
 </span><a href="#local-6989586621679310665"><span class="hs-identifier hs-var hs-var">eqns''</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; [(Type, Type)]
 </span><a href="Jikka.Core.Convert.TypeInfer.html#mergeAssertions"><span class="hs-identifier hs-var">mergeAssertions</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
 </span><a href="#local-6989586621679310666"><span class="hs-identifier hs-var">assertions</span></a></span><span>
-</span><span id="line-211"></span><span>  </span><span id="local-6989586621679310664"><span class="annot"><span class="annottext">Subst
+</span><span id="line-224"></span><span>  </span><span id="local-6989586621679310664"><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679310664"><span class="hs-identifier hs-var">sigma</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Type, Type)] -&gt; m Subst
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
@@ -1009,7 +1022,7 @@ MonadError Error m =&gt;
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[(Type, Type)]
 </span><a href="#local-6989586621679310665"><span class="hs-identifier hs-var">eqns''</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-212"></span><span>  </span><span id="local-6989586621679310663"><span class="annot"><span class="annottext">ToplevelExpr
+</span><span id="line-225"></span><span>  </span><span id="local-6989586621679310663"><span class="annot"><span class="annottext">ToplevelExpr
 </span><a href="#local-6989586621679310663"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m ToplevelExpr
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(ToplevelExpr -&gt; m ToplevelExpr) -&gt; ToplevelExpr -&gt; m ToplevelExpr
@@ -1018,17 +1031,17 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><a href="Jikka.Core.Convert.TypeInfer.html#substProgram"><span class="hs-identifier hs-var">substProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679310664"><span class="hs-identifier hs-var">sigma</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
 </span><a href="#local-6989586621679310669"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-213"></span><span>  </span><span class="annot"><span class="annottext">m Type -&gt; m Type
+</span><span id="line-226"></span><span>  </span><span class="annot"><span class="annottext">m Type -&gt; m Type
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#postcondition"><span class="hs-identifier hs-var">postcondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m Type -&gt; m Type) -&gt; m Type -&gt; m Type
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-214"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m Type
+</span><span id="line-227"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m Type
 forall (m :: * -&gt; *). MonadError Error m =&gt; ToplevelExpr -&gt; m Type
 </span><a href="Jikka.Core.Language.TypeCheck.html#typecheckProgram"><span class="hs-identifier hs-var">typecheckProgram</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
 </span><a href="#local-6989586621679310663"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-215"></span><span>  </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m ToplevelExpr
+</span><span id="line-228"></span><span>  </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m ToplevelExpr
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
 </span><a href="#local-6989586621679310663"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-216"></span></pre></body></html>
+</span><span id="line-229"></span></pre></body></html>

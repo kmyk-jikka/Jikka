@@ -1095,13 +1095,34 @@ pattern MultiChoose' :: Expr -> Expr -> Expr
 pattern Bottom' :: Type -> String -> Expr
 
 
--- | <a>Alpha</a> renames variables in exprs to avoid name conflictions,
---   even if the scopes of two variables are distinct.
 module Jikka.Core.Convert.Alpha
 rename :: MonadAlpha m => VarName -> m VarName
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+-- | <a>run</a> renames variables in exprs to avoid name conflictions, even
+--   if the scopes of two variables are distinct.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   let x = 0
+--   in y = x + x
+--   in x = x + y
+--   x + y
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   let x0 = 0
+--   in y1 = x0 + x0
+--   in x2 = x0 + y1
+--   x2 + y1
+--   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
@@ -1341,6 +1362,20 @@ module Jikka.Core.Convert.SpecializeFoldl
 
 -- | <a>run</a> reduces summations and products.
 --   
+--   <h2>Example</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   foldl (fun x y -&gt; x + y) 0 xs
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   sum xs
+--   </pre>
+--   
 --   <h2>List of builtin functions which are reduced</h2>
 --   
 --   <h3>Source functions</h3>
@@ -1465,6 +1500,20 @@ module Jikka.Core.Convert.CloseMin
 
 -- | <a>run</a> reduces maximums and minimums.
 --   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   max (map (fun x -&gt; 3 + f x) xs)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   3 + max (map f xs)
+--   </pre>
+--   
 --   <h2>List of builtin functions which are reduced</h2>
 --   
 --   &lt;math&gt;
@@ -1514,11 +1563,44 @@ reduceArgMax :: Monad m => RewriteRule m
 
 
 module Jikka.Core.Convert.BubbleLet
+
+-- | <a>run</a> moves let-exprs in lambdas passed to higher-order functions
+--   to the outer of the higher-order functions.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   map (fun x -&gt; let c = 12345 in c * x) xs
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   let c = 12345 in map (fun x -&gt; c * x) xs
+--   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: MonadAlpha m => RewriteRule m
 
 
 module Jikka.Core.Convert.Beta
+
+-- | <a>run</a> does beta-reduction.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   (fun x -&gt; x + x) y
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   y + y
+--   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: MonadAlpha m => RewriteRule m
 
@@ -1556,8 +1638,27 @@ rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 module Jikka.Core.Convert.TypeInfer
 
--- | <a>run</a> does type inference. This assumes that program has no name
---   conflicts.
+-- | <a>run</a> does type inference.
+--   
+--   <ul>
+--   <li>This assumes that program has no name conflicts.</li>
+--   </ul>
+--   
+--   Before:
+--   
+--   <pre>
+--   let f = fun y -&gt; y
+--   in let x = 1
+--   in f(x + x)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   let f: int -&gt; int = fun y: int -&gt; y
+--   in let x: int = 1
+--   in f(x + x)
+--   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 data Equation
 TypeEquation :: Type -> Type -> Equation
@@ -1615,6 +1716,20 @@ module Jikka.Core.Convert.ShortCutFusion
 --   much about concrete things, e.g., arithmetical operations.</li>
 --   <li>This doesn't do nothing about <a>Scanl</a> or <a>SetAt</a>.</li>
 --   </ul>
+--   
+--   <h2>Example</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   length (map f (cons (-1) (range n)))
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   n + 1
+--   </pre>
 --   
 --   <h2>List of builtin functions which are reduced</h2>
 --   
@@ -1755,6 +1870,29 @@ module Jikka.Core.Convert.MakeScanl
 
 -- | <a>run</a> replaces <a>Foldl</a> with <a>Scanl</a>.
 --   
+--   <h2>Example</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   let xs = range n
+--   xs[0] &lt;- 0
+--   xs[1] &lt;- 1
+--   foldl (fun a i -&gt; do
+--      xs[i + 2] &lt;- xs[i] + xs[i + 1]
+--      xs
+--   ) xs (range (n - 2))
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   0 : map snd (
+--      scanl (fun a i -&gt; (snd a, fst a + snd a))
+--            (0, 1)
+--            (range (n - 2)))
+--   </pre>
+--   
 --   <h2>List of builtin functions which are reduced</h2>
 --   
 --   <h3>Build functions</h3>
@@ -1849,6 +1987,22 @@ rule :: MonadAlpha m => RewriteRule m
 
 
 module Jikka.Core.Convert.CumulativeSum
+
+-- | <a>run</a> introduces cumulative sums.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   sum (fun i -&gt; a[i]) (range n)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   let b = scanl (+) 0 a in b[n]
+--   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: MonadAlpha m => RewriteRule m
 
@@ -1886,6 +2040,20 @@ module Jikka.Core.Convert.CloseSum
 --   <ul>
 --   <li>This doen't do nothing about <a>Foldl</a>.</li>
 --   </ul>
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   foldl (fun y x -&gt; y + x) 0 (range n)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   x * (x - 1) / 2
+--   </pre>
 --   
 --   <h2>List of builtin functions which are reduced</h2>
 --   
@@ -1954,6 +2122,20 @@ module Jikka.Core.Convert.CloseAll
 
 -- | <a>run</a> reduces <a>All</a> and <a>Any</a>.
 --   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   any (filter (fun x -&gt; x || f x) xs)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   any xs || any (map f xs)
+--   </pre>
+--   
 --   <h2>List of builtin functions which are reduced</h2>
 --   
 --   &lt;math&gt;
@@ -1996,6 +2178,22 @@ reduceAny :: MonadAlpha m => RewriteRule m
 
 
 module Jikka.Core.Convert.ArithmeticalExpr
+
+-- | <a>run</a> sorts arithmetical exprs.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   1 + a * 1 + b - b
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   a + 1
+--   </pre>
 run :: MonadError Error m => Program -> m Program
 
 

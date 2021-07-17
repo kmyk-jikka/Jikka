@@ -626,25 +626,35 @@ forall (m :: * -&gt; *). MonadAlpha m =&gt; RewriteRule m
 </span><span id="line-71"></span><span>
 </span><span id="line-72"></span><span class="hs-comment">-- | `run` reduces summations and products.</span><span>
 </span><span id="line-73"></span><span class="hs-comment">--</span><span>
-</span><span id="line-74"></span><span class="hs-comment">-- == List of builtin functions which are reduced</span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- == Example</span><span>
 </span><span id="line-75"></span><span class="hs-comment">--</span><span>
-</span><span id="line-76"></span><span class="hs-comment">-- === Source functions</span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- Before:</span><span>
 </span><span id="line-77"></span><span class="hs-comment">--</span><span>
-</span><span id="line-78"></span><span class="hs-comment">-- * `Foldl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- &gt; foldl (fun x y -&gt; x + y) 0 xs</span><span>
 </span><span id="line-79"></span><span class="hs-comment">--</span><span>
-</span><span id="line-80"></span><span class="hs-comment">-- === Destination functions</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- After:</span><span>
 </span><span id="line-81"></span><span class="hs-comment">--</span><span>
-</span><span id="line-82"></span><span class="hs-comment">-- * `Sum` \(: \list(\int) \to \int\)</span><span>
-</span><span id="line-83"></span><span class="hs-comment">-- * `Product` \(: \list(\int) \to \int\)</span><span>
-</span><span id="line-84"></span><span class="hs-comment">-- * `ModSum` \(: \list(\int) \to \int \to \int\)</span><span>
-</span><span id="line-85"></span><span class="hs-comment">-- * `ModProduct` \(: \list(\int) \to \int \to \int\)</span><span>
-</span><span id="line-86"></span><span class="hs-comment">-- * `All` \(: \list(\bool) \to \bool\)</span><span>
-</span><span id="line-87"></span><span class="hs-comment">-- * `Any` \(: \list(\bool) \to \bool\)</span><span>
-</span><span id="line-88"></span><span class="hs-comment">-- * `Max1` \(: \forall \alpha. \list(\alpha) \to \alpha\)</span><span>
-</span><span id="line-89"></span><span class="hs-comment">-- * `Min1` \(: \forall \alpha. \list(\alpha) \to \alpha\)</span><span>
-</span><span id="line-90"></span><span class="hs-comment">-- * `Iterate` \(: \forall \alpha. \int \to (\alpha \to \alpha) \to \alpha \to \alpha\)</span><span>
-</span><span id="line-91"></span><span id="local-6989586621679309820"><span class="annot"><a href="Jikka.Core.Convert.SpecializeFoldl.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309820"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309820"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309820"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
-</span><span id="line-92"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><span id="line-82"></span><span class="hs-comment">-- &gt; sum xs</span><span>
+</span><span id="line-83"></span><span class="hs-comment">--</span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- == List of builtin functions which are reduced</span><span>
+</span><span id="line-85"></span><span class="hs-comment">--</span><span>
+</span><span id="line-86"></span><span class="hs-comment">-- === Source functions</span><span>
+</span><span id="line-87"></span><span class="hs-comment">--</span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- * `Foldl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)</span><span>
+</span><span id="line-89"></span><span class="hs-comment">--</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- === Destination functions</span><span>
+</span><span id="line-91"></span><span class="hs-comment">--</span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- * `Sum` \(: \list(\int) \to \int\)</span><span>
+</span><span id="line-93"></span><span class="hs-comment">-- * `Product` \(: \list(\int) \to \int\)</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- * `ModSum` \(: \list(\int) \to \int \to \int\)</span><span>
+</span><span id="line-95"></span><span class="hs-comment">-- * `ModProduct` \(: \list(\int) \to \int \to \int\)</span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- * `All` \(: \list(\bool) \to \bool\)</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- * `Any` \(: \list(\bool) \to \bool\)</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- * `Max1` \(: \forall \alpha. \list(\alpha) \to \alpha\)</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- * `Min1` \(: \forall \alpha. \list(\alpha) \to \alpha\)</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- * `Iterate` \(: \forall \alpha. \int \to (\alpha \to \alpha) \to \alpha \to \alpha\)</span><span>
+</span><span id="line-101"></span><span id="local-6989586621679309820"><span class="annot"><a href="Jikka.Core.Convert.SpecializeFoldl.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309820"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679309820"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679309820"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-102"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.SpecializeFoldl.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679309819"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679309819"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
@@ -652,31 +662,31 @@ forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><span class="hs-string">&quot;Jikka.Core.Convert.SpecializeFoldl&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-93"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
+</span><span id="line-103"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#precondition"><span class="hs-identifier hs-var">precondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-94"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><span id="line-104"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679309819"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-95"></span><span>  </span><span id="local-6989586621679309815"><span class="annot"><span class="annottext">Program
+</span><span id="line-105"></span><span>  </span><span id="local-6989586621679309815"><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679309815"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *). MonadAlpha m =&gt; Program -&gt; m Program
 </span><a href="Jikka.Core.Convert.SpecializeFoldl.html#runProgram"><span class="hs-identifier hs-var">runProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679309819"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-96"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
+</span><span id="line-106"></span><span>  </span><span class="annot"><span class="annottext">m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; m a -&gt; m a
 </span><a href="Jikka.Core.Language.Lint.html#postcondition"><span class="hs-identifier hs-var">postcondition</span></a></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-97"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
+</span><span id="line-107"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; m ()
 forall (m :: * -&gt; *). MonadError Error m =&gt; Program -&gt; m ()
 </span><a href="Jikka.Core.Language.Lint.html#ensureWellTyped"><span class="hs-identifier hs-var">ensureWellTyped</span></a></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679309815"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-98"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+</span><span id="line-108"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
 </span><a href="#local-6989586621679309815"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-99"></span></pre></body></html>
+</span><span id="line-109"></span></pre></body></html>
