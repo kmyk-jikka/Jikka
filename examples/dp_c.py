@@ -10,10 +10,14 @@ def solve(n: int, a: List[int], b: List[int], c: List[int]) -> int:
     assert all(1 <= b_i <= 10 ** 4 for b_i in b)
     assert all(1 <= c_i <= 10 ** 4 for c_i in c)
 
-    dp = [[-1, -1, -1] for _ in range(n + 1)]
-    dp[0] = [0, 0, 0]
+    dp_a = [-1 for _ in range(n + 1)]
+    dp_b = [-1 for _ in range(n + 1)]
+    dp_c = [-1 for _ in range(n + 1)]
+    dp_a[0] = 0
+    dp_b[0] = 0
+    dp_c[0] = 0
     for i in range(n):
-        dp[i + 1][0] = a[i] + max(dp[i][1], dp[i][2])
-        dp[i + 1][0] = b[i] + max(dp[i][2], dp[i][0])
-        dp[i + 1][0] = c[i] + max(dp[i][0], dp[i][1])
-    return max(dp[n])
+        dp_a[i + 1] = a[i] + max(dp_b[i], dp_c[i])
+        dp_b[i + 1] = b[i] + max(dp_c[i], dp_a[i])
+        dp_c[i + 1] = c[i] + max(dp_a[i], dp_b[i])
+    return max([dp_a[n], dp_b[n], dp_c[n]])
