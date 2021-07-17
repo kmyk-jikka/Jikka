@@ -202,7 +202,20 @@ substProgram :: Subst -> Program -> Program
 substProgram = substToplevelExpr
 
 -- | `run` does type inference.
--- This assumes that program has no name conflicts.
+--
+-- * This assumes that program has no name conflicts.
+--
+-- Before:
+--
+-- > let f = fun y -> y
+-- > in let x = 1
+-- > in f(x + x)
+--
+-- After:
+--
+-- > let f: int -> int = fun y: int -> y
+-- > in let x: int = 1
+-- > in f(x + x)
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   eqns <- formularizeProgram prog

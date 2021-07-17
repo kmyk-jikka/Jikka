@@ -91,6 +91,16 @@ runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` reduces `All` and `Any`.
 --
+-- == Examples
+--
+-- Before:
+--
+-- > any (filter (fun x -> x || f x) xs)
+--
+-- After:
+--
+-- > any xs || any (map f xs)
+--
 -- == List of builtin functions which are reduced
 --
 -- \[

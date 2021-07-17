@@ -155,6 +155,16 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- * This doen't do nothing about `Foldl`.
 --
+-- == Examples
+--
+-- Before:
+--
+-- > foldl (fun y x -> y + x) 0 (range n)
+--
+-- After:
+--
+-- > x * (x - 1) / 2
+--
 -- == List of builtin functions which are reduced
 --
 -- === Target functions

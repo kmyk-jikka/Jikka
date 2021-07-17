@@ -62,6 +62,16 @@ runProgram = applyRewriteRuleProgram' rule
 -- * convert to C++
 
 -- TODO: expand in toplevel-let too.
+--
+-- == Examples
+--
+-- Before:
+--
+-- > foldl (+) 0 xs
+--
+-- After:
+--
+-- > foldl (fun y x -> y + x) 0 xs
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.Eta" $ do
   precondition $ do

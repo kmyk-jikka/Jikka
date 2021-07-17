@@ -117,6 +117,16 @@ runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` reduces maximums and minimums.
 --
+-- == Examples
+--
+-- Before:
+--
+-- > max (map (fun x -> 3 + f x) xs)
+--
+-- After:
+--
+-- > 3 + max (map f xs)
+--
 -- == List of builtin functions which are reduced
 --
 -- \[

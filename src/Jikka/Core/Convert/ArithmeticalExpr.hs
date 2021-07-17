@@ -2,7 +2,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.ArithmeticalExpr
--- Description : sort arithmetical exprs. / 算術式を整理します。
+-- Description : sorts arithmetical exprs. / 算術式を整理します。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -30,6 +30,17 @@ runExpr env e = do
 runProgram :: MonadError Error m => Program -> m Program
 runProgram = mapExprProgramM runExpr -- Doesn't use RewriteRules because the rewriting may not terminate.
 
+-- | `run` sorts arithmetical exprs.
+--
+-- == Examples
+--
+-- Before:
+--
+-- > 1 + a * 1 + b - b
+--
+-- After:
+--
+-- > a + 1
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ArithmeticalExpr" $ do
   precondition $ do
