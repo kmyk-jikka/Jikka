@@ -49,6 +49,7 @@ IntNop :: UnaryOp
 Negate :: UnaryOp
 BitNot :: UnaryOp
 Not :: UnaryOp
+Deref :: UnaryOp
 data BinaryOp
 Add :: BinaryOp
 Sub :: BinaryOp
@@ -89,6 +90,7 @@ Cond :: Expr -> Expr -> Expr -> Expr
 Lam :: [(Type, VarName)] -> Type -> [Statement] -> Expr
 Call :: Function -> [Expr] -> Expr
 VecExt :: Type -> [Expr] -> Expr
+ArrayExt :: Type -> [Expr] -> Expr
 At :: Expr -> Expr -> Expr
 Cast :: Type -> Expr -> Expr
 data LeftExpr
@@ -222,6 +224,7 @@ freeVars :: Expr -> [VarName]
 cinStatement :: Expr -> Statement
 coutStatement :: Expr -> Statement
 repStatement :: VarName -> Expr -> [Statement] -> Statement
+litInt64 :: Integer -> Expr
 litInt32 :: Integer -> Expr
 incrExpr :: Expr -> Expr
 
@@ -236,6 +239,11 @@ assignSimple :: VarName -> Expr -> Statement
 assignAt :: VarName -> Expr -> Expr -> Statement
 callExpr :: Expr -> [Expr] -> Expr
 callFunction :: FunName -> [Type] -> [Expr] -> Expr
+callFunction' :: FunName -> [Type] -> [Expr] -> Statement
+callMethod :: Expr -> FunName -> [Expr] -> Expr
+callMethod' :: Expr -> FunName -> [Expr] -> Statement
+begin :: Expr -> Expr
+end :: Expr -> Expr
 mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
 mapExprStatementFunctionM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Function -> m Function
 mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
