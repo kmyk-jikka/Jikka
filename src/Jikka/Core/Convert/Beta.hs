@@ -33,6 +33,17 @@ rule = RewriteRule $ \_ -> \case
 runProgram :: MonadAlpha m => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
+-- | `run` does beta-reduction.
+--
+-- == Examples
+--
+-- Before:
+--
+-- > (fun x -> x + x) y
+--
+-- After:
+--
+-- > y + y
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.Beta" $ do
   precondition $ do

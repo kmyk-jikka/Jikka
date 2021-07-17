@@ -71,6 +71,16 @@ runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` reduces summations and products.
 --
+-- == Example
+--
+-- Before:
+--
+-- > foldl (fun x y -> x + y) 0 xs
+--
+-- After:
+--
+-- > sum xs
+--
 -- == List of builtin functions which are reduced
 --
 -- === Source functions

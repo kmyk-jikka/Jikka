@@ -45,6 +45,17 @@ rule = RewriteRule $ \_ -> \case
 runProgram :: MonadAlpha m => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
+-- | `run` introduces cumulative sums.
+--
+-- == Examples
+--
+-- Before:
+--
+-- > sum (fun i -> a[i]) (range n)
+--
+-- After:
+--
+-- > let b = scanl (+) 0 a in b[n]
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.CumulativeSum" $ do
   precondition $ do

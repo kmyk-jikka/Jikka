@@ -10,8 +10,6 @@
 -- Maintainer  : kimiyuki95@gmail.com
 -- Stability   : experimental
 -- Portability : portable
---
--- `Jikka.Language.Core.Alpha` renames variables in exprs to avoid name conflictions, even if the scopes of two variables are distinct.
 module Jikka.Core.Convert.Alpha where
 
 import Jikka.Common.Alpha
@@ -63,6 +61,23 @@ runToplevelExpr env = \case
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = runToplevelExpr []
 
+-- | `run` renames variables in exprs to avoid name conflictions, even if the scopes of two variables are distinct.
+--
+-- == Examples
+--
+-- Before:
+--
+-- > let x = 0
+-- > in y = x + x
+-- > in x = x + y
+-- > x + y
+--
+-- After:
+--
+-- > let x0 = 0
+-- > in y1 = x0 + x0
+-- > in x2 = x0 + y1
+-- > x2 + y1
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.Alpha" $ do
   runToplevelExpr [] prog

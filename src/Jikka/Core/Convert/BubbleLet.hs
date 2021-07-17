@@ -3,7 +3,7 @@
 
 -- |
 -- Module      : Jikka.Core.Convert.BubbleLet
--- Description : bubbles let-exprs in higher-order functions. / 高階関数中の let 式を浮き上がらせます。
+-- Description : makes let-exprs rise in higher-order functions. / 高階関数中の let 式を浮き上がらせます。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
 -- Maintainer  : kimiyuki95@gmail.com
@@ -41,6 +41,17 @@ rule =
 runProgram :: MonadAlpha m => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
+-- | `run` moves let-exprs in lambdas passed to higher-order functions to the outer of the higher-order functions.
+--
+-- == Examples
+--
+-- Before:
+--
+-- > map (fun x -> let c = 12345 in c * x) xs
+--
+-- After:
+--
+-- > let c = 12345 in map (fun x -> c * x) xs
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.BubbleLet" $ do
   precondition $ do

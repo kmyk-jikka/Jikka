@@ -198,6 +198,16 @@ runProgram = applyRewriteRuleProgram' rule
 -- * This function is mainly for polymorphic reductions. This dosn't do much about concrete things, e.g., arithmetical operations.
 -- * This doesn't do nothing about `Scanl` or `SetAt`.
 --
+-- == Example
+--
+-- Before:
+--
+-- > length (map f (cons (-1) (range n)))
+--
+-- After:
+--
+-- > n + 1
+--
 -- == List of builtin functions which are reduced
 --
 -- === Build functions

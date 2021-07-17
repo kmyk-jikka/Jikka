@@ -155,6 +155,25 @@ runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` replaces `Foldl` with `Scanl`.
 --
+-- == Example
+--
+-- Before:
+--
+-- > let xs = range n
+-- > xs[0] <- 0
+-- > xs[1] <- 1
+-- > foldl (fun a i -> do
+-- >    xs[i + 2] <- xs[i] + xs[i + 1]
+-- >    xs
+-- > ) xs (range (n - 2))
+--
+-- After:
+--
+-- > 0 : map snd (
+-- >    scanl (fun a i -> (snd a, fst a + snd a))
+-- >          (0, 1)
+-- >          (range (n - 2)))
+--
 -- == List of builtin functions which are reduced
 --
 -- === Build functions
