@@ -220,7 +220,12 @@ ArgumentNameKind :: NameKind
 fromNameKind :: NameKind -> String
 newFreshName :: MonadAlpha m => NameKind -> m VarName
 renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
-freeVars :: Expr -> [VarName]
+freeVars :: Expr -> Set VarName
+freeVarsFunction :: Function -> Set VarName
+freeVarsStatements :: [Statement] -> Set VarName
+freeVarsStatement :: Statement -> Set VarName
+freeVarsAssignExpr :: AssignExpr -> Set VarName
+freeVarsLeftExpr :: LeftExpr -> Set VarName
 cinStatement :: Expr -> Statement
 coutStatement :: Expr -> Statement
 repStatement :: VarName -> Expr -> [Statement] -> Statement
@@ -542,6 +547,33 @@ prettyError' :: Error -> [String]
 prettyErrorWithText :: ColorFlag -> Text -> Error -> [String]
 hPrintError :: Handle -> Error -> IO ()
 hPrintErrorWithText :: Handle -> Text -> Error -> IO ()
+
+
+module Jikka.CPlusPlus.Convert.MoveSemantics
+
+-- | <a>run</a> replaces superfluous copying.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   vector&lt;int&gt; solve(vector&lt;int&gt; a) {
+--       vector&lt;int&gt; b = a;
+--       b[0] = 1;
+--       return b;
+--   }
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   vector&lt;int&gt; solve(vector&lt;int&gt; a) {
+--       a[0] = 1;
+--       return a;
+--   }
+--   </pre>
+run :: MonadError Error m => Program -> m Program
 
 
 module Jikka.CPlusPlus.Convert.AddMain
