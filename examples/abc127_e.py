@@ -9,7 +9,7 @@ def solve(h: int, w: int, k: int) -> int:
             for y2 in range(h):
                 for x2 in range(w):
                     if (y1, x1) < (y2, x2):
-                        ans += choose(h * w - 2, k - 2) * (abs(y2 - y1) + abs(x2 - x1))
+                        ans += jikka.choose(h * w - 2, k - 2) * (abs(y2 - y1) + abs(x2 - x1))
     return ans % MOD
 
 def main() -> None:
