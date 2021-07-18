@@ -27,7 +27,7 @@ runExpr = mapSubExprM go
     go e = case value' e of
       Name x -> resolveUniqueBuiltin x
       Call (WithLoc' _ (Name f)) args -> WithLoc' (loc' e) <$> (Call <$> resolveBuiltin f (length args) <*> pure args)
-      Attribute e' a -> WithLoc' (loc' e) <$> (Attribute e' <$> resolveAttribute a)
+      Attribute e' a -> WithLoc' (loc' e) <$> resolveAttribute e' a
       _ -> return e
 
 -- | `run` resolves types of polymorphic builtin functions.

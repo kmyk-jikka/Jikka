@@ -16,8 +16,8 @@ import Test.Hspec
 resolveBuiltin' :: VarName' -> Int -> Either Error Expr'
 resolveBuiltin' x n = flip evalAlphaT 0 $ resolveBuiltin x n
 
-resolveAttribute' :: Attribute' -> Either Error Attribute'
-resolveAttribute' x = flip evalAlphaT 0 $ resolveAttribute x
+resolveAttribute'' :: Attribute' -> Either Error Attribute'
+resolveAttribute'' x = flip evalAlphaT 0 $ resolveAttribute' x
 
 spec :: Spec
 spec = do
@@ -43,8 +43,8 @@ spec = do
       forM_ (S.toList builtinNames) $ \x -> do
         resolve x `shouldSatisfy` any isBuiltin
 
-  describe "resolveAttribute" $ do
-    let resolve = resolveAttribute' . withoutLoc . UnresolvedAttribute
+  describe "resolveAttribute'" $ do
+    let resolve = resolveAttribute'' . withoutLoc . UnresolvedAttribute
     it "works" $ do
       resolve "count" `shouldBe` Right (withoutLoc (BuiltinCount (VarTy "$0")))
       resolve "index" `shouldBe` Right (withoutLoc (BuiltinIndex (VarTy "$0")))

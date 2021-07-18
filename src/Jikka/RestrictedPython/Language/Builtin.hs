@@ -4,6 +4,7 @@
 
 module Jikka.RestrictedPython.Language.Builtin where
 
+import Data.Functor
 import qualified Data.Set as S
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -268,8 +269,8 @@ attributeNames =
       "split"
     ]
 
-resolveAttribute :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
-resolveAttribute x = wrapAt' (loc' x) $ case value' x of
+resolveAttribute' :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
+resolveAttribute' x = wrapAt' (loc' x) $ case value' x of
   UnresolvedAttribute x' ->
     if x' `S.notMember` attributeNames
       then throwSymbolError $ "unknown attribute: " ++ unAttributeName x'
@@ -281,6 +282,22 @@ resolveAttribute x = wrapAt' (loc' x) $ case value' x of
           "split" -> return BuiltinSplit
           _ -> throwInternalError $ "not exhaustive: " ++ unAttributeName x'
   _ -> return x
+
+resolveAttribute :: (MonadAlpha m, MonadError Error m) => Expr' -> Attribute' -> m Expr
+resolveAttribute e@(WithLoc' _ (Name (WithLoc' _ "math"))) x = wrapAt' (loc' x) $ case value' x of
+  UnresolvedAttribute x' -> case x' of
+    "gcd" -> return (Constant (ConstBuiltin BuiltinGcd))
+    "lcm" -> return (Constant (ConstBuiltin BuiltinGcd))
+    _ -> throwSymbolError $ "unknown attribute: " ++ unAttributeName x'
+  _ -> return $ Attribute e x
+resolveAttribute e@(WithLoc' _ (Name (WithLoc' _ "jikka"))) x = wrapAt' (loc' x) $ case value' x of
+  UnresolvedAttribute x' ->
+    let x'' = VarName (unAttributeName x')
+     in if x'' `S.notMember` additionalBuiltinNames
+          then throwSymbolError $ "unknown attribute: " ++ unAttributeName x'
+          else value' <$> resolveUniqueBuiltin (x $> x'')
+  _ -> return $ Attribute e x
+resolveAttribute e x = Attribute e <$> resolveAttribute' x
 
 formatAttribute :: Attribute -> String
 formatAttribute = \case

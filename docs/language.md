@@ -320,6 +320,8 @@ integer functions:
 -   `max(x: T, y: T) -> T`
 -   `pow(x: int, y: int) -> int`
 -   `pow(x: int, y: int, mod: int) -> int`
+-   `math.gcd(x: int, y: int) -> int`
+-   `math.lcm(x: int, y: int) -> int`
 
 list functions:
 
@@ -340,8 +342,6 @@ list functions:
 
 basic integer functions:
 
--   `gcd(x: int, y: int) -> int`
--   `lcm(x: int, y: int) -> int`
 -   `floordiv(x: int, y: int) -> int`
     -   This is same to `x // y`.
 -   `floormod(x: int, y: int) -> int`
@@ -353,19 +353,19 @@ basic integer functions:
 list functions:
 
 -   `product(xs: Iterator[int]) -> int`
--   `argmin(xs: List[T]) -> int`
+-   `jikka.argmin(xs: List[T]) -> int`
     -   `xs` must be non empty.
--   `argmax(xs: List[T]) -> int`
+-   `jikka.argmax(xs: List[T]) -> int`
     -   `xs` must be non empty.
 
 combinatorics functions:
 
--   `fact(x: int) -> int`
--   `choose(n: int, r: int): int`
+-   `jikka.fact(x: int) -> int`
+-   `jikka.choose(n: int, r: int): int`
     -   `n >= r` must be holds.
--   `permute(n: int, r: int) -> int`
+-   `jikka.permute(n: int, r: int) -> int`
     -   `n >= r` must be holds.
--   `multichoose(n: int, r: int) -> int`
+-   `jikka.multichoose(n: int, r: int) -> int`
     -   `n >= r` must be holds.
 
 modular functions:
@@ -373,6 +373,8 @@ modular functions:
 -   `modinv(x: int, mod: int) -> int`
     -   `x` must not be a multiple of `mod`.
     -   `mod` must be positive.
+
+(You can put and remove the prefix `jikka.` freely, at least in the current implementation.)
 
 TODO:
 
