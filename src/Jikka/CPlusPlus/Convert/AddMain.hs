@@ -52,7 +52,7 @@ runMainDeclare format = go M.empty (F.inputTree format)
               Just e -> return e
               Nothing -> throwInternalError $ "undefined variable" ++ i
         sizes' <- mapM lookupSize indices
-        let deps = S.fromList (concatMap freeVars sizes')
+        let deps = S.unions (map freeVars sizes')
         let t = foldl (\t _ -> TyVector t) TyInt64 indices
         let decl = Declare t y (Just (snd (foldr (\size (t, e) -> (TyVector t, Call (Function "std::vector" [t]) [size, e])) (TyInt64, Lit (LitInt64 (-1))) sizes')))
         return [(deps, decl)]
