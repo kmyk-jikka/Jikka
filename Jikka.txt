@@ -3145,7 +3145,8 @@ formatBuiltin :: Builtin -> String
 typeBuiltin :: Builtin -> Type
 mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
 attributeNames :: Set AttributeName
-resolveAttribute :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
+resolveAttribute' :: (MonadAlpha m, MonadError Error m) => Attribute' -> m Attribute'
+resolveAttribute :: (MonadAlpha m, MonadError Error m) => Expr' -> Attribute' -> m Expr
 formatAttribute :: Attribute -> String
 typeAttribute :: Attribute -> (Type, Type)
 mapTypeAttribute :: (Type -> Type) -> Attribute -> Attribute
