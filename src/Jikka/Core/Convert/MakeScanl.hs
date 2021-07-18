@@ -64,7 +64,7 @@ getRecurrenceFormulaBase = go (V.replicate recurrenceLimit Nothing)
       SetAt' _ e (LitInt' i) e' | 0 <= i && i < recurrenceLimit -> go (base V.// [(fromInteger i, Just e')]) e
       e -> (map fromJust (takeWhile isJust (V.toList base)), e)
 
--- | `getRecurrenceFormulaStep1` removes `At` in @a@.
+-- | `getRecurrenceFormulaStep1` removes `At` in @body@.
 getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 getRecurrenceFormulaStep1 shift t a i body = do
   x <- genVarName a
@@ -86,7 +86,7 @@ getRecurrenceFormulaStep1 shift t a i body = do
     Just body -> Just $ Lam2 x t i IntTy body
     Nothing -> Nothing
 
--- | `getRecurrenceFormulaStep` replaces `At` in @a@ with `Proj`.
+-- | `getRecurrenceFormulaStep` replaces `At` in @body@ with `Proj`.
 getRecurrenceFormulaStep :: MonadAlpha m => Int -> Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 getRecurrenceFormulaStep shift size t a i body = do
   x <- genVarName a
@@ -120,9 +120,11 @@ reduceFoldlSetAt :: MonadAlpha m => RewriteRule m
 reduceFoldlSetAt = RewriteRule $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) step(a, i)) init indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) init' indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+    -- index(i) = i + k
     index <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
       Just (i', k) | i' == i -> Just k
       _ -> Nothing
+    -- indices = range n
     n <- hoistMaybe $ case indices of
       Range1' n -> Just n -- We can do this because foldl-map combinations are already reduced.
       _ -> Nothing
@@ -189,6 +191,7 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- === Fold functions
 --
+-- * `Foldl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)
 -- * `At` \(: \forall \alpha. \list(\alpha) \to \int \to \alpha\)
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.MakeScanl" $ do
