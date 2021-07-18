@@ -5,6 +5,7 @@ module Jikka.CPlusPlus.Language.Util where
 
 import Control.Monad.Identity
 import Data.Char (isAlphaNum)
+import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.Common.Alpha
 
@@ -43,19 +44,54 @@ renameVarName kind hint = do
         hint' -> hint' ++ "_"
   return (VarName (prefix ++ show i))
 
-freeVars :: Expr -> [VarName]
+freeVars :: Expr -> S.Set VarName
 freeVars = \case
-  Var x -> [x]
-  Lit _ -> []
+  Var x -> S.singleton x
+  Lit _ -> S.empty
   UnOp _ e -> freeVars e
-  BinOp _ e1 e2 -> freeVars e1 ++ freeVars e2
-  Cond e1 e2 e3 -> freeVars e1 ++ freeVars e2 ++ freeVars e3
-  Lam _ _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
-  Call _ _ -> error "Jikka.CPlusPlus.Language.Util.freeVars: TODO"
-  ArrayExt _ es -> concatMap freeVars es
-  VecExt _ es -> concatMap freeVars es
-  At e1 e2 -> freeVars e1 ++ freeVars e2
+  BinOp _ e1 e2 -> freeVars e1 <> freeVars e2
+  Cond e1 e2 e3 -> freeVars e1 <> freeVars e2 <> freeVars e3
+  Lam args _ body -> freeVarsStatements body S.\\ S.fromList (map snd args)
+  Call f args -> freeVarsFunction f <> mconcat (map freeVars args)
+  ArrayExt _ es -> mconcat (map freeVars es)
+  VecExt _ es -> mconcat (map freeVars es)
+  At e1 e2 -> freeVars e1 <> freeVars e2
   Cast _ e -> freeVars e
+
+freeVarsFunction :: Function -> S.Set VarName
+freeVarsFunction = \case
+  Callable e -> freeVars e
+  Function _ _ -> S.empty
+  Method e _ -> freeVars e
+
+freeVarsStatements :: [Statement] -> S.Set VarName
+freeVarsStatements = mconcat . map freeVarsStatement
+
+freeVarsStatement :: Statement -> S.Set VarName
+freeVarsStatement = \case
+  ExprStatement e -> freeVars e
+  Block stmts -> freeVarsStatements stmts
+  If e body1 body2 -> freeVars e <> freeVarsStatements body1 <> S.unions (fmap freeVarsStatements body2)
+  For _ x init pred incr body -> S.singleton x <> freeVars init <> freeVars pred <> freeVarsAssignExpr incr <> freeVarsStatements body
+  ForEach _ x e body -> S.singleton x <> freeVars e <> freeVarsStatements body
+  While e body -> freeVars e <> freeVarsStatements body
+  Declare _ x e -> S.singleton x <> S.unions (fmap freeVars e)
+  DeclareDestructure xs e -> S.fromList xs <> freeVars e
+  Assign e -> freeVarsAssignExpr e
+  Assert e -> freeVars e
+  Return e -> freeVars e
+
+freeVarsAssignExpr :: AssignExpr -> S.Set VarName
+freeVarsAssignExpr = \case
+  AssignExpr _ e1 e2 -> freeVarsLeftExpr e1 <> freeVars e2
+  AssignIncr e -> freeVarsLeftExpr e
+  AssignDecr e -> freeVarsLeftExpr e
+
+freeVarsLeftExpr :: LeftExpr -> S.Set VarName
+freeVarsLeftExpr = \case
+  LeftVar x -> S.singleton x
+  LeftAt e1 e2 -> freeVarsLeftExpr e1 <> freeVars e2
+  LeftGet _ e -> freeVarsLeftExpr e
 
 cinStatement :: Expr -> Statement
 cinStatement e = ExprStatement (BinOp BitRightShift (Var "std::cin") e)
