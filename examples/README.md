@@ -12,9 +12,10 @@
     -   Educational DP Contest [A - Frog 1](https://atcoder.jp/contests/dp/tasks/dp_a)
     -   AC with a naive solution / 愚直解が AC
     -   submission at v5.0.9.0: <https://atcoder.jp/contests/dp/submissions/24221651>
--   :hourglass: TLE `dp_b.py`
+-   :heavy_check_mark: AC `dp_b.py`
     -   Educational DP Contest [B - Frog 2](https://atcoder.jp/contests/dp/tasks/dp_b)
     -   AC with a naive solution / 愚直解が AC
+    -   submission at v5.0.10.0: <https://atcoder.jp/contests/dp/submissions/24380616>
 -   :hourglass: TLE `dp_c.py`
     -   Educational DP Contest [C - Vacation](https://atcoder.jp/contests/dp/tasks/dp_c)
     -   AC with a naive solution / 愚直解が AC
