@@ -32,19 +32,8 @@ runExpr = \case
   BinOp op e1 e2 -> BinOp op <$> runExpr e1 <*> runExpr e2
   Cond e1 e2 e3 -> Cond <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
   Lam args ret body -> Lam args ret <$> runStatementsInLambda body
-  Call e args -> Call <$> runFunction e <*> mapM runExpr args
-  ArrayExt t es -> ArrayExt t <$> mapM runExpr es
-  VecExt t es -> VecExt t <$> mapM runExpr es
-  At e1 e2 -> At <$> runExpr e1 <*> runExpr e2
-  Cast t e -> Cast t <$> runExpr e
-
-runFunction :: MonadState (M.Map VarName VarName) m => Function -> m Function
-runFunction = \case
-  Callable e -> Callable <$> runExpr e
-  Function h ts -> return $ Function h ts
-  Method e h -> Method <$> runExpr e <*> return h
-  StdTuple ts -> return $ StdTuple ts
-  StdGet n -> return $ StdGet n
+  Call f args -> Call f <$> mapM runExpr args
+  CallExpr f args -> CallExpr <$> runExpr f <*> mapM runExpr args
 
 runLeftExpr :: MonadState (M.Map VarName VarName) m => LeftExpr -> m LeftExpr
 runLeftExpr = \case

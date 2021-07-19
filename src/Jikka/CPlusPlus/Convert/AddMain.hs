@@ -35,10 +35,10 @@ runFormatExpr :: (MonadState (M.Map String VarName) m, MonadAlpha m, MonadError 
 runFormatExpr = \case
   F.Var x -> Var <$> lookup' x
   F.Plus e k -> BinOp Add <$> runFormatExpr e <*> pure (Lit (LitInt32 k))
-  F.At e i -> At <$> runFormatExpr e <*> (Var <$> lookup' i)
+  F.At e i -> fastAt <$> runFormatExpr e <*> (Var <$> lookup' i)
   F.Len e -> do
     e <- runFormatExpr e
-    return $ Cast TyInt32 (Call (Method e "size") [])
+    return $ cast TyInt32 (Call MethodSize [e])
 
 runMainDeclare :: (MonadState (M.Map String VarName) m, MonadAlpha m, MonadError Error m) => F.IOFormat -> m [(S.Set VarName, Statement)]
 runMainDeclare format = go M.empty (F.inputTree format)

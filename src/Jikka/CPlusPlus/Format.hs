@@ -216,32 +216,36 @@ formatExpr = \case
         body' = concatMap formatStatement body
      in ("[=](" ++ intercalate ", " args' ++ ") -> " ++ ret' ++ "{ " ++ unwords body' ++ " }", FunCallPrec)
   Call f args ->
-    let f' = case f of
-          Callable f -> formatExpr' FunCallPrec f
-          Function f ts -> unFunName f ++ (if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">")
-          Method x f -> formatExpr' FunCallPrec x ++ "." ++ unFunName f
-          StdTuple ts -> "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
-          StdGet n -> "std::get<" ++ show n ++ ">"
-     in (f' ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+    let args' = intercalate ", " (map (formatExpr' CommaPrec) args)
+        call f = (f ++ "(" ++ args' ++ ")", FunCallPrec)
+        method f = case args of
+          [] -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: no receiver for method: " ++ f
+          e : args -> (formatExpr' FunCallPrec e ++ "." ++ f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+     in case f of
+          Function f ts -> call $ unFunName f ++ (if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">")
+          Method f -> method $ unFunName f
+          At -> case args of
+            [e1, e2] ->
+              let e1' = formatExpr' FunCallPrec e1
+                  e2' = formatExpr' FunCallPrec e2
+               in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
+            _ -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: wrong number of arguments for subscription: " ++ show (length args)
+          Cast t -> call $ formatType t
+          StdTuple ts -> call $ "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
+          StdGet n -> call $ "std::get<" ++ show n ++ ">"
+          ArrayExt t -> ("std::array<" ++ formatType t ++ ", " ++ show (length args) ++ ">{" ++ args' ++ "}", IdentPrec)
+          VecExt t -> ("std::vector<" ++ formatType t ++ ">{" ++ args' ++ "}", IdentPrec)
+          Range -> call "jikka::range"
+          MethodSize -> method "size"
+  CallExpr f args ->
+    let f' = formatExpr' FunCallPrec f
+        args' = intercalate ", " (map (formatExpr' CommaPrec) args)
+     in (f' ++ "(" ++ args' ++ ")", FunCallPrec)
   Cond e1 e2 e3 ->
     let e1' = resolvePrecLeft CondPrec (formatExpr e1)
         e2' = resolvePrec CondPrec (formatExpr e2)
         e3' = resolvePrecRight CondPrec (formatExpr e3)
      in (e1' ++ " ? " ++ e2' ++ " : " ++ e3', CondPrec)
-  ArrayExt t es ->
-    let es' = intercalate ", " (map (formatExpr' CommaPrec) es)
-     in ("std::array<" ++ formatType t ++ ", " ++ show (length es) ++ ">{" ++ es' ++ "}", IdentPrec)
-  VecExt t es ->
-    let es' = intercalate ", " (map (formatExpr' CommaPrec) es)
-     in ("std::vector<" ++ formatType t ++ ">{" ++ es' ++ "}", IdentPrec)
-  At e1 e2 ->
-    let e1' = formatExpr' FunCallPrec e1
-        e2' = formatExpr' FunCallPrec e2
-     in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
-  Cast t e ->
-    let t' = formatType t
-        e' = formatExpr' ParenPrec e
-     in (t' ++ "(" ++ e' ++ ")", FunCallPrec)
 
 formatLeftExpr :: LeftExpr -> (Code, Prec)
 formatLeftExpr = formatExpr . fromLeftExpr

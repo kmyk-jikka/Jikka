@@ -33,7 +33,7 @@ runExpr = \case
          in if shouldBeArray (map fst ys)
               then
                 let t = fst (head ys)
-                 in ArrayExt t es
+                 in Call (ArrayExt t) es
               else
                 let ts = map fst ys
                  in Call (StdTuple ts) es
@@ -42,65 +42,57 @@ runExpr = \case
   BinOp op e1 e2 -> BinOp op <$> runExpr e1 <*> runExpr e2
   Cond e1 e2 e3 -> Cond <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
   Lam args ret body -> Lam args ret <$> runStatements body []
-  Call f args -> do
-    f <- runFunction f
-    args <- mapM runExpr args
-    case (f, args) of
-      (StdGet n, [Var x]) -> do
-        ys <- gets (M.lookup x)
-        case ys of
-          Just ys -> do
-            let es = map (Var . snd) ys
-            when (n < 0 || toInteger (length ys) <= n) $ do
-              throwInternalError "index out of range"
-            return $ es !! fromInteger n
-          Nothing -> return $ Call f args
-      _ -> return $ Call f args
-  ArrayExt t es -> ArrayExt t <$> mapM runExpr es
-  VecExt t es -> VecExt t <$> mapM runExpr es
-  At e1 e2 -> do
-    e1 <- runExpr e1
-    e2 <- runExpr e2
-    case e1 of
-      Var x -> do
-        ys <- gets (M.lookup x)
-        case ys of
-          Just ys -> do
-            let t = fst (head ys)
-            let es = map (Var . snd) ys
-            let n = case e2 of
-                  Lit (LitInt32 n) -> Just n
-                  Lit (LitInt64 n) -> Just n
-                  _ -> Nothing
-            case n of
-              Just n -> do
-                when (n < 0 || toInteger (length ys) <= n) $ do
-                  throwInternalError "index out of range"
-                return (es !! fromInteger n)
-              Nothing -> do
-                return $ ArrayExt t es
-          Nothing -> return $ At e1 e2
-      ArrayExt _ es -> do
-        let n = case e2 of
-              Lit (LitInt32 n) -> Just n
-              Lit (LitInt64 n) -> Just n
-              _ -> Nothing
-        case n of
-          Just n -> do
-            when (n < 0 || toInteger (length es) <= n) $ do
-              throwInternalError "index out of range"
-            return (es !! fromInteger n)
-          Nothing -> return $ At e1 e2
-      _ -> return $ At e1 e2
-  Cast t e -> Cast t <$> runExpr e
+  Call f args -> runCall f args
+  CallExpr e args -> CallExpr <$> runExpr e <*> mapM runExpr args
 
-runFunction :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Function -> m Function
-runFunction = \case
-  Callable e -> Callable <$> runExpr e
-  Function h ts -> return $ Function h ts
-  Method e h -> Method <$> runExpr e <*> return h
-  StdTuple ts -> return $ StdTuple ts
-  StdGet n -> return $ StdGet n
+runCall :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Function -> [Expr] -> m Expr
+runCall f args = do
+  args <- mapM runExpr args
+  case (f, args) of
+    (StdGet n, [Var x]) -> do
+      ys <- gets (M.lookup x)
+      case ys of
+        Just ys -> do
+          let es = map (Var . snd) ys
+          when (n < 0 || toInteger (length ys) <= n) $ do
+            throwInternalError "index out of range"
+          return $ es !! fromInteger n
+        Nothing -> return $ Call f args
+    (At, [e1, e2]) -> do
+      e1 <- runExpr e1
+      e2 <- runExpr e2
+      case e1 of
+        Var x -> do
+          ys <- gets (M.lookup x)
+          case ys of
+            Just ys -> do
+              let t = fst (head ys)
+              let es = map (Var . snd) ys
+              let n = case e2 of
+                    Lit (LitInt32 n) -> Just n
+                    Lit (LitInt64 n) -> Just n
+                    _ -> Nothing
+              case n of
+                Just n -> do
+                  when (n < 0 || toInteger (length ys) <= n) $ do
+                    throwInternalError "index out of range"
+                  return (es !! fromInteger n)
+                Nothing -> do
+                  return $ Call (ArrayExt t) es
+            Nothing -> return $ Call At [e1, e2]
+        Call (ArrayExt _) es -> do
+          let n = case e2 of
+                Lit (LitInt32 n) -> Just n
+                Lit (LitInt64 n) -> Just n
+                _ -> Nothing
+          case n of
+            Just n -> do
+              when (n < 0 || toInteger (length es) <= n) $ do
+                throwInternalError "index out of range"
+              return (es !! fromInteger n)
+            Nothing -> return $ Call At [e1, e2]
+        _ -> return $ Call At [e1, e2]
+    _ -> return $ Call f args
 
 runLeftExpr :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => LeftExpr -> m LeftExpr
 runLeftExpr = \case
@@ -147,7 +139,7 @@ runStatement stmt cont = case stmt of
         ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
         modify' (M.insert x (zip ts ys))
         return $ zipWith3 (\t y e -> Declare t y (Just e)) ts ys es
-      Just (ArrayExt t es) -> do
+      Just (Call (ArrayExt t) es) -> do
         let ts = replicate (length es) t
         ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
         modify' (M.insert x (zip ts ys))
@@ -168,10 +160,10 @@ runStatement stmt cont = case stmt of
             let n = toInteger (length ts)
             let es = case e of
                   Call (StdTuple _) es -> es
-                  ArrayExt _ es -> es
+                  Call (ArrayExt _) es -> es
                   _ ->
                     if shouldBeArray ts
-                      then map (\i -> At e (litInt32 i)) [0 .. n - 1]
+                      then map (\i -> Call At [e, litInt32 i]) [0 .. n - 1]
                       else map (\i -> Call (StdGet i) [e]) [0 .. n - 1]
             return $ zipWith (\y e -> Assign (AssignExpr SimpleAssign (LeftVar y) e)) (map snd ys) es
           Nothing -> return [Assign (AssignExpr SimpleAssign (LeftVar x) e)]
