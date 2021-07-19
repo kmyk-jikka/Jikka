@@ -35,7 +35,7 @@ runFormatExpr :: (MonadState (M.Map String VarName) m, MonadAlpha m, MonadError 
 runFormatExpr = \case
   F.Var x -> Var <$> lookup' x
   F.Plus e k -> BinOp Add <$> runFormatExpr e <*> pure (Lit (LitInt32 k))
-  F.At e i -> fastAt <$> runFormatExpr e <*> (Var <$> lookup' i)
+  F.At e i -> at <$> runFormatExpr e <*> (Var <$> lookup' i)
   F.Len e -> do
     e <- runFormatExpr e
     return $ cast TyInt32 (Call MethodSize [e])

@@ -248,34 +248,34 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmtsF, body, f) <- runExprFunction2 env f (Y.fastAt (Y.Var ys) (Y.Var i)) (Y.fastAt xs (Y.Var i))
+      (stmtsF, body, f) <- runExprFunction2 env f (Y.at (Y.Var ys) (Y.Var i)) (Y.at xs (Y.Var i))
       return
         ( stmtsInit ++ stmtsXs
-            ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.fastSize xs)])),
+            ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.size xs)])),
                  Y.assignAt ys (Y.litInt32 0) init
                ]
             ++ stmtsF
             ++ [ Y.repStatement
                    i
-                   (Y.cast Y.TyInt32 (Y.fastSize xs))
+                   (Y.cast Y.TyInt32 (Y.size xs))
                    (body ++ [Y.assignAt ys (Y.incrExpr (Y.Var i)) f])
                ],
           Y.Var ys
         )
-    X.Len _ -> go1 $ \e -> Y.cast Y.TyInt64 (Y.fastSize e)
+    X.Len _ -> go1 $ \e -> Y.cast Y.TyInt64 (Y.size e)
     X.Map _ t2 -> go2'' $ \f xs -> do
       (stmtsXs, xs) <- runExpr env xs
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmtsF, body, f) <- runExprFunction env f (Y.fastAt xs (Y.Var i))
+      (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
       return
         ( stmtsXs
-            ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.fastSize xs]))]
+            ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.size xs]))]
             ++ stmtsF
             ++ [ Y.repStatement
                    i
-                   (Y.cast Y.TyInt32 (Y.fastSize xs))
+                   (Y.cast Y.TyInt32 (Y.size xs))
                    (body ++ [Y.assignAt ys (Y.Var i) f])
                ],
           Y.Var ys
@@ -304,7 +304,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
                ],
           Y.Var ys
         )
-    X.At _ -> go2 $ \e1 e2 -> Y.fastAt e1 e2
+    X.At _ -> go2 $ \e1 e2 -> Y.at e1 e2
     X.SetAt t -> go3' $ \xs i x -> do
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
@@ -431,7 +431,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
           ],
           Y.Var ys
         )
-    X.Range1 -> go1 $ \n -> Y.Call Y.Range [n] -- TODO: inline this without breaking `fastAt` and `fastSize`
+    X.Range1 -> go1 $ \n -> Y.Call Y.Range [n]
     X.Range2 -> go2' $ \from to -> do
       ys <- Y.newFreshName Y.LocalNameKind
       return
@@ -467,7 +467,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       ts <- mapM runType ts
       return . ([],) $
         if Y.shouldBeArray ts
-          then Y.fastAt e (Y.Lit (Y.LitInt32 (fromIntegral n)))
+          then Y.at e (Y.Lit (Y.LitInt32 (fromIntegral n)))
           else Y.Call (Y.StdGet (toInteger n)) [e]
     -- comparison
     X.LessThan _ -> go2 $ \e1 e2 -> Y.BinOp Y.LessThan e1 e2

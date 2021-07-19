@@ -105,15 +105,11 @@ litInt32 n = Lit (LitInt32 n)
 incrExpr :: Expr -> Expr
 incrExpr e = BinOp Add e (Lit (LitInt32 1))
 
--- | `fastSize` calls @vector<T>::size()@ method with an optimization aroung `Jikka.Core.Language.Range1`.
-fastSize :: Expr -> Expr
-fastSize (Call Range [n]) = n
-fastSize e = Call MethodSize [e]
+size :: Expr -> Expr
+size e = Call MethodSize [e]
 
--- | `fastAt` is subscription with an optimization aroung `Jikka.Core.Language.Range1`.
-fastAt :: Expr -> Expr -> Expr
-fastAt (Call Range [_]) i = i
-fastAt e i = Call At [e, i]
+at :: Expr -> Expr -> Expr
+at e i = Call At [e, i]
 
 cast :: Type -> Expr -> Expr
 cast t e = Call (Cast t) [e]
@@ -183,6 +179,14 @@ mapExprStatementStatementM f g = go
       Assign e -> g . Assign =<< mapExprStatementAssignExprM f g e
       Assert e -> g . Assert =<< go' e
       Return e -> g . Return =<< go' e
+
+mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> ToplevelStatement -> m ToplevelStatement
+mapExprStatementToplevelStatementM f g = \case
+  VarDef t x e -> VarDef t x <$> mapExprStatementExprM f g e
+  FunDef ret h args body -> FunDef ret h args <$> mapM (mapExprStatementStatementM f g) body
+
+mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
+mapExprStatementProgramM f g (Program decls) = Program <$> mapM (mapExprStatementToplevelStatementM f g) decls
 
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceExpr x e = runIdentity . mapExprStatementExprM go return
