@@ -44,6 +44,8 @@ data Function
 Callable :: Expr -> Function
 Function :: FunName -> [Type] -> Function
 Method :: Expr -> FunName -> Function
+StdTuple :: [Type] -> Function
+StdGet :: Integer -> Function
 data UnaryOp
 IntNop :: UnaryOp
 Negate :: UnaryOp
@@ -226,6 +228,7 @@ freeVarsStatements :: [Statement] -> Set VarName
 freeVarsStatement :: Statement -> Set VarName
 freeVarsAssignExpr :: AssignExpr -> Set VarName
 freeVarsLeftExpr :: LeftExpr -> Set VarName
+shouldBeArray :: [Type] -> Bool
 cinStatement :: Expr -> Statement
 coutStatement :: Expr -> Statement
 repStatement :: VarName -> Expr -> [Statement] -> Statement
@@ -547,6 +550,29 @@ prettyError' :: Error -> [String]
 prettyErrorWithText :: ColorFlag -> Text -> Error -> [String]
 hPrintError :: Handle -> Error -> IO ()
 hPrintErrorWithText :: Handle -> Text -> Error -> IO ()
+
+
+module Jikka.CPlusPlus.Convert.UnpackTuples
+
+-- | <a>run</a> unpack tuples.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   tuple&lt;int, int&gt; c = make_tuple(a, b);
+--   func(get&lt;0&gt;(c), get&lt;1&gt;(c));
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   int c0 = a;
+--   int c1 = b;
+--   func(c0, c1);
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 module Jikka.CPlusPlus.Convert.MoveSemantics
