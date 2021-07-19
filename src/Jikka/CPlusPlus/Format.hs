@@ -215,12 +215,14 @@ formatExpr = \case
         ret' = formatType ret
         body' = concatMap formatStatement body
      in ("[=](" ++ intercalate ", " args' ++ ") -> " ++ ret' ++ "{ " ++ unwords body' ++ " }", FunCallPrec)
-  Call f args -> case f of
-    Callable f -> (formatExpr' FunCallPrec f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
-    Function f ts ->
-      let template = if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">"
-       in (unFunName f ++ template ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
-    Method x f -> (formatExpr' FunCallPrec x ++ "." ++ unFunName f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+  Call f args ->
+    let f' = case f of
+          Callable f -> formatExpr' FunCallPrec f
+          Function f ts -> unFunName f ++ (if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">")
+          Method x f -> formatExpr' FunCallPrec x ++ "." ++ unFunName f
+          StdTuple ts -> "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
+          StdGet n -> "std::get<" ++ show n ++ ">"
+     in (f' ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
   Cond e1 e2 e3 ->
     let e1' = resolvePrecLeft CondPrec (formatExpr e1)
         e2' = resolvePrec CondPrec (formatExpr e2)

@@ -47,6 +47,8 @@ data Function
   = Callable Expr
   | Function FunName [Type]
   | Method Expr FunName
+  | StdTuple [Type]
+  | StdGet Integer
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp
