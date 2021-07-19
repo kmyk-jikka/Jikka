@@ -12,9 +12,11 @@ def solve(n: int, a: List[int], b: List[int], c: List[int]) -> int:
 
 def main() -> None:
     n = int(input())
-    _, *a = map(int, input().split())
-    _, *b = map(int, input().split())
-    _, *c = map(int, input().split())
+    a = list(range(n))
+    b = list(range(n))
+    c = list(range(n))
+    for i in range(n):
+        a[i], b[i], c[i] = map(int, input().split())
     ans = solve(n, a, b, c)
     print(ans)
 

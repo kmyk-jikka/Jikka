@@ -21,3 +21,16 @@ def solve(n: int, a: List[int], b: List[int], c: List[int]) -> int:
         dp_b[i + 1] = b[i] + max(dp_c[i], dp_a[i])
         dp_c[i + 1] = c[i] + max(dp_a[i], dp_b[i])
     return max([dp_a[n], dp_b[n], dp_c[n]])
+
+def main() -> None:
+    n = int(input())
+    a = list(range(n))
+    b = list(range(n))
+    c = list(range(n))
+    for i in range(n):
+        a[i], b[i], c[i] = map(int, input().split())
+    ans = solve(n, a, b, c)
+    print(ans)
+
+if __name__ == '__main__':
+    main()
