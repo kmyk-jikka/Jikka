@@ -43,6 +43,8 @@ runFunction = \case
   Callable e -> Callable <$> runExpr e
   Function h ts -> return $ Function h ts
   Method e h -> Method <$> runExpr e <*> return h
+  StdTuple ts -> return $ StdTuple ts
+  StdGet n -> return $ StdGet n
 
 runLeftExpr :: MonadState (M.Map VarName VarName) m => LeftExpr -> m LeftExpr
 runLeftExpr = \case

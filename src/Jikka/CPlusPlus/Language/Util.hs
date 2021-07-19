@@ -63,6 +63,8 @@ freeVarsFunction = \case
   Callable e -> freeVars e
   Function _ _ -> S.empty
   Method e _ -> freeVars e
+  StdTuple _ -> S.empty
+  StdGet _ -> S.empty
 
 freeVarsStatements :: [Statement] -> S.Set VarName
 freeVarsStatements = mconcat . map freeVarsStatement
@@ -92,6 +94,9 @@ freeVarsLeftExpr = \case
   LeftVar x -> S.singleton x
   LeftAt e1 e2 -> freeVarsLeftExpr e1 <> freeVars e2
   LeftGet _ e -> freeVarsLeftExpr e
+
+shouldBeArray :: [Type] -> Bool
+shouldBeArray ts = not (null ts) && ts == replicate (length ts) (head ts)
 
 cinStatement :: Expr -> Statement
 cinStatement e = ExprStatement (BinOp BitRightShift (Var "std::cin") e)
@@ -169,6 +174,8 @@ mapExprStatementFunctionM f g = \case
   Callable e -> Callable <$> mapExprStatementExprM f g e
   Function h ts -> return $ Function h ts
   Method e h -> Method <$> mapExprStatementExprM f g e <*> return h
+  StdTuple ts -> return $ StdTuple ts
+  StdGet n -> return $ StdGet n
 
 mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
 mapExprStatementLeftExprM f g = \case

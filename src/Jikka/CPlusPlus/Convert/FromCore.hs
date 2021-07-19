@@ -52,10 +52,12 @@ runType = \case
   X.IntTy -> return Y.TyInt64
   X.BoolTy -> return Y.TyBool
   X.ListTy t -> Y.TyVector <$> runType t
-  X.TupleTy ts ->
-    if not (null ts) && ts == replicate (length ts) (head ts)
-      then Y.TyArray <$> runType (head ts) <*> pure (fromIntegral (length ts))
-      else Y.TyTuple <$> mapM runType ts
+  X.TupleTy ts -> do
+    ts <- mapM runType ts
+    return $
+      if Y.shouldBeArray ts
+        then Y.TyArray (head ts) (fromIntegral (length ts))
+        else Y.TyTuple ts
   X.FunTy t ret -> Y.TyFunction <$> runType ret <*> mapM runType [t]
 
 runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
@@ -458,13 +460,15 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Tuple ts -> goN' $ \es -> do
       ts <- mapM runType ts
       return $
-        if not (null ts) && ts == replicate (length ts) (head ts)
+        if Y.shouldBeArray ts
           then Y.ArrayExt (head ts) es
-          else Y.Call (Y.Function "std::tuple" ts) es
-    X.Proj ts n -> go1 $ \e ->
-      if not (null ts) && ts == replicate (length ts) (head ts)
-        then Y.At e (Y.Lit (Y.LitInt32 (fromIntegral n)))
-        else Y.Call (Y.Function "std::get" [Y.TyIntValue (fromIntegral n)]) [e]
+          else Y.Call (Y.StdTuple ts) es
+    X.Proj ts n -> go1' $ \e -> do
+      ts <- mapM runType ts
+      return . ([],) $
+        if Y.shouldBeArray ts
+          then Y.At e (Y.Lit (Y.LitInt32 (fromIntegral n)))
+          else Y.Call (Y.StdGet (toInteger n)) [e]
     -- comparison
     X.LessThan _ -> go2 $ \e1 e2 -> Y.BinOp Y.LessThan e1 e2
     X.LessEqual _ -> go2 $ \e1 e2 -> Y.BinOp Y.LessEqual e1 e2
