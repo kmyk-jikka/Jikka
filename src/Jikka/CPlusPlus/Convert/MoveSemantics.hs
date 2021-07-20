@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.MoveSemantics
@@ -84,6 +85,7 @@ runStatement stmt cont = case stmt of
       Just (Var y) | y `isMovable` cont -> do
         modify' (M.insert x y)
         return []
+      Just (Call ConvexHullTrickMake []) -> return [Declare t x Nothing]
       _ -> do
         return [Declare t x e]
   DeclareDestructure xs e -> do
@@ -93,6 +95,12 @@ runStatement stmt cont = case stmt of
     e <- runAssignExpr e
     case e of
       AssignExpr SimpleAssign (LeftVar y) (Var x) | x == y -> return []
+      AssignExpr SimpleAssign (LeftVar y) (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+        | x == y -> return [callMethod' (Var x) "add_line" [a, b]]
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "add_line" [a, b]]
+        | otherwise -> return [Assign e]
       _ -> return [Assign e]
   Assert e -> do
     e <- runExpr e
@@ -135,6 +143,22 @@ runProgram (Program decls) = (`evalStateT` M.empty) $ do
 -- > vector<int> solve(vector<int> a) {
 -- >     a[0] = 1;
 -- >     return a;
+-- > }
+--
+-- Before:
+--
+-- > int solve(int a, int b, int x) {
+-- >     jikka::convex_hull_trick cht = jikka::convex_hull_trick();
+-- >     cht = jikka::convex_hull_trick::persistent_add_line(cht, a, b);
+-- >     return cht.get_min(x);
+-- > }
+--
+-- After:
+--
+-- > int solve(int a, int b, int x) {
+-- >     jikka::convex_hull_trick cht;
+-- >     cht = cht.add_line(a, b);
+-- >     return cht.get_min(x);
 -- > }
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.CPlusPlus.Convert.MoveSemantics" $ do

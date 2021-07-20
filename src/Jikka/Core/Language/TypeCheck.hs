@@ -109,6 +109,10 @@ builtinToType = \case
   Choose -> Fun2STy IntTy
   Permute -> Fun2STy IntTy
   MultiChoose -> Fun2STy IntTy
+  -- data structure
+  ConvexHullTrickInit -> ConvexHullTrickTy
+  ConvexHullTrickGetMin -> Fun2Ty ConvexHullTrickTy IntTy IntTy
+  ConvexHullTrickInsert -> Fun3Ty ConvexHullTrickTy IntTy IntTy ConvexHullTrickTy
 
 literalToType :: Literal -> Type
 literalToType = \case

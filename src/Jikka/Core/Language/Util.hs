@@ -114,6 +114,10 @@ mapTypeInBuiltin f = \case
   Choose -> Choose
   Permute -> Permute
   MultiChoose -> MultiChoose
+  -- data structures
+  ConvexHullTrickInit -> ConvexHullTrickInit
+  ConvexHullTrickInsert -> ConvexHullTrickInsert
+  ConvexHullTrickGetMin -> ConvexHullTrickGetMin
 
 countOccurrences :: VarName -> Expr -> Int
 countOccurrences x = \case
@@ -312,6 +316,10 @@ isConstantTimeBuiltin = \case
   Choose -> True
   Permute -> True
   MultiChoose -> True
+  -- data structures
+  ConvexHullTrickInit -> False
+  ConvexHullTrickInsert -> False
+  ConvexHullTrickGetMin -> False
 
 -- | `isConstantTimeExpr` checks whether given exprs are suitable to propagate.
 isConstantTimeExpr :: Expr -> Bool

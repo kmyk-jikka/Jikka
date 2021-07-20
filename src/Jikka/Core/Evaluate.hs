@@ -98,6 +98,12 @@ matpow' f _ | let (h, w) = matsize f in h /= w = throwInternalError $ "matrix is
 matpow' _ k | k < 0 = throwRuntimeError $ "exponent is negative: " ++ show k
 matpow' f k = return $ matpow f k
 
+convexHullTrickGetMin :: MonadError Error m => V.Vector (Integer, Integer) -> Integer -> m Integer
+convexHullTrickGetMin cht x =
+  if V.null cht
+    then throwRuntimeError "the set of lines is empty"
+    else return $ V.minimum (V.map (\(a, b) -> a * x + b) cht)
+
 -- -----------------------------------------------------------------------------
 -- evaluator
 
@@ -220,6 +226,10 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Choose -> go2' valueToInt valueToInt ValInt choose
     Permute -> go2' valueToInt valueToInt ValInt permute
     MultiChoose -> go2' valueToInt valueToInt ValInt multichoose
+    -- data structures
+    ConvexHullTrickInit -> go0 ValList V.empty
+    ConvexHullTrickGetMin -> go2' (V.mapM valueToIntPair <=< valueToList) valueToInt ValInt convexHullTrickGetMin
+    ConvexHullTrickInsert -> go3 valueToList pure pure ValList $ \cht a b -> V.snoc cht (ValTuple [a, b])
 
 callLambda :: MonadError Error m => Maybe VarName -> Env -> VarName -> Type -> Expr -> [Value] -> m Value
 callLambda = \name env x t body args -> wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ go Nothing env x t body args

@@ -187,5 +187,12 @@ pattern Permute' e1 e2 = AppBuiltin2 Permute e1 e2
 
 pattern MultiChoose' e1 e2 = AppBuiltin2 MultiChoose e1 e2
 
+-- data structures
+pattern ConvexHullTrickInit' = Lit (LitBuiltin ConvexHullTrickInit)
+
+pattern ConvexHullTrickGetMin' cht a = AppBuiltin2 ConvexHullTrickGetMin cht a
+
+pattern ConvexHullTrickInsert' cht a b = AppBuiltin3 ConvexHullTrickInsert cht a b
+
 -- errors
 pattern Bottom' t err = Lit (LitBottom t err)

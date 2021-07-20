@@ -59,10 +59,16 @@ runType = \case
         then Y.TyArray (head ts) (fromIntegral (length ts))
         else Y.TyTuple ts
   X.FunTy t ret -> Y.TyFunction <$> runType ret <*> mapM runType [t]
+  X.DataStructureTy ds -> case ds of
+    X.ConvexHullTrick -> return Y.TyConvexHullTrick
 
-runLiteral :: MonadError Error m => X.Literal -> m Y.Expr
-runLiteral = \case
-  X.LitBuiltin builtin -> throwInternalError $ "cannot use builtin functaions as values: " ++ X.formatBuiltinIsolated builtin
+runLiteral :: (MonadAlpha m, MonadError Error m) => Env -> X.Literal -> m Y.Expr
+runLiteral env = \case
+  X.LitBuiltin builtin -> do
+    (stmts, e) <- runAppBuiltin env builtin []
+    case stmts of
+      [] -> return e
+      _ -> throwInternalError "now builtin values don't use statements"
   X.LitInt n -> return $ Y.Lit (Y.LitInt64 n)
   X.LitBool p -> return $ Y.Lit (Y.LitBool p)
   X.LitNil t -> do
@@ -490,6 +496,10 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Choose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::choose" []) [e1, e2]
     X.Permute -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::permute" []) [e1, e2]
     X.MultiChoose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
+    -- data structures
+    X.ConvexHullTrickInit -> go0 $ Y.Call Y.ConvexHullTrickMake []
+    X.ConvexHullTrickGetMin -> go2 $ \cht x -> Y.Call (Y.Method "get_min") [cht, x]
+    X.ConvexHullTrickInsert -> go3 $ \cht a b -> Y.Call Y.ConvexHullTrickCopyAddLine [cht, a, b]
 
 runExprFunction :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction env f e = case f of
@@ -522,7 +532,7 @@ runExpr env = \case
     y <- lookupVarName env x
     return ([], Y.Var y)
   X.Lit lit -> do
-    lit <- runLiteral lit
+    lit <- runLiteral env lit
     return ([], lit)
   e@(X.App _ _) -> do
     let (f, args) = X.curryApp e

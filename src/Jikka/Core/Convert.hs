@@ -26,6 +26,7 @@ import qualified Jikka.Core.Convert.CloseMin as CloseMin
 import qualified Jikka.Core.Convert.CloseSum as CloseSum
 import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
+import qualified Jikka.Core.Convert.ConvexHullTrick as ConvexHullTrick
 import qualified Jikka.Core.Convert.CumulativeSum as CumulativeSum
 import qualified Jikka.Core.Convert.Eta as Eta
 import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
@@ -61,6 +62,7 @@ run' prog = do
   prog <- CumulativeSum.run prog
   prog <- BubbleLet.run prog
   prog <- ArithmeticalExpr.run prog
+  prog <- ConvexHullTrick.run prog
   prog <- StrengthReduction.run prog
   Eta.run prog
 

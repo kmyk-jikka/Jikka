@@ -19,6 +19,7 @@ module Jikka.Core.Language.ArithmeticalExpr
     unNPlusKPattern,
     makeVectorFromArithmeticalExpr,
     makeAffineFunctionFromArithmeticalExpr,
+    splitConstantFactorArithmeticalExpr,
   )
 where
 
@@ -252,3 +253,25 @@ unNPlusKPattern e = case normalizeArithmeticalExpr e of
 -- This function returns \(a, b\) for a given variable \(x\) and a given expr \(e = a x + b\) where \(a, b\) which doesn't use \(x\) free.
 makeAffineFunctionFromArithmeticalExpr :: VarName -> ArithmeticalExpr -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
 makeAffineFunctionFromArithmeticalExpr x es = first V.head <$> makeVectorFromArithmeticalExpr (V.singleton x) es
+
+-- | `splitConstantFactorArithmeticalExpr` finds \(k\) and \(e'\) for given \(e\) s.t. \(e = k e'\).
+splitConstantFactorArithmeticalExpr :: ArithmeticalExpr -> (Integer, ArithmeticalExpr)
+splitConstantFactorArithmeticalExpr e =
+  let e' = unArithmeticalExpr $ normalizeArithmeticalExpr e
+   in case (sumExprConst e', sumExprList e') of
+        (0, []) -> (0, integerArithmeticalExpr 0)
+        (k, []) -> (k, integerArithmeticalExpr 1)
+        (0, [e]) -> second arithmeticalExprFromProductExpr $ splitConstantFactorProductExpr e
+        (k, es) ->
+          let kes = map splitConstantFactorProductExpr es
+              d = foldl gcd k (map fst kes)
+           in ( d,
+                ArithmeticalExpr
+                  SumExpr
+                    { sumExprConst = k `div` d,
+                      sumExprList = map (\(k, e) -> e {productExprConst = (k * productExprConst e) `div` d}) kes
+                    }
+              )
+
+splitConstantFactorProductExpr :: ProductExpr -> (Integer, ProductExpr)
+splitConstantFactorProductExpr e = (productExprConst e, e {productExprConst = 1})

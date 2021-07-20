@@ -58,40 +58,37 @@ runCall f args = do
             throwInternalError "index out of range"
           return $ es !! fromInteger n
         Nothing -> return $ Call f args
-    (At, [e1, e2]) -> do
-      e1 <- runExpr e1
-      e2 <- runExpr e2
-      case e1 of
-        Var x -> do
-          ys <- gets (M.lookup x)
-          case ys of
-            Just ys -> do
-              let t = fst (head ys)
-              let es = map (Var . snd) ys
-              let n = case e2 of
-                    Lit (LitInt32 n) -> Just n
-                    Lit (LitInt64 n) -> Just n
-                    _ -> Nothing
-              case n of
-                Just n -> do
-                  when (n < 0 || toInteger (length ys) <= n) $ do
-                    throwInternalError "index out of range"
-                  return (es !! fromInteger n)
-                Nothing -> do
-                  return $ Call (ArrayExt t) es
-            Nothing -> return $ Call At [e1, e2]
-        Call (ArrayExt _) es -> do
+    (StdGet n, [Call (StdTuple _) es]) -> do
+      when (n < 0 || toInteger (length es) <= n) $ do
+        throwInternalError "index out of range"
+      return $ es !! fromInteger n
+    (At, [Var x, e2]) -> do
+      ys <- gets (M.lookup x)
+      case ys of
+        Just ys -> do
+          let es = map (Var . snd) ys
           let n = case e2 of
                 Lit (LitInt32 n) -> Just n
                 Lit (LitInt64 n) -> Just n
                 _ -> Nothing
           case n of
             Just n -> do
-              when (n < 0 || toInteger (length es) <= n) $ do
+              when (n < 0 || toInteger (length ys) <= n) $ do
                 throwInternalError "index out of range"
               return (es !! fromInteger n)
-            Nothing -> return $ Call At [e1, e2]
-        _ -> return $ Call At [e1, e2]
+            Nothing -> return $ Call f args
+        Nothing -> return $ Call f args
+    (At, [Call (ArrayExt _) es, e2]) -> do
+      let n = case e2 of
+            Lit (LitInt32 n) -> Just n
+            Lit (LitInt64 n) -> Just n
+            _ -> Nothing
+      case n of
+        Just n -> do
+          when (n < 0 || toInteger (length es) <= n) $ do
+            throwInternalError "index out of range"
+          return (es !! fromInteger n)
+        Nothing -> return $ Call f args
     _ -> return $ Call f args
 
 runLeftExpr :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => LeftExpr -> m LeftExpr

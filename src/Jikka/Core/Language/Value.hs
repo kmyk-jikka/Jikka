@@ -61,6 +61,11 @@ valueToTuple = \case
   ValTuple xs -> return xs
   val -> throwInternalError $ "not a tuple value: " ++ formatValue val
 
+valueToIntPair :: MonadError Error m => Value -> m (Integer, Integer)
+valueToIntPair = \case
+  ValTuple [a, b] -> (,) <$> valueToInt a <*> valueToInt b
+  val -> throwInternalError $ "not a tuple value: " ++ formatValue val
+
 valueToVector :: MonadError Error m => Value -> m (V.Vector Integer)
 valueToVector = \case
   ValTuple x -> V.fromList <$> mapM valueToInt x
