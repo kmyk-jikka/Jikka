@@ -41,11 +41,16 @@ LitBool :: Bool -> Literal
 LitChar :: Char -> Literal
 LitString :: String -> Literal
 data Function
-Callable :: Expr -> Function
 Function :: FunName -> [Type] -> Function
-Method :: Expr -> FunName -> Function
+Method :: FunName -> Function
+At :: Function
+Cast :: Type -> Function
 StdTuple :: [Type] -> Function
 StdGet :: Integer -> Function
+ArrayExt :: Type -> Function
+VecExt :: Type -> Function
+Range :: Function
+MethodSize :: Function
 data UnaryOp
 IntNop :: UnaryOp
 Negate :: UnaryOp
@@ -91,10 +96,7 @@ BinOp :: BinaryOp -> Expr -> Expr -> Expr
 Cond :: Expr -> Expr -> Expr -> Expr
 Lam :: [(Type, VarName)] -> Type -> [Statement] -> Expr
 Call :: Function -> [Expr] -> Expr
-VecExt :: Type -> [Expr] -> Expr
-ArrayExt :: Type -> [Expr] -> Expr
-At :: Expr -> Expr -> Expr
-Cast :: Type -> Expr -> Expr
+CallExpr :: Expr -> [Expr] -> Expr
 data LeftExpr
 LeftVar :: VarName -> LeftExpr
 LeftAt :: LeftExpr -> Expr -> LeftExpr
@@ -143,6 +145,10 @@ instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Literal
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Literal
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Literal
 instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Literal
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Function
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Function
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.UnaryOp
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.UnaryOp
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.UnaryOp
@@ -155,10 +161,6 @@ instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.AssignOp
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.AssignOp
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.AssignOp
 instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.AssignOp
-instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Function
-instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Function
-instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Function
-instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Function
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Expr
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Expr
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Expr
@@ -223,7 +225,6 @@ fromNameKind :: NameKind -> String
 newFreshName :: MonadAlpha m => NameKind -> m VarName
 renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
 freeVars :: Expr -> Set VarName
-freeVarsFunction :: Function -> Set VarName
 freeVarsStatements :: [Statement] -> Set VarName
 freeVarsStatement :: Statement -> Set VarName
 freeVarsAssignExpr :: AssignExpr -> Set VarName
@@ -235,17 +236,11 @@ repStatement :: VarName -> Expr -> [Statement] -> Statement
 litInt64 :: Integer -> Expr
 litInt32 :: Integer -> Expr
 incrExpr :: Expr -> Expr
-
--- | <a>fastSize</a> calls <tt>vector<a>T</a>::size()</tt> method with an
---   optimization aroung <a>Range1</a>.
-fastSize :: Expr -> Expr
-
--- | <a>fastAt</a> is subscription with an optimization aroung
---   <a>Range1</a>.
-fastAt :: Expr -> Expr -> Expr
+size :: Expr -> Expr
+at :: Expr -> Expr -> Expr
+cast :: Type -> Expr -> Expr
 assignSimple :: VarName -> Expr -> Statement
 assignAt :: VarName -> Expr -> Expr -> Statement
-callExpr :: Expr -> [Expr] -> Expr
 callFunction :: FunName -> [Type] -> [Expr] -> Expr
 callFunction' :: FunName -> [Type] -> [Expr] -> Statement
 callMethod :: Expr -> FunName -> [Expr] -> Expr
@@ -253,10 +248,11 @@ callMethod' :: Expr -> FunName -> [Expr] -> Statement
 begin :: Expr -> Expr
 end :: Expr -> Expr
 mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
-mapExprStatementFunctionM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Function -> m Function
 mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
 mapExprStatementAssignExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> AssignExpr -> m AssignExpr
 mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Statement -> m Statement
+mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> ToplevelStatement -> m ToplevelStatement
+mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceStatement :: VarName -> Expr -> Statement -> Statement
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Util.NameKind
@@ -573,6 +569,42 @@ module Jikka.CPlusPlus.Convert.UnpackTuples
 --   func(c0, c1);
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+
+module Jikka.CPlusPlus.Convert.OptimizeRange
+
+-- | <a>run</a> replaces superfluous copying.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   int b = range(a).size();
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   int b = a;
+--   </pre>
+--   
+--   Before:
+--   
+--   <pre>
+--   for (int i : jikka::range(n)) {
+--       ...
+--   }
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   for (int i = 0; i &lt; n; ++ i) {
+--       ...
+--   }
+--   </pre>
+run :: MonadError Error m => Program -> m Program
 
 
 module Jikka.CPlusPlus.Convert.MoveSemantics
