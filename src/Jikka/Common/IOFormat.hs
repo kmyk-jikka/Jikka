@@ -57,21 +57,16 @@ normalizeFormatTree = \case
           Seq formats -> formats
           format -> [format]
      in Seq (concatMap (unSeq . normalizeFormatTree) formats)
-  Loop i n body -> Loop i n (normalizeFormatTree body)
+  Loop i n body -> case normalizeFormatTree body of
+    Seq [] -> Seq []
+    body -> Loop i n body
 
-substFormatExpr :: String -> String -> FormatExpr -> FormatExpr
-substFormatExpr name value = go
-  where
-    go = \case
-      Var x -> Var (if x == name then value else x)
-      Plus e k -> Plus (go e) k
-      At e i -> At (go e) (if i == name then value else i)
-      Len e -> Len (go e)
-
-substFormatTree :: String -> String -> FormatTree -> FormatTree
-substFormatTree name value = mapFormatTree $ \case
-  Exp e -> Exp (substFormatExpr name value e)
-  format -> format
+normalizeIOFormat :: IOFormat -> IOFormat
+normalizeIOFormat format =
+  format
+    { inputTree = normalizeFormatTree (inputTree format),
+      outputTree = normalizeFormatTree (outputTree format)
+    }
 
 hasNewline :: FormatTree -> Bool
 hasNewline = \case
@@ -95,16 +90,17 @@ formatFormatTree =
           go text | patt `isPrefixOf` text = subst ++ go (drop (length patt) text)
           go [] = []
           go (c : s) = c : go s
-      unwords' = replace "\n " "\n" . replace " \n" "\n" . unwords
+      unwords' = replace "\n\n" "\n" . replace "\n " "\n" . replace " \n" "\n" . unwords
    in \case
         Exp e -> formatFormatExpr e
-        Newline -> "\n"
+        Newline -> "(newline)\n"
         Seq formats -> unwords' (map formatFormatTree formats)
         Loop i n body ->
-          let first = substFormatTree i "0" body
-              last = substFormatTree i (formatFormatExpr n) body
-              dots = if hasNewline body then "...\n" else "..."
-           in unwords' [formatFormatTree first, dots, formatFormatTree last]
+          unwords'
+            [ "for " ++ i ++ " < " ++ formatFormatExpr n ++ " {\n",
+              formatFormatTree body ++ "\n",
+              "}"
+            ]
 
 formatIOFormat :: IOFormat -> String
 formatIOFormat format =
@@ -172,6 +168,7 @@ makeReadValueIO toInt fromInt toList fromList format = wrapError' "Jikka.Common.
           n <- case n of
             Var n -> toInt =<< lookup n
             Plus (Var n) k -> (+ k) <$> (toInt =<< lookup n)
+            Len (Var xs) -> toInteger . V.length <$> (toList =<< lookup xs)
             _ -> throwInternalError $ "invalid loop size in input tree: " ++ formatFormatExpr n
           liftIO $ modifyIORef' sizes (M.insert i n)
           forM_ [0 .. n -1] $ \i' -> do
