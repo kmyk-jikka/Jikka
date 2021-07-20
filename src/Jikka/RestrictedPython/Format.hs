@@ -38,6 +38,7 @@ formatType t = case t of
   TupleTy ts -> "Tuple[" ++ intercalate ", " (map formatType ts) ++ "]"
   CallableTy ts ret -> "Callable[[" ++ intercalate ", " (map formatType ts) ++ "], " ++ formatType ret ++ "]"
   StringTy -> "str"
+  SideEffectTy -> "side-effect"
 
 formatConstant :: Constant -> String
 formatConstant = \case

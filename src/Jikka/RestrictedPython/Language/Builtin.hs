@@ -214,7 +214,7 @@ typeBuiltin = \case
   BuiltinTuple ts -> CallableTy [TupleTy ts] (TupleTy ts)
   BuiltinZip ts -> CallableTy (map ListTy ts) (TupleTy ts)
   BuiltinInput -> CallableTy [] StringTy
-  BuiltinPrint ts -> CallableTy ts NoneTy
+  BuiltinPrint ts -> CallableTy ts SideEffectTy
 
 mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
 mapTypeBuiltin f = \case
@@ -266,6 +266,7 @@ attributeNames =
     [ "count",
       "index",
       "copy",
+      "append",
       "split"
     ]
 
@@ -279,6 +280,7 @@ resolveAttribute' x = wrapAt' (loc' x) $ case value' x of
           "count" -> BuiltinCount <$> genType
           "index" -> BuiltinIndex <$> genType
           "copy" -> BuiltinCopy <$> genType
+          "append" -> BuiltinAppend <$> genType
           "split" -> return BuiltinSplit
           _ -> throwInternalError $ "not exhaustive: " ++ unAttributeName x'
   _ -> return x
@@ -305,6 +307,7 @@ formatAttribute = \case
   BuiltinCount _ -> "count"
   BuiltinIndex _ -> "index"
   BuiltinCopy _ -> "copy"
+  BuiltinAppend _ -> "append"
   BuiltinSplit -> "split"
 
 typeAttribute :: Attribute -> (Type, Type)
@@ -313,6 +316,7 @@ typeAttribute = \case
   BuiltinCount t -> (ListTy t, CallableTy [t] IntTy)
   BuiltinIndex t -> (ListTy t, CallableTy [t] IntTy)
   BuiltinCopy t -> (ListTy t, CallableTy [] (ListTy t))
+  BuiltinAppend t -> (ListTy t, CallableTy [t] SideEffectTy)
   BuiltinSplit -> (StringTy, CallableTy [] (ListTy StringTy))
 
 mapTypeAttribute :: (Type -> Type) -> Attribute -> Attribute
@@ -321,4 +325,5 @@ mapTypeAttribute f = \case
   BuiltinCount t -> BuiltinCount (f t)
   BuiltinIndex t -> BuiltinIndex (f t)
   BuiltinCopy t -> BuiltinCopy (f t)
+  BuiltinAppend t -> BuiltinAppend (f t)
   BuiltinSplit -> BuiltinSplit

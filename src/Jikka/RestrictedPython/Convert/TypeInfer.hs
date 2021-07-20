@@ -174,7 +174,7 @@ formularizeStatement ret = \case
   Assert e -> do
     formularizeExpr' e BoolTy
   Expr' e -> do
-    formularizeExpr' e NoneTy
+    formularizeExpr' e SideEffectTy
 
 formularizeToplevelStatement :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelStatement -> m ()
 formularizeToplevelStatement = \case
@@ -222,6 +222,7 @@ subst sigma = \case
   TupleTy ts -> TupleTy (map (subst sigma) ts)
   CallableTy ts ret -> CallableTy (map (subst sigma) ts) (subst sigma ret)
   StringTy -> StringTy
+  SideEffectTy -> SideEffectTy
 
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
@@ -275,6 +276,7 @@ substUnit = \case
   TupleTy ts -> TupleTy (map substUnit ts)
   CallableTy ts ret -> CallableTy (map substUnit ts) (substUnit ret)
   StringTy -> StringTy
+  SideEffectTy -> SideEffectTy
 
 -- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type

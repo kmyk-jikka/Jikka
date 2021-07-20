@@ -58,6 +58,7 @@ runType = \case
   X.TupleTy ts -> Y.TupleTy <$> mapM runType ts
   X.CallableTy args ret -> Y.curryFunTy <$> mapM runType args <*> runType ret
   X.StringTy -> throwSemanticError "cannot use `str' type out of main function"
+  X.SideEffectTy -> throwSemanticError "side-effect type must be used only as expr-statement" -- TODO: check in Jikka.RestrictedPython.Language.Lint
 
 runConstant :: MonadError Error m => X.Constant -> m Y.Expr
 runConstant = \case
@@ -164,6 +165,7 @@ runAttribute a = wrapAt' (loc' a) $ do
     X.BuiltinCopy t -> do
       t <- runType t
       return $ Y.Lam "x" t (Y.Var "x")
+    X.BuiltinAppend _ -> throwSemanticError "cannot use `append' out of expr-statements"
     X.BuiltinSplit -> throwSemanticError "cannot use `split' out of main function"
 
 runBoolOp :: X.BoolOp -> Y.Builtin
@@ -377,7 +379,16 @@ runStatements (stmt : stmts) cont = case stmt of
   X.For x iter body -> runForStatement x iter body stmts cont
   X.If e body1 body2 -> runIfStatement e body1 body2 stmts cont
   X.Assert _ -> runStatements stmts cont
-  X.Expr' _ -> runStatements stmts cont
+  X.Append loc t x e -> do
+    case X.exprToTarget x of
+      Nothing -> throwSemanticErrorAt' loc "invalid `append` method"
+      Just x -> do
+        t <- runType t
+        y <- runTargetExpr x
+        e <- runExpr e
+        runAssign x (Y.Snoc' t y e) $ do
+          runStatements stmts cont
+  X.Expr' e -> throwSemanticErrorAt' (loc' e) "invalid expr-statement"
 
 runToplevelStatements :: (MonadState Env m, MonadAlpha m, MonadError Error m) => [X.ToplevelStatement] -> m Y.ToplevelExpr
 runToplevelStatements [] = return $ Y.ResultExpr (Y.Var "solve")

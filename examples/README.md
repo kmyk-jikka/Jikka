@@ -35,7 +35,7 @@
     -   CODE FESTIVAL 2015 決勝 [D - 足ゲームII](https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d)
 -   :hourglass: TLE `m_solutions2019_e.py`
     -   M-SOLUTIONS Programming Contest [E - Product of Arithmetic Progression](https://atcoder.jp/contests/m-solutions2019/tasks/m_solutions2019_e?lang=ja)
--   :warning: CE `wip/point_add_range_sum.py`
+-   :hourglass: TLE `wip/point_add_range_sum.py`
     -   Library Checker [Point Add Range Sum](https://judge.yosupo.jp/problem/point_add_range_sum)
     -   A normal segment tree / 通常のセグメント木
 -   :warning: CE `wip/dp_w.py`

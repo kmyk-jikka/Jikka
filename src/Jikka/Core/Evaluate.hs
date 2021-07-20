@@ -181,6 +181,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     ModMatPow _ -> go3' pure valueToInt valueToInt valueFromModMatrix $ \f k m -> join (matpow' <$> valueToModMatrix m f <*> pure k)
     -- list functions
     Cons _ -> go2 pure valueToList ValList V.cons
+    Snoc _ -> go2 valueToList pure ValList V.snoc
     Foldl _ _ -> go3' pure pure valueToList id $ \f x a -> V.foldM (\x y -> callValue f [x, y]) x a
     Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
     Len _ -> go1 valueToList ValInt (fromIntegral . V.length)

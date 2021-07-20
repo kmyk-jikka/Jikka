@@ -34,6 +34,7 @@ import Jikka.Common.Error
 import Jikka.RestrictedPython.Format (formatAttribute, formatBuiltin, formatOperator)
 import Jikka.RestrictedPython.Language.Expr
 import Jikka.RestrictedPython.Language.Lint
+import Jikka.RestrictedPython.Language.Util
 import Jikka.RestrictedPython.Language.Value
 
 assign :: MonadState Local m => VarName -> Value -> m ()
@@ -416,6 +417,16 @@ evalCall' f actualArgs = case f of
 --         \mathbf{assert}~ e \mid \mu \Downarrow \mathbf{err}
 --     }
 -- \]
+--
+-- === Rules for \(e\)
+--
+-- \[
+--     \cfrac{
+--         e \mid \mu \Downarrow v
+--     }{
+--         x.\mathrm{append}(e) \mid \mu \Downarrow \mathbf{stop} \mid (x \mapsto \mathrm{snoc}(\mu(x), v); \mu)
+--     }
+-- \]
 evalStatement :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Statement -> m (Maybe Value)
 evalStatement = \case
   Return e -> do
@@ -455,9 +466,15 @@ evalStatement = \case
     when (v == BoolVal False) $ do
       throwRuntimeError "assertion failure"
     return Nothing
-  Expr' e -> do
-    _ <- evalExpr e
-    return Nothing
+  Append loc _ x e -> case exprToTarget x of
+    Nothing -> throwSemanticErrorAt' loc "wrong `append` method"
+    Just x -> do
+      v1 <- evalTarget x
+      v2 <- evalExpr e
+      v <- ListVal <$> (V.snoc <$> toList v1 <*> pure v2)
+      assignTarget x v
+      return Nothing
+  Expr' e -> throwSemanticErrorAt' (loc' e) "wrong expr-statement"
 
 -- | `evalStatements` evaluates sequences of statements of our restricted Python-like language.
 --
@@ -659,4 +676,5 @@ evalAttribute v0 a args = wrapError' ("calling " ++ formatAttribute a) $ do
       Nothing -> throwRuntimeError $ "not in list: " ++ formatValue x
       Just i -> return (toInteger i)
     BuiltinCopy _ -> go0 toList ListVal id
+    BuiltinAppend _ -> throwSemanticError "cannot use `append' out of expr-statements"
     BuiltinSplit -> throwSemanticError "cannot use `split' out of main function"

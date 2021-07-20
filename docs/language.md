@@ -182,6 +182,11 @@ The augmented assignment `x @= a` statement binds the value `x @ a` to the varia
 
 -   Implementations can use `assert` statements as hints for optimization.
 
+### expr statements
+
+Expr statements runs processes with side effects.
+Now only `xs.append(x)` is available.
+
 
 ## Semantics (Exprs)
 

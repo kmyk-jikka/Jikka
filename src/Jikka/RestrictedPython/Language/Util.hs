@@ -46,6 +46,7 @@ module Jikka.RestrictedPython.Language.Util
     targetVars',
     hasSubscriptTrg,
     hasBareNameTrg,
+    exprToTarget,
 
     -- * programs
     toplevelMainDef,
@@ -84,6 +85,7 @@ freeTyVars = nub . go
       TupleTy ts -> concat $ mapM go ts
       CallableTy ts ret -> concat $ mapM go (ret : ts)
       StringTy -> []
+      SideEffectTy -> []
 
 -- | `freeVars'` reports all free variables.
 freeVars :: Expr' -> [VarName]
@@ -321,6 +323,14 @@ hasBareNameTrg (WithLoc' _ x) = case x of
   SubscriptTrg _ _ -> False
   NameTrg _ -> True
   TupleTrg xs -> any hasSubscriptTrg xs
+
+exprToTarget :: Expr' -> Maybe Target'
+exprToTarget e =
+  WithLoc' (loc' e) <$> case value' e of
+    Name x -> Just $ NameTrg x
+    Tuple es -> TupleTrg <$> mapM exprToTarget es
+    Subscript e1 e2 -> SubscriptTrg <$> exprToTarget e1 <*> pure e2
+    _ -> Nothing
 
 toplevelMainDef :: [Statement] -> Program
 toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]

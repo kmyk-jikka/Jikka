@@ -42,6 +42,7 @@ module Jikka.RestrictedPython.Language.Expr
     Target (..),
     Target',
     Statement (..),
+    pattern Append,
     ToplevelStatement (..),
     Program,
   )
@@ -83,6 +84,7 @@ unAttributeName (AttributeName x) = x
 --         \vert & \tau \times \tau \times \dots \times \tau \\
 --         \vert & \tau \times \tau \times \dots \times \tau \to \tau
 --         \vert & \string
+--         \vert & \mathbf{side-effect}
 --     \end{array}
 -- \]
 --
@@ -95,6 +97,7 @@ data Type
   | TupleTy [Type]
   | CallableTy [Type] Type
   | StringTy
+  | SideEffectTy
   deriving (Eq, Ord, Show, Read)
 
 pattern NoneTy = TupleTy []
@@ -199,6 +202,8 @@ data Attribute
     BuiltinIndex Type
   | -- | "list.copy" \(: \forall \alpha. \list(\alpha) \to \epsilon \to \list(\alpha)\)
     BuiltinCopy Type
+  | -- | "list.append" \(: \forall \alpha. \list(\alpha) \to \alpha \to \mathbf{side-effect}\)
+    BuiltinAppend Type
   | -- | "str.split" \(: \forall \alpha. \string \to \epsilon \to \list(\string)\)
     BuiltinSplit
   deriving (Eq, Ord, Show, Read)
@@ -292,6 +297,8 @@ data Statement
   | -- | expression statements
     Expr' Expr'
   deriving (Eq, Ord, Show, Read)
+
+pattern Append loc t e1 e2 <- Expr' (WithLoc' loc (Call (WithLoc' _ (Attribute e1 (WithLoc' _ (BuiltinAppend t)))) [e2]))
 
 -- | `TopLevelStatement` represents the statements of our restricted Python-like language.
 -- They appear in the toplevel of programs.

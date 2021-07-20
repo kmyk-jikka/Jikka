@@ -110,6 +110,7 @@ analyzeBuiltin = \case
   ModMatPow _ -> fun "modmatpow"
   -- list functions
   Cons t -> Fun [t] "cons"
+  Snoc t -> Fun [t] "snoc"
   Foldl t1 t2 -> Fun [t1, t2] "foldl"
   Scanl t1 t2 -> Fun [t1, t2] "scanl"
   Iterate t -> Fun [t] "iterate"
