@@ -17,10 +17,13 @@ module Jikka.Core.Language.RewriteRules
     applyRewriteRuleToplevelExpr,
     applyRewriteRuleProgram,
     applyRewriteRuleProgram',
+    traceRewriteRule,
   )
 where
 
 import Data.Maybe (fromMaybe)
+import Debug.Trace
+import Jikka.Core.Format (formatExpr)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Util (curryFunTy)
 
@@ -114,3 +117,10 @@ applyRewriteRuleProgram f = applyRewriteRuleToplevelExpr f []
 
 applyRewriteRuleProgram' :: Monad m => RewriteRule m -> Program -> m Program
 applyRewriteRuleProgram' f prog = fromMaybe prog <$> applyRewriteRuleProgram f prog
+
+traceRewriteRule :: Monad m => RewriteRule m -> RewriteRule m
+traceRewriteRule f = RewriteRule $ \env e -> do
+  e' <- unRewriteRule f env e
+  case e' of
+    Nothing -> return Nothing
+    Just e' -> trace ("before:\n" ++ formatExpr e ++ "\nafter:\n" ++ formatExpr e') (return (Just e'))
