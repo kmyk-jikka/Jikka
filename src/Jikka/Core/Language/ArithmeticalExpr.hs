@@ -71,6 +71,7 @@ parseProductExpr = \case
   LitInt' n -> ProductExpr {productExprConst = n, productExprList = []}
   Negate' e -> negateProductExpr (parseProductExpr e)
   Mult' e1 e2 -> multProductExpr (parseProductExpr e1) (parseProductExpr e2)
+  Pow' e1 (LitInt' k) | 0 <= k && k < 10 -> iterate (multProductExpr (parseProductExpr e1)) (integerProductExpr 1) !! fromInteger k
   e -> ProductExpr {productExprConst = 1, productExprList = [e]}
 
 sumExprFromProductExpr :: ProductExpr -> SumExpr
