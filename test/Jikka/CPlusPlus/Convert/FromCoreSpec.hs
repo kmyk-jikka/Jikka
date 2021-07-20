@@ -48,8 +48,8 @@ spec = describe "run" $ do
                             ( Y.BinOp
                                 Y.Mul
                                 (Y.Var "n_1")
-                                ( Y.Call
-                                    (Y.Callable (Y.Var "f_0"))
+                                ( Y.CallExpr
+                                    (Y.Var "f_0")
                                     [Y.BinOp Y.Sub (Y.Var "n_1") (Y.Lit (Y.LitInt64 1))]
                                 )
                             )
@@ -63,6 +63,6 @@ spec = describe "run" $ do
             Y.TyInt64
             "solve"
             [(Y.TyInt64, "a3")]
-            [Y.Return (Y.Call (Y.Callable (Y.Var "f_0")) [Y.Var "a3"])]
+            [Y.Return (Y.CallExpr (Y.Var "f_0") [Y.Var "a3"])]
     let expected = Y.Program [expectedF, expectedSolve]
     run' prog `shouldBe` Right expected

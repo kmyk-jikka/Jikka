@@ -16,9 +16,10 @@
     -   Educational DP Contest [B - Frog 2](https://atcoder.jp/contests/dp/tasks/dp_b)
     -   AC with a naive solution / 愚直解が AC
     -   submission at v5.0.10.0: <https://atcoder.jp/contests/dp/submissions/24380616>
--   :hourglass: TLE `dp_c.py`
+-   :heavy_check_mark: AC `dp_c.py`
     -   Educational DP Contest [C - Vacation](https://atcoder.jp/contests/dp/tasks/dp_c)
     -   AC with a naive solution / 愚直解が AC
+    -   submission at v5.0.10.0: <https://atcoder.jp/contests/dp/submissions/24396317>
 -   :hourglass: TLE `dp_q.py`
     -   Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
     -   A lazy propagation segment tree / 遅延伝播セグメント木

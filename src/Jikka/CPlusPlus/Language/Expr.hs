@@ -44,11 +44,16 @@ data Literal
   deriving (Eq, Ord, Show, Read)
 
 data Function
-  = Callable Expr
-  | Function FunName [Type]
-  | Method Expr FunName
+  = Function FunName [Type]
+  | Method FunName
+  | At
+  | Cast Type
   | StdTuple [Type]
   | StdGet Integer
+  | ArrayExt Type
+  | VecExt Type
+  | Range
+  | MethodSize
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp
@@ -102,10 +107,7 @@ data Expr
   | Cond Expr Expr Expr
   | Lam [(Type, VarName)] Type [Statement]
   | Call Function [Expr]
-  | VecExt Type [Expr]
-  | ArrayExt Type [Expr]
-  | At Expr Expr
-  | Cast Type Expr
+  | CallExpr Expr [Expr]
   deriving (Eq, Ord, Show, Read)
 
 data LeftExpr

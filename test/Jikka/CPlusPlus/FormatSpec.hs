@@ -23,7 +23,7 @@ spec = describe "run" $ do
                     (Lit (LitInt32 0))
                     (BinOp LessThan (Var (VarName "i")) (Var (VarName "n")))
                     (AssignIncr (LeftVar (VarName "i")))
-                    [ Assign (AssignExpr AddAssign (LeftVar (VarName "x")) (Cast TyInt64 (Var (VarName "i"))))
+                    [ Assign (AssignExpr AddAssign (LeftVar (VarName "x")) (Call (Cast TyInt64) [Var (VarName "i")]))
                     ],
                   Return (Var (VarName "x"))
                 ]

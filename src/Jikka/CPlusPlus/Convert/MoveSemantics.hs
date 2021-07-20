@@ -31,20 +31,9 @@ runExpr = \case
   UnOp op e -> UnOp op <$> runExpr e
   BinOp op e1 e2 -> BinOp op <$> runExpr e1 <*> runExpr e2
   Cond e1 e2 e3 -> Cond <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
-  Lam args ret body -> Lam args ret <$> runStatementsInLambda body
-  Call e args -> Call <$> runFunction e <*> mapM runExpr args
-  ArrayExt t es -> ArrayExt t <$> mapM runExpr es
-  VecExt t es -> VecExt t <$> mapM runExpr es
-  At e1 e2 -> At <$> runExpr e1 <*> runExpr e2
-  Cast t e -> Cast t <$> runExpr e
-
-runFunction :: MonadState (M.Map VarName VarName) m => Function -> m Function
-runFunction = \case
-  Callable e -> Callable <$> runExpr e
-  Function h ts -> return $ Function h ts
-  Method e h -> Method <$> runExpr e <*> return h
-  StdTuple ts -> return $ StdTuple ts
-  StdGet n -> return $ StdGet n
+  Lam args ret body -> Lam args ret <$> runStatements body []
+  Call f args -> Call f <$> mapM runExpr args
+  CallExpr f args -> CallExpr <$> runExpr f <*> mapM runExpr args
 
 runLeftExpr :: MonadState (M.Map VarName VarName) m => LeftExpr -> m LeftExpr
 runLeftExpr = \case
@@ -97,53 +86,6 @@ runStatement stmt cont = case stmt of
         return []
       _ -> do
         return [Declare t x e]
-  DeclareDestructure xs e -> do
-    e <- runExpr e
-    return [DeclareDestructure xs e]
-  Assign e -> do
-    e <- runAssignExpr e
-    case e of
-      AssignExpr SimpleAssign (LeftVar y) (Var x) | x == y -> return []
-      _ -> return [Assign e]
-  Assert e -> do
-    e <- runExpr e
-    return [Assert e]
-  Return e -> do
-    e <- runExpr e
-    return [Return e]
-
-runStatementsInLambda :: MonadState (M.Map VarName VarName) m => [Statement] -> m [Statement]
-runStatementsInLambda stmts = concat <$> mapM runStatementInLambda stmts
-
-runStatementInLambda :: MonadState (M.Map VarName VarName) m => Statement -> m [Statement]
-runStatementInLambda = \case
-  ExprStatement e -> do
-    e <- runExpr e
-    return [ExprStatement e]
-  Block stmts -> do
-    runStatementsInLambda stmts
-  If e body1 body2 -> do
-    e <- runExpr e
-    body1 <- runStatementsInLambda body1
-    body2 <- traverse runStatementsInLambda body2
-    return [If e body1 body2]
-  For t x init pred incr body -> do
-    init <- runExpr init
-    pred <- runExpr pred
-    incr <- runAssignExpr incr
-    body <- runStatementsInLambda body
-    return [For t x init pred incr body]
-  ForEach t x e body -> do
-    e <- runExpr e
-    body <- runStatementsInLambda body
-    return [ForEach t x e body]
-  While e body -> do
-    e <- runExpr e
-    body <- runStatementsInLambda body
-    return [While e body]
-  Declare t x e -> do
-    e <- traverse runExpr e
-    return [Declare t x e]
   DeclareDestructure xs e -> do
     e <- runExpr e
     return [DeclareDestructure xs e]

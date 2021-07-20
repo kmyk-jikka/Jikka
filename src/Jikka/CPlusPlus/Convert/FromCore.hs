@@ -161,7 +161,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
             ++ stmtsF
             ++ [ Y.repStatement
                    i
-                   (Y.Cast Y.TyInt32 n)
+                   (Y.cast Y.TyInt32 n)
                    (body ++ [Y.assignSimple y f])
                ],
           Y.Var y
@@ -248,34 +248,34 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmtsF, body, f) <- runExprFunction2 env f (Y.fastAt (Y.Var ys) (Y.Var i)) (Y.fastAt xs (Y.Var i))
+      (stmtsF, body, f) <- runExprFunction2 env f (Y.at (Y.Var ys) (Y.Var i)) (Y.at xs (Y.Var i))
       return
         ( stmtsInit ++ stmtsXs
-            ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.fastSize xs)])),
+            ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.size xs)])),
                  Y.assignAt ys (Y.litInt32 0) init
                ]
             ++ stmtsF
             ++ [ Y.repStatement
                    i
-                   (Y.Cast Y.TyInt32 (Y.fastSize xs))
+                   (Y.cast Y.TyInt32 (Y.size xs))
                    (body ++ [Y.assignAt ys (Y.incrExpr (Y.Var i)) f])
                ],
           Y.Var ys
         )
-    X.Len _ -> go1 $ \e -> Y.Cast Y.TyInt64 (Y.Call (Y.Method e "size") [])
+    X.Len _ -> go1 $ \e -> Y.cast Y.TyInt64 (Y.size e)
     X.Map _ t2 -> go2'' $ \f xs -> do
       (stmtsXs, xs) <- runExpr env xs
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmtsF, body, f) <- runExprFunction env f (Y.fastAt xs (Y.Var i))
+      (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
       return
         ( stmtsXs
-            ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.fastSize xs]))]
+            ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.size xs]))]
             ++ stmtsF
             ++ [ Y.repStatement
                    i
-                   (Y.Cast Y.TyInt32 (Y.fastSize xs))
+                   (Y.cast Y.TyInt32 (Y.size xs))
                    (body ++ [Y.assignAt ys (Y.Var i) f])
                ],
           Y.Var ys
@@ -304,7 +304,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
                ],
           Y.Var ys
         )
-    X.At _ -> go2 $ \e1 e2 -> Y.At e1 e2
+    X.At _ -> go2 $ \e1 e2 -> Y.at e1 e2
     X.SetAt t -> go3' $ \xs i x -> do
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
@@ -431,7 +431,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
           ],
           Y.Var ys
         )
-    X.Range1 -> go1 $ \n -> Y.callFunction "jikka::range" [] [n] -- TODO: inline this without breaking `fastAt` and `fastSize`
+    X.Range1 -> go1 $ \n -> Y.Call Y.Range [n]
     X.Range2 -> go2' $ \from to -> do
       ys <- Y.newFreshName Y.LocalNameKind
       return
@@ -461,13 +461,13 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       ts <- mapM runType ts
       return $
         if Y.shouldBeArray ts
-          then Y.ArrayExt (head ts) es
+          then Y.Call (Y.ArrayExt (head ts)) es
           else Y.Call (Y.StdTuple ts) es
     X.Proj ts n -> go1' $ \e -> do
       ts <- mapM runType ts
       return . ([],) $
         if Y.shouldBeArray ts
-          then Y.At e (Y.Lit (Y.LitInt32 (fromIntegral n)))
+          then Y.at e (Y.Lit (Y.LitInt32 (fromIntegral n)))
           else Y.Call (Y.StdGet (toInteger n)) [e]
     -- comparison
     X.LessThan _ -> go2 $ \e1 e2 -> Y.BinOp Y.LessThan e1 e2
@@ -492,7 +492,7 @@ runExprFunction env f e = case f of
     return ([], stmts', body')
   f -> do
     (stmts, f) <- runExpr env f
-    return (stmts, [], Y.callExpr f [e])
+    return (stmts, [], Y.CallExpr f [e])
 
 runExprFunction2 :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction2 env f e1 e2 = case f of
@@ -505,7 +505,7 @@ runExprFunction2 env f e1 e2 = case f of
     return ([], stmts', body')
   f -> do
     (stmts, f) <- runExpr env f
-    return (stmts, [], Y.callExpr (Y.callExpr f [e1]) [e2])
+    return (stmts, [], Y.CallExpr (Y.CallExpr f [e1]) [e2])
 
 runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m ([Y.Statement], Y.Expr)
 runExpr env = \case
@@ -537,11 +537,11 @@ runExpr env = \case
               else do
                 (stmts, e) <- runAppBuiltin env builtin (take arity args)
                 args <- mapM (runExpr env) (drop arity args)
-                return (concatMap fst args ++ stmts, Y.Call (Y.Callable e) (map snd args))
+                return (concatMap fst args ++ stmts, Y.CallExpr e (map snd args))
       _ -> do
         args <- mapM (runExpr env) args
         (stmts, f) <- runExpr env f
-        return (stmts ++ concatMap fst args, Y.Call (Y.Callable f) (map snd args))
+        return (stmts ++ concatMap fst args, Y.CallExpr f (map snd args))
   e@(X.Lam _ _ _) -> do
     let (args, body) = X.uncurryLam e
     ys <- mapM (renameVarName' Y.LocalArgumentNameKind . fst) args
@@ -576,7 +576,7 @@ runToplevelVarDef env x t e = do
   (stmts, e) <- runExpr env e
   case stmts of
     [] -> return [Y.VarDef t x e]
-    _ -> return [Y.VarDef t x (Y.Call (Y.Callable (Y.Lam [] t (stmts ++ [Y.Return e]))) [])]
+    _ -> return [Y.VarDef t x (Y.CallExpr (Y.Lam [] t (stmts ++ [Y.Return e])) [])]
 
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case
@@ -603,7 +603,7 @@ runToplevelExpr env = \case
               y <- Y.newFreshName Y.ArgumentNameKind
               return (t, y)
             (stmts, e) <- runExpr env e
-            let body = stmts ++ [Y.Return (Y.Call (Y.Callable e) (map (Y.Var . snd) args))]
+            let body = stmts ++ [Y.Return (Y.CallExpr e (map (Y.Var . snd) args))]
             return (args, body)
         ret <- runType ret
         return [Y.FunDef ret f args body]

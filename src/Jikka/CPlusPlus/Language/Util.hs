@@ -12,7 +12,7 @@ import Jikka.Common.Alpha
 fromLeftExpr :: LeftExpr -> Expr
 fromLeftExpr = \case
   LeftVar x -> Var x
-  LeftAt x e -> At (fromLeftExpr x) e
+  LeftAt x e -> Call At [fromLeftExpr x, e]
   LeftGet n e -> Call (Function "std::get" [TyIntValue n]) [fromLeftExpr e]
 
 data NameKind
@@ -52,19 +52,8 @@ freeVars = \case
   BinOp _ e1 e2 -> freeVars e1 <> freeVars e2
   Cond e1 e2 e3 -> freeVars e1 <> freeVars e2 <> freeVars e3
   Lam args _ body -> freeVarsStatements body S.\\ S.fromList (map snd args)
-  Call f args -> freeVarsFunction f <> mconcat (map freeVars args)
-  ArrayExt _ es -> mconcat (map freeVars es)
-  VecExt _ es -> mconcat (map freeVars es)
-  At e1 e2 -> freeVars e1 <> freeVars e2
-  Cast _ e -> freeVars e
-
-freeVarsFunction :: Function -> S.Set VarName
-freeVarsFunction = \case
-  Callable e -> freeVars e
-  Function _ _ -> S.empty
-  Method e _ -> freeVars e
-  StdTuple _ -> S.empty
-  StdGet _ -> S.empty
+  Call _ args -> mconcat (map freeVars args)
+  CallExpr f args -> freeVars f <> mconcat (map freeVars args)
 
 freeVarsStatements :: [Statement] -> S.Set VarName
 freeVarsStatements = mconcat . map freeVarsStatement
@@ -116,24 +105,20 @@ litInt32 n = Lit (LitInt32 n)
 incrExpr :: Expr -> Expr
 incrExpr e = BinOp Add e (Lit (LitInt32 1))
 
--- | `fastSize` calls @vector<T>::size()@ method with an optimization aroung `Jikka.Core.Language.Range1`.
-fastSize :: Expr -> Expr
-fastSize (Call (Function "jikka::range" []) [n]) = n
-fastSize e = Call (Method e "size") []
+size :: Expr -> Expr
+size e = Call MethodSize [e]
 
--- | `fastAt` is subscription with an optimization aroung `Jikka.Core.Language.Range1`.
-fastAt :: Expr -> Expr -> Expr
-fastAt (Call (Function "jikka::range" []) [_]) i = i
-fastAt e i = At e i
+at :: Expr -> Expr -> Expr
+at e i = Call At [e, i]
+
+cast :: Type -> Expr -> Expr
+cast t e = Call (Cast t) [e]
 
 assignSimple :: VarName -> Expr -> Statement
 assignSimple x e = Assign (AssignExpr SimpleAssign (LeftVar x) e)
 
 assignAt :: VarName -> Expr -> Expr -> Statement
 assignAt xs i e = Assign (AssignExpr SimpleAssign (LeftAt (LeftVar xs) i) e)
-
-callExpr :: Expr -> [Expr] -> Expr
-callExpr f args = Call (Callable f) args
 
 callFunction :: FunName -> [Type] -> [Expr] -> Expr
 callFunction f ts args = Call (Function f ts) args
@@ -142,16 +127,16 @@ callFunction' :: FunName -> [Type] -> [Expr] -> Statement
 callFunction' = ((ExprStatement .) .) . callFunction
 
 callMethod :: Expr -> FunName -> [Expr] -> Expr
-callMethod e f args = Call (Method e f) args
+callMethod e f args = Call (Method f) (e : args)
 
 callMethod' :: Expr -> FunName -> [Expr] -> Statement
 callMethod' = ((ExprStatement .) .) . callMethod
 
 begin :: Expr -> Expr
-begin e = Call (Method e "begin") []
+begin e = Call (Method "begin") [e]
 
 end :: Expr -> Expr
-end e = Call (Method e "end") []
+end e = Call (Method "end") [e]
 
 mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
 mapExprStatementExprM f g = go
@@ -163,19 +148,8 @@ mapExprStatementExprM f g = go
       BinOp op e1 e2 -> f =<< (BinOp op <$> go e1 <*> go e2)
       Cond e1 e2 e3 -> f =<< (Cond <$> go e1 <*> go e2 <*> go e3)
       Lam args ret body -> f . Lam args ret =<< mapM (mapExprStatementStatementM f g) body
-      Call e args -> f =<< (Call <$> mapExprStatementFunctionM f g e <*> mapM go args)
-      ArrayExt t es -> f . ArrayExt t =<< mapM go es
-      VecExt t es -> f . VecExt t =<< mapM go es
-      At e1 e2 -> f =<< (At <$> go e1 <*> go e2)
-      Cast t e -> f . Cast t =<< go e
-
-mapExprStatementFunctionM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Function -> m Function
-mapExprStatementFunctionM f g = \case
-  Callable e -> Callable <$> mapExprStatementExprM f g e
-  Function h ts -> return $ Function h ts
-  Method e h -> Method <$> mapExprStatementExprM f g e <*> return h
-  StdTuple ts -> return $ StdTuple ts
-  StdGet n -> return $ StdGet n
+      Call g args -> f . Call g =<< mapM go args
+      CallExpr g args -> f =<< (CallExpr <$> go g <*> mapM go args)
 
 mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
 mapExprStatementLeftExprM f g = \case
@@ -205,6 +179,14 @@ mapExprStatementStatementM f g = go
       Assign e -> g . Assign =<< mapExprStatementAssignExprM f g e
       Assert e -> g . Assert =<< go' e
       Return e -> g . Return =<< go' e
+
+mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> ToplevelStatement -> m ToplevelStatement
+mapExprStatementToplevelStatementM f g = \case
+  VarDef t x e -> VarDef t x <$> mapExprStatementExprM f g e
+  FunDef ret h args body -> FunDef ret h args <$> mapM (mapExprStatementStatementM f g) body
+
+mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
+mapExprStatementProgramM f g (Program decls) = Program <$> mapM (mapExprStatementToplevelStatementM f g) decls
 
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceExpr x e = runIdentity . mapExprStatementExprM go return
