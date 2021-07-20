@@ -2,7 +2,25 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
 
-module Jikka.Core.Language.ArithmeticalExpr where
+module Jikka.Core.Language.ArithmeticalExpr
+  ( -- * Basic functions
+    ArithmeticalExpr,
+    parseArithmeticalExpr,
+    formatArithmeticalExpr,
+    integerArithmeticalExpr,
+    negateArithmeticalExpr,
+    plusArithmeticalExpr,
+    minusArithmeticalExpr,
+    multArithmeticalExpr,
+    isZeroArithmeticalExpr,
+    isOneArithmeticalExpr,
+
+    -- * Advanced functions
+    unNPlusKPattern,
+    makeVectorFromArithmeticalExpr,
+    makeAffineFunctionFromArithmeticalExpr,
+  )
+where
 
 import Control.Arrow
 import Control.Monad
@@ -31,10 +49,10 @@ data SumExpr = SumExpr
 
 type ArithmeticalExpr = SumExpr
 
-oneProductExpr :: ProductExpr
-oneProductExpr =
+integerProductExpr :: Integer -> ProductExpr
+integerProductExpr n =
   ProductExpr
-    { productExprConst = 1,
+    { productExprConst = n,
       productExprList = []
     }
 
@@ -62,12 +80,15 @@ sumExprFromProductExpr e =
       sumExprConst = 0
     }
 
-sumExprFromInteger :: Integer -> SumExpr
-sumExprFromInteger n =
+integerSumExpr :: Integer -> SumExpr
+integerSumExpr n =
   SumExpr
     { sumExprConst = n,
       sumExprList = []
     }
+
+integerArithmeticalExpr :: Integer -> ArithmeticalExpr
+integerArithmeticalExpr = integerSumExpr
 
 negateSumExpr :: SumExpr -> SumExpr
 negateSumExpr e =
@@ -92,6 +113,18 @@ multSumExpr e1 e2 =
          in map (uncurry multProductExpr) ((,) <$> es1 <*> es2),
       sumExprConst = sumExprConst e1 * sumExprConst e2
     }
+
+negateArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
+negateArithmeticalExpr = negateSumExpr
+
+plusArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
+plusArithmeticalExpr = plusSumExpr
+
+minusArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
+minusArithmeticalExpr e1 e2 = plusSumExpr e1 (negateArithmeticalExpr e2)
+
+multArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
+multArithmeticalExpr = multSumExpr
 
 parseSumExpr :: Expr -> SumExpr
 parseSumExpr = \case
@@ -135,7 +168,7 @@ formatSumExpr e = case sumExprList e of
      in k' (foldl go (formatProductExpr eHead) esTail)
 
 formatArithmeticalExpr :: ArithmeticalExpr -> Expr
-formatArithmeticalExpr = formatSumExpr
+formatArithmeticalExpr = formatSumExpr . normalizeArithmeticalExpr
 
 normalizeProductExpr :: ProductExpr -> ProductExpr
 normalizeProductExpr e =
@@ -169,8 +202,8 @@ normalizeArithmeticalExpr = normalizeSumExpr
 makeVectorFromArithmeticalExpr :: V.Vector VarName -> ArithmeticalExpr -> Maybe (V.Vector ArithmeticalExpr, ArithmeticalExpr)
 makeVectorFromArithmeticalExpr xs es = runST $ do
   runMaybeT $ do
-    f <- lift $ MV.replicate (V.length xs) (sumExprFromInteger 0)
-    c <- lift $ newSTRef (sumExprFromInteger (sumExprConst es))
+    f <- lift $ MV.replicate (V.length xs) (integerArithmeticalExpr 0)
+    c <- lift $ newSTRef (integerArithmeticalExpr (sumExprConst es))
     forM_ (sumExprList es) $ \e -> do
       let indices = V.imap (\i x -> map (i,) (findIndices (x `isFreeVar`) (productExprList e))) xs
       case concat (V.toList indices) of
@@ -184,10 +217,10 @@ makeVectorFromArithmeticalExpr xs es = runST $ do
     return (V.map normalizeArithmeticalExpr f, normalizeArithmeticalExpr c)
 
 isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
-isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
+isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == integerArithmeticalExpr 0
 
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
-isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 1
+isOneArithmeticalExpr e = normalizeArithmeticalExpr e == integerArithmeticalExpr 1
 
 -- | `unNPlusKPattern` recognizes a pattern of \(x + k\) for a variable \(x\) and an integer constant \(k \in \mathbb{Z}\).
 unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)

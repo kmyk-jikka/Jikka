@@ -24,7 +24,7 @@ runExpr :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
 runExpr env e = do
   t <- typecheckExpr env e
   if t == IntTy
-    then return . formatArithmeticalExpr . normalizeArithmeticalExpr $ parseArithmeticalExpr e
+    then return . formatArithmeticalExpr $ parseArithmeticalExpr e
     else return e
 
 runProgram :: MonadError Error m => Program -> m Program
