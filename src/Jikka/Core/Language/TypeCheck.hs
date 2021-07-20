@@ -70,6 +70,7 @@ builtinToType = \case
   ModMatPow n -> Fun3Ty (matrixTy n n) IntTy IntTy (matrixTy n n)
   -- list functions
   Cons t -> Fun2Ty t (ListTy t) (ListTy t)
+  Snoc t -> Fun2Ty (ListTy t) t (ListTy t)
   Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
   Len t -> FunTy (ListTy t) IntTy

@@ -75,6 +75,7 @@ mapTypeInBuiltin f = \case
   ModMatPow n -> ModMatPow n
   -- list functionslist
   Cons t -> Cons (f t)
+  Snoc t -> Snoc (f t)
   Foldl t1 t2 -> Foldl (f t1) (f t2)
   Scanl t1 t2 -> Scanl (f t1) (f t2)
   Len t -> Len (f t)
@@ -272,6 +273,7 @@ isConstantTimeBuiltin = \case
   ModMatPow _ -> True
   -- list functions
   Cons _ -> False
+  Snoc _ -> False
   Foldl _ _ -> False
   Scanl _ _ -> False
   Len _ -> True

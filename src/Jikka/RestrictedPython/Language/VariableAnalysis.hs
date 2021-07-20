@@ -52,6 +52,11 @@ analyzeStatementGeneric isMax = \case
           then (ReadList (nub $ r ++ r1 ++ r2), WriteList (nub $ w1 ++ w2))
           else (ReadList (nub $ r ++ intersect r1 r2), WriteList (nub $ w1 `intersect` w2))
   Assert e -> (analyzeExpr e, WriteList [])
+  Append _ _ x e ->
+    let w = maybe (WriteList []) analyzeTargetWrite (exprToTarget x)
+        (ReadList r) = maybe (ReadList []) analyzeTargetRead (exprToTarget x)
+        (ReadList r') = analyzeExpr e
+     in (ReadList (nub $ r ++ r'), w)
   Expr' e -> (analyzeExpr e, WriteList [])
 
 analyzeStatementsGeneric :: Bool -> [Statement] -> (ReadList, WriteList)

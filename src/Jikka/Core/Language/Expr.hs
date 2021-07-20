@@ -159,6 +159,8 @@ data Builtin
 
     -- | \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)
     Cons Type
+  | -- | \(: \forall \alpha. \list(alpha) \to \alpha \to \list(\alpha)\)
+    Snoc Type
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)
     Foldl Type Type
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)

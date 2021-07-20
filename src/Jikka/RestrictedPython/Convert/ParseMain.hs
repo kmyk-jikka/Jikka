@@ -136,18 +136,22 @@ parseFor go x e body = do
   n <- case e of
     CallBuiltin BuiltinRange1 [n] -> return n
     _ -> throwSemanticErrorAt' (loc' e) $ "for loops in main function must use `range' like `for i in range(n): ...': " ++ formatExpr e
-  (n, k) <- case value' n of
-    Name n -> return (n, 0)
-    BinOp (WithLoc' _ (Name n)) Add (WithLoc' _ (Constant (ConstInt k))) -> return (n, k)
-    BinOp (WithLoc' _ (Name n)) Sub (WithLoc' _ (Constant (ConstInt k))) -> return (n, - k)
-    _ -> throwSemanticErrorAt' (loc' n) $ "for loops in main function must use `range(x)', `range(x + k)' or `range(x - k)'" ++ formatExpr n
+  n <- case value' n of
+    Name n -> return $ Right (n, 0)
+    BinOp (WithLoc' _ (Name n)) Add (WithLoc' _ (Constant (ConstInt k))) -> return $ Right (n, k)
+    BinOp (WithLoc' _ (Name n)) Sub (WithLoc' _ (Constant (ConstInt k))) -> return $ Right (n, - k)
+    Call (WithLoc' _ (Constant (ConstBuiltin (BuiltinLen _)))) [WithLoc' _ (Name xs)] -> return $ Left xs
+    _ -> throwSemanticErrorAt' (loc' n) $ "for loops in main function must use `range(x)', `range(x + k)', `range(x - k)', `range(len(xs))`: " ++ formatExpr n
+  n <- return $ case n of
+    Right (n, k) ->
+      let n' = Var (unVarName (value' n))
+       in if k == 0 then n' else Plus n' k
+    Left xs -> Len (Var (unVarName (value' xs)))
   (input, solve, output) <- go body
   when (isJust solve) $ do
     throwSemanticError "cannot call `solve(...)' in for loop"
   let x' = unVarName (value' x)
-  let n' = Var (unVarName (value' n))
-  let n'' = if k == 0 then n' else Plus n' k
-  return (Loop x' n'' input, Loop x' n'' output)
+  return (Loop x' n input, Loop x' n output)
 
 parseExprStatement :: MonadError Error m => Expr' -> m FormatTree
 parseExprStatement e = do
@@ -203,5 +207,6 @@ run prog = wrapError' "Jikka.RestrictedPython.Convert.ParseMain" $ do
   (main, prog) <- return $ splitMain prog
   main <- forM main $ \main -> do
     checkMainType main
-    parseMain main
+    main <- parseMain main
+    return $ normalizeIOFormat main
   return (main, prog)

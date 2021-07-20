@@ -111,6 +111,8 @@ pattern Nil' t = Lit (LitNil t)
 
 pattern Cons' t e1 e2 = AppBuiltin2 (Cons t) e1 e2
 
+pattern Snoc' t e1 e2 = AppBuiltin2 (Snoc t) e1 e2
+
 pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 
 pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3

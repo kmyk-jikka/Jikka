@@ -222,6 +222,15 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
           ],
           Y.Var ys
         )
+    X.Snoc t -> go2' $ \xs x -> do
+      t <- runType t
+      ys <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+            Y.callMethod' (Y.Var ys) "push_back" [x]
+          ],
+          Y.Var ys
+        )
     X.Foldl t1 t2 -> go3'' $ \f init xs -> do
       (stmtsInit, init) <- runExpr env init
       (stmtsXs, xs) <- runExpr env xs

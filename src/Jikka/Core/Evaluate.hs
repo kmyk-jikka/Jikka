@@ -29,8 +29,8 @@ import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Matrix
-import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import Jikka.Core.Format (formatBuiltinIsolated)
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Runtime
@@ -181,6 +181,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     ModMatPow _ -> go3' pure valueToInt valueToInt valueFromModMatrix $ \f k m -> join (matpow' <$> valueToModMatrix m f <*> pure k)
     -- list functions
     Cons _ -> go2 pure valueToList ValList V.cons
+    Snoc _ -> go2 valueToList pure ValList V.snoc
     Foldl _ _ -> go3' pure pure valueToList id $ \f x a -> V.foldM (\x y -> callValue f [x, y]) x a
     Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
     Len _ -> go1 valueToList ValInt (fromIntegral . V.length)
@@ -243,6 +244,11 @@ evaluateExpr env = \case
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just val -> return val
   Lit lit -> literalToValue lit
+  If' _ p e1 e2 -> do
+    p <- valueToBool =<< evaluateExpr env p
+    if p
+      then evaluateExpr env e1
+      else evaluateExpr env e2
   e@(App _ _) -> do
     let (f, args) = curryApp e
     f <- evaluateExpr env f
@@ -279,5 +285,4 @@ callProgram prog args = wrapError' "Jikka.Core.Evaluate" $ do
 
 run :: (MonadAlpha m, MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
 run prog args = do
-  prog <- MakeEager.run prog
   callProgram prog args
