@@ -29,8 +29,8 @@ import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Matrix
-import qualified Jikka.Core.Convert.MakeEager as MakeEager
 import Jikka.Core.Format (formatBuiltinIsolated)
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Runtime
@@ -243,6 +243,11 @@ evaluateExpr env = \case
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just val -> return val
   Lit lit -> literalToValue lit
+  If' _ p e1 e2 -> do
+    p <- valueToBool =<< evaluateExpr env p
+    if p
+      then evaluateExpr env e1
+      else evaluateExpr env e2
   e@(App _ _) -> do
     let (f, args) = curryApp e
     f <- evaluateExpr env f
@@ -279,5 +284,4 @@ callProgram prog args = wrapError' "Jikka.Core.Evaluate" $ do
 
 run :: (MonadAlpha m, MonadFix m, MonadError Error m) => Program -> [Value] -> m Value
 run prog args = do
-  prog <- MakeEager.run prog
   callProgram prog args
