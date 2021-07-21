@@ -2,7 +2,7 @@
 
 ## 2021-07-14: v5.0.9.0
 
--   The generated C++ stops being functional and becomes natural.
+-   The generated C++ code becomes more natural.
 -   The restricted Python allows to write `main` function and uses it to analyze input/output format.
 
 Input:
