@@ -1,5 +1,10 @@
 # Changelog for Jikka
 
+## 2021-07-21: v5.0.10.0
+
+-   The generated C++ code is optimized.
+-   `list.append` is added in the restricted Python.
+
 ## 2021-07-14: v5.0.9.0
 
 -   The generated C++ code becomes more natural.
