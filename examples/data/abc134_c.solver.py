@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from typing import *
 
+
 def solve(n: int, a: List[int]) -> List[int]:
     l = [-1] * (n + 1)
     r = [-1] * (n + 1)
@@ -13,11 +14,13 @@ def solve(n: int, a: List[int]) -> List[int]:
         ans[i] = max(l[i], r[i + 1])
     return ans
 
+
 def main() -> None:
     n = int(input())
     _, *a = map(int, input().split())
     ans = solve(n, a)
     print(len(ans), *ans)
+
 
 if __name__ == '__main__':
     main()

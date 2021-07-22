@@ -18,11 +18,11 @@ jobs:
       run: pip3 install -r scripts/requirements.txt
 
     - name: Run isort
-      run: isort --check-only --diff scripts/*.py
+      run: isort --check-only --diff scripts/*.py examples/data/*.py
 
     - name: Run yapf
       run: |
-        yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py
+        yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py
 
     - name: Run mypy
-      run: mypy scripts/*.py
+      run: mypy scripts/*.py examples/data/*.py
