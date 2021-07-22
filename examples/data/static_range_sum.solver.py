@@ -1,5 +1,6 @@
 from typing import *
 
+
 def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]:
     b = [0] * (n + 1)
     for i in range(n):
@@ -8,6 +9,7 @@ def solve(n: int, q: int, a: List[int], l: List[int], r: List[int]) -> List[int]
     for j in range(q):
         ans[j] = b[r[j]] - b[l[j]]
     return ans
+
 
 def main() -> None:
     n = int(input())
@@ -20,6 +22,7 @@ def main() -> None:
     ans = solve(n, q, a, l, r)
     for i in range(q):
         print(ans[i])
+
 
 if __name__ == '__main__':
     main()

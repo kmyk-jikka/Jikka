@@ -34,7 +34,7 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
     for generator_path in pathlib.Path('examples', 'data').glob(glob.escape(script.stem) + '*.generator.py'):
         _, testset_name, _, _ = generator_path.name.split('.')
 
-        solver_path = pathlib.Path('examples', 'data', script.stem + '.' + testset_name + '.solver.py')
+        solver_path = pathlib.Path('examples', 'data', script.stem + '.solver.py')
         if not solver_path.exists():
             logger.error('%s: failed to find the solver', str(script))
             return []
