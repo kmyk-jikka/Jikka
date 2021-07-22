@@ -5,6 +5,7 @@ import glob
 import os
 import pathlib
 import platform
+import re
 import subprocess
 import sys
 import tempfile
@@ -14,7 +15,7 @@ from typing import *
 logger = getLogger(__name__)
 
 CXX_ONLY = 'large'
-NO_RPYTHON = 'medium'
+NO_PYTHON = 'medium'
 TIMEOUT_FACTOR = 1 if platform.system() == 'Linux' else 10
 
 
@@ -77,6 +78,10 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
             logger.error('%s: failed to compile from C++ to executable: %s', str(script), e)
             return False
 
+        with open(script, 'rb') as fh:
+            code = fh.read()
+        use_standard_python = bool(re.search(rb'\bdef +main *\(', code)) and not bool(re.search(rb'\bjikka\b', code))
+
         inputcases = collect_input_cases(script, tempdir=tempdir)
         if not inputcases:
             logger.error('%s: no input cases', str(script))
@@ -87,11 +92,13 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
                 expected = fh.read()
 
             matrix: List[Tuple[str, List[str]]] = []
+            if use_standard_python:
+                matrix.append(('standard Python', [sys.executable, str(script)]))
             matrix.append(('restricted Python', [str(executable), 'execute', '--target', 'rpython', str(script)]))
             matrix.append(('core', [str(executable), 'execute', '--target', 'core', str(script)]))
             matrix.append(('C++', [str(tempdir / 'a.exe')]))
             for title, command in matrix:
-                if title == 'restricted Python' and (NO_RPYTHON in inputcase.name or CXX_ONLY in inputcase.name):
+                if 'Python' in title and (NO_PYTHON in inputcase.name or CXX_ONLY in inputcase.name):
                     continue
                 if title == 'core' and CXX_ONLY in inputcase.name:
                     continue
