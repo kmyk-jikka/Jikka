@@ -17,9 +17,7 @@ def main():
     b = list(map(int, input().split()))
     assert len(b) == n
     ans = solve(n, a, b)
-    # print(*ans)
-    for i in range(len(ans)):
-        print(ans[i])
+    print(*ans)
 
 
 if __name__ == '__main__':

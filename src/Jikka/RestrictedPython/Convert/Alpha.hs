@@ -196,6 +196,7 @@ runExpr e0 =
       Constant const -> return $ Constant const
       Attribute e x -> Attribute <$> runExpr e <*> pure x
       Subscript e1 e2 -> Subscript <$> runExpr e1 <*> runExpr e2
+      Starred e -> Starred <$> runExpr e
       Name x -> Name <$> lookupName' x
       List t es -> List t <$> mapM runExpr es
       Tuple es -> Tuple <$> mapM runExpr es

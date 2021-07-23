@@ -236,6 +236,7 @@ Python とほとんど同じです。
     -   `xs = list(range(n)); for i in range(n): xs[i] = ...`
     -   `x, y, z = solve(a, b, c)`
     -   `print(x, y, z)`
+    -   `print(*xs)`
     -   `for i in range(n): ...`
 
 ### Toplevel expression statements

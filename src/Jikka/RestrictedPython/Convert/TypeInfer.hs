@@ -28,6 +28,7 @@ import Control.Arrow (second)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
+import Data.Functor
 import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -127,6 +128,10 @@ formularizeExpr e0 = case value' e0 of
     formularizeExpr' e1 (ListTy t)
     formularizeExpr' e2 IntTy
     return t
+  Starred e -> do
+    t <- genType
+    formularizeExpr' e (ListTy t)
+    return t -- because @*xs@ and @y@ has the same type in @[*xs, y]@
   Name x -> do
     t <- genType
     formularizeVarName x t
@@ -296,24 +301,17 @@ substTarget sigma = fmap $ \case
   TupleTrg xs -> TupleTrg (map (substTarget sigma) xs)
 
 substExpr :: Subst -> Expr' -> Expr'
-substExpr sigma = go
+substExpr sigma = mapSubExpr go
   where
-    go = fmap $ \case
-      BoolOp e1 op e2 -> BoolOp (go e1) op (go e2)
-      BinOp e1 op e2 -> BinOp (go e1) op (go e2)
-      UnaryOp op e -> UnaryOp op (go e)
-      Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
-      IfExp e1 e2 e3 -> IfExp (go e1) (go e2) (go e3)
-      ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma x) (go iter) (fmap go pred))
-      Compare e1 op e2 -> Compare (go e1) op (go e2)
-      Call f args -> Call (go f) (map go args)
-      Constant const -> Constant (substConstant sigma const)
-      Attribute e a -> Attribute (go e) (mapTypeAttribute (subst' sigma) <$> a)
-      Subscript e1 e2 -> Subscript (go e1) (go e2)
-      Name x -> Name x
-      List t es -> List (subst' sigma t) (map go es)
-      Tuple es -> Tuple (map go es)
-      SubscriptSlice e from to step -> SubscriptSlice (go e) (fmap go from) (fmap go to) (fmap go step)
+    go e =
+      e $> case value' e of
+        Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
+        ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma x) (go iter) (fmap go pred))
+        Compare e1 op e2 -> Compare (go e1) op (go e2)
+        Constant const -> Constant (substConstant sigma const)
+        Attribute e a -> Attribute (go e) (mapTypeAttribute (subst' sigma) <$> a)
+        List t es -> List (subst' sigma t) (map go es)
+        e -> e
 
 substStatement :: Subst -> Statement -> Statement
 substStatement sigma = \case

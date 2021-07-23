@@ -153,16 +153,29 @@ parseFor go x e body = do
   let x' = unVarName (value' x)
   return (Loop x' n input, Loop x' n output)
 
-parseExprStatement :: MonadError Error m => Expr' -> m FormatTree
+parseExprStatement :: (MonadAlpha m, MonadError Error m) => Expr' -> m FormatTree
 parseExprStatement e = do
   let subscriptExpr e = case value' e of
         Name x -> return (unVarName (value' x), [])
         Subscript e (WithLoc' _ (Name i)) -> second (++ [unVarName (value' i)]) <$> subscriptExpr e
         _ -> throwSemanticErrorAt' (loc' e) $ "subscripted variable is expected, but got: " ++ formatExpr e
+  let starredExpr e = do
+        (e, starred) <- return $ case value' e of
+          Starred e -> (e, True)
+          _ -> (e, False)
+        (x, indices) <- subscriptExpr e
+        return (x, indices, starred)
+  let pack (x, indices, starred)
+        | not starred = return $ packSubscriptedVar' x indices
+        | otherwise = do
+          let xs = packSubscriptedVar x indices
+          i <- unVarName . value' <$> genVarName'
+          return $ Loop i (Len xs) (packSubscriptedVar' x (indices ++ [i]))
   case e of
     CallBuiltin (BuiltinPrint _) args -> do
-      outputs <- mapM subscriptExpr args
-      return $ Seq (map (uncurry packSubscriptedVar') outputs ++ [Newline])
+      outputs <- mapM starredExpr args
+      outputs <- mapM pack outputs
+      return $ Seq (outputs ++ [Newline])
     _ -> throwSemanticErrorAt' (loc' e) "only `print(...)' is allowed for expr statements in main function"
 
 parseMain :: (MonadAlpha m, MonadError Error m) => MainFunction -> m IOFormat

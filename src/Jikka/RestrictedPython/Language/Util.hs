@@ -109,6 +109,7 @@ freeVars' (WithLoc' _ e0) = case e0 of
   Constant _ -> []
   Attribute e _ -> freeVars' e
   Subscript e1 e2 -> freeVars' e1 ++ freeVars' e2
+  Starred e -> freeVars' e
   Name x -> [x]
   List _ es -> concatMap freeVars' es
   Tuple es -> concatMap freeVars' es
@@ -166,6 +167,7 @@ mapSubExprM f = go
         Constant const -> return $ Constant const
         Attribute e x -> Attribute <$> go e <*> pure x
         Subscript e1 e2 -> Subscript <$> go e1 <*> go e2
+        Starred e -> Starred <$> go e
         Name x -> return $ Name x
         List t es -> List t <$> mapM go es
         Tuple es -> Tuple <$> mapM go es

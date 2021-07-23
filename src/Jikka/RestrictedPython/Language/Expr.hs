@@ -266,6 +266,7 @@ data Expr
   | Constant Constant
   | Attribute Expr' Attribute'
   | Subscript Expr' Expr'
+  | Starred Expr'
   | Name VarName'
   | List Type [Expr']
   | Tuple [Expr']

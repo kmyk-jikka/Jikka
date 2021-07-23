@@ -136,6 +136,7 @@ runExpr e =
     X.Subscript e1 e2 -> case value e2 of
       X.Slice from to step -> Y.SubscriptSlice <$> runExpr e1 <*> mapM runExpr from <*> mapM runExpr to <*> mapM runExpr step
       _ -> Y.Subscript <$> runExpr e1 <*> runExpr e2
+    X.Starred e -> Y.Starred <$> runExpr e
     X.Name x -> return $ Y.Name (runIdent x)
     X.List es -> Y.List <$> Y.genType <*> mapM runExpr es
     X.Tuple es -> Y.Tuple <$> mapM runExpr es

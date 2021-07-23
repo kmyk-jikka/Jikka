@@ -268,6 +268,7 @@ runExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
     a <- runAttribute a
     return $ Y.App a e
   X.Subscript e1 e2 -> Y.AppBuiltin2 <$> (Y.At <$> Y.genType) <*> runExpr e1 <*> runExpr e2
+  X.Starred e -> throwSemanticErrorAt' (loc' e) "cannot use starred expr"
   X.Name x -> return $ Y.Var (runVarName x)
   X.List t es -> do
     t <- runType t
