@@ -289,7 +289,7 @@ mapTypeExpr f = mapSubExpr go
     go = fmap $ \case
       Lambda args body -> Lambda (map (second f) args) (go body)
       ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (mapTypeTarget f x) (go iter) (fmap go pred))
-      Compare e1 op e2 -> Compare (go e1) op (go e2)
+      Compare e1 (CmpOp' op t) e2 -> Compare (go e1) (CmpOp' op (f t)) (go e2)
       Constant const -> Constant (mapTypeConstant f const)
       Attribute e a -> Attribute (go e) (mapTypeAttribute f <$> a)
       List t es -> List (f t) (map go es)
