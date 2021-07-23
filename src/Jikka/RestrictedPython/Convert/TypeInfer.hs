@@ -20,7 +20,7 @@ module Jikka.RestrictedPython.Convert.TypeInfer
     Subst (..),
     subst,
     solveEquations,
-    substProgram,
+    mapTypeProgram,
   )
 where
 
@@ -28,7 +28,6 @@ import Control.Arrow (second)
 import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
-import Data.Functor
 import qualified Data.Map.Strict as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -271,6 +270,50 @@ solveEquations eqns = wrapError' "failed to solve type equations" $ do
         return $ Left (maybe id WithLocation loc (WithWrapped ("failed to unify type " ++ formatType t1 ++ " and type " ++ formatType t2) err))
     reportErrors errs
 
+mapTypeConstant :: (Type -> Type) -> Constant -> Constant
+mapTypeConstant f = \case
+  ConstNone -> ConstNone
+  ConstInt n -> ConstInt n
+  ConstBool p -> ConstBool p
+  ConstBuiltin b -> ConstBuiltin (mapTypeBuiltin f b)
+
+mapTypeTarget :: (Type -> Type) -> Target' -> Target'
+mapTypeTarget f = fmap $ \case
+  SubscriptTrg x index -> SubscriptTrg (mapTypeTarget f x) (mapTypeExpr f index)
+  NameTrg x -> NameTrg x
+  TupleTrg xs -> TupleTrg (map (mapTypeTarget f) xs)
+
+mapTypeExpr :: (Type -> Type) -> Expr' -> Expr'
+mapTypeExpr f = mapSubExpr go
+  where
+    go = fmap $ \case
+      Lambda args body -> Lambda (map (second f) args) (go body)
+      ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (mapTypeTarget f x) (go iter) (fmap go pred))
+      Compare e1 op e2 -> Compare (go e1) op (go e2)
+      Constant const -> Constant (mapTypeConstant f const)
+      Attribute e a -> Attribute (go e) (mapTypeAttribute f <$> a)
+      List t es -> List (f t) (map go es)
+      e -> e
+
+mapTypeStatement :: (Type -> Type) -> Statement -> Statement
+mapTypeStatement f = \case
+  Return e -> Return (mapTypeExpr f e)
+  AugAssign x op e -> AugAssign (mapTypeTarget f x) op (mapTypeExpr f e)
+  AnnAssign x t e -> AnnAssign (mapTypeTarget f x) (f t) (mapTypeExpr f e)
+  For x iter body -> For (mapTypeTarget f x) (mapTypeExpr f iter) (map (mapTypeStatement f) body)
+  If pred body1 body2 -> If (mapTypeExpr f pred) (map (mapTypeStatement f) body1) (map (mapTypeStatement f) body2)
+  Assert e -> Assert (mapTypeExpr f e)
+  Expr' e -> Expr' (mapTypeExpr f e)
+
+mapTypeToplevelStatement :: (Type -> Type) -> ToplevelStatement -> ToplevelStatement
+mapTypeToplevelStatement f = \case
+  ToplevelAnnAssign x t e -> ToplevelAnnAssign x (f t) (mapTypeExpr f e)
+  ToplevelFunctionDef g args ret body -> ToplevelFunctionDef g (map (second f) args) (f ret) (map (mapTypeStatement f) body)
+  ToplevelAssert e -> ToplevelAssert (mapTypeExpr f e)
+
+mapTypeProgram :: (Type -> Type) -> Program -> Program
+mapTypeProgram f prog = map (mapTypeToplevelStatement f) prog
+
 -- | `substUnit` replaces all undetermined type variables with the unit type.
 substUnit :: Type -> Type
 substUnit = \case
@@ -286,51 +329,6 @@ substUnit = \case
 -- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
-
-substConstant :: Subst -> Constant -> Constant
-substConstant sigma = \case
-  ConstNone -> ConstNone
-  ConstInt n -> ConstInt n
-  ConstBool p -> ConstBool p
-  ConstBuiltin b -> ConstBuiltin (mapTypeBuiltin (subst' sigma) b)
-
-substTarget :: Subst -> Target' -> Target'
-substTarget sigma = fmap $ \case
-  SubscriptTrg f index -> SubscriptTrg (substTarget sigma f) (substExpr sigma index)
-  NameTrg x -> NameTrg x
-  TupleTrg xs -> TupleTrg (map (substTarget sigma) xs)
-
-substExpr :: Subst -> Expr' -> Expr'
-substExpr sigma = mapSubExpr go
-  where
-    go e =
-      e $> case value' e of
-        Lambda args body -> Lambda (map (second (subst' sigma)) args) (go body)
-        ListComp e (Comprehension x iter pred) -> ListComp (go e) (Comprehension (substTarget sigma x) (go iter) (fmap go pred))
-        Compare e1 op e2 -> Compare (go e1) op (go e2)
-        Constant const -> Constant (substConstant sigma const)
-        Attribute e a -> Attribute (go e) (mapTypeAttribute (subst' sigma) <$> a)
-        List t es -> List (subst' sigma t) (map go es)
-        e -> e
-
-substStatement :: Subst -> Statement -> Statement
-substStatement sigma = \case
-  Return e -> Return (substExpr sigma e)
-  AugAssign x op e -> AugAssign (substTarget sigma x) op (substExpr sigma e)
-  AnnAssign x t e -> AnnAssign (substTarget sigma x) (subst' sigma t) (substExpr sigma e)
-  For x iter body -> For (substTarget sigma x) (substExpr sigma iter) (map (substStatement sigma) body)
-  If pred body1 body2 -> If (substExpr sigma pred) (map (substStatement sigma) body1) (map (substStatement sigma) body2)
-  Assert e -> Assert (substExpr sigma e)
-  Expr' e -> Expr' (substExpr sigma e)
-
-substToplevelStatement :: Subst -> ToplevelStatement -> ToplevelStatement
-substToplevelStatement sigma = \case
-  ToplevelAnnAssign x t e -> ToplevelAnnAssign x (subst' sigma t) (substExpr sigma e)
-  ToplevelFunctionDef f args ret body -> ToplevelFunctionDef f (map (second (subst' sigma)) args) (subst' sigma ret) (map (substStatement sigma) body)
-  ToplevelAssert e -> ToplevelAssert (substExpr sigma e)
-
-substProgram :: Subst -> Program -> Program
-substProgram sigma prog = map (substToplevelStatement sigma) prog
 
 -- | `run` infers types of given programs.
 --
@@ -351,4 +349,4 @@ run prog = wrapError' "Jikka.RestrictedPython.Convert.TypeInfer" $ do
   let (eqns', assertions) = sortEquations eqns
   let eqns'' = mergeAssertions assertions
   sigma <- solveEquations (eqns' ++ eqns'')
-  return $ substProgram sigma prog
+  return $ mapTypeProgram (subst' sigma) prog
