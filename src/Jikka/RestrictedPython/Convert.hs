@@ -19,12 +19,14 @@ import qualified Jikka.RestrictedPython.Convert.ResolveBuiltin as ResolveBuiltin
 import qualified Jikka.RestrictedPython.Convert.SplitLoops as SplitLoops
 import qualified Jikka.RestrictedPython.Convert.ToCore as ToCore
 import qualified Jikka.RestrictedPython.Convert.TypeInfer as TypeInfer
+import qualified Jikka.RestrictedPython.Convert.UseAppend as UseAppend
 import qualified Jikka.RestrictedPython.Language.Expr as X
 
 run' :: (MonadAlpha m, MonadError Error m) => X.Program -> m (X.Program, IOFormat)
 run' prog = do
   prog <- return $ RemoveUnreachable.run prog
   prog <- return $ RemoveUnbalancedIf.run prog
+  prog <- UseAppend.run prog
   prog <- ResolveBuiltin.run prog
   prog <- Alpha.run prog
   (format, prog) <- ParseMain.run prog -- Run ParseMain before type inference because main function has different semantics.

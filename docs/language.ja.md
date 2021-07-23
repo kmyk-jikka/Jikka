@@ -185,10 +185,10 @@ Python とほとんど同じです。
 
 -   処理系は `assert` 文を最適化のヒントとして利用できます。
 
-### expr statements
+### `list.append`
 
-式文は副作用のある処理を実行します。
-現在は `xs.append(x)` の形の式文のみが利用可能です。
+`xs = xs + [x]` 文はリスト `xs` の末尾に要素 `x` を追加します。
+この文は `xs.append(x)` あるいは `xs += [x]` と書くこともできます。
 
 
 ## Semantics (Exprs)
