@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- |
--- Module      : Jikka.RestrictedPython.Convert.TypeInfer
+-- Module      : Jikka.RestrictedPython.Convert.ResolveBuiltin
 -- Description : resolves names of builtin functions using information of arity. / arity の情報を使いながら組み込み関数を名前解決します。
 -- Copyright   : (c) Kimiyuki Onaka, 2021
 -- License     : Apache License 2.0
