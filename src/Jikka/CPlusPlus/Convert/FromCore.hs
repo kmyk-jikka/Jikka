@@ -23,6 +23,7 @@ import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
+import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
 import qualified Jikka.Core.Language.TypeCheck as X
 import qualified Jikka.Core.Language.Util as X
@@ -279,22 +280,29 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
         )
     X.Len _ -> go1 $ \e -> Y.cast Y.TyInt64 (Y.size e)
     X.Map _ t2 -> go2'' $ \f xs -> do
-      (stmtsXs, xs) <- runExpr env xs
-      t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
-      i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
-      return
-        ( stmtsXs
-            ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.size xs]))]
-            ++ stmtsF
-            ++ [ Y.repStatement
-                   i
-                   (Y.cast Y.TyInt32 (Y.size xs))
-                   (body ++ [Y.assignAt ys (Y.Var i) f])
-               ],
-          Y.Var ys
-        )
+      t2 <- runType t2
+      stmts <- case (f, xs) of
+        (X.Lam _ _ (X.Lit lit), X.Range1' n) -> do
+          (stmtsN, n) <- runExpr env n
+          lit <- runLiteral env lit
+          return $
+            stmtsN
+              ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [n, lit]))]
+        _ -> do
+          (stmtsXs, xs) <- runExpr env xs
+          i <- Y.newFreshName Y.LoopCounterNameKind
+          (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
+          return $
+            stmtsXs
+              ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.size xs]))]
+              ++ stmtsF
+              ++ [ Y.repStatement
+                     i
+                     (Y.cast Y.TyInt32 (Y.size xs))
+                     (body ++ [Y.assignAt ys (Y.Var i) f])
+                 ]
+      return (stmts, Y.Var ys)
     X.Filter t -> go2'' $ \f xs -> do
       (stmtsXs, xs) <- runExpr env xs
       t <- runType t
