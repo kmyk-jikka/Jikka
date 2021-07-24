@@ -17,29 +17,48 @@ module Jikka.Core.Convert.CumulativeSum
   )
 where
 
+import Data.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
 import Jikka.Core.Language.ArithmeticalExpr
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
+cumulativeMax :: MonadAlpha m => (Expr -> Expr -> Expr) -> Type -> Maybe Expr -> Expr -> Expr -> m Expr
+cumulativeMax max2 t a0 a n = do
+  b <- genVarName'
+  let e = At' t (Var b) n
+  x1 <- genVarName'
+  x2 <- genVarName'
+  let a0' = fromMaybe (At' t a (LitInt' 0)) a0
+  return $ Let b (ListTy t) (Scanl' IntTy t (Lam2 x1 t x2 t (max2 (Var x1) (Var x2))) a0' a) e
+
 rule :: MonadAlpha m => RewriteRule m
 rule = RewriteRule $ \_ -> \case
-  Sum' (Map' _ _ (Lam x _ (At' _ a x')) (Range1' n)) -> do
-    case makeAffineFunctionFromArithmeticalExpr x (parseArithmeticalExpr x') of
+  Sum' (Map' _ _ (Lam x _ (At' _ a index)) (Range1' n)) | x `isUnusedVar` a -> do
+    case makeAffineFunctionFromArithmeticalExpr x (parseArithmeticalExpr index) of
       Just (coeff, shift) | isOneArithmeticalExpr coeff -> do
-        y <- genVarName'
+        b <- genVarName'
         let e =
               if isZeroArithmeticalExpr shift
-                then At' IntTy (Var y) n
-                else Minus' (At' IntTy (Var y) (Plus' n (formatArithmeticalExpr shift))) (At' IntTy (Var y) (formatArithmeticalExpr shift))
+                then At' IntTy (Var b) n
+                else Minus' (At' IntTy (Var b) (Plus' n (formatArithmeticalExpr shift))) (At' IntTy (Var b) (formatArithmeticalExpr shift))
         return . Just $
-          Let y (ListTy IntTy) (Scanl' IntTy IntTy (Lit (LitBuiltin Plus)) Lit0 a) e
+          Let b (ListTy IntTy) (Scanl' IntTy IntTy (Lit (LitBuiltin Plus)) Lit0 a) e
       _ -> return Nothing
+  Max1' t (Cons' _ a0 (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n))) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax (Max2' t) t (Just a0) a n
+  Max1' t (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n)) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax (Max2' t) t Nothing a n
+  Min1' t (Cons' _ a0 (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n))) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax (Min2' t) t (Just a0) a n
+  Min1' t (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n)) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax (Min2' t) t Nothing a n
   _ -> return Nothing
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
