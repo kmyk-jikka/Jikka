@@ -57,6 +57,13 @@ data Type
 
 data DataStructure
   = ConvexHullTrick
+  | SegmentTree Semigroup'
+  deriving (Eq, Ord, Show, Read)
+
+data Semigroup'
+  = SemigroupIntPlus
+  | SemigroupIntMin
+  | SemigroupIntMax
   deriving (Eq, Ord, Show, Read)
 
 -- | TODO: What is the difference between `Literal` and `Builtin`?
@@ -253,6 +260,12 @@ data Builtin
     ConvexHullTrickGetMin
   | -- | \(: \mathrm{convex-hull-trick} \to \int \to \int \to \mathrm{convex-hull-trick}\)
     ConvexHullTrickInsert
+  | -- | \(: \forall S. \list(S) \to \mathrm{segment-tree}(S)\)
+    SegmentTreeInitList Semigroup'
+  | -- | \(: \forall S. \mathrm{segment-tree}(S) \to \int \to \int \to S\)
+    SegmentTreeGetRange Semigroup'
+  | -- | \(: \forall S. \mathrm{segment-tree}(S) \to \int \to S \to \mathrm{segment-tree}(S)\)
+    SegmentTreeSetPoint Semigroup'
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -323,6 +336,8 @@ matrixTy h w = TupleTy (replicate h (TupleTy (replicate w IntTy)))
 pattern UnitTy = TupleTy []
 
 pattern ConvexHullTrickTy = DataStructureTy ConvexHullTrick
+
+pattern SegmentTreeTy semigrp = DataStructureTy (SegmentTree semigrp)
 
 pattern LitInt' n = Lit (LitInt n)
 

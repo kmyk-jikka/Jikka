@@ -33,6 +33,7 @@ import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
+import qualified Jikka.Core.Convert.SegmentTree as SegmentTree
 import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
 import qualified Jikka.Core.Convert.SpecializeFoldl as SpecializeFoldl
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
@@ -56,6 +57,7 @@ run'' prog = do
   prog <- CloseAll.run prog
   prog <- CloseMin.run prog
   prog <- CumulativeSum.run prog
+  prog <- SegmentTree.run prog
   prog <- BubbleLet.run prog
   prog <- ArithmeticalExpr.run prog
   prog <- ConvexHullTrick.run prog

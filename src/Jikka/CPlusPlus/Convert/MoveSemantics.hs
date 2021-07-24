@@ -93,6 +93,11 @@ runStatement stmt cont = case stmt of
         | x `isMovable` cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
+      Just (Call (SegmentTreeMake _) []) -> return [Declare t y Nothing]
+      Just (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "set" [i, a]]
       _ -> do
         return [Declare t y e]
   DeclareDestructure xs e -> do
@@ -107,6 +112,12 @@ runStatement stmt cont = case stmt of
         | x `isMovable` cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
+        | otherwise -> return [Assign e]
+      AssignExpr SimpleAssign (LeftVar y) (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
+        | x == y -> return [callMethod' (Var x) "set" [i, a]]
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "set" [i, a]]
         | otherwise -> return [Assign e]
       _ -> return [Assign e]
   Assert e -> do

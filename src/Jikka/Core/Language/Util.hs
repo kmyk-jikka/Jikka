@@ -4,7 +4,9 @@
 module Jikka.Core.Language.Util where
 
 import Control.Monad.Identity
+import Control.Monad.Writer (execWriter, tell)
 import Data.Maybe (isJust)
+import Data.Monoid (Dual (..))
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
@@ -122,6 +124,9 @@ mapTypeInBuiltin f = \case
   ConvexHullTrickInit -> ConvexHullTrickInit
   ConvexHullTrickInsert -> ConvexHullTrickInsert
   ConvexHullTrickGetMin -> ConvexHullTrickGetMin
+  SegmentTreeInitList semigrp -> SegmentTreeInitList semigrp
+  SegmentTreeGetRange semigrp -> SegmentTreeGetRange semigrp
+  SegmentTreeSetPoint semigrp -> SegmentTreeSetPoint semigrp
 
 -- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
@@ -166,6 +171,13 @@ mapExprToplevelExpr f env e = runIdentity $ mapExprToplevelExprM (\env e -> retu
 
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 mapExprProgram f prog = runIdentity $ mapExprProgramM (\env e -> return $ f env e) prog
+
+listSubExprs :: Expr -> [Expr]
+listSubExprs e = getDual . execWriter $ mapExprM go [] e
+  where
+    go _ e = do
+      tell $ Dual [e]
+      return e
 
 uncurryFunTy :: Type -> ([Type], Type)
 uncurryFunTy = \case
@@ -311,6 +323,9 @@ isConstantTimeBuiltin = \case
   ConvexHullTrickInit -> False
   ConvexHullTrickInsert -> False
   ConvexHullTrickGetMin -> False
+  SegmentTreeInitList _ -> False
+  SegmentTreeGetRange _ -> False
+  SegmentTreeSetPoint _ -> False
 
 -- | `isConstantTimeExpr` checks whether given exprs are suitable to propagate.
 isConstantTimeExpr :: Expr -> Bool

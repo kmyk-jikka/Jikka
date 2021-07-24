@@ -3,9 +3,13 @@ module Jikka.CPlusPlus.FormatSpec
   )
 where
 
+import Data.List
 import Jikka.CPlusPlus.Format
 import Jikka.CPlusPlus.Language.Expr
 import Test.Hspec
+
+run'' :: Program -> [String]
+run'' prog = dropWhile ("#include" `isPrefixOf`) (lines (run' prog))
 
 spec :: Spec
 spec = describe "run" $ do
@@ -29,22 +33,12 @@ spec = describe "run" $ do
                 ]
             ]
     let formatted =
-          unlines
-            [ "#include <algorithm>",
-              "#include <array>",
-              "#include <cstdint>",
-              "#include <functional>",
-              "#include <iostream>",
-              "#include <numeric>",
-              "#include <string>",
-              "#include <tuple>",
-              "#include <vector>",
-              "int64_t solve(int32_t n) {",
-              "    int64_t x = 0;",
-              "    for (int32_t i = 0; i < n; ++ i) {",
-              "        x += int64_t(i);",
-              "    }",
-              "    return x;",
-              "}"
-            ]
-    run' program `shouldBe` formatted
+          [ "int64_t solve(int32_t n) {",
+            "    int64_t x = 0;",
+            "    for (int32_t i = 0; i < n; ++ i) {",
+            "        x += int64_t(i);",
+            "    }",
+            "    return x;",
+            "}"
+          ]
+    run'' program `shouldBe` formatted

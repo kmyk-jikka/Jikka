@@ -62,6 +62,13 @@ runType = \case
   X.FunTy t ret -> Y.TyFunction <$> runType ret <*> mapM runType [t]
   X.DataStructureTy ds -> case ds of
     X.ConvexHullTrick -> return Y.TyConvexHullTrick
+    X.SegmentTree semigrp -> return $ Y.TySegmentTree (runSemigroup semigrp)
+
+runSemigroup :: X.Semigroup' -> Y.Monoid'
+runSemigroup = \case
+  X.SemigroupIntPlus -> Y.MonoidIntPlus
+  X.SemigroupIntMin -> Y.MonoidIntMin
+  X.SemigroupIntMax -> Y.MonoidIntMax
 
 runLiteral :: (MonadAlpha m, MonadError Error m) => Env -> X.Literal -> m Y.Expr
 runLiteral env = \case
@@ -527,6 +534,9 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.ConvexHullTrickInit -> go0 $ Y.Call Y.ConvexHullTrickMake []
     X.ConvexHullTrickGetMin -> go2 $ \cht x -> Y.Call (Y.Method "get_min") [cht, x]
     X.ConvexHullTrickInsert -> go3 $ \cht a b -> Y.Call Y.ConvexHullTrickCopyAddLine [cht, a, b]
+    X.SegmentTreeInitList semigrp -> go1 $ \a -> Y.Call (Y.SegmentTreeMake (runSemigroup semigrp)) [a]
+    X.SegmentTreeGetRange _ -> go3 $ \segtree l r -> Y.Call (Y.Method "prod") [segtree, l, r]
+    X.SegmentTreeSetPoint semigrp -> go3 $ \segtree i a -> Y.Call (Y.SegmentTreeCopySetPoint (runSemigroup semigrp)) [segtree, i, a]
 
 runExprFunction :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction env f e = case f of

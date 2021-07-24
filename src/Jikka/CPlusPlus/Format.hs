@@ -185,6 +185,10 @@ formatType = \case
   TyString -> "std::string"
   TyFunction t ts -> "std::function<" ++ formatType t ++ " (" ++ intercalate ", " (map formatType ts) ++ ")>"
   TyConvexHullTrick -> "jikka::convex_hull_trick"
+  TySegmentTree mon -> case mon of
+    MonoidIntPlus -> "atcoder::segtree<int64_t, jikka::plus_int64_t, jikka::const_zero>"
+    MonoidIntMin -> "atcoder::segtree<int64_t, jikka::min_int64_t, jikka::const_int64_max>"
+    MonoidIntMax -> "atcoder::segtree<int64_t, jikka::max_int64_t, jikka::const_int64_min>"
   TyIntValue n -> show n
 
 formatLiteral :: Literal -> Code
@@ -240,6 +244,8 @@ formatExpr = \case
           MethodSize -> method "size"
           ConvexHullTrickMake -> call "jikka::convex_hull_trick"
           ConvexHullTrickCopyAddLine -> call "jikka::convex_hull_trick::add_line"
+          SegmentTreeMake mon -> call (formatType (TySegmentTree mon))
+          SegmentTreeCopySetPoint _ -> call "jikka::segment_tree_set"
   CallExpr f args ->
     let f' = formatExpr' FunCallPrec f
         args' = intercalate ", " (map (formatExpr' CommaPrec) args)
@@ -325,10 +331,16 @@ formatProgram prog =
           "#include <tuple>",
           "#include <vector>"
         ]
-      additionalHeader = "#include \"jikka/all.hpp\""
-   in if "jikka::" `isInfixOf` unlines body
-        then standardHeaders ++ [additionalHeader] ++ body
-        else standardHeaders ++ body
+      additionalHeader =
+        map snd $
+          filter
+            (\(key, _) -> key `isInfixOf` unlines body)
+            [ ("jikka::", "#include \"jikka/base.hpp\""),
+              ("jikka::convex_hull_trick", "#include \"jikka/convex_hull_trick.hpp\""),
+              ("atcoder::segtree", "#include \"jikka/segment_tree.hpp\""),
+              ("atcoder::segtree", "#include \"atcoder/segtree\"")
+            ]
+   in standardHeaders ++ additionalHeader ++ body
 
 run' :: Program -> String
 run' = unlines . makeIndentFromBraces 4 . formatProgram

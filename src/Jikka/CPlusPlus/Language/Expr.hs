@@ -32,8 +32,15 @@ data Type
   | TyString
   | TyFunction Type [Type]
   | TyConvexHullTrick
+  | TySegmentTree Monoid'
   | -- | for template parameters
     TyIntValue Integer
+  deriving (Eq, Ord, Show, Read)
+
+data Monoid'
+  = MonoidIntPlus
+  | MonoidIntMin
+  | MonoidIntMax
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -57,6 +64,8 @@ data Function
   | MethodSize
   | ConvexHullTrickMake
   | ConvexHullTrickCopyAddLine
+  | SegmentTreeMake Monoid'
+  | SegmentTreeCopySetPoint Monoid'
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp

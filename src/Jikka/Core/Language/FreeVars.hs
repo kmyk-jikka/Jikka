@@ -54,3 +54,9 @@ freeTyVars = \case
   TupleTy ts -> concatMap freeTyVars ts
   FunTy t1 t2 -> freeTyVars t1 ++ freeTyVars t2
   DataStructureTy _ -> []
+
+findUnusedVarName :: VarName -> Expr -> VarName
+findUnusedVarName (VarName x) e = head . filter (`isUnusedVar` e) $ map (\i -> VarName (x ++ show i)) [0 ..]
+
+findUnusedVarName' :: Expr -> VarName
+findUnusedVarName' = findUnusedVarName (VarName "x")

@@ -73,7 +73,7 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
                 logger.error('%s: failed to compile from Python to C++: %s', str(script), e)
                 return False
         try:
-            subprocess.check_call(['g++', '-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-o', str(tempdir / 'a.exe'), str(tempdir / 'main.cpp')], timeout=20 * TIMEOUT_FACTOR)
+            subprocess.check_call(['g++', '-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-I', str(pathlib.Path('runtime', 'ac-library')), '-o', str(tempdir / 'a.exe'), str(tempdir / 'main.cpp')], timeout=20 * TIMEOUT_FACTOR)
         except subprocess.SubprocessError as e:
             logger.error('%s: failed to compile from C++ to executable: %s', str(script), e)
             return False

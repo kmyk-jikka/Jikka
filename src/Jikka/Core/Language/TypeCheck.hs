@@ -114,6 +114,15 @@ builtinToType = \case
   ConvexHullTrickInit -> ConvexHullTrickTy
   ConvexHullTrickGetMin -> Fun2Ty ConvexHullTrickTy IntTy IntTy
   ConvexHullTrickInsert -> Fun3Ty ConvexHullTrickTy IntTy IntTy ConvexHullTrickTy
+  SegmentTreeInitList semigrp -> FunTy (ListTy (semigroupToType semigrp)) (SegmentTreeTy semigrp)
+  SegmentTreeGetRange semigrp -> Fun3Ty (SegmentTreeTy semigrp) IntTy IntTy (semigroupToType semigrp)
+  SegmentTreeSetPoint semigrp -> Fun3Ty (SegmentTreeTy semigrp) IntTy (semigroupToType semigrp) (SegmentTreeTy semigrp)
+
+semigroupToType :: Semigroup' -> Type
+semigroupToType = \case
+  SemigroupIntPlus -> IntTy
+  SemigroupIntMin -> IntTy
+  SemigroupIntMax -> IntTy
 
 literalToType :: Literal -> Type
 literalToType = \case
