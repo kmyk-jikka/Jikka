@@ -53,3 +53,4 @@ freeTyVars = \case
   ListTy t -> freeTyVars t
   TupleTy ts -> concatMap freeTyVars ts
   FunTy t1 t2 -> freeTyVars t1 ++ freeTyVars t2
+  DataStructureTy _ -> []

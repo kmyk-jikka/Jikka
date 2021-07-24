@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.MoveSemantics
@@ -20,6 +21,7 @@ import Data.Maybe
 import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.CPlusPlus.Language.Util
+import Jikka.CPlusPlus.Language.VariableAnalysis
 import Jikka.Common.Error
 
 runExpr :: MonadState (M.Map VarName VarName) m => Expr -> m Expr
@@ -50,7 +52,9 @@ runAssignExpr = \case
   AssignDecr e -> AssignDecr <$> runLeftExpr e
 
 isMovable :: VarName -> [[Statement]] -> Bool
-isMovable x cont = all (\stmt -> x `S.notMember` freeVarsStatement stmt) (concat cont)
+isMovable x cont =
+  let ReadWriteList rs _ = analyzeStatements (concat cont)
+   in x `S.notMember` rs
 
 runStatement :: MonadState (M.Map VarName VarName) m => Statement -> [[Statement]] -> m [Statement]
 runStatement stmt cont = case stmt of
@@ -78,14 +82,19 @@ runStatement stmt cont = case stmt of
     e <- runExpr e
     body <- runStatements body cont
     return [While e body]
-  Declare t x e -> do
+  Declare t y e -> do
     e <- traverse runExpr e
     case e of
-      Just (Var y) | y `isMovable` cont -> do
-        modify' (M.insert x y)
+      Just (Var x) | x `isMovable` cont -> do
+        modify' (M.insert y x)
         return []
+      Just (Call ConvexHullTrickMake []) -> return [Declare t y Nothing]
+      Just (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "add_line" [a, b]]
       _ -> do
-        return [Declare t x e]
+        return [Declare t y e]
   DeclareDestructure xs e -> do
     e <- runExpr e
     return [DeclareDestructure xs e]
@@ -93,6 +102,12 @@ runStatement stmt cont = case stmt of
     e <- runAssignExpr e
     case e of
       AssignExpr SimpleAssign (LeftVar y) (Var x) | x == y -> return []
+      AssignExpr SimpleAssign (LeftVar y) (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+        | x == y -> return [callMethod' (Var x) "add_line" [a, b]]
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "add_line" [a, b]]
+        | otherwise -> return [Assign e]
       _ -> return [Assign e]
   Assert e -> do
     e <- runExpr e
@@ -135,6 +150,22 @@ runProgram (Program decls) = (`evalStateT` M.empty) $ do
 -- > vector<int> solve(vector<int> a) {
 -- >     a[0] = 1;
 -- >     return a;
+-- > }
+--
+-- Before:
+--
+-- > int solve(int a, int b, int x) {
+-- >     jikka::convex_hull_trick cht = jikka::convex_hull_trick();
+-- >     cht = jikka::convex_hull_trick::persistent_add_line(cht, a, b);
+-- >     return cht.get_min(x);
+-- > }
+--
+-- After:
+--
+-- > int solve(int a, int b, int x) {
+-- >     jikka::convex_hull_trick cht;
+-- >     cht = cht.add_line(a, b);
+-- >     return cht.get_min(x);
 -- > }
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.CPlusPlus.Convert.MoveSemantics" $ do

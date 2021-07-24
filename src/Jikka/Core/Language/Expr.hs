@@ -42,6 +42,7 @@ unTypeName (TypeName name) = name
 --         \vert & \list(\tau) \\
 --         \vert & \tau \times \tau \times \dots \times \tau \\
 --         \vert & \tau \to \tau
+--         \vert & \mathrm{data-structure}
 --     \end{array}
 -- \]
 data Type
@@ -51,6 +52,11 @@ data Type
   | ListTy Type
   | TupleTy [Type]
   | FunTy Type Type
+  | DataStructureTy DataStructure
+  deriving (Eq, Ord, Show, Read)
+
+data DataStructure
+  = ConvexHullTrick
   deriving (Eq, Ord, Show, Read)
 
 -- | TODO: What is the difference between `Literal` and `Builtin`?
@@ -237,6 +243,14 @@ data Builtin
     Permute
   | -- | \(: \int \to \int \to \int\)
     MultiChoose
+  | -- data structures
+
+    -- | \(: \mathrm{convex-hull-trick}\)
+    ConvexHullTrickInit
+  | -- | \(: \mathrm{convex-hull-trick} \to \int \to \int\)
+    ConvexHullTrickGetMin
+  | -- | \(: \mathrm{convex-hull-trick} \to \int \to \int \to \mathrm{convex-hull-trick}\)
+    ConvexHullTrickInsert
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -305,6 +319,8 @@ matrixTy :: Int -> Int -> Type
 matrixTy h w = TupleTy (replicate h (TupleTy (replicate w IntTy)))
 
 pattern UnitTy = TupleTy []
+
+pattern ConvexHullTrickTy = DataStructureTy ConvexHullTrick
 
 pattern LitInt' n = Lit (LitInt n)
 

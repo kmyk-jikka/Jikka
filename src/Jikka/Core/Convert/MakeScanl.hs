@@ -21,7 +21,8 @@ module Jikka.Core.Convert.MakeScanl
     -- * internal rules
     rule,
     reduceScanlBuild,
-    reduceFoldlSetAt,
+    reduceFoldlSetAtRecurrence,
+    reduceFoldlSetAtAccumulation,
     getRecurrenceFormulaBase,
     getRecurrenceFormulaStep1,
     getRecurrenceFormulaStep,
@@ -34,6 +35,7 @@ import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.ArithmeticalExpr
+import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -64,7 +66,7 @@ getRecurrenceFormulaBase = go (V.replicate recurrenceLimit Nothing)
       SetAt' _ e (LitInt' i) e' | 0 <= i && i < recurrenceLimit -> go (base V.// [(fromInteger i, Just e')]) e
       e -> (map fromJust (takeWhile isJust (V.toList base)), e)
 
--- | `getRecurrenceFormulaStep1` removes `At` in @a@.
+-- | `getRecurrenceFormulaStep1` removes `At` in @body@.
 getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 getRecurrenceFormulaStep1 shift t a i body = do
   x <- genVarName a
@@ -86,7 +88,7 @@ getRecurrenceFormulaStep1 shift t a i body = do
     Just body -> Just $ Lam2 x t i IntTy body
     Nothing -> Nothing
 
--- | `getRecurrenceFormulaStep` replaces `At` in @a@ with `Proj`.
+-- | `getRecurrenceFormulaStep` replaces `At` in @body@ with `Proj`.
 getRecurrenceFormulaStep :: MonadAlpha m => Int -> Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 getRecurrenceFormulaStep shift size t a i body = do
   x <- genVarName a
@@ -116,13 +118,15 @@ hoistMaybe = MaybeT . pure
 -- * This assumes that `Range2` and `Range3` are already converted to `Range1` (`Jikka.Core.Convert.ShortCutFusion`).
 -- * This assumes that combinations `Foldl` and `Map` squashed (`Jikka.Core.Convert.ShortCutFusion`).
 -- * This assumes that constants are already folded (`Jikka.Core.Convert.ConstantFolding`).
-reduceFoldlSetAt :: MonadAlpha m => RewriteRule m
-reduceFoldlSetAt = RewriteRule $ \_ -> \case
+reduceFoldlSetAtRecurrence :: MonadAlpha m => RewriteRule m
+reduceFoldlSetAtRecurrence = RewriteRule $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) step(a, i)) init indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) init' indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+    -- index(i) = i + k
     index <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
       Just (i', k) | i' == i -> Just k
       _ -> Nothing
+    -- indices = range n
     n <- hoistMaybe $ case indices of
       Range1' n -> Just n -- We can do this because foldl-map combinations are already reduced.
       _ -> Nothing
@@ -143,11 +147,57 @@ reduceFoldlSetAt = RewriteRule $ \_ -> \case
         return $ foldr (Cons' t2) (Map' (TupleTy ts) t2 (Lam x (TupleTy ts) (Proj' ts (length base - 1) (Var x))) (Scanl' IntTy (TupleTy ts) step base' (Range1' n))) (init base)
   _ -> return Nothing
 
+-- | `checkAccumulationFormulaStep` checks that all `At` in @body@ about @a@ are @At a i@.
+checkAccumulationFormulaStep :: VarName -> VarName -> Expr -> Bool
+checkAccumulationFormulaStep a i = go
+  where
+    go = \case
+      At' _ (Var a') i' | a' == a -> case i' of
+        Var i' | i' == i -> True
+        _ -> False
+      Var x -> x /= a
+      Lit _ -> True
+      App f e -> go f && go e
+      Lam x _ e -> x == a || go e
+      Let x _ e1 e2 -> go e1 && (x == a || go e2)
+
+-- |
+-- * This assumes that `Range2` and `Range3` are already converted to `Range1` (`Jikka.Core.Convert.ShortCutFusion`).
+-- * This assumes that combinations `Foldl` and `Map` squashed (`Jikka.Core.Convert.ShortCutFusion`).
+-- * This assumes that constants are already folded (`Jikka.Core.Convert.ConstantFolding`).
+reduceFoldlSetAtAccumulation :: MonadAlpha m => RewriteRule m
+reduceFoldlSetAtAccumulation = RewriteRule $ \_ -> \case
+  -- foldl (fun a i -> setat a index() step(a, i)) init indices
+  Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) init indices | a' == a && a `isUnusedVar` index && i `isUnusedVar` index -> runMaybeT $ do
+    -- step(a, i) = op (at a index()) step'(a, i)
+    (accumulate, step) <- hoistMaybe $ case step of
+      Max2' t (At' _ (Var a') index') step | a' == a && index' == index -> Just (Max1' t, step)
+      Min2' t (At' _ (Var a') index') step | a' == a && index' == index -> Just (Min1' t, step)
+      Plus' (At' _ (Var a') index') step | a' == a && index' == index -> Just (Sum', step)
+      Mult' (At' _ (Var a') index') step | a' == a && index' == index -> Just (Product', step)
+      ModPlus' (At' _ (Var a') index') step m | a' == a && index' == index && a `isUnusedVar` m && i `isUnusedVar` m -> Just ((`ModSum'` m), step)
+      ModMult' (At' _ (Var a') index') step m | a' == a && index' == index && a `isUnusedVar` m && i `isUnusedVar` m -> Just ((`ModProduct'` m), step)
+      _ -> Nothing
+    -- index() = j + k
+    (j, k) <- hoistMaybe $ unNPlusKPattern (parseArithmeticalExpr index)
+    -- indices = range (j + k)
+    () <- hoistMaybe $ case indices of
+      Range1' n -> case unNPlusKPattern (parseArithmeticalExpr n) of
+        Just (j', k') | j' == j && k' == k -> Just ()
+        _ -> Nothing
+      _ -> Nothing
+    -- step'(a, i) = step''(at a i)
+    guard $ checkAccumulationFormulaStep a i step
+    step <- lift $ substitute a init step
+    return $ SetAt' t2 init index (accumulate (Map' IntTy t2 (Lam i IntTy step) (Range1' index)))
+  _ -> return Nothing
+
 rule :: MonadAlpha m => RewriteRule m
 rule =
   mconcat
     [ reduceScanlBuild,
-      reduceFoldlSetAt
+      reduceFoldlSetAtRecurrence,
+      reduceFoldlSetAtAccumulation
     ]
 
 runProgram :: MonadAlpha m => Program -> m Program
@@ -189,6 +239,7 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- === Fold functions
 --
+-- * `Foldl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)
 -- * `At` \(: \forall \alpha. \list(\alpha) \to \int \to \alpha\)
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.MakeScanl" $ do

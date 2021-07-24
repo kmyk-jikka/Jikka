@@ -2,7 +2,26 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
 
-module Jikka.Core.Language.ArithmeticalExpr where
+module Jikka.Core.Language.ArithmeticalExpr
+  ( -- * Basic functions
+    ArithmeticalExpr,
+    parseArithmeticalExpr,
+    formatArithmeticalExpr,
+    integerArithmeticalExpr,
+    negateArithmeticalExpr,
+    plusArithmeticalExpr,
+    minusArithmeticalExpr,
+    multArithmeticalExpr,
+    isZeroArithmeticalExpr,
+    isOneArithmeticalExpr,
+
+    -- * Advanced functions
+    unNPlusKPattern,
+    makeVectorFromArithmeticalExpr,
+    makeAffineFunctionFromArithmeticalExpr,
+    splitConstantFactorArithmeticalExpr,
+  )
+where
 
 import Control.Arrow
 import Control.Monad
@@ -29,12 +48,19 @@ data SumExpr = SumExpr
   }
   deriving (Eq, Ord, Show, Read)
 
-type ArithmeticalExpr = SumExpr
+newtype ArithmeticalExpr = ArithmeticalExpr {unArithmeticalExpr :: SumExpr}
+  deriving (Show)
 
-oneProductExpr :: ProductExpr
-oneProductExpr =
+instance Eq ArithmeticalExpr where
+  e1 == e2 = unArithmeticalExpr (normalizeArithmeticalExpr e1) == unArithmeticalExpr (normalizeArithmeticalExpr e2)
+
+instance Ord ArithmeticalExpr where
+  e1 `compare` e2 = unArithmeticalExpr (normalizeArithmeticalExpr e1) `compare` unArithmeticalExpr (normalizeArithmeticalExpr e2)
+
+integerProductExpr :: Integer -> ProductExpr
+integerProductExpr n =
   ProductExpr
-    { productExprConst = 1,
+    { productExprConst = n,
       productExprList = []
     }
 
@@ -53,6 +79,7 @@ parseProductExpr = \case
   LitInt' n -> ProductExpr {productExprConst = n, productExprList = []}
   Negate' e -> negateProductExpr (parseProductExpr e)
   Mult' e1 e2 -> multProductExpr (parseProductExpr e1) (parseProductExpr e2)
+  Pow' e1 (LitInt' k) | 0 <= k && k < 10 -> iterate (multProductExpr (parseProductExpr e1)) (integerProductExpr 1) !! fromInteger k
   e -> ProductExpr {productExprConst = 1, productExprList = [e]}
 
 sumExprFromProductExpr :: ProductExpr -> SumExpr
@@ -62,12 +89,18 @@ sumExprFromProductExpr e =
       sumExprConst = 0
     }
 
-sumExprFromInteger :: Integer -> SumExpr
-sumExprFromInteger n =
+arithmeticalExprFromProductExpr :: ProductExpr -> ArithmeticalExpr
+arithmeticalExprFromProductExpr = ArithmeticalExpr . sumExprFromProductExpr
+
+integerSumExpr :: Integer -> SumExpr
+integerSumExpr n =
   SumExpr
     { sumExprConst = n,
       sumExprList = []
     }
+
+integerArithmeticalExpr :: Integer -> ArithmeticalExpr
+integerArithmeticalExpr = ArithmeticalExpr . integerSumExpr
 
 negateSumExpr :: SumExpr -> SumExpr
 negateSumExpr e =
@@ -93,6 +126,18 @@ multSumExpr e1 e2 =
       sumExprConst = sumExprConst e1 * sumExprConst e2
     }
 
+negateArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
+negateArithmeticalExpr (ArithmeticalExpr e) = ArithmeticalExpr $ negateSumExpr e
+
+plusArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
+plusArithmeticalExpr (ArithmeticalExpr e1) (ArithmeticalExpr e2) = ArithmeticalExpr $ plusSumExpr e1 e2
+
+minusArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
+minusArithmeticalExpr (ArithmeticalExpr e1) (ArithmeticalExpr e2) = ArithmeticalExpr $ plusSumExpr e1 (negateSumExpr e2)
+
+multArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
+multArithmeticalExpr (ArithmeticalExpr e1) (ArithmeticalExpr e2) = ArithmeticalExpr $ multSumExpr e1 e2
+
 parseSumExpr :: Expr -> SumExpr
 parseSumExpr = \case
   LitInt' n -> SumExpr {sumExprList = [], sumExprConst = n}
@@ -105,7 +150,7 @@ parseSumExpr = \case
 -- | `parseArithmeticalExpr` converts a given expr to a normal form \(\sum_i \prod_j e _ {i,j})\).
 -- This assumes given exprs have the type \(\mathbf{int}\).
 parseArithmeticalExpr :: Expr -> ArithmeticalExpr
-parseArithmeticalExpr = parseSumExpr
+parseArithmeticalExpr = ArithmeticalExpr . parseSumExpr
 
 formatProductExpr :: ProductExpr -> Expr
 formatProductExpr e =
@@ -135,7 +180,7 @@ formatSumExpr e = case sumExprList e of
      in k' (foldl go (formatProductExpr eHead) esTail)
 
 formatArithmeticalExpr :: ArithmeticalExpr -> Expr
-formatArithmeticalExpr = formatSumExpr
+formatArithmeticalExpr = formatSumExpr . unArithmeticalExpr . normalizeArithmeticalExpr
 
 normalizeProductExpr :: ProductExpr -> ProductExpr
 normalizeProductExpr e =
@@ -160,7 +205,7 @@ normalizeSumExpr e =
         }
 
 normalizeArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
-normalizeArithmeticalExpr = normalizeSumExpr
+normalizeArithmeticalExpr = ArithmeticalExpr . normalizeSumExpr . unArithmeticalExpr
 
 -- | `makeVectorFromArithmeticalExpr` makes a vector \(f\) and a expr \(c\) from a given vector of variables \(x_0, x_1, \dots, x _ {n - 1}\) and a given expr \(e\) s.t. \(f\) and \(c\) don't have \(x_0, x_1, \dots, x _ {n - 1}\) as free variables and \(e = c + f \cdot (x_0, x_1, \dots, x _ {n - 1})\) holds.
 -- This assumes given variables and exprs have the type \(\mathbf{int}\).
@@ -169,41 +214,64 @@ normalizeArithmeticalExpr = normalizeSumExpr
 makeVectorFromArithmeticalExpr :: V.Vector VarName -> ArithmeticalExpr -> Maybe (V.Vector ArithmeticalExpr, ArithmeticalExpr)
 makeVectorFromArithmeticalExpr xs es = runST $ do
   runMaybeT $ do
-    f <- lift $ MV.replicate (V.length xs) (sumExprFromInteger 0)
-    c <- lift $ newSTRef (sumExprFromInteger (sumExprConst es))
-    forM_ (sumExprList es) $ \e -> do
+    f <- lift $ MV.replicate (V.length xs) (integerArithmeticalExpr 0)
+    c <- lift $ newSTRef (integerArithmeticalExpr (sumExprConst (unArithmeticalExpr es)))
+    forM_ (sumExprList (unArithmeticalExpr es)) $ \e -> do
       let indices = V.imap (\i x -> map (i,) (findIndices (x `isFreeVar`) (productExprList e))) xs
       case concat (V.toList indices) of
-        [] -> lift $ modifySTRef c (plusSumExpr (sumExprFromProductExpr e))
+        [] -> lift $ modifySTRef c (plusArithmeticalExpr (arithmeticalExprFromProductExpr e))
         [(i, j)] -> do
           let e' = e {productExprList = take j (productExprList e) ++ drop (j + 1) (productExprList e)}
-          lift $ MV.modify f (plusSumExpr (sumExprFromProductExpr e')) i
+          lift $ MV.modify f (plusArithmeticalExpr (arithmeticalExprFromProductExpr e')) i
         _ -> MaybeT $ return Nothing
     f <- V.freeze f
     c <- lift $ readSTRef c
     return (V.map normalizeArithmeticalExpr f, normalizeArithmeticalExpr c)
 
 isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
-isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 0
+isZeroArithmeticalExpr e = normalizeArithmeticalExpr e == integerArithmeticalExpr 0
 
 isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
-isOneArithmeticalExpr e = normalizeArithmeticalExpr e == sumExprFromInteger 1
+isOneArithmeticalExpr e = normalizeArithmeticalExpr e == integerArithmeticalExpr 1
 
 -- | `unNPlusKPattern` recognizes a pattern of \(x + k\) for a variable \(x\) and an integer constant \(k \in \mathbb{Z}\).
 unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
 unNPlusKPattern e = case normalizeArithmeticalExpr e of
-  SumExpr
-    { sumExprList =
-        [ ProductExpr
-            { productExprConst = 1,
-              productExprList = [Var x]
-            }
-          ],
-      sumExprConst = k
-    } -> Just (x, k)
+  ArithmeticalExpr
+    SumExpr
+      { sumExprList =
+          [ ProductExpr
+              { productExprConst = 1,
+                productExprList = [Var x]
+              }
+            ],
+        sumExprConst = k
+      } -> Just (x, k)
   _ -> Nothing
 
 -- | `makeAffineFunctionFromArithmeticalExpr` is a specialized version of `makeVectorFromArithmeticalExpr`.
 -- This function returns \(a, b\) for a given variable \(x\) and a given expr \(e = a x + b\) where \(a, b\) which doesn't use \(x\) free.
 makeAffineFunctionFromArithmeticalExpr :: VarName -> ArithmeticalExpr -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
 makeAffineFunctionFromArithmeticalExpr x es = first V.head <$> makeVectorFromArithmeticalExpr (V.singleton x) es
+
+-- | `splitConstantFactorArithmeticalExpr` finds \(k\) and \(e'\) for given \(e\) s.t. \(e = k e'\).
+splitConstantFactorArithmeticalExpr :: ArithmeticalExpr -> (Integer, ArithmeticalExpr)
+splitConstantFactorArithmeticalExpr e =
+  let e' = unArithmeticalExpr $ normalizeArithmeticalExpr e
+   in case (sumExprConst e', sumExprList e') of
+        (0, []) -> (0, integerArithmeticalExpr 0)
+        (k, []) -> (k, integerArithmeticalExpr 1)
+        (0, [e]) -> second arithmeticalExprFromProductExpr $ splitConstantFactorProductExpr e
+        (k, es) ->
+          let kes = map splitConstantFactorProductExpr es
+              d = foldl gcd k (map fst kes)
+           in ( d,
+                ArithmeticalExpr
+                  SumExpr
+                    { sumExprConst = k `div` d,
+                      sumExprList = map (\(k, e) -> e {productExprConst = (k * productExprConst e) `div` d}) kes
+                    }
+              )
+
+splitConstantFactorProductExpr :: ProductExpr -> (Integer, ProductExpr)
+splitConstantFactorProductExpr e = (productExprConst e, e {productExprConst = 1})

@@ -188,6 +188,9 @@ mapExprStatementToplevelStatementM f g = \case
 mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
 mapExprStatementProgramM f g (Program decls) = Program <$> mapM (mapExprStatementToplevelStatementM f g) decls
 
+mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> Statement) -> Program -> Program
+mapExprStatementProgram f g = runIdentity . mapExprStatementProgramM (return . f) (return . g)
+
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceExpr x e = runIdentity . mapExprStatementExprM go return
   where

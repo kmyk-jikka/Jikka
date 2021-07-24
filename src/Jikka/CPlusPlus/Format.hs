@@ -184,6 +184,7 @@ formatType = \case
   TyArray t n -> "std::array<" ++ formatType t ++ ", " ++ show n ++ ">"
   TyString -> "std::string"
   TyFunction t ts -> "std::function<" ++ formatType t ++ " (" ++ intercalate ", " (map formatType ts) ++ ")>"
+  TyConvexHullTrick -> "jikka::convex_hull_trick"
   TyIntValue n -> show n
 
 formatLiteral :: Literal -> Code
@@ -237,6 +238,8 @@ formatExpr = \case
           VecExt t -> ("std::vector<" ++ formatType t ++ ">{" ++ args' ++ "}", IdentPrec)
           Range -> call "jikka::range"
           MethodSize -> method "size"
+          ConvexHullTrickMake -> call "jikka::convex_hull_trick"
+          ConvexHullTrickCopyAddLine -> call "jikka::convex_hull_trick::add_line"
   CallExpr f args ->
     let f' = formatExpr' FunCallPrec f
         args' = intercalate ", " (map (formatExpr' CommaPrec) args)

@@ -11,9 +11,9 @@ def solve(n: int, c: int, h: List[int]) -> int:
 
     dp = [INF for _ in range(n)]
     dp[0] = 0
-    for i in range(n):
-        for j in range(i + 1, n):
-            dp[j] = min(dp[j], dp[i] + (h[i] - h[j]) ** 2 + c)
+    for i in range(1, n):
+        for j in range(i):
+            dp[i] = min(dp[i], dp[j] + (h[j] - h[i]) ** 2 + c)
     return dp[n - 1]
 
 def main() -> None:

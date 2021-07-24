@@ -31,6 +31,7 @@ data Type
   | TyArray Type Integer
   | TyString
   | TyFunction Type [Type]
+  | TyConvexHullTrick
   | -- | for template parameters
     TyIntValue Integer
   deriving (Eq, Ord, Show, Read)
@@ -54,6 +55,8 @@ data Function
   | VecExt Type
   | Range
   | MethodSize
+  | ConvexHullTrickMake
+  | ConvexHullTrickCopyAddLine
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp

@@ -42,6 +42,11 @@ formatType = \case
   t@(FunTy _ _) ->
     let (ts, ret) = uncurryFunTy t
      in paren $ intercalate " -> " (map formatType (ts ++ [ret]))
+  DataStructureTy ds -> formatDataStructure ds
+
+formatDataStructure :: DataStructure -> String
+formatDataStructure = \case
+  ConvexHullTrick -> "convex-hull-trick"
 
 data Builtin'
   = Fun [Type] String
@@ -150,6 +155,10 @@ analyzeBuiltin = \case
   Choose -> fun "choose"
   Permute -> fun "permute"
   MultiChoose -> fun "multichoose"
+  -- data structures
+  ConvexHullTrickInit -> fun "cht.init"
+  ConvexHullTrickGetMin -> fun "cht.getmin"
+  ConvexHullTrickInsert -> fun "cht.insert"
 
 formatTemplate :: [Type] -> String
 formatTemplate = \case
