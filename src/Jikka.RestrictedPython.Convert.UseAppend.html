@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : Jikka.RestrictedPython.Convert.UseAppend</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : converts @xs = xs + [x]@ and @xs += [x]@ to @xs.append(x)@. / @xs = xs + [x]@ &#12392; @xs += [x]@ &#12434; @xs.append(x)@ &#12395;&#22793;&#25563;&#12375;&#12414;&#12377;&#12290;</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2021</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.RestrictedPython.Convert.UseAppend</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.UseAppend.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html"><span class="hs-identifier">Jikka.Common.Alpha</span></a></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Util.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Util</span></a></span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span class="annot"><a href="Jikka.RestrictedPython.Convert.UseAppend.html#runStatement"><span class="hs-identifier hs-type">runStatement</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-23"></span><span id="runStatement"><span class="annot"><span class="annottext">runStatement :: Statement -&gt; [Statement]
+</span><a href="Jikka.RestrictedPython.Convert.UseAppend.html#runStatement"><span class="hs-identifier hs-var hs-var">runStatement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-24"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AugAssign"><span class="hs-identifier hs-type">AugAssign</span></a></span><span> </span><span id="local-6989586621679361388"><span class="annot"><span class="annottext">Target'
+</span><a href="#local-6989586621679361388"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="Jikka.Python.Language.Expr.html#Add"><span class="hs-identifier hs-var">Add</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-type">WithLoc'</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#List"><span class="hs-identifier hs-type">List</span></a></span><span> </span><span id="local-6989586621679361384"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361384"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679361383"><span class="annot"><span class="annottext">WithLoc' Expr
+</span><a href="#local-6989586621679361383"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-25"></span><span>    </span><span class="hs-special">[</span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; Statement
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-var">Expr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; WithLoc' Expr
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; [WithLoc' Expr] -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Call"><span class="hs-identifier hs-var">Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; WithLoc' Expr
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; Attribute' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Target' -&gt; WithLoc' Expr
+</span><a href="Jikka.RestrictedPython.Language.Util.html#targetToExpr"><span class="hs-identifier hs-var">targetToExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Target'
+</span><a href="#local-6989586621679361388"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Attribute'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Attribute
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#BuiltinAppend"><span class="hs-identifier hs-var">BuiltinAppend</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361384"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">WithLoc' Expr
+</span><a href="#local-6989586621679361383"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-26"></span><span>  </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#AnnAssign"><span class="hs-identifier hs-type">AnnAssign</span></a></span><span> </span><span id="local-6989586621679361375"><span class="annot"><span class="annottext">Target'
+</span><a href="#local-6989586621679361375"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679361374"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361374"><span class="hs-identifier hs-var">t1</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-type">WithLoc'</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#BinOp"><span class="hs-identifier hs-type">BinOp</span></a></span><span> </span><span id="local-6989586621679361372"><span class="annot"><span class="annottext">WithLoc' Expr
+</span><a href="#local-6989586621679361372"><span class="hs-identifier hs-var">xs'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Operator
+</span><a href="Jikka.Python.Language.Expr.html#Add"><span class="hs-identifier hs-var">Add</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Location.html#WithLoc%27"><span class="hs-identifier hs-type">WithLoc'</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Loc
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#List"><span class="hs-identifier hs-type">List</span></a></span><span> </span><span id="local-6989586621679361371"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361371"><span class="hs-identifier hs-var">t2</span></a></span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679361370"><span class="annot"><span class="annottext">WithLoc' Expr
+</span><a href="#local-6989586621679361370"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; WithLoc' Expr
+</span><a href="Jikka.RestrictedPython.Language.Util.html#dropLocation"><span class="hs-identifier hs-var">dropLocation</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Target' -&gt; WithLoc' Expr
+</span><a href="Jikka.RestrictedPython.Language.Util.html#targetToExpr"><span class="hs-identifier hs-var">targetToExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Target'
+</span><a href="#local-6989586621679361375"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; WithLoc' Expr -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; WithLoc' Expr
+</span><a href="Jikka.RestrictedPython.Language.Util.html#dropLocation"><span class="hs-identifier hs-var">dropLocation</span></a></span><span> </span><span class="annot"><span class="annottext">WithLoc' Expr
+</span><a href="#local-6989586621679361372"><span class="hs-identifier hs-var">xs'</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-28"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679361368"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621679361368"><span class="hs-identifier hs-var hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361374"><span class="hs-identifier hs-var">t1</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-29"></span><span>            </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#ListTy"><span class="hs-identifier hs-type">ListTy</span></a></span><span> </span><span id="local-6989586621679361366"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361366"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361366"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-30"></span><span>            </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361371"><span class="hs-identifier hs-var">t2</span></a></span><span>
+</span><span id="line-31"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; Statement
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Expr%27"><span class="hs-identifier hs-var">Expr'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; WithLoc' Expr
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; [WithLoc' Expr] -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Call"><span class="hs-identifier hs-var">Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; WithLoc' Expr
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">WithLoc' Expr -&gt; Attribute' -&gt; Expr
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#Attribute"><span class="hs-identifier hs-var">Attribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Target' -&gt; WithLoc' Expr
+</span><a href="Jikka.RestrictedPython.Language.Util.html#targetToExpr"><span class="hs-identifier hs-var">targetToExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Target'
+</span><a href="#local-6989586621679361375"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Attribute'
+forall a. a -&gt; WithLoc' a
+</span><a href="Jikka.Common.Location.html#withoutLoc"><span class="hs-identifier hs-var">withoutLoc</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Attribute
+</span><a href="Jikka.RestrictedPython.Language.Expr.html#BuiltinAppend"><span class="hs-identifier hs-var">BuiltinAppend</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679361368"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">WithLoc' Expr
+</span><a href="#local-6989586621679361370"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">]</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679361365"><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679361365"><span class="hs-identifier hs-var">stmt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679361365"><span class="hs-identifier hs-var">stmt</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-comment">-- | `run` converts @xs = xs + [x]@ and @xs += [x]@ to @xs.append(x)@.</span><span>
+</span><span id="line-35"></span><span class="hs-comment">--</span><span>
+</span><span id="line-36"></span><span class="hs-comment">-- == Examples</span><span>
+</span><span id="line-37"></span><span class="hs-comment">--</span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- Before:</span><span>
+</span><span id="line-39"></span><span class="hs-comment">--</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- &gt; xs = xs + [x]</span><span>
+</span><span id="line-41"></span><span class="hs-comment">-- &gt; xs += [x]</span><span>
+</span><span id="line-42"></span><span class="hs-comment">-- &gt; xs.append(x)</span><span>
+</span><span id="line-43"></span><span class="hs-comment">--</span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- After:</span><span>
+</span><span id="line-45"></span><span class="hs-comment">--</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- &gt; xs.append(x)</span><span>
+</span><span id="line-47"></span><span class="hs-comment">-- &gt; xs.append(x)</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- &gt; xs.append(x)</span><span>
+</span><span id="line-49"></span><span id="local-6989586621679361364"><span class="annot"><a href="Jikka.RestrictedPython.Convert.UseAppend.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679361364"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679361364"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679361364"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-50"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><a href="Jikka.RestrictedPython.Convert.UseAppend.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679361362"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679361362"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
+</span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Jikka.RestrictedPython.Convert.UseAppend&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-51"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; m Program) -&gt; Program -&gt; m Program
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; [Statement]) -&gt; Program -&gt; Program
+</span><a href="Jikka.RestrictedPython.Language.Util.html#mapStatement"><span class="hs-identifier hs-var">mapStatement</span></a></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; [Statement]
+</span><a href="Jikka.RestrictedPython.Convert.UseAppend.html#runStatement"><span class="hs-identifier hs-var">runStatement</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679361362"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-52"></span></pre></body></html>

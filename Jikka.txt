@@ -3044,6 +3044,7 @@ Call :: Expr' -> [Expr'] -> Expr
 Constant :: Constant -> Expr
 Attribute :: Expr' -> Attribute' -> Expr
 Subscript :: Expr' -> Expr' -> Expr
+Starred :: Expr' -> Expr
 Name :: VarName' -> Expr
 List :: Type -> [Expr'] -> Expr
 Tuple :: [Expr'] -> Expr
@@ -3180,6 +3181,7 @@ listStatements :: Program -> [Statement]
 -- | <a>mapSubExprM</a> replaces all exprs in a given expr using a given
 --   function. This may breaks various constraints.
 mapSubExprM :: Monad m => (Expr' -> m Expr') -> Expr' -> m Expr'
+mapSubExpr :: (Expr' -> Expr') -> Expr' -> Expr'
 listSubExprs :: Expr' -> [Expr']
 mapExprTargetM :: Monad m => (Expr' -> m Expr') -> Target' -> m Target'
 mapExprStatementM :: Monad m => (Expr' -> m Expr') -> Statement -> m Statement
@@ -3190,11 +3192,13 @@ hasFunctionCall :: Expr' -> Bool
 -- | <a>isSmallExpr</a> is true if the evaluation of a given expr trivially
 --   terminates.
 isSmallExpr :: Expr' -> Bool
+dropLocation :: Expr' -> Expr'
 targetVars :: Target' -> [VarName]
 targetVars' :: Target' -> [VarName']
 hasSubscriptTrg :: Target' -> Bool
 hasBareNameTrg :: Target' -> Bool
 exprToTarget :: Expr' -> Maybe Target'
+targetToExpr :: Target' -> Expr'
 toplevelMainDef :: [Statement] -> Program
 
 module Jikka.RestrictedPython.Language.Builtin
@@ -3229,6 +3233,31 @@ formatBuiltin :: Builtin -> String
 formatAttribute :: Attribute -> String
 formatExpr :: Expr' -> String
 formatTarget :: Target' -> String
+
+
+module Jikka.RestrictedPython.Convert.UseAppend
+
+-- | <a>run</a> converts <tt>xs = xs + [x]</tt> and <tt>xs += [x]</tt> to
+--   <tt>xs.append(x)</tt>.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   xs = xs + [x]
+--   xs += [x]
+--   xs.append(x)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   xs.append(x)
+--   xs.append(x)
+--   xs.append(x)
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 module Jikka.RestrictedPython.Convert.TypeInfer
@@ -3269,7 +3298,7 @@ Subst :: Map TypeName Type -> Subst
 [unSubst] :: Subst -> Map TypeName Type
 subst :: Subst -> Type -> Type
 solveEquations :: MonadError Error m => [(Type, Type, Maybe Loc)] -> m Subst
-substProgram :: Subst -> Program -> Program
+mapTypeProgram :: (Type -> Type) -> Program -> Program
 instance GHC.Read.Read Jikka.RestrictedPython.Convert.TypeInfer.Equation
 instance GHC.Show.Show Jikka.RestrictedPython.Convert.TypeInfer.Equation
 instance GHC.Classes.Ord Jikka.RestrictedPython.Convert.TypeInfer.Equation
