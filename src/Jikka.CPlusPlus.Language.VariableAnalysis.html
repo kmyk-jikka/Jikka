@@ -1,0 +1,412 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.CPlusPlus.Language.VariableAnalysis</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">S</span></span><span>
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html"><span class="hs-identifier">Jikka.CPlusPlus.Language.Expr</span></a></span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">data</span><span> </span><span id="ReadWriteList"><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="ReadWriteList"><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span></span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="readList"><span class="annot"><span class="annottext">ReadWriteList -&gt; Set VarName
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#readList"><span class="hs-identifier hs-var hs-var">readList</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">S.Set</span></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span id="writeList"><span class="annot"><span class="annottext">ReadWriteList -&gt; Set VarName
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeList"><span class="hs-identifier hs-var hs-var">writeList</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">S.Set</span></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679312945"><span id="local-6989586621679312947"><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; Bool
+(ReadWriteList -&gt; ReadWriteList -&gt; Bool)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; Bool) -&gt; Eq ReadWriteList
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+$c/= :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+== :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+$c== :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679312929"><span id="local-6989586621679312931"><span id="local-6989586621679312933"><span id="local-6989586621679312935"><span id="local-6989586621679312937"><span id="local-6989586621679312939"><span id="local-6989586621679312941"><span class="annot"><span class="annottext">Eq ReadWriteList
+Eq ReadWriteList
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; Ordering)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; Bool)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; Bool)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; Bool)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; Bool)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList)
+-&gt; (ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList)
+-&gt; Ord ReadWriteList
+ReadWriteList -&gt; ReadWriteList -&gt; Bool
+ReadWriteList -&gt; ReadWriteList -&gt; Ordering
+ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+$cmin :: ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+max :: ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+$cmax :: ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+&gt;= :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+$c&gt;= :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+&gt; :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+$c&gt; :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+&lt;= :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+$c&lt;= :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+&lt; :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+$c&lt; :: ReadWriteList -&gt; ReadWriteList -&gt; Bool
+compare :: ReadWriteList -&gt; ReadWriteList -&gt; Ordering
+$ccompare :: ReadWriteList -&gt; ReadWriteList -&gt; Ordering
+$cp1Ord :: Eq ReadWriteList
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679312922"><span id="local-6989586621679312924"><span id="local-6989586621679312926"><span class="annot"><span class="annottext">Int -&gt; ReadWriteList -&gt; ShowS
+[ReadWriteList] -&gt; ShowS
+ReadWriteList -&gt; String
+(Int -&gt; ReadWriteList -&gt; ShowS)
+-&gt; (ReadWriteList -&gt; String)
+-&gt; ([ReadWriteList] -&gt; ShowS)
+-&gt; Show ReadWriteList
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ReadWriteList] -&gt; ShowS
+$cshowList :: [ReadWriteList] -&gt; ShowS
+show :: ReadWriteList -&gt; String
+$cshow :: ReadWriteList -&gt; String
+showsPrec :: Int -&gt; ReadWriteList -&gt; ShowS
+$cshowsPrec :: Int -&gt; ReadWriteList -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679312913"><span id="local-6989586621679312915"><span id="local-6989586621679312917"><span id="local-6989586621679312919"><span class="annot"><span class="annottext">ReadPrec [ReadWriteList]
+ReadPrec ReadWriteList
+Int -&gt; ReadS ReadWriteList
+ReadS [ReadWriteList]
+(Int -&gt; ReadS ReadWriteList)
+-&gt; ReadS [ReadWriteList]
+-&gt; ReadPrec ReadWriteList
+-&gt; ReadPrec [ReadWriteList]
+-&gt; Read ReadWriteList
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [ReadWriteList]
+$creadListPrec :: ReadPrec [ReadWriteList]
+readPrec :: ReadPrec ReadWriteList
+$creadPrec :: ReadPrec ReadWriteList
+readList :: ReadS [ReadWriteList]
+$creadList :: ReadS [ReadWriteList]
+readsPrec :: Int -&gt; ReadS ReadWriteList
+$creadsPrec :: Int -&gt; ReadS ReadWriteList
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679312907"><span id="local-6989586621679312909"><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span> </span><span id="local-6989586621679312905"><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312905"><span class="hs-identifier hs-var">rs</span></a></span></span><span> </span><span id="local-6989586621679312904"><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312904"><span class="hs-identifier hs-var">ws</span></a></span></span><span> </span><span id="local-6989586621679312903"><span class="annot"><span class="annottext">&lt;&gt; :: ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+</span><span class="hs-operator hs-var hs-var hs-var hs-var">&lt;&gt;</span></span></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span> </span><span id="local-6989586621679312902"><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312902"><span class="hs-identifier hs-var">rs'</span></a></span></span><span> </span><span id="local-6989586621679312901"><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312901"><span class="hs-identifier hs-var">ws'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312905"><span class="hs-identifier hs-var">rs</span></a></span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; Set VarName
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312902"><span class="hs-identifier hs-var">rs'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312904"><span class="hs-identifier hs-var">ws</span></a></span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; Set VarName
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312901"><span class="hs-identifier hs-var">ws'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679312895"><span id="local-6989586621679312897"><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-18"></span><span>  </span><span id="local-6989586621679312893"><span class="annot"><span class="annottext">mempty :: ReadWriteList
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span><span> </span><span class="annot"><span class="annottext">Set VarName
+forall a. Set a
+</span><span class="hs-identifier hs-var">S.empty</span></span><span> </span><span class="annot"><span class="annottext">Set VarName
+forall a. Set a
+</span><span class="hs-identifier hs-var">S.empty</span></span><span>
+</span><span id="line-19"></span><span>
+</span><span id="line-20"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#readVariable"><span class="hs-identifier hs-type">readVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-21"></span><span id="readVariable"><span class="annot"><span class="annottext">readVariable :: VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#readVariable"><span class="hs-identifier hs-var hs-var">readVariable</span></a></span></span><span> </span><span id="local-6989586621679312890"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312890"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Set VarName
+forall a. a -&gt; Set a
+</span><span class="hs-identifier hs-var">S.singleton</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312890"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Set VarName
+forall a. Set a
+</span><span class="hs-identifier hs-var">S.empty</span></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-type">writeVariable</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-24"></span><span id="writeVariable"><span class="annot"><span class="annottext">writeVariable :: VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-var hs-var">writeVariable</span></a></span></span><span> </span><span id="local-6989586621679312887"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312887"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span><span> </span><span class="annot"><span class="annottext">Set VarName
+forall a. Set a
+</span><span class="hs-identifier hs-var">S.empty</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Set VarName
+forall a. a -&gt; Set a
+</span><span class="hs-identifier hs-var">S.singleton</span></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312887"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-type">analyzeExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-27"></span><span id="analyzeExpr"><span class="annot"><span class="annottext">analyzeExpr :: Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var hs-var">analyzeExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-28"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679312884"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312884"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#readVariable"><span class="hs-identifier hs-var">readVariable</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312884"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-29"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Lit"><span class="hs-identifier hs-type">Lit</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ReadWriteList
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-30"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#UnOp"><span class="hs-identifier hs-type">UnOp</span></a></span><span> </span><span class="annot"><span class="annottext">UnaryOp
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312881"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312881"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312881"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#BinOp"><span class="hs-identifier hs-type">BinOp</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312879"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312879"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679312878"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312878"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312879"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312878"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Cond"><span class="hs-identifier hs-type">Cond</span></a></span><span> </span><span id="local-6989586621679312876"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312876"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679312875"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312875"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span id="local-6989586621679312874"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312874"><span class="hs-identifier hs-var">e3</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312876"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312875"><span class="hs-identifier hs-var">e2</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312874"><span class="hs-identifier hs-var">e3</span></a></span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679312872"><span class="annot"><span class="annottext">[(Type, VarName)]
+</span><a href="#local-6989586621679312872"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312871"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312871"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span> </span><span id="local-6989586621679312870"><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312870"><span class="hs-identifier hs-var">rs</span></a></span></span><span> </span><span id="local-6989586621679312869"><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312869"><span class="hs-identifier hs-var">ws</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312871"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-35"></span><span>        </span><span id="local-6989586621679312867"><span class="annot"><span class="annottext">args' :: Set VarName
+</span><a href="#local-6989586621679312867"><span class="hs-identifier hs-var hs-var">args'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[VarName] -&gt; Set VarName
+forall a. Ord a =&gt; [a] -&gt; Set a
+</span><span class="hs-identifier hs-var">S.fromList</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((Type, VarName) -&gt; VarName) -&gt; [(Type, VarName)] -&gt; [VarName]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(Type, VarName) -&gt; VarName
+forall a b. (a, b) -&gt; b
+</span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">[(Type, VarName)]
+</span><a href="#local-6989586621679312872"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>     </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-var">ReadWriteList</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312870"><span class="hs-identifier hs-var">rs</span></a></span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; Set VarName
+forall a. Ord a =&gt; Set a -&gt; Set a -&gt; Set a
+</span><span class="hs-operator hs-var">`S.difference`</span></span><span> </span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312867"><span class="hs-identifier hs-var">args'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312869"><span class="hs-identifier hs-var">ws</span></a></span><span> </span><span class="annot"><span class="annottext">Set VarName -&gt; Set VarName -&gt; Set VarName
+forall a. Ord a =&gt; Set a -&gt; Set a -&gt; Set a
+</span><span class="hs-operator hs-var">`S.difference`</span></span><span> </span><span class="annot"><span class="annottext">Set VarName
+</span><a href="#local-6989586621679312867"><span class="hs-identifier hs-var">args'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Call"><span class="hs-identifier hs-type">Call</span></a></span><span> </span><span class="annot"><span class="annottext">Function
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312863"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679312863"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[ReadWriteList] -&gt; ReadWriteList
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; ReadWriteList) -&gt; [Expr] -&gt; [ReadWriteList]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679312863"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#CallExpr"><span class="hs-identifier hs-type">CallExpr</span></a></span><span> </span><span id="local-6989586621679312861"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312861"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679312860"><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679312860"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[ReadWriteList] -&gt; ReadWriteList
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; ReadWriteList) -&gt; [Expr] -&gt; [ReadWriteList]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312861"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; [Expr] -&gt; [Expr]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Expr]
+</span><a href="#local-6989586621679312860"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-type">analyzeLeftExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftExpr"><span class="hs-identifier hs-type">LeftExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-41"></span><span id="analyzeLeftExpr"><span class="annot"><span class="annottext">analyzeLeftExpr :: LeftExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-var hs-var">analyzeLeftExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftVar"><span class="hs-identifier hs-type">LeftVar</span></a></span><span> </span><span id="local-6989586621679312857"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312857"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-var">writeVariable</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312857"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftAt"><span class="hs-identifier hs-type">LeftAt</span></a></span><span> </span><span id="local-6989586621679312855"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312855"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679312854"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312854"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LeftExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-var">analyzeLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312855"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312854"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#LeftGet"><span class="hs-identifier hs-type">LeftGet</span></a></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312852"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312852"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LeftExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-var">analyzeLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312852"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeAssignExpr"><span class="hs-identifier hs-type">analyzeAssignExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#AssignExpr"><span class="hs-identifier hs-type">AssignExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-47"></span><span id="analyzeAssignExpr"><span class="annot"><span class="annottext">analyzeAssignExpr :: AssignExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeAssignExpr"><span class="hs-identifier hs-var hs-var">analyzeAssignExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-48"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#AssignExpr"><span class="hs-identifier hs-type">AssignExpr</span></a></span><span> </span><span class="annot"><span class="annottext">AssignOp
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312849"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312849"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679312848"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312848"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LeftExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-var">analyzeLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312849"><span class="hs-identifier hs-var">e1</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312848"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#AssignIncr"><span class="hs-identifier hs-type">AssignIncr</span></a></span><span> </span><span id="local-6989586621679312846"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312846"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LeftExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-var">analyzeLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312846"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#AssignDecr"><span class="hs-identifier hs-type">AssignDecr</span></a></span><span> </span><span id="local-6989586621679312844"><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312844"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LeftExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeLeftExpr"><span class="hs-identifier hs-var">analyzeLeftExpr</span></a></span><span> </span><span class="annot"><span class="annottext">LeftExpr
+</span><a href="#local-6989586621679312844"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatement"><span class="hs-identifier hs-type">analyzeStatement</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-53"></span><span id="analyzeStatement"><span class="annot"><span class="annottext">analyzeStatement :: Statement -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatement"><span class="hs-identifier hs-var hs-var">analyzeStatement</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-54"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#ExprStatement"><span class="hs-identifier hs-type">ExprStatement</span></a></span><span> </span><span id="local-6989586621679312841"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312841"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312841"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-55"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Block"><span class="hs-identifier hs-type">Block</span></a></span><span> </span><span id="local-6989586621679312839"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312839"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312839"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-56"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#If"><span class="hs-identifier hs-type">If</span></a></span><span> </span><span id="local-6989586621679312837"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312837"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679312836"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312836"><span class="hs-identifier hs-var">body1</span></a></span></span><span> </span><span id="local-6989586621679312835"><span class="annot"><span class="annottext">Maybe [Statement]
+</span><a href="#local-6989586621679312835"><span class="hs-identifier hs-var">body2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312837"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312836"><span class="hs-identifier hs-var">body1</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ReadWriteList
+-&gt; ([Statement] -&gt; ReadWriteList)
+-&gt; Maybe [Statement]
+-&gt; ReadWriteList
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">ReadWriteList
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe [Statement]
+</span><a href="#local-6989586621679312835"><span class="hs-identifier hs-var">body2</span></a></span><span>
+</span><span id="line-57"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#For"><span class="hs-identifier hs-type">For</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312832"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312832"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679312831"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312831"><span class="hs-identifier hs-var">init</span></a></span></span><span> </span><span id="local-6989586621679312830"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312830"><span class="hs-identifier hs-var">pred</span></a></span></span><span> </span><span id="local-6989586621679312829"><span class="annot"><span class="annottext">AssignExpr
+</span><a href="#local-6989586621679312829"><span class="hs-identifier hs-var">incr</span></a></span></span><span> </span><span id="local-6989586621679312828"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312828"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-var">writeVariable</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312832"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312831"><span class="hs-identifier hs-var">init</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312830"><span class="hs-identifier hs-var">pred</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">AssignExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeAssignExpr"><span class="hs-identifier hs-var">analyzeAssignExpr</span></a></span><span> </span><span class="annot"><span class="annottext">AssignExpr
+</span><a href="#local-6989586621679312829"><span class="hs-identifier hs-var">incr</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312828"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-58"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#ForEach"><span class="hs-identifier hs-type">ForEach</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312826"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312826"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679312825"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312825"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679312824"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312824"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-var">writeVariable</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312826"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312825"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312824"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#While"><span class="hs-identifier hs-type">While</span></a></span><span> </span><span id="local-6989586621679312822"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312822"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679312821"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312821"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312822"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var">analyzeStatements</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679312821"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-60"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Declare"><span class="hs-identifier hs-type">Declare</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679312819"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312819"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679312818"><span class="annot"><span class="annottext">Maybe Expr
+</span><a href="#local-6989586621679312818"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-var">writeVariable</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679312819"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">ReadWriteList
+-&gt; (Expr -&gt; ReadWriteList) -&gt; Maybe Expr -&gt; ReadWriteList
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">ReadWriteList
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Expr
+</span><a href="#local-6989586621679312818"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#DeclareDestructure"><span class="hs-identifier hs-type">DeclareDestructure</span></a></span><span> </span><span id="local-6989586621679312816"><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679312816"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="local-6989586621679312815"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312815"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[ReadWriteList] -&gt; ReadWriteList
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(VarName -&gt; ReadWriteList) -&gt; [VarName] -&gt; [ReadWriteList]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#writeVariable"><span class="hs-identifier hs-var">writeVariable</span></a></span><span> </span><span class="annot"><span class="annottext">[VarName]
+</span><a href="#local-6989586621679312816"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ReadWriteList -&gt; ReadWriteList -&gt; ReadWriteList
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312815"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-62"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Assign"><span class="hs-identifier hs-type">Assign</span></a></span><span> </span><span id="local-6989586621679312813"><span class="annot"><span class="annottext">AssignExpr
+</span><a href="#local-6989586621679312813"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">AssignExpr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeAssignExpr"><span class="hs-identifier hs-var">analyzeAssignExpr</span></a></span><span> </span><span class="annot"><span class="annottext">AssignExpr
+</span><a href="#local-6989586621679312813"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Assert"><span class="hs-identifier hs-type">Assert</span></a></span><span> </span><span id="local-6989586621679312811"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312811"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312811"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Return"><span class="hs-identifier hs-type">Return</span></a></span><span> </span><span id="local-6989586621679312809"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312809"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeExpr"><span class="hs-identifier hs-var">analyzeExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679312809"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-type">analyzeStatements</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#ReadWriteList"><span class="hs-identifier hs-type">ReadWriteList</span></a></span><span>
+</span><span id="line-67"></span><span id="analyzeStatements"><span class="annot"><span class="annottext">analyzeStatements :: [Statement] -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatements"><span class="hs-identifier hs-var hs-var">analyzeStatements</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ReadWriteList] -&gt; ReadWriteList
+forall a. Monoid a =&gt; [a] -&gt; a
+</span><span class="hs-identifier hs-var">mconcat</span></span><span> </span><span class="annot"><span class="annottext">([ReadWriteList] -&gt; ReadWriteList)
+-&gt; ([Statement] -&gt; [ReadWriteList]) -&gt; [Statement] -&gt; ReadWriteList
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">(Statement -&gt; ReadWriteList) -&gt; [Statement] -&gt; [ReadWriteList]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; ReadWriteList
+</span><a href="Jikka.CPlusPlus.Language.VariableAnalysis.html#analyzeStatement"><span class="hs-identifier hs-var">analyzeStatement</span></a></span><span>
+</span><span id="line-68"></span></pre></body></html>

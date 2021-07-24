@@ -5,4 +5,12 @@
 }</pre><p>After:</p><pre>vector&lt;int&gt; solve(vector&lt;int&gt; a) {
     a[0] = 1;
     return a;
+}</pre><p>Before:</p><pre>int solve(int a, int b, int x) {
+    jikka::convex_hull_trick cht = jikka::convex_hull_trick();
+    cht = jikka::convex_hull_trick::persistent_add_line(cht, a, b);
+    return cht.get_min(x);
+}</pre><p>After:</p><pre>int solve(int a, int b, int x) {
+    jikka::convex_hull_trick cht;
+    cht = cht.add_line(a, b);
+    return cht.get_min(x);
 }</pre></div></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.24.0</p></div></body></html>
