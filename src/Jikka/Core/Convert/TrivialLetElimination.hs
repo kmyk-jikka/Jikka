@@ -15,16 +15,34 @@ module Jikka.Core.Convert.TrivialLetElimination
   )
 where
 
+import Data.Functor
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
-import Jikka.Core.Language.Util
 
-type Env = M.Map VarName Expr
+plus :: Maybe Bool -> Maybe Bool -> Maybe Bool
+plus (Just _) (Just _) = Just False
+plus (Just p) Nothing = Just p
+plus Nothing (Just p) = Just p
+plus Nothing Nothing = Nothing
 
-runExpr :: Env -> Expr -> Expr
+isEliminatable :: VarName -> Expr -> Maybe Bool
+isEliminatable x = \case
+  Var y -> if x == y then Just True else Nothing
+  Lit _ -> Nothing
+  App f e -> isEliminatable x f `plus` isEliminatable x e
+  Lam y _ e -> if x == y then Nothing else isEliminatable x e $> False -- moving an expr into a lambda may increase the time complexity
+  Let y _ e1 e2 -> isEliminatable x e1 `plus` (if x == y then Nothing else isEliminatable x e2)
+
+isEliminatableToplevelExpr :: VarName -> ToplevelExpr -> Maybe Bool
+isEliminatableToplevelExpr x = \case
+  ResultExpr e -> isEliminatable x e
+  ToplevelLet y _ e cont -> isEliminatable x e `plus` (if x == y then Nothing else isEliminatableToplevelExpr x cont)
+  ToplevelLetRec f args _ body cont -> if x == f then Nothing else isEliminatableToplevelExpr x cont `plus` (if x `elem` map fst args then Nothing else isEliminatable x body)
+
+runExpr :: M.Map VarName Expr -> Expr -> Expr
 runExpr env = \case
   Var x -> fromMaybe (Var x) (M.lookup x env)
   Lit lit -> Lit lit
@@ -32,16 +50,16 @@ runExpr env = \case
   Lam x t body -> Lam x t (runExpr env body)
   Let x t e1 e2 ->
     let e1' = runExpr env e1
-     in if countOccurrences x e2 <= 1
+     in if isEliminatable x e2 /= Just False
           then runExpr (M.insert x e1' env) e2
           else Let x t e1' (runExpr env e2)
 
-runToplevelExpr :: Env -> ToplevelExpr -> ToplevelExpr
+runToplevelExpr :: M.Map VarName Expr -> ToplevelExpr -> ToplevelExpr
 runToplevelExpr env = \case
   ResultExpr e -> ResultExpr (runExpr env e)
   ToplevelLet x t e cont ->
     let e' = runExpr env e
-     in if countOccurrencesToplevelExpr x cont <= 1
+     in if isEliminatableToplevelExpr x cont /= Just False
           then runToplevelExpr (M.insert x e' env) cont
           else ToplevelLet x t e' (runToplevelExpr env cont)
   ToplevelLetRec f args ret body cont ->

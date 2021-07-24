@@ -123,20 +123,6 @@ mapTypeInBuiltin f = \case
   ConvexHullTrickInsert -> ConvexHullTrickInsert
   ConvexHullTrickGetMin -> ConvexHullTrickGetMin
 
-countOccurrences :: VarName -> Expr -> Int
-countOccurrences x = \case
-  Var y -> if x == y then 1 else 0
-  Lit _ -> 0
-  App f e -> countOccurrences x f + countOccurrences x e
-  Lam y _ body -> if x == y then 0 else countOccurrences x body
-  Let y _ e1 e2 -> countOccurrences x e1 + (if x == y then 0 else countOccurrences x e2)
-
-countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
-countOccurrencesToplevelExpr x = \case
-  ResultExpr e -> countOccurrences x e
-  ToplevelLet y _ e cont -> countOccurrences x e + (if x == y then 0 else countOccurrencesToplevelExpr x cont)
-  ToplevelLetRec f args _ body cont -> if x == f then 0 else countOccurrencesToplevelExpr x cont + (if x `elem` map fst args then 0 else countOccurrences x body)
-
 -- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
 mapExprM' pre post env e = do
