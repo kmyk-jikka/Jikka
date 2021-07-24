@@ -260,6 +260,8 @@ evalExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
           throwRuntimeError "list index out of range"
         return $ v1 V.! fromInteger v2
       _ -> throwInternalError "type error"
+  Starred _ ->
+    throwInternalError "cannot evaluate starred expr"
   Name x -> do
     local <- get
     case M.lookup (value' x) (unLocal local) of

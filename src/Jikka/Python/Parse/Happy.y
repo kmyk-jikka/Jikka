@@ -225,7 +225,7 @@ slicing :: { Expr' }
 -- 6.3.4. Calls
 call :: { Expr' }
     : primary "(" ")"                                       { $1 @> Call $1 [] [] }
-    | primary "(" expression_list ")"                       { $1 @> Call $1 (fst $3) [] }
+    | primary "(" starred_list ")"                          { $1 @> Call $1 (fst $3) [] }
     | primary "(" comprehension ")"                         { $1 @> Call $1 [$2 @> uncurry GeneratorExp $3] [] }
 
 -- 6.5. The power operator
@@ -324,6 +324,12 @@ lambda_expr_nocond :: { Expr' }
 expression_list :: { ([Expr'], Bool) }
     : expression opt(",")                                   { ([$1], isJust $2) }
     | expression "," expression_list                        { first ($1 :) $3 }
+starred_list :: { ([Expr'], Bool) }
+    : starred_item opt(",")                                 { ([$1], isJust $2) }
+    | starred_item "," starred_list                         { first ($1 :) $3 }
+starred_item :: { Expr' }
+    : expression                                            { $1 }
+    | "*" min_expr                                          { $1 @> Starred $2 }
 
 -- 7. Simple statements
 simple_stmt :: { Statement' }

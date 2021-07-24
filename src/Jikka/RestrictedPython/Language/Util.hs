@@ -29,6 +29,7 @@ module Jikka.RestrictedPython.Language.Util
 
     -- * traversing sub exprs
     mapSubExprM,
+    mapSubExpr,
     listSubExprs,
 
     -- * traversing exprs
@@ -40,6 +41,7 @@ module Jikka.RestrictedPython.Language.Util
     -- * exprs
     hasFunctionCall,
     isSmallExpr,
+    dropLocation,
 
     -- * targets
     targetVars,
@@ -47,6 +49,7 @@ module Jikka.RestrictedPython.Language.Util
     hasSubscriptTrg,
     hasBareNameTrg,
     exprToTarget,
+    targetToExpr,
 
     -- * programs
     toplevelMainDef,
@@ -106,6 +109,7 @@ freeVars' (WithLoc' _ e0) = case e0 of
   Constant _ -> []
   Attribute e _ -> freeVars' e
   Subscript e1 e2 -> freeVars' e1 ++ freeVars' e2
+  Starred e -> freeVars' e
   Name x -> [x]
   List _ es -> concatMap freeVars' es
   Tuple es -> concatMap freeVars' es
@@ -163,10 +167,14 @@ mapSubExprM f = go
         Constant const -> return $ Constant const
         Attribute e x -> Attribute <$> go e <*> pure x
         Subscript e1 e2 -> Subscript <$> go e1 <*> go e2
+        Starred e -> Starred <$> go e
         Name x -> return $ Name x
         List t es -> List t <$> mapM go es
         Tuple es -> Tuple <$> mapM go es
         SubscriptSlice e from to step -> SubscriptSlice <$> go e <*> mapM go from <*> mapM go to <*> mapM go step
+
+mapSubExpr :: (Expr' -> Expr') -> Expr' -> Expr'
+mapSubExpr f = runIdentity . mapSubExprM (return . f)
 
 listSubExprs :: Expr' -> [Expr']
 listSubExprs = reverse . getDual . execWriter . mapSubExprM go
@@ -303,6 +311,11 @@ hasFunctionCall = any (check . value') . listSubExprs
 isSmallExpr :: Expr' -> Bool
 isSmallExpr = not . hasFunctionCall
 
+dropLocation :: Expr' -> Expr'
+dropLocation = mapSubExpr go
+  where
+    go (WithLoc' _ e) = withoutLoc e
+
 targetVars :: Target' -> [VarName]
 targetVars = nub . map value' . targetVars'
 
@@ -331,6 +344,13 @@ exprToTarget e =
     Tuple es -> TupleTrg <$> mapM exprToTarget es
     Subscript e1 e2 -> SubscriptTrg <$> exprToTarget e1 <*> pure e2
     _ -> Nothing
+
+targetToExpr :: Target' -> Expr'
+targetToExpr e =
+  WithLoc' (loc' e) $ case value' e of
+    NameTrg x -> Name x
+    TupleTrg es -> Tuple (map targetToExpr es)
+    SubscriptTrg e1 e2 -> Subscript (targetToExpr e1) e2
 
 toplevelMainDef :: [Statement] -> Program
 toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]

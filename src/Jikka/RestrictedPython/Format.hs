@@ -127,6 +127,7 @@ formatExpr (WithLoc' _ e0) = case e0 of
   Constant const -> formatConstant const
   Attribute e (WithLoc' _ x) -> formatExpr e ++ "." ++ formatAttribute x
   Subscript e1 e2 -> formatExpr e1 ++ "[" ++ formatExpr e2 ++ "]"
+  Starred e -> "*" ++ formatExpr e
   Name x -> unVarName (value' x)
   List _ es -> "[" ++ intercalate ", " (map formatExpr es) ++ "]"
   Tuple es -> case es of
