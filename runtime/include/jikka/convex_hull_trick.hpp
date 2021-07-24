@@ -82,12 +82,6 @@ public:
     cross.emplace(cross_point(*it, *next(it)), *next(it));
     assert(not empty());
   }
-  // TODO: Remove this function.
-  static convex_hull_trick add_line(convex_hull_trick cht, int64_t a,
-                                    int64_t b) {
-    cht.add_line(a, b);
-    return cht;
-  }
   bool empty() const { return lines.size() <= 2; }
   /**
    * @note O(log n)

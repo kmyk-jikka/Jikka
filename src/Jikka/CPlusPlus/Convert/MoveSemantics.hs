@@ -21,6 +21,7 @@ import Data.Maybe
 import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.CPlusPlus.Language.Util
+import Jikka.CPlusPlus.Language.VariableAnalysis
 import Jikka.Common.Error
 
 runExpr :: MonadState (M.Map VarName VarName) m => Expr -> m Expr
@@ -51,7 +52,9 @@ runAssignExpr = \case
   AssignDecr e -> AssignDecr <$> runLeftExpr e
 
 isMovable :: VarName -> [[Statement]] -> Bool
-isMovable x cont = all (\stmt -> x `S.notMember` freeVarsStatement stmt) (concat cont)
+isMovable x cont =
+  let ReadWriteList rs _ = analyzeStatements (concat cont)
+   in x `S.notMember` rs
 
 runStatement :: MonadState (M.Map VarName VarName) m => Statement -> [[Statement]] -> m [Statement]
 runStatement stmt cont = case stmt of
@@ -79,15 +82,19 @@ runStatement stmt cont = case stmt of
     e <- runExpr e
     body <- runStatements body cont
     return [While e body]
-  Declare t x e -> do
+  Declare t y e -> do
     e <- traverse runExpr e
     case e of
-      Just (Var y) | y `isMovable` cont -> do
-        modify' (M.insert x y)
+      Just (Var x) | x `isMovable` cont -> do
+        modify' (M.insert y x)
         return []
-      Just (Call ConvexHullTrickMake []) -> return [Declare t x Nothing]
+      Just (Call ConvexHullTrickMake []) -> return [Declare t y Nothing]
+      Just (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "add_line" [a, b]]
       _ -> do
-        return [Declare t x e]
+        return [Declare t y e]
   DeclareDestructure xs e -> do
     e <- runExpr e
     return [DeclareDestructure xs e]
