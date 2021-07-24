@@ -147,6 +147,7 @@ def get_local_install_root() -> pathlib.Path:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--jobs', type=int, default=os.cpu_count())
+    parser.add_argument('-k', type=str)
     args = parser.parse_args()
 
     basicConfig(level=DEBUG)
@@ -156,8 +157,12 @@ def main() -> None:
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
         futures = []
         for path in pathlib.Path('examples').glob('*.py'):
+            if args.k and args.k not in path.name:
+                continue
             futures.append(executor.submit(run_integration_test, path, executable=executable))
         for path in pathlib.Path('examples', 'errors').glob('*.py'):
+            if args.k and args.k not in path.name:
+                continue
             futures.append(executor.submit(run_integration_test_about_error, path, executable=executable))
     cnt = [future.result() for future in futures].count(True)
     logger.info('%d/%d tests succeeded', cnt, len(futures))
