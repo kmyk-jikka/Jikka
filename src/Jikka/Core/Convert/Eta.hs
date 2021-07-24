@@ -52,7 +52,7 @@ rule =
         Filter' t f xs -> go f (FunTy t BoolTy) (\f -> Filter' t f xs)
         _ -> return Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- `run` does eta-reductions in some locations.

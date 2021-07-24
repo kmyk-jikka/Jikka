@@ -93,7 +93,7 @@ rule =
       misc
     ]
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | TODO: Split and remove this module.

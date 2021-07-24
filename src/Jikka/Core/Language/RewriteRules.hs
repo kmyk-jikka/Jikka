@@ -21,8 +21,10 @@ module Jikka.Core.Language.RewriteRules
   )
 where
 
+import Control.Monad.State.Strict
 import Data.Maybe (fromMaybe)
 import Debug.Trace
+import Jikka.Common.Error
 import Jikka.Core.Format (formatExpr)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Util (curryFunTy)
@@ -57,7 +59,7 @@ simpleRewriteRule f = RewriteRule (\_ e -> return (f e))
 --
 -- * This function is idempotent.
 -- * This function doesn't terminate when a given rewrite rule doesn't terminate.
-applyRewriteRule :: Monad m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRule = applyRewriteRulePreOrder
 
 coalesceMaybes :: a -> Maybe a -> b -> Maybe b -> Maybe (a, b)
@@ -66,40 +68,53 @@ coalesceMaybes a Nothing _ (Just b) = Just (a, b)
 coalesceMaybes _ (Just a) b Nothing = Just (a, b)
 coalesceMaybes _ (Just a) _ (Just b) = Just (a, b)
 
-applyRewriteRuleToImmediateSubExprs :: Monad m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+applyRewriteRuleToImmediateSubExprs :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRuleToImmediateSubExprs f env = \case
   Var _ -> return Nothing
   Lit _ -> return Nothing
   App e1 e2 -> do
-    e1' <- unRewriteRule f env e1
-    e2' <- unRewriteRule f env e2
+    e1' <- lift $ unRewriteRule f env e1
+    e2' <- lift $ unRewriteRule f env e2
     return $ fmap (uncurry App) (coalesceMaybes e1 e1' e2 e2')
-  Lam x t body -> (Lam x t <$>) <$> unRewriteRule f ((x, t) : env) body
+  Lam x t body -> lift $ (Lam x t <$>) <$> unRewriteRule f ((x, t) : env) body
   Let x t e1 e2 -> do
-    e1' <- unRewriteRule f env e1
-    e2' <- unRewriteRule f ((x, t) : env) e2
+    e1' <- lift $ unRewriteRule f env e1
+    e2' <- lift $ unRewriteRule f ((x, t) : env) e2
     return $ fmap (uncurry (Let x t)) (coalesceMaybes e1 e1' e2 e2')
 
-applyRewriteRulePreOrder :: Monad m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+joinStateT :: Monad m => StateT s (StateT s m) a -> StateT s m a
+joinStateT f = do
+  s <- get
+  (a, s) <- runStateT f s
+  put s
+  return a
+
+applyRewriteRulePreOrder :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRulePreOrder f env e = do
-  e' <- unRewriteRule f env e
+  cnt <- get
+  when (cnt >= 100) $ do
+    throwInternalError "rewrite rule doesn't terminate"
+  e' <- lift $ unRewriteRule f env e
   case e' of
     Nothing -> do
-      e' <- applyRewriteRuleToImmediateSubExprs (RewriteRule (applyRewriteRulePreOrder f)) env e
+      e' <- joinStateT (applyRewriteRuleToImmediateSubExprs (RewriteRule (applyRewriteRulePreOrder f)) env e)
       case e' of
         Nothing -> return Nothing
         Just e' -> do
-          e'' <- unRewriteRule f env e'
+          modify' succ
+          e'' <- lift $ unRewriteRule f env e'
           case e'' of
             Nothing -> return $ Just e'
             Just e'' -> do
+              modify' succ
               e''' <- applyRewriteRulePreOrder f env e''
               return . Just $ fromMaybe e'' e'''
     Just e' -> do
+      modify' succ
       e'' <- applyRewriteRulePreOrder f env e'
       return . Just $ fromMaybe e' e''
 
-applyRewriteRuleToplevelExpr :: Monad m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> m (Maybe ToplevelExpr)
+applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
 applyRewriteRuleToplevelExpr f env = \case
   ResultExpr e -> (ResultExpr <$>) <$> applyRewriteRule f env e
   ToplevelLet y t e cont -> do
@@ -112,10 +127,10 @@ applyRewriteRuleToplevelExpr f env = \case
     cont' <- applyRewriteRuleToplevelExpr f env' cont
     return $ fmap (uncurry (ToplevelLetRec g args ret)) (coalesceMaybes body body' cont cont')
 
-applyRewriteRuleProgram :: Monad m => RewriteRule m -> Program -> m (Maybe Program)
-applyRewriteRuleProgram f = applyRewriteRuleToplevelExpr f []
+applyRewriteRuleProgram :: MonadError Error m => RewriteRule m -> Program -> m (Maybe Program)
+applyRewriteRuleProgram f prog = evalStateT (applyRewriteRuleToplevelExpr f [] prog) 0
 
-applyRewriteRuleProgram' :: Monad m => RewriteRule m -> Program -> m Program
+applyRewriteRuleProgram' :: MonadError Error m => RewriteRule m -> Program -> m Program
 applyRewriteRuleProgram' f prog = fromMaybe prog <$> applyRewriteRuleProgram f prog
 
 traceRewriteRule :: Monad m => RewriteRule m -> RewriteRule m

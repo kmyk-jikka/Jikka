@@ -30,7 +30,7 @@ rule = RewriteRule $ \_ -> \case
   App (Lam x _ e1) e2 -> Just <$> substitute x e2 e1
   _ -> return Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` does beta-reduction.
