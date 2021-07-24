@@ -118,6 +118,7 @@ analyzeBuiltin = \case
   Snoc t -> Fun [t] "snoc"
   Foldl t1 t2 -> Fun [t1, t2] "foldl"
   Scanl t1 t2 -> Fun [t1, t2] "scanl"
+  Build t -> Fun [t] "build"
   Iterate t -> Fun [t] "iterate"
   Len t -> Fun [t] "len"
   Map t1 t2 -> Fun [t1, t2] "map"

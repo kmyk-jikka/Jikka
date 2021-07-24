@@ -278,6 +278,25 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
                ],
           Y.Var ys
         )
+    X.Build t -> go3'' $ \f xs n -> do
+      (stmtsInit, xs) <- runExpr env xs
+      (stmtsXs, n) <- runExpr env n
+      t <- runType t
+      ys <- Y.newFreshName Y.LocalNameKind
+      i <- Y.newFreshName Y.LoopCounterNameKind
+      (stmtsF, body, f) <- runExprFunction env f (Y.Var ys)
+      return
+        ( stmtsInit ++ stmtsXs
+            ++ [ Y.Declare (Y.TyVector t) ys (Just xs)
+               ]
+            ++ stmtsF
+            ++ [ Y.repStatement
+                   i
+                   (Y.cast Y.TyInt32 n)
+                   (body ++ [Y.callMethod' (Y.Var ys) "push_back" [f]])
+               ],
+          Y.Var ys
+        )
     X.Len _ -> go1 $ \e -> Y.cast Y.TyInt64 (Y.size e)
     X.Map _ t2 -> go2'' $ \f xs -> do
       ys <- Y.newFreshName Y.LocalNameKind

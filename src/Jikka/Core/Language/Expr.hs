@@ -171,6 +171,8 @@ data Builtin
     Foldl Type Type
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
     Scanl Type Type
+  | -- | \(\lambda f a n.\) repeat @a <- snoc a (f a)@ @n@ times \(: \forall \alpha. (\list(\alpha) \to \alpha) \to \list(\alpha) \to \int \to \list(\alpha)\)
+    Build Type
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     Len Type
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)

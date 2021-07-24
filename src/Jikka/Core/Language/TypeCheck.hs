@@ -73,6 +73,7 @@ builtinToType = \case
   Snoc t -> Fun2Ty (ListTy t) t (ListTy t)
   Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
+  Build t -> Fun3Ty (FunTy (ListTy t) t) (ListTy t) IntTy (ListTy t)
   Len t -> FunTy (ListTy t) IntTy
   Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
   Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)

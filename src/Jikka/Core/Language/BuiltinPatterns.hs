@@ -117,6 +117,8 @@ pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 
 pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3
 
+pattern Build' t e1 e2 e3 = AppBuiltin3 (Build t) e1 e2 e3
+
 pattern Len' t e = AppBuiltin (Len t) e
 
 pattern Map' t1 t2 f e = AppBuiltin2 (Map t1 t2) f e

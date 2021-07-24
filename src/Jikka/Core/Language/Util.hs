@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Jikka.Core.Language.Util where
@@ -5,6 +6,8 @@ module Jikka.Core.Language.Util where
 import Control.Monad.Identity
 import Data.Maybe (isJust)
 import Jikka.Common.Alpha
+import Jikka.Common.Error
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 
 genType :: MonadAlpha m => m Type
@@ -78,6 +81,7 @@ mapTypeInBuiltin f = \case
   Snoc t -> Snoc (f t)
   Foldl t1 t2 -> Foldl (f t1) (f t2)
   Scanl t1 t2 -> Scanl (f t1) (f t2)
+  Build t -> Build (f t)
   Len t -> Len (f t)
   Map t1 t2 -> Map (f t1) (f t2)
   Filter t -> Filter (f t)
@@ -280,6 +284,7 @@ isConstantTimeBuiltin = \case
   Snoc _ -> False
   Foldl _ _ -> False
   Scanl _ _ -> False
+  Build _ -> False
   Len _ -> True
   Map _ _ -> False
   Filter _ -> False
@@ -331,3 +336,18 @@ isConstantTimeExpr = \case
     _ -> False
   Lam _ _ _ -> True
   Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2
+
+-- | `replaceLenF` replaces @len(f)@ in an expr with @i + 1@.
+-- * This assumes that there are no name conflicts.
+replaceLenF :: MonadError Error m => VarName -> VarName -> Expr -> m Expr
+replaceLenF f i = go
+  where
+    go = \case
+      Len' _ (Var f') | f' == f -> return $ Plus' (Var i) (LitInt' 1)
+      Var y -> return $ Var y
+      Lit lit -> return $ Lit lit
+      App g e -> App <$> go g <*> go e
+      Lam x _ _ | x == i -> throwInternalError "Jikka.Core.Language.Util.replaceLenF: name conflict"
+      Lam x t body -> Lam x t <$> (if x == f then return body else go body)
+      Let y _ _ _ | y == i -> throwInternalError "Jikka.Core.Language.Util.replaceLenF: name conflict"
+      Let y t e1 e2 -> Let y t <$> go e1 <*> (if y == f then return e2 else go e2)

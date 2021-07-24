@@ -23,6 +23,7 @@ module Jikka.Core.Convert.MakeScanl
     reduceScanlBuild,
     reduceFoldlSetAtRecurrence,
     reduceFoldlSetAtAccumulation,
+    reduceFoldlSetAtGeneric,
     getRecurrenceFormulaBase,
     getRecurrenceFormulaStep1,
     getRecurrenceFormulaStep,
@@ -30,6 +31,7 @@ module Jikka.Core.Convert.MakeScanl
 where
 
 import Control.Monad.Trans.Maybe
+import qualified Data.Map as M
 import Data.Maybe
 import qualified Data.Vector as V
 import Jikka.Common.Alpha
@@ -120,29 +122,30 @@ hoistMaybe = MaybeT . pure
 -- * This assumes that constants are already folded (`Jikka.Core.Convert.ConstantFolding`).
 reduceFoldlSetAtRecurrence :: MonadAlpha m => RewriteRule m
 reduceFoldlSetAtRecurrence = RewriteRule $ \_ -> \case
-  -- foldl (fun a i -> setat a index(i) step(a, i)) init indices
-  Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) init' indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+  -- foldl (fun a i -> setat a index(i) step(a, i)) base indices
+  Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
     -- index(i) = i + k
-    index <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
+    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
       Just (i', k) | i' == i -> Just k
       _ -> Nothing
     -- indices = range n
     n <- hoistMaybe $ case indices of
       Range1' n -> Just n -- We can do this because foldl-map combinations are already reduced.
       _ -> Nothing
-    let (base, _) = getRecurrenceFormulaBase init'
+    -- init = setat (k-1) a_{k-1} (... (setat 0 a_0 (range n)) ...)
+    (base, _) <- return $ getRecurrenceFormulaBase base -- TODO: care about cases when base is longer than indices
     case base of
       [] ->
-        if index == 0 && a `isUnusedVar` step
+        if k == 0 && a `isUnusedVar` step
           then return $ Map' IntTy t2 (Lam i IntTy step) (Range1' n)
           else hoistMaybe Nothing
       [base] -> do
-        step <- MaybeT $ getRecurrenceFormulaStep1 (- 1 + fromInteger index) t2 a i step
+        step <- MaybeT $ getRecurrenceFormulaStep1 (- 1 + fromInteger k) t2 a i step
         return $ Scanl' IntTy t2 step base (Range1' n)
       _ -> do
         let ts = replicate (length base) t2
         let base' = uncurryApp (Tuple' ts) base
-        step <- MaybeT $ getRecurrenceFormulaStep (- length base + fromInteger index) (length base) t2 a i step
+        step <- MaybeT $ getRecurrenceFormulaStep (- length base + fromInteger k) (length base) t2 a i step
         x <- lift (genVarName a)
         return $ foldr (Cons' t2) (Map' (TupleTy ts) t2 (Lam x (TupleTy ts) (Proj' ts (length base - 1) (Var x))) (Scanl' IntTy (TupleTy ts) step base' (Range1' n))) (init base)
   _ -> return Nothing
@@ -167,8 +170,8 @@ checkAccumulationFormulaStep a i = go
 -- * This assumes that constants are already folded (`Jikka.Core.Convert.ConstantFolding`).
 reduceFoldlSetAtAccumulation :: MonadAlpha m => RewriteRule m
 reduceFoldlSetAtAccumulation = RewriteRule $ \_ -> \case
-  -- foldl (fun a i -> setat a index() step(a, i)) init indices
-  Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) init indices | a' == a && a `isUnusedVar` index && i `isUnusedVar` index -> runMaybeT $ do
+  -- foldl (fun a i -> setat a index() step(a, i)) base indices
+  Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index && i `isUnusedVar` index -> runMaybeT $ do
     -- step(a, i) = op (at a index()) step'(a, i)
     (accumulate, step) <- hoistMaybe $ case step of
       Max2' t (At' _ (Var a') index') step | a' == a && index' == index -> Just (Max1' t, step)
@@ -178,18 +181,55 @@ reduceFoldlSetAtAccumulation = RewriteRule $ \_ -> \case
       ModPlus' (At' _ (Var a') index') step m | a' == a && index' == index && a `isUnusedVar` m && i `isUnusedVar` m -> Just ((`ModSum'` m), step)
       ModMult' (At' _ (Var a') index') step m | a' == a && index' == index && a `isUnusedVar` m && i `isUnusedVar` m -> Just ((`ModProduct'` m), step)
       _ -> Nothing
-    -- index() = j + k
-    (j, k) <- hoistMaybe $ unNPlusKPattern (parseArithmeticalExpr index)
-    -- indices = range (j + k)
-    () <- hoistMaybe $ case indices of
-      Range1' n -> case unNPlusKPattern (parseArithmeticalExpr n) of
-        Just (j', k') | j' == j && k' == k -> Just ()
-        _ -> Nothing
-      _ -> Nothing
+    -- indices = range (index())
+    guard $ indices == Range1' index
     -- step'(a, i) = step''(at a i)
     guard $ checkAccumulationFormulaStep a i step
-    step <- lift $ substitute a init step
-    return $ SetAt' t2 init index (accumulate (Map' IntTy t2 (Lam i IntTy step) (Range1' index)))
+    step <- lift $ substitute a base step
+    return $ SetAt' t2 base index (accumulate (Map' IntTy t2 (Lam i IntTy step) (Range1' index)))
+  _ -> return Nothing
+
+-- | `checkGenericRecurrenceFormulaStep` checks that all `At` in @body@ about @a@ have indices less than @i + k@.
+checkGenericRecurrenceFormulaStep :: VarName -> VarName -> Integer -> Expr -> Bool
+checkGenericRecurrenceFormulaStep a = \i k -> go (M.fromList [(i, k - 1)])
+  where
+    -- (i, k) in env menas a[i + k] is accessible but a[i + k + 1] is not.
+    go :: M.Map VarName Integer -> Expr -> Bool
+    go env = \case
+      At' _ (Var a') i | a' == a -> case unNPlusKPattern (parseArithmeticalExpr i) of
+        Just (i, k) -> case M.lookup i env of
+          Just limit -> k <= limit
+          Nothing -> False
+        _ -> False
+      Map' _ _ (Lam j _ body) (Range1' n) | j /= a -> case unNPlusKPattern (parseArithmeticalExpr n) of
+        Just (i, k) -> case M.lookup i env of
+          Just limit -> go (M.insert j (limit - k + 1) env) body
+          Nothing -> go env body && go env n
+        _ -> go env body && go env n
+      Var x -> x /= a
+      Lit _ -> True
+      App f e -> go env f && go env e
+      Lam x _ e -> x == a || go env e
+      Let x _ e1 e2 -> go env e1 && (x == a || go env e2)
+
+reduceFoldlSetAtGeneric :: MonadAlpha m => RewriteRule m
+reduceFoldlSetAtGeneric = RewriteRule $ \_ -> \case
+  -- foldl (fun a i -> setat a index(i) step(a, i)) base indices
+  Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+    -- index(i) = i + k
+    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
+      Just (i', k) | i' == i -> Just k
+      _ -> Nothing
+    -- indices = range n
+    n <- hoistMaybe $ case indices of
+      Range1' n -> Just n -- We can do this because foldl-map combinations are already reduced.
+      _ -> Nothing
+    -- base = setat (k - 1) a_{k - 1} (... (setat 0 a_0 (range n)) ...)
+    (base, _) <- return $ getRecurrenceFormulaBase base -- TODO: care about cases when base is longer than indices
+    -- step(a, i) = step(a[0], a[1], ..., a[i + k - 1], i)
+    guard $ checkGenericRecurrenceFormulaStep a i k step
+    step <- lift $ substitute i (Minus' (Len' t2 (Var a)) (LitInt' k)) step
+    return $ Build' t2 (Lam a (ListTy t2) step) (foldl (Snoc' t2) (Nil' t2) base) n
   _ -> return Nothing
 
 rule :: MonadAlpha m => RewriteRule m
@@ -197,7 +237,8 @@ rule =
   mconcat
     [ reduceScanlBuild,
       reduceFoldlSetAtRecurrence,
-      reduceFoldlSetAtAccumulation
+      reduceFoldlSetAtAccumulation,
+      reduceFoldlSetAtGeneric
     ]
 
 runProgram :: MonadAlpha m => Program -> m Program
@@ -231,6 +272,7 @@ runProgram = applyRewriteRuleProgram' rule
 -- * `Nil` \(: \forall \alpha. \list(\alpha)\)
 -- * `Cons` \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)
 -- * `Range1` \(: \int \to \list(\int)\)
+-- * `Build` \(: \forall \alpha. (\list(\alpha) \to \alpha) \to \list(\alpha) \to \int \to \list(\alpha)\)
 --
 -- === Map functions
 --
