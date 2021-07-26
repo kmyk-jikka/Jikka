@@ -1491,8 +1491,8 @@ isConstantTimeBuiltin :: Builtin -> Bool
 isConstantTimeExpr :: Expr -> Bool
 
 -- | <a>replaceLenF</a> replaces <tt>len(f)</tt> in an expr with <tt>i +
---   1</tt>. * This assumes that there are no name conflicts.
-replaceLenF :: MonadError Error m => VarName -> VarName -> Expr -> m Expr
+--   k</tt>. * This assumes that there are no name conflicts.
+replaceLenF :: MonadError Error m => VarName -> VarName -> Integer -> Expr -> m Expr
 
 
 module Jikka.Core.Language.Beta
@@ -2237,7 +2237,7 @@ module Jikka.Core.Convert.ConvexHullTrick
 --   in &lt;math&gt;.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
-parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
+parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
 
 -- | <a>parseLinearFunctionBody</a>` parses the body of a linear function
 --   which can be decomposed to convex hull trick.
