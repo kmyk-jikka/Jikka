@@ -36,7 +36,7 @@ cumulativeMax max2 t a0 a n = do
   x1 <- genVarName'
   x2 <- genVarName'
   let a0' = fromMaybe (At' t a (LitInt' 0)) a0
-  return $ Let b (ListTy t) (Scanl' IntTy t (Lam2 x1 t x2 t (max2 (Var x1) (Var x2))) a0' a) e
+  return $ Let b (ListTy t) (Scanl' t t (Lam2 x1 t x2 t (max2 (Var x1) (Var x2))) a0' a) e
 
 rule :: MonadAlpha m => RewriteRule m
 rule = RewriteRule $ \_ -> \case
