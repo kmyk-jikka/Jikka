@@ -1,5 +1,159 @@
 # Changelog for Jikka
 
+## 2021-07-21: v5.0.11.0
+
+Convex Hull Trick and Segment Trees are implemented.
+
+Input (`examples/dp_z.py`):
+
+```python
+# https://atcoder.jp/contests/dp/tasks/dp_z
+from typing import *
+
+INF = 10 ** 18
+
+def solve(n: int, c: int, h: List[int]) -> int:
+    assert 2 <= n <= 10 ** 5
+    assert 1 <= c <= 10 ** 12
+    assert len(h) == n
+    assert all(1 <= h_i <= 10 ** 6 for h_i in h)
+
+    dp = [INF for _ in range(n)]
+    dp[0] = 0
+    for i in range(1, n):
+        for j in range(i):
+            dp[i] = min(dp[i], dp[j] + (h[j] - h[i]) ** 2 + c)
+    return dp[n - 1]
+
+def main() -> None:
+    n, c = map(int, input().split())
+    h = list(map(int, input().split()))
+    assert len(h) == n
+    ans = solve(n, c, h)
+    print(ans)
+
+if __name__ == '__main__':
+    main()
+```
+
+Output (<https://atcoder.jp/contests/dp/submissions/24563891>):
+
+```c++
+#include "jikka/base.hpp"
+#include "jikka/convex_hull_trick.hpp"
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <tuple>
+#include <vector>
+int64_t solve(int64_t n_0, int64_t c_1, std::vector<int64_t> h_2) {
+  std::vector<int64_t> x3;
+  x3.push_back(0);
+  jikka::convex_hull_trick x4_10;
+  for (int32_t x5 = 0; x5 < n_0 - 1; ++x5) {
+    x4_10.add_line(h_2[x5], h_2[x5] * h_2[x5] + x3[x5]);
+    x3.push_back(c_1 + h_2[(x5 + 1)] * h_2[(x5 + 1)] +
+                 x4_10.get_min(h_2[(x5 + 1)] * -2));
+  }
+  return x3[(n_0 - 1)];
+}
+int main() {
+  int64_t n_12 = -1;
+  int64_t c_13 = -1;
+  std::cin >> n_12;
+  std::vector<int64_t> h_14(n_12, -1);
+  std::cin >> c_13;
+  for (int32_t i15 = 0; i15 < n_12; ++i15) {
+    std::cin >> h_14[i15];
+  }
+  auto ans_16 = solve(n_12, c_13, h_14);
+  std::cout << ans_16 << ' ';
+  std::cout << '\n' << ' ';
+}
+```
+
+Input (`examples/dp_q.py`):
+
+```python
+# https://atcoder.jp/contests/dp/tasks/dp_q
+from typing import *
+
+def solve(n: int, h: List[int], a: List[int]) -> int:
+    assert 1 <= n <= 2 * 10 ** 5
+    assert len(h) == n
+    assert all(1 <= h_i <= n for h_i in h)
+    assert len(a) == n
+    assert all(1 <= a_i <= 10 ** 9 for a_i in a)
+
+    dp = [0 for _ in range(n)]
+    for i in range(n):
+        b = 0
+        for j in range(h[i]):
+            b = max(b, dp[j])
+        dp[h[i] - 1] = b + a[i]
+    return max(dp)
+
+def main() -> None:
+    n = int(input())
+    h = list(map(int, input().split()))
+    assert len(h) == n
+    a = list(map(int, input().split()))
+    assert len(a) == n
+    ans = solve(n, h, a)
+    print(ans)
+
+if __name__ == '__main__':
+    main()
+```
+
+Output (<https://atcoder.jp/contests/dp/submissions/24561829>):
+
+```c++
+#include "jikka/base.hpp"
+#include "jikka/segment_tree.hpp"
+#include <algorithm>
+#include <array>
+#include <atcoder/segtree>
+#include <cstdint>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <tuple>
+#include <vector>
+int64_t solve(int64_t n_0, std::vector<int64_t> h_1, std::vector<int64_t> a_2) {
+  std::vector<int64_t> x4(n_0, 0);
+  atcoder::segtree<int64_t, jikka::max_int64_t, jikka::const_int64_min> x5_13(
+      x4);
+  for (int32_t x6 = 0; x6 < n_0; ++x6) {
+    x4[(h_1[x6] - 1)] = std::max<int64_t>(0, x5_13.prod(0, h_1[x6])) + a_2[x6];
+    x5_13.set(h_1[x6] - 1, x4[(h_1[x6] - 1)]);
+  }
+  int64_t x11 = *std::max_element(x4.begin(), x4.end());
+  return x11;
+}
+int main() {
+  int64_t n_14 = -1;
+  std::cin >> n_14;
+  std::vector<int64_t> h_15(n_14, -1);
+  std::vector<int64_t> a_16(n_14, -1);
+  for (int32_t i17 = 0; i17 < n_14; ++i17) {
+    std::cin >> h_15[i17];
+  }
+  for (int32_t i18 = 0; i18 < n_14; ++i18) {
+    std::cin >> a_16[i18];
+  }
+  auto ans_19 = solve(n_14, h_15, a_16);
+  std::cout << ans_19 << ' ';
+  std::cout << '\n' << ' ';
+}
+```
+
+
 ## 2021-07-21: v5.0.10.0
 
 -   The generated C++ code is optimized.

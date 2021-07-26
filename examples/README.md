@@ -27,7 +27,7 @@
 -   :heavy_check_mark: AC `dp_z.py`
     -   Educational DP Contest [Z - Frog 3](https://atcoder.jp/contests/dp/tasks/dp_z)
     -   Convex hull trick
-    -   submission at v5.0.11.0: <https://atcoder.jp/contests/dp/submissions/24471716>
+    -   submission at v5.0.11.0: <https://atcoder.jp/contests/dp/submissions/24563891>
 -   :hourglass: TLE `abc134_c.py`
     -   AtCoder Beginner Contest 134 [C - Exception Handling](https://atcoder.jp/contests/abc134/tasks/abc134_c)
     -   Cumulative sums from both sides / 両側からの累積和
