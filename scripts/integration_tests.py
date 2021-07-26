@@ -165,6 +165,37 @@ def get_local_install_root() -> pathlib.Path:
     return pathlib.Path(s.decode().strip())
 
 
+def find_unused_test_cases() -> List[pathlib.Path]:
+    scripts = list(pathlib.Path('examples').glob('*.py'))
+    errors = list(pathlib.Path('examples', 'errors').glob('*.py'))
+    unused = []
+    for path in pathlib.Path('examples', 'data').glob('*'):
+        name = path.name[:-len(''.join(path.suffixes))]
+        if name not in [script.stem for script in scripts + errors]:
+            unused.append(path)
+            continue
+        if path.suffix == '.in':
+            pass
+        elif path.suffix == '.out':
+            pass
+        elif path.name.endswith('.generator.py'):
+            pass
+        elif path.name.endswith('.generator.cpp'):
+            pass
+        elif path.name.endswith('.solver.py'):
+            pass
+        elif path.name.endswith('.solver.cpp'):
+            pass
+        elif path.suffix == '.txt' and name in [script.stem for script in errors]:
+            pass
+        else:
+            unused.append(path)
+            continue
+    for path in unused:
+        logger.error('unused file: %s', str(path))
+    return unused
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--jobs', type=int, default=os.cpu_count())
@@ -173,6 +204,8 @@ def main() -> None:
 
     basicConfig(level=DEBUG)
 
+    if find_unused_test_cases():
+        sys.exit(1)
     subprocess.check_call(['stack', '--system-ghc', 'build'])
     executable = get_local_install_root() / 'bin' / 'jikka'
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
