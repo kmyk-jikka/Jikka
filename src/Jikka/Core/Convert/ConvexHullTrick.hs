@@ -112,20 +112,20 @@ parseLinearFunctionBody' f i j e = result <$> go e
         _ -> Nothing
       _ -> Nothing
 
-parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
-parseLinearFunctionBody f i = runMaybeT . go
+parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
+parseLinearFunctionBody f i k = runMaybeT . go
   where
     go = \case
-      Min1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case size of
-        Var i' | i' == i -> do
+      Min1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case unNPlusKPattern (parseArithmeticalExpr size) of
+        Just (i', k') | i' == i && k' == k -> do
           (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
           -- raname @j@ to @i@
           a <- lift $ substitute j (Var i) a
           c <- lift $ substitute j (Var i) c
           return (LitInt' 1, a, b, c, d)
         _ -> hoistMaybe Nothing
-      Max1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case size of
-        Var i' | i' == i -> do
+      Max1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case unNPlusKPattern (parseArithmeticalExpr size) of
+        Just (i', k') | i' == i && k' == k -> do
           (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
           -- raname @j@ to @i@
           a <- lift $ substitute j (Var i) a
@@ -155,14 +155,22 @@ parseLinearFunctionBody f i = runMaybeT . go
         return (Mult' e1 sign, a, b, c, Mult' e1 d)
       _ -> hoistMaybe Nothing
 
+getLength :: Expr -> Maybe Integer
+getLength = \case
+  Nil' _ -> Just 0
+  Cons' _ _ xs -> succ <$> getLength xs
+  Snoc' _ xs _ -> succ <$> getLength xs
+  _ -> Nothing
+
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule = RewriteRule $ \_ -> \case
   -- build (fun f -> step(f)) base n
   Build' IntTy (Lam f _ step) base n -> runMaybeT $ do
     i <- lift genVarName'
-    step <- replaceLenF f i step
+    k <- hoistMaybe $ getLength base
+    step <- replaceLenF f i k step
     -- step(f) = sign(f) * min (map (fun j -> a(f, j) c(f) + b(f, j)) (range (i + k))) + d(f)
-    (sign, a, c, b, d) <- MaybeT $ parseLinearFunctionBody f i step
+    (sign, a, c, b, d) <- MaybeT $ parseLinearFunctionBody f i k step
     x <- lift genVarName'
     y <- lift genVarName'
     f' <- lift $ genVarName f

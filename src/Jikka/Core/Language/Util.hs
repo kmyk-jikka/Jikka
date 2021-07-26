@@ -338,13 +338,13 @@ isConstantTimeExpr = \case
   Lam _ _ _ -> True
   Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2
 
--- | `replaceLenF` replaces @len(f)@ in an expr with @i + 1@.
+-- | `replaceLenF` replaces @len(f)@ in an expr with @i + k@.
 -- * This assumes that there are no name conflicts.
-replaceLenF :: MonadError Error m => VarName -> VarName -> Expr -> m Expr
-replaceLenF f i = go
+replaceLenF :: MonadError Error m => VarName -> VarName -> Integer -> Expr -> m Expr
+replaceLenF f i k = go
   where
     go = \case
-      Len' _ (Var f') | f' == f -> return $ Plus' (Var i) (LitInt' 1)
+      Len' _ (Var f') | f' == f -> return $ Plus' (Var i) (LitInt' k)
       Var y -> return $ Var y
       Lit lit -> return $ Lit lit
       App g e -> App <$> go g <*> go e
