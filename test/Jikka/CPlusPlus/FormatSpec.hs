@@ -20,7 +20,7 @@ spec = describe "run" $ do
                 TyInt64
                 (VarName "solve")
                 [(TyInt32, VarName "n")]
-                [ Declare TyInt64 (VarName "x") (Just (Lit (LitInt64 0))),
+                [ Declare TyInt64 (VarName "x") (DeclareCopy (Lit (LitInt64 0))),
                   For
                     TyInt32
                     (VarName "i")

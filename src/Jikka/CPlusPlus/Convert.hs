@@ -10,6 +10,7 @@ import qualified Jikka.CPlusPlus.Convert.FromCore as FromCore
 import qualified Jikka.CPlusPlus.Convert.MoveSemantics as MoveSemantics
 import qualified Jikka.CPlusPlus.Convert.OptimizeRange as OptimizeRange
 import qualified Jikka.CPlusPlus.Convert.UnpackTuples as UnpackTuples
+import qualified Jikka.CPlusPlus.Convert.UseInitialization as UseInitialization
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -26,4 +27,5 @@ run prog format = do
   prog <- go prog
   prog <- go prog
   prog <- go prog
-  AddMain.run prog format
+  prog <- AddMain.run prog format
+  UseInitialization.run prog

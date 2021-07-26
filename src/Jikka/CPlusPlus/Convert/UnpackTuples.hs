@@ -129,20 +129,23 @@ runStatement stmt cont = case stmt of
     e <- runExpr e
     body <- runStatements body cont
     return [While e body]
-  Declare t x e -> do
-    e <- traverse runExpr e
-    case e of
-      Just (Call (StdTuple ts) es) -> do
+  Declare t x init -> do
+    init <- case init of
+      DeclareDefault -> return DeclareDefault
+      DeclareCopy e -> DeclareCopy <$> runExpr e
+      DeclareInitialize es -> DeclareInitialize <$> mapM runExpr es
+    case init of
+      DeclareCopy (Call (StdTuple ts) es) -> do
         ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
         modify' (M.insert x (zip ts ys))
-        return $ zipWith3 (\t y e -> Declare t y (Just e)) ts ys es
-      Just (Call (ArrayExt t) es) -> do
+        return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
+      DeclareCopy (Call (ArrayExt t) es) -> do
         let ts = replicate (length es) t
         ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
         modify' (M.insert x (zip ts ys))
-        return $ zipWith3 (\t y e -> Declare t y (Just e)) ts ys es
+        return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
       _ -> do
-        return [Declare t x e]
+        return [Declare t x init]
   DeclareDestructure xs e -> do
     e <- runExpr e
     return [DeclareDestructure xs e]

@@ -36,7 +36,7 @@ spec = describe "run" $ do
             Y.TyInt64
             "f_0"
             [(Y.TyInt64, "n_1")]
-            [ Y.Declare Y.TyInt64 "x2" Nothing,
+            [ Y.Declare Y.TyInt64 "x2" Y.DeclareDefault,
               Y.If
                 (Y.BinOp Y.Equal (Y.Var "n_1") (Y.Lit (Y.LitInt64 0)))
                 [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar "x2") (Y.Lit (Y.LitInt64 1)))]

@@ -54,7 +54,7 @@ runMainDeclare format = go M.empty (F.inputTree format)
         sizes' <- mapM lookupSize indices
         let deps = S.unions (map freeVars sizes')
         let t = foldl (\t _ -> TyVector t) TyInt64 indices
-        let decl = Declare t y (Just (snd (foldr (\size (t, e) -> (TyVector t, Call (Function "std::vector" [t]) [size, e])) (TyInt64, Lit (LitInt64 (-1))) sizes')))
+        let decl = Declare t y (DeclareCopy (snd (foldr (\size (t, e) -> (TyVector t, vecCtor t [size, e])) (TyInt64, Lit (LitInt64 (-1))) sizes')))
         return [(deps, decl)]
       F.Newline -> return []
       F.Seq formats -> concat <$> mapM (go sizes) formats
@@ -95,7 +95,7 @@ runMainSolve format = do
     Left x -> do
       y <- renameVarName LocalNameKind x
       modify' $ M.insert x y
-      return $ Declare TyAuto y (Just solve)
+      return $ Declare TyAuto y (DeclareCopy solve)
     Right xs -> do
       ys <- mapM (renameVarName LocalNameKind) xs
       modify' $ \env -> foldl (\env (x, y) -> M.insert x y env) env (zip xs ys)

@@ -66,11 +66,17 @@ freeVarsStatement = \case
   For _ x init pred incr body -> S.singleton x <> freeVars init <> freeVars pred <> freeVarsAssignExpr incr <> freeVarsStatements body
   ForEach _ x e body -> S.singleton x <> freeVars e <> freeVarsStatements body
   While e body -> freeVars e <> freeVarsStatements body
-  Declare _ x e -> S.singleton x <> S.unions (fmap freeVars e)
+  Declare _ x init -> S.singleton x <> freeVarsDeclareRight init
   DeclareDestructure xs e -> S.fromList xs <> freeVars e
   Assign e -> freeVarsAssignExpr e
   Assert e -> freeVars e
   Return e -> freeVars e
+
+freeVarsDeclareRight :: DeclareRight -> S.Set VarName
+freeVarsDeclareRight = \case
+  DeclareDefault -> S.empty
+  DeclareCopy e -> freeVars e
+  DeclareInitialize es -> S.unions (map freeVars es)
 
 freeVarsAssignExpr :: AssignExpr -> S.Set VarName
 freeVarsAssignExpr = \case
@@ -132,6 +138,9 @@ callMethod e f args = Call (Method f) (e : args)
 callMethod' :: Expr -> FunName -> [Expr] -> Statement
 callMethod' = ((ExprStatement .) .) . callMethod
 
+vecCtor :: Type -> [Expr] -> Expr
+vecCtor t es = Call (VecCtor t) es
+
 begin :: Expr -> Expr
 begin e = Call (Method "begin") [e]
 
@@ -174,7 +183,12 @@ mapExprStatementStatementM f g = go
       For t x init pred incr body -> g =<< (For t x <$> go' init <*> go' pred <*> mapExprStatementAssignExprM f g incr <*> mapM go body)
       ForEach t x e body -> g =<< (ForEach t x <$> go' e <*> mapM go body)
       While e body -> g =<< (While <$> go' e <*> mapM go body)
-      Declare t x e -> g . Declare t x =<< traverse go' e
+      Declare t x init -> do
+        init <- case init of
+          DeclareDefault -> return DeclareDefault
+          DeclareCopy e -> DeclareCopy <$> go' e
+          DeclareInitialize es -> DeclareInitialize <$> mapM go' es
+        g $ Declare t x init
       DeclareDestructure xs e -> g . DeclareDestructure xs =<< go' e
       Assign e -> g . Assign =<< mapExprStatementAssignExprM f g e
       Assert e -> g . Assert =<< go' e

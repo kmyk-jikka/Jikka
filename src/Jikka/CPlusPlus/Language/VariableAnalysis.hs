@@ -57,7 +57,11 @@ analyzeStatement = \case
   For _ x init pred incr body -> writeVariable x <> analyzeExpr init <> analyzeExpr pred <> analyzeAssignExpr incr <> analyzeStatements body
   ForEach _ x e body -> writeVariable x <> analyzeExpr e <> analyzeStatements body
   While e body -> analyzeExpr e <> analyzeStatements body
-  Declare _ x e -> writeVariable x <> maybe mempty analyzeExpr e
+  Declare _ x init ->
+    writeVariable x <> case init of
+      DeclareDefault -> mempty
+      DeclareCopy e -> analyzeExpr e
+      DeclareInitialize es -> mconcat (map analyzeExpr es)
   DeclareDestructure xs e -> mconcat (map writeVariable xs) <> analyzeExpr e
   Assign e -> analyzeAssignExpr e
   Assert e -> analyzeExpr e

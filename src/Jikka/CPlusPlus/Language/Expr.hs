@@ -60,11 +60,12 @@ data Function
   | StdGet Integer
   | ArrayExt Type
   | VecExt Type
+  | VecCtor Type
   | Range
   | MethodSize
-  | ConvexHullTrickMake
+  | ConvexHullTrickCtor
   | ConvexHullTrickCopyAddLine
-  | SegmentTreeMake Monoid'
+  | SegmentTreeCtor Monoid'
   | SegmentTreeCopySetPoint Monoid'
   deriving (Eq, Ord, Show, Read)
 
@@ -135,6 +136,13 @@ data AssignExpr
   | AssignDecr LeftExpr
   deriving (Eq, Ord, Show, Read)
 
+data DeclareRight
+  = DeclareDefault
+  | DeclareCopy Expr
+  | -- | This is only for better formatting. This should not be used while optimization phases.
+    DeclareInitialize [Expr]
+  deriving (Eq, Ord, Show, Read)
+
 data Statement
   = ExprStatement Expr
   | Block [Statement]
@@ -142,7 +150,7 @@ data Statement
   | For Type VarName Expr Expr AssignExpr [Statement]
   | ForEach Type VarName Expr [Statement]
   | While Expr [Statement]
-  | Declare Type VarName (Maybe Expr)
+  | Declare Type VarName DeclareRight
   | DeclareDestructure [VarName] Expr
   | Assign AssignExpr
   | Assert Expr

@@ -240,11 +240,12 @@ formatExpr = \case
           StdGet n -> call $ "std::get<" ++ show n ++ ">"
           ArrayExt t -> ("std::array<" ++ formatType t ++ ", " ++ show (length args) ++ ">{" ++ args' ++ "}", IdentPrec)
           VecExt t -> ("std::vector<" ++ formatType t ++ ">{" ++ args' ++ "}", IdentPrec)
+          VecCtor t -> call $ "std::vector<" ++ formatType t ++ ">"
           Range -> call "jikka::range"
           MethodSize -> method "size"
-          ConvexHullTrickMake -> call "jikka::convex_hull_trick"
+          ConvexHullTrickCtor -> call "jikka::convex_hull_trick"
           ConvexHullTrickCopyAddLine -> call "jikka::convex_hull_trick::add_line"
-          SegmentTreeMake mon -> call (formatType (TySegmentTree mon))
+          SegmentTreeCtor mon -> call (formatType (TySegmentTree mon))
           SegmentTreeCopySetPoint _ -> call "jikka::segment_tree_set"
   CallExpr f args ->
     let f' = formatExpr' FunCallPrec f
@@ -297,12 +298,13 @@ formatStatement = \case
     let cond' = formatExpr' ParenPrec cond
         body' = concatMap formatStatement body
      in ["while (" ++ cond' ++ ") {"] ++ body' ++ ["}"]
-  Declare t x e ->
+  Declare t x init ->
     let t' = formatType t
-        e' = case e of
-          Nothing -> ""
-          Just e -> " = " ++ resolvePrecRight AssignPrec (formatExpr e)
-     in [t' ++ " " ++ unVarName x ++ e' ++ ";"]
+        init' = case init of
+          DeclareDefault -> ""
+          DeclareCopy e -> " = " ++ resolvePrecRight AssignPrec (formatExpr e)
+          DeclareInitialize es -> "(" ++ intercalate ", " (map (formatExpr' CommaPrec) es) ++ ")"
+     in [t' ++ " " ++ unVarName x ++ init' ++ ";"]
   DeclareDestructure xs e -> ["auto [" ++ intercalate ", " (map unVarName xs) ++ "] = " ++ resolvePrecRight AssignPrec (formatExpr e) ++ ";"]
   Assign e -> [resolvePrec ParenPrec (formatAssignExpr e) ++ ";"]
   Assert e -> ["assert (" ++ formatExpr' ParenPrec e ++ ");"]

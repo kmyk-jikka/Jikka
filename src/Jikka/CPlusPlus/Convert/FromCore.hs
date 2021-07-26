@@ -81,7 +81,7 @@ runLiteral env = \case
   X.LitBool p -> return $ Y.Lit (Y.LitBool p)
   X.LitNil t -> do
     t <- runType t
-    return $ Y.Call (Y.Function "std::vector" [t]) []
+    return $ Y.vecCtor t []
   X.LitBottom t err -> do
     t <- runType t
     return $ Y.Call (Y.Function "jikka::error" [t]) [Y.Lit (Y.LitString err)]
@@ -171,7 +171,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       (stmtsF, body, f) <- runExprFunction env f (Y.Var y)
       return
         ( stmtsN ++ stmtsX
-            ++ [Y.Declare t y (Just x)]
+            ++ [Y.Declare t y (Y.DeclareCopy x)]
             ++ stmtsF
             ++ [ Y.repStatement
                    i
@@ -197,7 +197,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
           t <- runType t
           phi <- Y.newFreshName Y.LocalNameKind
           let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
-          return ([Y.Declare t phi Nothing] ++ stmts1 ++ [Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))], Y.Var phi)
+          return ([Y.Declare t phi Y.DeclareDefault] ++ stmts1 ++ [Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))], Y.Var phi)
     -- bitwise functions
     X.BitNot -> go1 $ \e -> Y.UnOp Y.BitNot e
     X.BitAnd -> go2 $ \e1 e2 -> Y.BinOp Y.BitAnd e1 e2
@@ -230,7 +230,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare (Y.TyVector t) ys Nothing,
+        ( [ Y.Declare (Y.TyVector t) ys Y.DeclareDefault,
             Y.callMethod' (Y.Var ys) "push_back" [x],
             Y.callMethod' (Y.Var ys) "insert" [Y.end (Y.Var ys), Y.begin xs, Y.end xs]
           ],
@@ -240,7 +240,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
             Y.callMethod' (Y.Var ys) "push_back" [x]
           ],
           Y.Var ys
@@ -255,7 +255,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       (stmtsF, body, f) <- runExprFunction2 env f (Y.Var y) (Y.Var x)
       return
         ( stmtsInit ++ stmtsXs
-            ++ [Y.Declare t2 y (Just init)]
+            ++ [Y.Declare t2 y (Y.DeclareCopy init)]
             ++ stmtsF
             ++ [ Y.ForEach
                    t1
@@ -274,7 +274,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       (stmtsF, body, f) <- runExprFunction2 env f (Y.at (Y.Var ys) (Y.Var i)) (Y.at xs (Y.Var i))
       return
         ( stmtsInit ++ stmtsXs
-            ++ [ Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.incrExpr (Y.size xs)])),
+            ++ [ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.incrExpr (Y.size xs)])),
                  Y.assignAt ys (Y.litInt32 0) init
                ]
             ++ stmtsF
@@ -294,7 +294,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       (stmtsF, body, f) <- runExprFunction env f (Y.Var ys)
       return
         ( stmtsInit ++ stmtsXs
-            ++ [ Y.Declare (Y.TyVector t) ys (Just xs)
+            ++ [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
                ]
             ++ stmtsF
             ++ [ Y.repStatement
@@ -314,14 +314,14 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
           lit <- runLiteral env lit
           return $
             stmtsN
-              ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [n, lit]))]
+              ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [n, lit]))]
         _ -> do
           (stmtsXs, xs) <- runExpr env xs
           i <- Y.newFreshName Y.LoopCounterNameKind
           (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
           return $
             stmtsXs
-              ++ [Y.Declare (Y.TyVector t2) ys (Just (Y.callFunction "std::vector" [t2] [Y.size xs]))]
+              ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs]))]
               ++ stmtsF
               ++ [ Y.repStatement
                      i
@@ -337,7 +337,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       (stmtsF, body, f) <- runExprFunction env f (Y.Var x)
       return
         ( stmtsXs
-            ++ [Y.Declare (Y.TyVector t) ys Nothing]
+            ++ [Y.Declare (Y.TyVector t) ys Y.DeclareDefault]
             ++ stmtsF
             ++ [ Y.ForEach
                    t
@@ -358,7 +358,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
             Y.assignAt ys i x
           ],
           Y.Var ys
@@ -366,14 +366,14 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Elem _ -> go2' $ \xs x -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Just (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
           ],
           Y.Var y
         )
     X.Sum -> go1' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyInt64 y (Just (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0]))
+        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0]))
           ],
           Y.Var y
         )
@@ -381,7 +381,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyInt64 y (Just (Y.litInt64 0)),
+        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 0)),
             Y.ForEach
               Y.TyInt64
               x
@@ -394,7 +394,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyInt64 y (Just (Y.litInt64 1)),
+        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1)),
             Y.ForEach
               Y.TyInt64
               x
@@ -407,7 +407,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyInt64 y (Just (Y.litInt64 1)),
+        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1)),
             Y.ForEach
               Y.TyInt64
               x
@@ -420,7 +420,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare t y (Just (Y.UnOp Y.Deref (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs])))
+        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs])))
           ],
           Y.Var y
         )
@@ -428,7 +428,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare t y (Just (Y.UnOp Y.Deref (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs])))
+        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs])))
           ],
           Y.Var y
         )
@@ -436,7 +436,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare t y (Just (Y.BinOp Y.Sub (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+        ( [ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
           ],
           Y.Var y
         )
@@ -444,21 +444,21 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare t y (Just (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+        ( [ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
           ],
           Y.Var y
         )
     X.All -> go1' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Just (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
           ],
           Y.Var y
         )
     X.Any -> go1' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Just (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
           ],
           Y.Var y
         )
@@ -466,7 +466,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
             Y.callFunction' "std::sort" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
           ],
           Y.Var ys
@@ -475,7 +475,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare (Y.TyVector t) ys (Just xs),
+        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
             Y.callFunction' "std::reverse" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
           ],
           Y.Var ys
@@ -484,7 +484,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Range2 -> go2' $ \from to -> do
       ys <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys (Just (Y.callFunction "std::vector" [Y.TyInt64] [Y.BinOp Y.Sub to from])),
+        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys (Y.DeclareCopy (Y.vecCtor Y.TyInt64 [Y.BinOp Y.Sub to from])),
             Y.callFunction' "std::iota" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys), from]
           ],
           Y.Var ys
@@ -493,7 +493,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
       return
-        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys Nothing,
+        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys Y.DeclareDefault,
             Y.For
               Y.TyInt32
               i
@@ -531,10 +531,10 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Permute -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::permute" []) [e1, e2]
     X.MultiChoose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
     -- data structures
-    X.ConvexHullTrickInit -> go0 $ Y.Call Y.ConvexHullTrickMake []
+    X.ConvexHullTrickInit -> go0 $ Y.Call Y.ConvexHullTrickCtor []
     X.ConvexHullTrickGetMin -> go2 $ \cht x -> Y.Call (Y.Method "get_min") [cht, x]
     X.ConvexHullTrickInsert -> go3 $ \cht a b -> Y.Call Y.ConvexHullTrickCopyAddLine [cht, a, b]
-    X.SegmentTreeInitList semigrp -> go1 $ \a -> Y.Call (Y.SegmentTreeMake (runSemigroup semigrp)) [a]
+    X.SegmentTreeInitList semigrp -> go1 $ \a -> Y.Call (Y.SegmentTreeCtor (runSemigroup semigrp)) [a]
     X.SegmentTreeGetRange _ -> go3 $ \segtree l r -> Y.Call (Y.Method "prod") [segtree, l, r]
     X.SegmentTreeSetPoint semigrp -> go3 $ \segtree i a -> Y.Call (Y.SegmentTreeCopySetPoint (runSemigroup semigrp)) [segtree, i, a]
 
@@ -612,7 +612,7 @@ runExpr env = \case
     t' <- runType t
     (stmts1, e1) <- runExpr env e1
     (stmts2, e2) <- runExpr ((x, t, y) : env) e2
-    return (stmts1 ++ Y.Declare t' y (Just e1) : stmts2, e2)
+    return (stmts1 ++ Y.Declare t' y (Y.DeclareCopy e1) : stmts2, e2)
 
 runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelFunDef env f args ret body = do
