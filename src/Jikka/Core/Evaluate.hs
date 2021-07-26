@@ -104,6 +104,24 @@ convexHullTrickGetMin cht x =
     then throwRuntimeError "the set of lines is empty"
     else return $ V.minimum (V.map (\(a, b) -> a * x + b) cht)
 
+segmentTreeGetRange :: MonadError Error m => Semigroup' -> [Integer] -> Integer -> Integer -> m Integer
+segmentTreeGetRange semigrp segtree l r
+  | l > r = throwRuntimeError $ "the range has negative length: l = " ++ show l ++ ", r = " ++ show r
+  | l == r = throwRuntimeError $ "the range is empty: l = r = " ++ show l
+  | otherwise =
+    let slice = take (fromInteger (r - l)) (drop (fromInteger l) segtree)
+     in return $ case semigrp of
+          SemigroupIntPlus -> sum slice
+          SemigroupIntMin -> minimum slice
+          SemigroupIntMax -> maximum slice
+
+build :: MonadError Error m => (V.Vector Value -> m Value) -> V.Vector Value -> Integer -> m (V.Vector Value)
+build _ _ n | n < 0 = throwRuntimeError $ "negative length: " ++ show n
+build _ xs 0 = return xs
+build f xs n = do
+  y <- f xs
+  build f (V.snoc xs y) (n - 1)
+
 -- -----------------------------------------------------------------------------
 -- evaluator
 
@@ -190,6 +208,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Snoc _ -> go2 valueToList pure ValList V.snoc
     Foldl _ _ -> go3' pure pure valueToList id $ \f x a -> V.foldM (\x y -> callValue f [x, y]) x a
     Scanl _ _ -> go3' pure pure valueToList ValList $ \f x a -> scanM (\x y -> callValue f [x, y]) x a
+    Build _ -> go3' pure valueToList valueToInt ValList $ \f xs n -> build (\xs -> callValue f [ValList xs]) xs n
     Len _ -> go1 valueToList ValInt (fromIntegral . V.length)
     Map _ _ -> go2' pure valueToList ValList map'
     Filter _ -> go2' pure valueToList ValList $ \f xs -> V.filterM (\x -> (/= ValBool False) <$> callValue f [x]) xs
@@ -230,6 +249,9 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     ConvexHullTrickInit -> go0 ValList V.empty
     ConvexHullTrickGetMin -> go2' (V.mapM valueToIntPair <=< valueToList) valueToInt ValInt convexHullTrickGetMin
     ConvexHullTrickInsert -> go3 valueToList pure pure ValList $ \cht a b -> V.snoc cht (ValTuple [a, b])
+    SegmentTreeInitList _ -> go1 pure id id
+    SegmentTreeGetRange semigrp -> go3' valueToIntList valueToInt valueToInt ValInt (segmentTreeGetRange semigrp)
+    SegmentTreeSetPoint _ -> go3' valueToList valueToInt pure ValList setAtEither
 
 callLambda :: MonadError Error m => Maybe VarName -> Env -> VarName -> Type -> Expr -> [Value] -> m Value
 callLambda = \name env x t body args -> wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ go Nothing env x t body args

@@ -73,6 +73,7 @@ builtinToType = \case
   Snoc t -> Fun2Ty (ListTy t) t (ListTy t)
   Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
   Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
+  Build t -> Fun3Ty (FunTy (ListTy t) t) (ListTy t) IntTy (ListTy t)
   Len t -> FunTy (ListTy t) IntTy
   Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
   Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)
@@ -113,6 +114,15 @@ builtinToType = \case
   ConvexHullTrickInit -> ConvexHullTrickTy
   ConvexHullTrickGetMin -> Fun2Ty ConvexHullTrickTy IntTy IntTy
   ConvexHullTrickInsert -> Fun3Ty ConvexHullTrickTy IntTy IntTy ConvexHullTrickTy
+  SegmentTreeInitList semigrp -> FunTy (ListTy (semigroupToType semigrp)) (SegmentTreeTy semigrp)
+  SegmentTreeGetRange semigrp -> Fun3Ty (SegmentTreeTy semigrp) IntTy IntTy (semigroupToType semigrp)
+  SegmentTreeSetPoint semigrp -> Fun3Ty (SegmentTreeTy semigrp) IntTy (semigroupToType semigrp) (SegmentTreeTy semigrp)
+
+semigroupToType :: Semigroup' -> Type
+semigroupToType = \case
+  SemigroupIntPlus -> IntTy
+  SemigroupIntMin -> IntTy
+  SemigroupIntMax -> IntTy
 
 literalToType :: Literal -> Type
 literalToType = \case

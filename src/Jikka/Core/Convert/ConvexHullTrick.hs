@@ -59,11 +59,11 @@ sumPairs :: [(ArithmeticalExpr, ArithmeticalExpr)] -> Maybe (ArithmeticalExpr, A
 sumPairs = foldr (\e1 e2 -> plusPair e1 =<< e2) (Just (integerArithmeticalExpr 1, integerArithmeticalExpr 0))
 
 -- | `parseLinearFunctionBody'` parses the body of a linear function which can be decomposed to convex hull trick.
--- @parseLinearFunctionBody' f i j k e@ finds a 4-tuple @a, b, c, d@ where @e = a(f[j], j) c(f[< i + k], i) + b(f[j], j) + d(f[< i + k], i)@.
+-- @parseLinearFunctionBody' f i j e@ finds a 4-tuple @a, b, c, d@ where @e = a(f[j], j) c(f[< i], i) + b(f[j], j) + d(f[< i], i)@.
 --
 -- TODO: What is the relation between @j@ and @k@?
-parseLinearFunctionBody' :: VarName -> VarName -> Integer -> VarName -> Expr -> Maybe (Expr, Expr, Expr, Expr)
-parseLinearFunctionBody' f i k j e = result <$> go e
+parseLinearFunctionBody' :: VarName -> VarName -> VarName -> Expr -> Maybe (Expr, Expr, Expr, Expr)
+parseLinearFunctionBody' f i j e = result <$> go e
   where
     result (a, c, b, d) =
       let (k, a') = splitConstantFactorArithmeticalExpr a
@@ -104,29 +104,29 @@ parseLinearFunctionBody' f i k j e = result <$> go e
       e
         | f `isUnusedVar` e && i `isUnusedVar` e ->
           return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, parseArithmeticalExpr e, integerArithmeticalExpr 0)
-      e@(At' _ (Var x) index) | x == f -> case unNPlusKPattern (parseArithmeticalExpr index) of
-        Just (i', k') | i' == i && k' < k -> do
+      e@(At' _ (Var f') index) | f' == f -> case unNPlusKPattern (parseArithmeticalExpr index) of
+        Just (i', k) | i' == i && k < 0 -> do
           return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, integerArithmeticalExpr 0, parseArithmeticalExpr e)
         Just (j', 0) | j' == j -> do
           return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, parseArithmeticalExpr e, integerArithmeticalExpr 0)
         _ -> Nothing
       _ -> Nothing
 
-parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
-parseLinearFunctionBody f i k = runMaybeT . go
+parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
+parseLinearFunctionBody f i = runMaybeT . go
   where
     go = \case
-      Min1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case unNPlusKPattern (parseArithmeticalExpr size) of
-        Just (i', k') | i' == i && k' == k -> do
-          (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i k j step
+      Min1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case size of
+        Var i' | i' == i -> do
+          (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
           -- raname @j@ to @i@
           a <- lift $ substitute j (Var i) a
           c <- lift $ substitute j (Var i) c
           return (LitInt' 1, a, b, c, d)
         _ -> hoistMaybe Nothing
-      Max1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case unNPlusKPattern (parseArithmeticalExpr size) of
-        Just (i', k') | i' == i && k' == k -> do
-          (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i k j step
+      Max1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case size of
+        Var i' | i' == i -> do
+          (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
           -- raname @j@ to @i@
           a <- lift $ substitute j (Var i) a
           c <- lift $ substitute j (Var i) c
@@ -155,16 +155,14 @@ parseLinearFunctionBody f i k = runMaybeT . go
         return (Mult' e1 sign, a, b, c, Mult' e1 d)
       _ -> hoistMaybe Nothing
 
-rule :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule = RewriteRule $ \_ -> \case
-  -- foldl (fun f i -> setat f index(i) step(f, i)) base (range n)
-  Foldl' IntTy (ListTy IntTy) (Lam2 f _ i _ (SetAt' _ (Var f') index step)) base (Range1' n) | f' == f && f `isUnusedVar` index -> runMaybeT $ do
-    -- index(i) = i + k
-    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
-      Just (i', k) | i' == i -> Just k
-      _ -> Nothing
-    -- step(f, i) = sign(f, i) * min (map (fun j -> a(f, j) c(f, i) + b(f, j)) (range (i + k))) + d(f, i)
-    (sign, a, c, b, d) <- MaybeT $ parseLinearFunctionBody f i k step
+  -- build (fun f -> step(f)) base n
+  Build' IntTy (Lam f _ step) base n -> runMaybeT $ do
+    i <- lift genVarName'
+    step <- replaceLenF f i step
+    -- step(f) = sign(f) * min (map (fun j -> a(f, j) c(f) + b(f, j)) (range (i + k))) + d(f)
+    (sign, a, c, b, d) <- MaybeT $ parseLinearFunctionBody f i step
     x <- lift genVarName'
     y <- lift genVarName'
     f' <- lift $ genVarName f
@@ -179,13 +177,13 @@ rule = RewriteRule $ \_ -> \case
           Lam2 x (TupleTy ts) i IntTy $
             Let f (ListTy IntTy) (Proj' ts 1 (Var x)) $
               Let y ConvexHullTrickTy (ConvexHullTrickInsert' (Proj' ts 0 (Var x)) a b) $
-                Let f' (ListTy IntTy) (SetAt' IntTy (Var f) index (Plus' (Mult' sign (ConvexHullTrickGetMin' (Var y) c)) d)) $
+                Let f' (ListTy IntTy) (Snoc' IntTy (Var f) (Plus' (Mult' sign (ConvexHullTrickGetMin' (Var y) c)) d)) $
                   uncurryApp (Tuple' ts) [Var y, Var f']
     -- proj 1 (foldl step' base' (range (n - 1)))
     return $ Proj' ts 1 (Foldl' IntTy (TupleTy ts) step' base' (Range1' n))
   _ -> return Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` optimizes a DP which has the recurrence relation

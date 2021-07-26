@@ -47,11 +47,12 @@ rule =
         Iterate' t k f x -> go f (FunTy t t) (\f -> Iterate' t k f x)
         Foldl' t1 t2 f init xs -> go f (FunTy t2 (FunTy t1 t1)) (\f -> Foldl' t1 t2 f init xs)
         Scanl' t1 t2 f init xs -> go f (FunTy t2 (FunTy t1 t1)) (\f -> Scanl' t1 t2 f init xs)
+        Build' t f xs n -> go f (FunTy (ListTy t) t) (\f -> Build' t f xs n)
         Map' t1 t2 f xs -> go f (FunTy t1 t2) (\f -> Map' t1 t2 f xs)
         Filter' t f xs -> go f (FunTy t BoolTy) (\f -> Filter' t f xs)
         _ -> return Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- `run` does eta-reductions in some locations.

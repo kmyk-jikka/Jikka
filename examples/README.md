@@ -20,13 +20,14 @@
     -   Educational DP Contest [C - Vacation](https://atcoder.jp/contests/dp/tasks/dp_c)
     -   AC with a naive solution / 愚直解が AC
     -   submission at v5.0.10.0: <https://atcoder.jp/contests/dp/submissions/24396317>
+-   :heavy_check_mark: AC `dp_q.py`
+    -   Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
+    -   A lazy propagation segment tree / 遅延伝播セグメント木
+    -   submission at v5.0.11.0: <https://atcoder.jp/contests/dp/submissions/24561829>
 -   :heavy_check_mark: AC `dp_z.py`
     -   Educational DP Contest [Z - Frog 3](https://atcoder.jp/contests/dp/tasks/dp_z)
     -   Convex hull trick
     -   submission at v5.0.11.0: <https://atcoder.jp/contests/dp/submissions/24471716>
--   :hourglass: TLE `dp_q.py`
-    -   Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
-    -   A lazy propagation segment tree / 遅延伝播セグメント木
 -   :hourglass: TLE `abc134_c.py`
     -   AtCoder Beginner Contest 134 [C - Exception Handling](https://atcoder.jp/contests/abc134/tasks/abc134_c)
     -   Cumulative sums from both sides / 両側からの累積和

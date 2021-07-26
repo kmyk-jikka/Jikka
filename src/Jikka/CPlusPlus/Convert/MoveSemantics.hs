@@ -82,19 +82,26 @@ runStatement stmt cont = case stmt of
     e <- runExpr e
     body <- runStatements body cont
     return [While e body]
-  Declare t y e -> do
-    e <- traverse runExpr e
-    case e of
-      Just (Var x) | x `isMovable` cont -> do
+  Declare t y init -> do
+    init <- case init of
+      DeclareDefault -> return DeclareDefault
+      DeclareCopy e -> DeclareCopy <$> runExpr e
+      DeclareInitialize es -> DeclareInitialize <$> mapM runExpr es
+    case init of
+      DeclareCopy (Var x) | x `isMovable` cont -> do
         modify' (M.insert y x)
         return []
-      Just (Call ConvexHullTrickMake []) -> return [Declare t y Nothing]
-      Just (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+      DeclareCopy (Call ConvexHullTrickCtor []) -> return [Declare t y DeclareDefault]
+      DeclareCopy (Call ConvexHullTrickCopyAddLine [Var x, a, b])
         | x `isMovable` cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
+      DeclareCopy (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "set" [i, a]]
       _ -> do
-        return [Declare t y e]
+        return [Declare t y init]
   DeclareDestructure xs e -> do
     e <- runExpr e
     return [DeclareDestructure xs e]
@@ -107,6 +114,12 @@ runStatement stmt cont = case stmt of
         | x `isMovable` cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
+        | otherwise -> return [Assign e]
+      AssignExpr SimpleAssign (LeftVar y) (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
+        | x == y -> return [callMethod' (Var x) "set" [i, a]]
+        | x `isMovable` cont -> do
+          modify' (M.insert y x)
+          return [callMethod' (Var x) "set" [i, a]]
         | otherwise -> return [Assign e]
       _ -> return [Assign e]
   Assert e -> do

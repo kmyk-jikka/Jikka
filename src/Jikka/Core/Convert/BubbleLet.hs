@@ -33,12 +33,12 @@ rule =
    in RewriteRule $ \_ -> \case
         Iterate' t k f x -> go f (\f -> Iterate' t k f x)
         Foldl' t1 t2 f init xs -> go f (\f -> Foldl' t1 t2 f init xs)
-        Scanl' t1 t2 f init xs -> go f (\f -> Scanl' t1 t2 f init xs)
+        Build' t f xs n -> go f (\f -> Build' t f xs n)
         Map' t1 t2 f xs -> go f (\f -> Map' t1 t2 f xs)
         Filter' t f xs -> go f (\f -> Filter' t f xs)
         _ -> return Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` moves let-exprs in lambdas passed to higher-order functions to the outer of the higher-order functions.

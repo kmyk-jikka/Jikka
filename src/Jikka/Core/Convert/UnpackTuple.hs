@@ -31,7 +31,7 @@ rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
-        orig@(App (Lam x (TupleTy ts) body) e) -> case curryApp e of
+        App (Lam x (TupleTy ts) body) e -> case curryApp e of
           (Tuple' ts', es) -> do
             when (ts /= ts') $ do
               throwInternalError "the types of tuple don't match"
@@ -40,7 +40,7 @@ rule =
             xs <- replicateM (length ts) (genVarName x)
             body' <- substitute x (uncurryApp (Tuple' ts) (map Var xs)) body
             return' $ uncurryApp (curryLam (zip xs ts) body') es
-          _ -> return' orig
+          _ -> return Nothing
         App (Tuple' [_]) (Proj' [_] 0 e) -> return' e
         Proj' ts i e -> case curryApp e of
           (Tuple' _, es) -> return' $ es !! i

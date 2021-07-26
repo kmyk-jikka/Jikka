@@ -33,6 +33,7 @@ import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
+import qualified Jikka.Core.Convert.SegmentTree as SegmentTree
 import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
 import qualified Jikka.Core.Convert.SpecializeFoldl as SpecializeFoldl
 import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
@@ -41,13 +42,9 @@ import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import qualified Jikka.Core.Convert.UnpackTuple as UnpackTuple
 import Jikka.Core.Language.Expr (Program)
 
-run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run' prog = do
-  prog <- Alpha.run prog
-  prog <- TypeInfer.run prog
+run'' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run'' prog = do
   prog <- RemoveUnusedVars.run prog
-  prog <- Beta.run prog
-  prog <- TrivialLetElimination.run prog
   prog <- UnpackTuple.run prog
   prog <- MatrixExponentiation.run prog
   prog <- SpecializeFoldl.run prog
@@ -60,13 +57,29 @@ run' prog = do
   prog <- CloseAll.run prog
   prog <- CloseMin.run prog
   prog <- CumulativeSum.run prog
+  prog <- SegmentTree.run prog
   prog <- BubbleLet.run prog
   prog <- ArithmeticalExpr.run prog
   prog <- ConvexHullTrick.run prog
   prog <- StrengthReduction.run prog
   Eta.run prog
 
+run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+run' prog = do
+  prog <- Beta.run prog
+  prog <- TrivialLetElimination.run prog
+  prog <- run'' prog
+  prog <- run'' prog
+  prog <- run'' prog
+  prog <- run'' prog
+  run'' prog
+
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog =
-  let iteration = 20
-   in foldM (\prog _ -> run' prog) prog [0 .. iteration - 1]
+run prog = do
+  prog <- Alpha.run prog
+  prog <- TypeInfer.run prog
+  prog <- run' prog
+  prog <- run' prog
+  prog <- run' prog
+  prog <- run' prog
+  run' prog

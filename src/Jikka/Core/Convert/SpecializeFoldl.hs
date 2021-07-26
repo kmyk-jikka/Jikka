@@ -66,7 +66,7 @@ rule = simpleRewriteRule $ \case
   -- others
   _ -> Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` reduces summations and products.

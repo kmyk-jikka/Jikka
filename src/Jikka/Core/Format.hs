@@ -47,6 +47,13 @@ formatType = \case
 formatDataStructure :: DataStructure -> String
 formatDataStructure = \case
   ConvexHullTrick -> "convex-hull-trick"
+  SegmentTree semigrp -> "segment-tree<" ++ formatSemigroup semigrp ++ ">"
+
+formatSemigroup :: Semigroup' -> String
+formatSemigroup = \case
+  SemigroupIntPlus -> "int.plus"
+  SemigroupIntMin -> "int.min"
+  SemigroupIntMax -> "int.max"
 
 data Builtin'
   = Fun [Type] String
@@ -118,6 +125,7 @@ analyzeBuiltin = \case
   Snoc t -> Fun [t] "snoc"
   Foldl t1 t2 -> Fun [t1, t2] "foldl"
   Scanl t1 t2 -> Fun [t1, t2] "scanl"
+  Build t -> Fun [t] "build"
   Iterate t -> Fun [t] "iterate"
   Len t -> Fun [t] "len"
   Map t1 t2 -> Fun [t1, t2] "map"
@@ -159,6 +167,9 @@ analyzeBuiltin = \case
   ConvexHullTrickInit -> fun "cht.init"
   ConvexHullTrickGetMin -> fun "cht.getmin"
   ConvexHullTrickInsert -> fun "cht.insert"
+  SegmentTreeInitList _ -> fun "segtree.initlist"
+  SegmentTreeGetRange _ -> fun "segtree.getrange"
+  SegmentTreeSetPoint _ -> fun "segtree.setpoint"
 
 formatTemplate :: [Type] -> String
 formatTemplate = \case

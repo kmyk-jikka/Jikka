@@ -117,6 +117,8 @@ pattern Foldl' t1 t2 e1 e2 e3 = AppBuiltin3 (Foldl t1 t2) e1 e2 e3
 
 pattern Scanl' t1 t2 e1 e2 e3 = AppBuiltin3 (Scanl t1 t2) e1 e2 e3
 
+pattern Build' t e1 e2 e3 = AppBuiltin3 (Build t) e1 e2 e3
+
 pattern Len' t e = AppBuiltin (Len t) e
 
 pattern Map' t1 t2 f e = AppBuiltin2 (Map t1 t2) f e
@@ -193,6 +195,12 @@ pattern ConvexHullTrickInit' = Lit (LitBuiltin ConvexHullTrickInit)
 pattern ConvexHullTrickGetMin' cht a = AppBuiltin2 ConvexHullTrickGetMin cht a
 
 pattern ConvexHullTrickInsert' cht a b = AppBuiltin3 ConvexHullTrickInsert cht a b
+
+pattern SegmentTreeInitList' semigrp a = AppBuiltin (SegmentTreeInitList semigrp) a
+
+pattern SegmentTreeGetRange' semigrp segtree e1 e2 = AppBuiltin3 (SegmentTreeGetRange semigrp) segtree e1 e2
+
+pattern SegmentTreeSetPoint' semigrp segtree e1 e2 = AppBuiltin3 (SegmentTreeSetPoint semigrp) segtree e1 e2
 
 -- errors
 pattern Bottom' t err = Lit (LitBottom t err)

@@ -86,7 +86,7 @@ rule =
       reduceAny
     ]
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` reduces `All` and `Any`.

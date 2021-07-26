@@ -1,10 +1,15 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Jikka.Core.Language.Util where
 
 import Control.Monad.Identity
+import Control.Monad.Writer (execWriter, tell)
 import Data.Maybe (isJust)
+import Data.Monoid (Dual (..))
 import Jikka.Common.Alpha
+import Jikka.Common.Error
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 
 genType :: MonadAlpha m => m Type
@@ -78,6 +83,7 @@ mapTypeInBuiltin f = \case
   Snoc t -> Snoc (f t)
   Foldl t1 t2 -> Foldl (f t1) (f t2)
   Scanl t1 t2 -> Scanl (f t1) (f t2)
+  Build t -> Build (f t)
   Len t -> Len (f t)
   Map t1 t2 -> Map (f t1) (f t2)
   Filter t -> Filter (f t)
@@ -118,20 +124,9 @@ mapTypeInBuiltin f = \case
   ConvexHullTrickInit -> ConvexHullTrickInit
   ConvexHullTrickInsert -> ConvexHullTrickInsert
   ConvexHullTrickGetMin -> ConvexHullTrickGetMin
-
-countOccurrences :: VarName -> Expr -> Int
-countOccurrences x = \case
-  Var y -> if x == y then 1 else 0
-  Lit _ -> 0
-  App f e -> countOccurrences x f + countOccurrences x e
-  Lam y _ body -> if x == y then 0 else countOccurrences x body
-  Let y _ e1 e2 -> countOccurrences x e1 + (if x == y then 0 else countOccurrences x e2)
-
-countOccurrencesToplevelExpr :: VarName -> ToplevelExpr -> Int
-countOccurrencesToplevelExpr x = \case
-  ResultExpr e -> countOccurrences x e
-  ToplevelLet y _ e cont -> countOccurrences x e + (if x == y then 0 else countOccurrencesToplevelExpr x cont)
-  ToplevelLetRec f args _ body cont -> if x == f then 0 else countOccurrencesToplevelExpr x cont + (if x `elem` map fst args then 0 else countOccurrences x body)
+  SegmentTreeInitList semigrp -> SegmentTreeInitList semigrp
+  SegmentTreeGetRange semigrp -> SegmentTreeGetRange semigrp
+  SegmentTreeSetPoint semigrp -> SegmentTreeSetPoint semigrp
 
 -- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
@@ -176,6 +171,13 @@ mapExprToplevelExpr f env e = runIdentity $ mapExprToplevelExprM (\env e -> retu
 
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 mapExprProgram f prog = runIdentity $ mapExprProgramM (\env e -> return $ f env e) prog
+
+listSubExprs :: Expr -> [Expr]
+listSubExprs e = getDual . execWriter $ mapExprM go [] e
+  where
+    go _ e = do
+      tell $ Dual [e]
+      return e
 
 uncurryFunTy :: Type -> ([Type], Type)
 uncurryFunTy = \case
@@ -280,6 +282,7 @@ isConstantTimeBuiltin = \case
   Snoc _ -> False
   Foldl _ _ -> False
   Scanl _ _ -> False
+  Build _ -> False
   Len _ -> True
   Map _ _ -> False
   Filter _ -> False
@@ -320,6 +323,9 @@ isConstantTimeBuiltin = \case
   ConvexHullTrickInit -> False
   ConvexHullTrickInsert -> False
   ConvexHullTrickGetMin -> False
+  SegmentTreeInitList _ -> False
+  SegmentTreeGetRange _ -> False
+  SegmentTreeSetPoint _ -> False
 
 -- | `isConstantTimeExpr` checks whether given exprs are suitable to propagate.
 isConstantTimeExpr :: Expr -> Bool
@@ -331,3 +337,18 @@ isConstantTimeExpr = \case
     _ -> False
   Lam _ _ _ -> True
   Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2
+
+-- | `replaceLenF` replaces @len(f)@ in an expr with @i + 1@.
+-- * This assumes that there are no name conflicts.
+replaceLenF :: MonadError Error m => VarName -> VarName -> Expr -> m Expr
+replaceLenF f i = go
+  where
+    go = \case
+      Len' _ (Var f') | f' == f -> return $ Plus' (Var i) (LitInt' 1)
+      Var y -> return $ Var y
+      Lit lit -> return $ Lit lit
+      App g e -> App <$> go g <*> go e
+      Lam x _ _ | x == i -> throwInternalError "Jikka.Core.Language.Util.replaceLenF: name conflict"
+      Lam x t body -> Lam x t <$> (if x == f then return body else go body)
+      Let y _ _ _ | y == i -> throwInternalError "Jikka.Core.Language.Util.replaceLenF: name conflict"
+      Let y t e1 e2 -> Let y t <$> go e1 <*> (if y == f then return e2 else go e2)

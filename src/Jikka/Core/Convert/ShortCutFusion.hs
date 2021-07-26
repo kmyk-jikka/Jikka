@@ -190,7 +190,7 @@ rule =
       reduceFold
     ]
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` does short cut fusion.

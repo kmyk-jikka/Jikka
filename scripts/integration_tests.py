@@ -19,6 +19,13 @@ NO_PYTHON = 'medium'
 TIMEOUT_FACTOR = 1 if platform.system() == 'Linux' else 10
 
 
+def compile_cxx(src_path: pathlib.Path, dst_path: pathlib.Path):
+    CXX = os.environ.get('CXX', 'g++')
+    CXXFLAGS = ['-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-I', str(pathlib.Path('runtime', 'ac-library'))]
+    command = [CXX, *CXXFLAGS, '-o', str(dst_path), str(src_path)]
+    subprocess.check_call(command, timeout=20 * TIMEOUT_FACTOR)
+
+
 def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[pathlib.Path]:
     inputcases: List[pathlib.Path] = []
 
@@ -34,10 +41,24 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
     for generator_path in pathlib.Path('examples', 'data').glob(glob.escape(script.stem) + '*.generator.py'):
         _, testset_name, _, _ = generator_path.name.split('.')
 
-        solver_path = pathlib.Path('examples', 'data', script.stem + '.solver.py')
-        if not solver_path.exists():
+        for solver_ext in ('.py', '.cpp'):
+            solver_path = pathlib.Path('examples', 'data', script.stem + '.solver' + solver_ext)
+            if solver_path.exists():
+                break
+        else:
             logger.error('%s: failed to find the solver', str(script))
             return []
+        if solver_path.suffix == '.py':
+            solver_command = [sys.executable, str(solver_path)]
+        elif solver_path.suffix == '.cpp':
+            try:
+                compile_cxx(src_path=solver_path, dst_path=tempdir / 'expected.exe')
+            except subprocess.SubprocessError as e:
+                logger.error('%s: failed to compile the expected solver from C++ to executable: %s', str(script), e)
+                return []
+            solver_command = [str(tempdir / 'expected.exe')]
+        else:
+            assert False
 
         logger.info('%s: generating input cases...', str(script))
         for i in range(20):
@@ -52,7 +73,7 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
             with open(inputcase, 'rb') as fh1:
                 with open(outputcase, 'wb') as fh2:
                     try:
-                        subprocess.check_call([sys.executable, str(solver_path)], stdin=fh1, stdout=fh2, timeout=5 * TIMEOUT_FACTOR)
+                        subprocess.check_call(solver_command, stdin=fh1, stdout=fh2, timeout=5 * TIMEOUT_FACTOR)
                     except subprocess.SubprocessError as e:
                         logger.error('%s: %s: failed to generate an output of a random case: %s', str(script), str(inputcase), e)
                         return []
@@ -73,7 +94,7 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
                 logger.error('%s: failed to compile from Python to C++: %s', str(script), e)
                 return False
         try:
-            subprocess.check_call(['g++', '-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-o', str(tempdir / 'a.exe'), str(tempdir / 'main.cpp')], timeout=20 * TIMEOUT_FACTOR)
+            compile_cxx(src_path=tempdir / 'main.cpp', dst_path=tempdir / 'a.exe')
         except subprocess.SubprocessError as e:
             logger.error('%s: failed to compile from C++ to executable: %s', str(script), e)
             return False
@@ -147,6 +168,7 @@ def get_local_install_root() -> pathlib.Path:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--jobs', type=int, default=os.cpu_count())
+    parser.add_argument('-k', type=str)
     args = parser.parse_args()
 
     basicConfig(level=DEBUG)
@@ -156,8 +178,12 @@ def main() -> None:
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
         futures = []
         for path in pathlib.Path('examples').glob('*.py'):
+            if args.k and args.k not in path.name:
+                continue
             futures.append(executor.submit(run_integration_test, path, executable=executable))
         for path in pathlib.Path('examples', 'errors').glob('*.py'):
+            if args.k and args.k not in path.name:
+                continue
             futures.append(executor.submit(run_integration_test_about_error, path, executable=executable))
     cnt = [future.result() for future in futures].count(True)
     logger.info('%d/%d tests succeeded', cnt, len(futures))

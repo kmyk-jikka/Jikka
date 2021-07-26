@@ -108,7 +108,7 @@ rule = RewriteRule $ \env -> \case
               removeOneFromVector n z
   _ -> return Nothing
 
-runProgram :: MonadAlpha m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` simplifies an affine functions from vectors to vectors in @iterate@ (`Iterate`) functions.
