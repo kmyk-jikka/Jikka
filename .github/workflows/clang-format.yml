@@ -10,4 +10,4 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Run clang-format
-      run: set -ex; for f in $(find runtime -type f); do diff $f <(clang-format $f); done
+      run: set -ex; for f in $(find runtime/include -type f); do diff $f <(clang-format $f); done
