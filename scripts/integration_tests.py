@@ -16,14 +16,14 @@ logger = getLogger(__name__)
 
 CXX_ONLY = 'large'
 NO_PYTHON = 'medium'
-TIMEOUT_FACTOR = 1 if platform.system() == 'Linux' else 10
+TIMEOUT_FACTOR = 1 if os.environ.get('CI') is None else (5 if platform.system() == 'Linux' else 20)
 
 
 def compile_cxx(src_path: pathlib.Path, dst_path: pathlib.Path):
     CXX = os.environ.get('CXX', 'g++')
     CXXFLAGS = ['-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-I', str(pathlib.Path('runtime', 'ac-library'))]
     command = [CXX, *CXXFLAGS, '-o', str(dst_path), str(src_path)]
-    subprocess.check_call(command, timeout=20 * TIMEOUT_FACTOR)
+    subprocess.check_call(command, timeout=5 * TIMEOUT_FACTOR)
 
 
 def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[pathlib.Path]:
@@ -129,7 +129,7 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
                 logger.info('%s: %s: running as %s...', str(script), str(inputcase), title)
                 with open(inputcase, 'rb') as fh:
                     try:
-                        actual = subprocess.check_output(command, stdin=fh, timeout=20 * TIMEOUT_FACTOR)
+                        actual = subprocess.check_output(command, stdin=fh, timeout=(2 if title == 'C++' else 20) * TIMEOUT_FACTOR)
                     except subprocess.SubprocessError as e:
                         logger.error('%s: %s: failed to run as %s: %s', str(script), str(inputcase), title, e)
                         return False
@@ -165,6 +165,37 @@ def get_local_install_root() -> pathlib.Path:
     return pathlib.Path(s.decode().strip())
 
 
+def find_unused_test_cases() -> List[pathlib.Path]:
+    scripts = list(pathlib.Path('examples').glob('*.py'))
+    errors = list(pathlib.Path('examples', 'errors').glob('*.py'))
+    unused = []
+    for path in pathlib.Path('examples', 'data').glob('*'):
+        name = path.name[:-len(''.join(path.suffixes))]
+        if name not in [script.stem for script in scripts + errors]:
+            unused.append(path)
+            continue
+        if path.suffix == '.in':
+            pass
+        elif path.suffix == '.out':
+            pass
+        elif path.name.endswith('.generator.py'):
+            pass
+        elif path.name.endswith('.generator.cpp'):
+            pass
+        elif path.name.endswith('.solver.py'):
+            pass
+        elif path.name.endswith('.solver.cpp'):
+            pass
+        elif path.suffix == '.txt' and name in [script.stem for script in errors]:
+            pass
+        else:
+            unused.append(path)
+            continue
+    for path in unused:
+        logger.error('unused file: %s', str(path))
+    return unused
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--jobs', type=int, default=os.cpu_count())
@@ -173,6 +204,8 @@ def main() -> None:
 
     basicConfig(level=DEBUG)
 
+    if find_unused_test_cases():
+        sys.exit(1)
     subprocess.check_call(['stack', '--system-ghc', 'build'])
     executable = get_local_install_root() / 'bin' / 'jikka'
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
