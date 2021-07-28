@@ -38,7 +38,8 @@ for developpers:
     -   [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
 -   [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
 -   [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
--   [Haddock](https://kmyk.github.io/Jikka/)
+-   [Haddock](https://hackage.haskell.org/package/Jikka)
+    -   [Haddock (master)](https://kmyk.github.io/Jikka/)
 
 
 ## Examples

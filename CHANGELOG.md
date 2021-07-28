@@ -2,7 +2,7 @@
 
 ## 2021-07-28: v5.0.11.1
 
-Uploaded to Hackage
+Uploaded to Hackage: <https://hackage.haskell.org/package/Jikka>
 
 ## 2021-07-21: v5.0.11.0
 
