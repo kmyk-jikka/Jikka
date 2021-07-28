@@ -28,6 +28,8 @@ for users:
 
 -   [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
     -   [docs/language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) (Japanese translation)
+-   [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
+  -   [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
 -   [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
 -   [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
 -   a blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
