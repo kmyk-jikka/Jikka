@@ -1,0 +1,15 @@
+name: upload-hackage
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  upload-hackage:
+    runs-on: ubuntu-latest
+    env:
+      # Can be created at https://hackage.haskell.org/user/{username}/manage
+      HACKAGE_API_KEY: ${{ secrets.HACKAGE_API_KEY }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: freckle/stack-upload-action@main
