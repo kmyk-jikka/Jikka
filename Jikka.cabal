@@ -1,0 +1,259 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           Jikka
+version:        5.0.11.1
+synopsis:       A transpiler from Python to C++ for competitive programming
+description:    Please see the README on GitHub at <https://github.com/kmyk/Jikka>
+category:       Compilers/Interpreters
+homepage:       https://github.com/kmyk/Jikka#readme
+bug-reports:    https://github.com/kmyk/Jikka/issues
+author:         Kimiyuki Onaka
+maintainer:     kimiyuk95@gmail.com
+copyright:      2021 Kimiyuki Onaka
+license:        Apache
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/kmyk/Jikka
+
+library
+  exposed-modules:
+      Jikka.Common.Alpha
+      Jikka.Common.Combinatorics
+      Jikka.Common.Error
+      Jikka.Common.Format.AutoIndent
+      Jikka.Common.Format.Color
+      Jikka.Common.Format.Error
+      Jikka.Common.Format.Location
+      Jikka.Common.Format.Show
+      Jikka.Common.Graph
+      Jikka.Common.IO
+      Jikka.Common.IOFormat
+      Jikka.Common.Location
+      Jikka.Common.Matrix
+      Jikka.Common.ModInt
+      Jikka.Common.Parse.JoinLines
+      Jikka.Common.Parse.OffsideRule
+      Jikka.Common.Parse.Read
+      Jikka.Common.Parse.ShuntingYard
+      Jikka.Core.Convert
+      Jikka.Core.Convert.Alpha
+      Jikka.Core.Convert.ANormal
+      Jikka.Core.Convert.ArithmeticalExpr
+      Jikka.Core.Convert.Beta
+      Jikka.Core.Convert.BubbleLet
+      Jikka.Core.Convert.CloseAll
+      Jikka.Core.Convert.CloseMin
+      Jikka.Core.Convert.CloseSum
+      Jikka.Core.Convert.ConstantFolding
+      Jikka.Core.Convert.ConstantPropagation
+      Jikka.Core.Convert.ConvexHullTrick
+      Jikka.Core.Convert.CumulativeSum
+      Jikka.Core.Convert.Eta
+      Jikka.Core.Convert.MakeScanl
+      Jikka.Core.Convert.MatrixExponentiation
+      Jikka.Core.Convert.PropagateMod
+      Jikka.Core.Convert.RemoveUnusedVars
+      Jikka.Core.Convert.SegmentTree
+      Jikka.Core.Convert.ShortCutFusion
+      Jikka.Core.Convert.SpecializeFoldl
+      Jikka.Core.Convert.StrengthReduction
+      Jikka.Core.Convert.TrivialLetElimination
+      Jikka.Core.Convert.TypeInfer
+      Jikka.Core.Convert.UnpackTuple
+      Jikka.Core.Evaluate
+      Jikka.Core.Format
+      Jikka.Core.Language.ArithmeticalExpr
+      Jikka.Core.Language.Beta
+      Jikka.Core.Language.BuiltinPatterns
+      Jikka.Core.Language.Expr
+      Jikka.Core.Language.FreeVars
+      Jikka.Core.Language.Lint
+      Jikka.Core.Language.RewriteRules
+      Jikka.Core.Language.Runtime
+      Jikka.Core.Language.TypeCheck
+      Jikka.Core.Language.Util
+      Jikka.Core.Language.Value
+      Jikka.CPlusPlus.Convert
+      Jikka.CPlusPlus.Convert.AddMain
+      Jikka.CPlusPlus.Convert.FromCore
+      Jikka.CPlusPlus.Convert.MoveSemantics
+      Jikka.CPlusPlus.Convert.OptimizeRange
+      Jikka.CPlusPlus.Convert.UnpackTuples
+      Jikka.CPlusPlus.Convert.UseInitialization
+      Jikka.CPlusPlus.Format
+      Jikka.CPlusPlus.Language.Expr
+      Jikka.CPlusPlus.Language.Util
+      Jikka.CPlusPlus.Language.VariableAnalysis
+      Jikka.Main
+      Jikka.Main.Subcommand.Convert
+      Jikka.Main.Subcommand.Debug
+      Jikka.Main.Subcommand.Execute
+      Jikka.Main.Target
+      Jikka.Python.Convert.ToRestrictedPython
+      Jikka.Python.Language.Expr
+      Jikka.Python.Language.Util
+      Jikka.Python.Parse
+      Jikka.Python.Parse.Alex
+      Jikka.Python.Parse.Happy
+      Jikka.Python.Parse.Token
+      Jikka.RestrictedPython.Convert
+      Jikka.RestrictedPython.Convert.Alpha
+      Jikka.RestrictedPython.Convert.DefaultMain
+      Jikka.RestrictedPython.Convert.ParseMain
+      Jikka.RestrictedPython.Convert.RemoveUnbalancedIf
+      Jikka.RestrictedPython.Convert.RemoveUnreachable
+      Jikka.RestrictedPython.Convert.ResolveBuiltin
+      Jikka.RestrictedPython.Convert.SplitLoops
+      Jikka.RestrictedPython.Convert.ToCore
+      Jikka.RestrictedPython.Convert.TypeInfer
+      Jikka.RestrictedPython.Convert.UseAppend
+      Jikka.RestrictedPython.Evaluate
+      Jikka.RestrictedPython.Format
+      Jikka.RestrictedPython.Language.Builtin
+      Jikka.RestrictedPython.Language.Expr
+      Jikka.RestrictedPython.Language.Lint
+      Jikka.RestrictedPython.Language.Util
+      Jikka.RestrictedPython.Language.Value
+      Jikka.RestrictedPython.Language.VariableAnalysis
+      Jikka.RestrictedPython.Language.WithoutLoc
+  other-modules:
+      Paths_Jikka
+  hs-source-dirs:
+      src
+  ghc-options: -W -optP-Wno-nonportable-include-path
+  build-tools:
+      alex
+    , happy
+  build-depends:
+      ansi-terminal ==0.11.*
+    , array >=0.5.3 && <0.6
+    , base ==4.14.*
+    , containers >=0.6.0 && <0.7
+    , deepseq >=1.4.4 && <1.5
+    , mtl >=2.2.2 && <2.3
+    , text >=1.2.3 && <1.3
+    , transformers >=0.5.6 && <0.6
+    , vector >=0.12.0 && <0.13
+  default-language: Haskell2010
+
+executable jikka
+  main-is: Main.hs
+  other-modules:
+      Paths_Jikka
+  hs-source-dirs:
+      app
+  ghc-options: -W -threaded -rtsopts -with-rtsopts=-N -optP-Wno-nonportable-include-path
+  build-depends:
+      Jikka
+    , ansi-terminal ==0.11.*
+    , array >=0.5.3 && <0.6
+    , base ==4.14.*
+    , containers >=0.6.0 && <0.7
+    , deepseq >=1.4.4 && <1.5
+    , mtl >=2.2.2 && <2.3
+    , text >=1.2.3 && <1.3
+    , transformers >=0.5.6 && <0.6
+    , vector >=0.12.0 && <0.13
+  default-language: Haskell2010
+
+test-suite jikka-doctest
+  type: exitcode-stdio-1.0
+  main-is: doctests.hs
+  other-modules:
+      Paths_Jikka
+  hs-source-dirs:
+      ./
+  ghc-options: -W -threaded -rtsopts -with-rtsopts=-N -optP-Wno-nonportable-include-path
+  build-depends:
+      Jikka
+    , ansi-terminal ==0.11.*
+    , array >=0.5.3 && <0.6
+    , base ==4.14.*
+    , containers >=0.6.0 && <0.7
+    , deepseq >=1.4.4 && <1.5
+    , doctest
+    , mtl >=2.2.2 && <2.3
+    , text >=1.2.3 && <1.3
+    , transformers >=0.5.6 && <0.6
+    , vector >=0.12.0 && <0.13
+  default-language: Haskell2010
+
+test-suite jikka-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Jikka.Common.MatrixSpec
+      Jikka.Common.Parse.JoinLinesSpec
+      Jikka.Common.Parse.OffsideRuleSpec
+      Jikka.Common.Parse.ShuntingYardSpec
+      Jikka.Core.Convert.AlphaSpec
+      Jikka.Core.Convert.ANormalSpec
+      Jikka.Core.Convert.BetaSpec
+      Jikka.Core.Convert.CloseSumSpec
+      Jikka.Core.Convert.ConstantFoldingSpec
+      Jikka.Core.Convert.ConstantPropagationSpec
+      Jikka.Core.Convert.EtaSpec
+      Jikka.Core.Convert.MakeScanlSpec
+      Jikka.Core.Convert.MatrixExponentiationSpec
+      Jikka.Core.Convert.PropagateModSpec
+      Jikka.Core.Convert.RemoveUnusedVarsSpec
+      Jikka.Core.Convert.ShortCutFusionSpec
+      Jikka.Core.Convert.SpecializeFoldlSpec
+      Jikka.Core.Convert.TrivialLetEliminationSpec
+      Jikka.Core.Convert.TypeInferSpec
+      Jikka.Core.Convert.UnpackTupleSpec
+      Jikka.Core.EvaluateSpec
+      Jikka.Core.FormatSpec
+      Jikka.Core.Language.ArithmeticalExprSpec
+      Jikka.Core.Language.BetaSpec
+      Jikka.CPlusPlus.Convert.FromCoreSpec
+      Jikka.CPlusPlus.FormatSpec
+      Jikka.Python.Convert.ToRestrictedPythonSpec
+      Jikka.Python.Parse.AlexSpec
+      Jikka.Python.Parse.HappySpec
+      Jikka.Python.ParseSpec
+      Jikka.RestrictedPython.Convert.AlphaSpec
+      Jikka.RestrictedPython.Convert.RemoveUnbalancedIfSpec
+      Jikka.RestrictedPython.Convert.RemoveUnreachableSpec
+      Jikka.RestrictedPython.Convert.ResolveBuiltinSpec
+      Jikka.RestrictedPython.Convert.SplitLoopsSpec
+      Jikka.RestrictedPython.Convert.ToCoreSpec
+      Jikka.RestrictedPython.Convert.TypeInferSpec
+      Jikka.RestrictedPython.EvaluateSpec
+      Jikka.RestrictedPython.FormatSpec
+      Jikka.RestrictedPython.Language.BuiltinSpec
+      Jikka.RestrictedPython.Language.LintSpec
+      Jikka.RestrictedPython.Language.TypeInferSpec
+      Jikka.RestrictedPython.Language.UtilSpec
+      Jikka.RestrictedPython.Language.VariableAnalysisSpec
+      Paths_Jikka
+  hs-source-dirs:
+      test
+  ghc-options: -W -threaded -rtsopts -with-rtsopts=-N -optP-Wno-nonportable-include-path
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      Jikka
+    , ansi-terminal ==0.11.*
+    , array >=0.5.3 && <0.6
+    , base ==4.14.*
+    , containers >=0.6.0 && <0.7
+    , deepseq >=1.4.4 && <1.5
+    , hlint
+    , hspec
+    , mtl >=2.2.2 && <2.3
+    , ormolu
+    , text >=1.2.3 && <1.3
+    , transformers >=0.5.6 && <0.6
+    , vector >=0.12.0 && <0.13
+  default-language: Haskell2010

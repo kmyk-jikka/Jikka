@@ -1,5 +1,9 @@
 # Changelog for Jikka
 
+## 2021-07-28: v5.0.11.1
+
+Uploaded to Hackage
+
 ## 2021-07-21: v5.0.11.0
 
 Convex Hull Trick and Segment Trees are implemented.
