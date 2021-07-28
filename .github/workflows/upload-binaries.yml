@@ -34,18 +34,24 @@ jobs:
       run: stack --system-ghc build --ghc-options=-Werror
 
     - name: Set extension to .exe on Windows
-      run: echo "::set-env name=EXT::.exe"
-      if: matrix.os == 'windows-latest'
+      id: get_ext
+      run: |
+        if [ ${{ matrix.os }} == windows-latest ]; then
+          ext=.exe
+        fi
+        echo "::set-output name=ext::$ext"
+      shell: bash
 
     - name: Get binary path
+      id: get_binary_path
       run: |
-        echo "::set-env name=BINARY_PATH::$(stack --system-ghc path --local-install-root)/bin/jikka${{ env.EXT }}"
+        echo "::set-output name=binary_path::$(stack --system-ghc path --local-install-root)/bin/jikka${{ steps.get_ext.outputs.ext }}"
       shell: bash
 
     - name: Compress binary
       uses: svenstaro/upx-action@2.0.1
       with:
-        file: ${{ env.BINARY_PATH }}
+        file: ${{ steps.get_binary_path.outputs.binary_path }}
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1.0.1
@@ -53,6 +59,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ env.BINARY_PATH }}
-        asset_name: jikka-${{ github.event.release.tag_name }}-${{ runner.os }}${{ env.EXT }}
+        asset_path: ${{ steps.get_binary_path.outputs.binary_path }}
+        asset_name: jikka-${{ github.event.release.tag_name }}-${{ runner.os }}${{ steps.get_ext.outputs.ext }}
         asset_content_type: application/octet-stream
