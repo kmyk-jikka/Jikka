@@ -22,7 +22,11 @@ $ jikka convert PYTHON_FILE
 
 ## How to Install
 
-### Using Stack (recommended)
+### Using prebuilt binaries (recommended)
+
+Go [Releases page](https://github.com/kmyk/Jikka/releases) and download `jikka-vA.B.C.D-Linux`, `jikka-vA.B.C.D-maxOS` or `jikka-vA.B.C.D-Windows.exe`.
+
+### Using Stack
 
 [Stack](https://www.haskellstack.org/) is required. If you are using Ubuntu, you can install Stack with `$ sudo apt install haskell-stack`.
 
@@ -34,7 +38,7 @@ $ stack install
 
 ### Using Cabal
 
-[Cabal](https://www.haskell.org/cabal/) is required. If you are using Ubuntu, you can install Stack with `$ sudo apt install cabal-install`.
+[Cabal](https://www.haskell.org/cabal/) is required. This is bundled [Haskell Platform](https://www.haskell.org/platform/). If you are using Ubuntu, you can install Stack with `$ sudo apt install haskell-platform`.
 
 ``` console
 $ cabal update
