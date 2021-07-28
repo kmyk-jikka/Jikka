@@ -16,10 +16,30 @@ Jikka はそのような問題を自動で解きます。
 ## Usage
 
 ``` console
-$ stack run convert PYTHON_FILE
+$ jikka convert PYTHON_FILE
 ```
 
+
+## How to Install
+
+### Using Stack (recommended)
+
 [Stack](https://www.haskellstack.org/) is required. If you are using Ubuntu, you can install Stack with `$ sudo apt install haskell-stack`.
+
+``` console
+$ git clone https://github.com/kmyk/Jikka.git
+$ cd Jikka
+$ stack install
+```
+
+### Using Cabal
+
+[Cabal](https://www.haskell.org/cabal/) is required. If you are using Ubuntu, you can install Stack with `$ sudo apt install cabal-install`.
+
+``` console
+$ cabal update
+$ cabal install Jikka
+```
 
 
 ## Documents
