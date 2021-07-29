@@ -16,7 +16,7 @@ Jikka はそのような問題を自動で解きます。
 ## Usage
 
 ``` console
-$ jikka convert PYTHON_FILE
+$ jikka convert [--bundle] PYTHON_FILE
 ```
 
 
