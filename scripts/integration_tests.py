@@ -21,7 +21,7 @@ TIMEOUT_FACTOR = 1 if os.environ.get('CI') is None else (5 if platform.system() 
 
 def compile_cxx(src_path: pathlib.Path, dst_path: pathlib.Path):
     CXX = os.environ.get('CXX', 'g++')
-    CXXFLAGS = ['-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'include')), '-I', str(pathlib.Path('runtime', 'ac-library'))]
+    CXXFLAGS = ['-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'ac-library'))]
     command = [CXX, *CXXFLAGS, '-o', str(dst_path), str(src_path)]
     subprocess.check_call(command, timeout=5 * TIMEOUT_FACTOR)
 

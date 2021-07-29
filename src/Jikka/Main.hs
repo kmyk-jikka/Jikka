@@ -28,7 +28,7 @@ data Flag
   | Verbose
   | Version
   | Target String
-  | Bundle
+  | Bundle Bool
   deriving (Eq, Ord, Show, Read)
 
 data Options = Options
@@ -43,11 +43,11 @@ defaultOptions =
   Options
     { verbose = False,
       target = Nothing,
-      bundleRuntime = False
+      bundleRuntime = True
     }
 
 header :: String -> String
-header progName = "Usage: " ++ progName ++ " [convert [--bundle] | debug | execute] FILE"
+header progName = "Usage: " ++ progName ++ " [convert | debug | execute] FILE"
 
 options :: [OptDescr Flag]
 options =
@@ -55,7 +55,8 @@ options =
     Option ['v'] ["verbose"] (NoArg Verbose) "",
     Option [] ["version"] (NoArg Version) "",
     Option [] ["target"] (ReqArg Target "TARGET") "\"python\", \"rpython\", \"core\" or \"cxx\"",
-    Option [] ["bundle"] (NoArg Bundle) "bundles runtime headers using oj-bundle command"
+    Option [] ["bundle"] (NoArg (Bundle True)) "bundles runtime headers",
+    Option [] ["no-bundle"] (NoArg (Bundle False)) ""
   ]
 
 main :: String -> [String] -> IO ExitCode
@@ -102,7 +103,7 @@ parseFlags _ = go defaultOptions
       Target target -> do
         target <- parseTarget target
         go (opts {target = Just target}) flags
-      Bundle -> go (opts {bundleRuntime = True}) flags
+      Bundle p -> go (opts {bundleRuntime = p}) flags
 
 runSubcommand :: String -> Options -> FilePath -> ExceptT Error IO ()
 runSubcommand subcmd opts path = case subcmd of
