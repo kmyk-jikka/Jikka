@@ -151,7 +151,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.FloorMod -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::floormod" []) [e1, e2]
     X.CeilDiv -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceildiv" []) [e1, e2]
     X.CeilMod -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceilmod" []) [e1, e2]
-    X.Pow -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::pow" []) [e1, e2]
+    X.Pow -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::pow" []) [e1, e2]
     -- advanced arithmetical functions
     X.Abs -> go1 $ \e -> Y.Call (Y.Function "std::abs" []) [e]
     X.Gcd -> go2 $ \e1 e2 -> Y.Call (Y.Function "std::gcd" []) [e1, e2]
@@ -206,25 +206,25 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.BitLeftShift -> go2 $ \e1 e2 -> Y.BinOp Y.BitLeftShift e1 e2
     X.BitRightShift -> go2 $ \e1 e2 -> Y.BinOp Y.BitRightShift e1 e2
     -- matrix functions
-    X.MatAp h w -> go2 $ \f x -> Y.Call (Y.Function "jikka::matap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x]
-    X.MatZero n -> go0 $ Y.Call (Y.Function "jikka::matzero" [Y.TyIntValue (fromIntegral n)]) []
-    X.MatOne n -> go0 $ Y.Call (Y.Function "jikka::matone" [Y.TyIntValue (fromIntegral n)]) []
-    X.MatAdd h w -> go2 $ \f g -> Y.Call (Y.Function "jikka::matadd" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g]
-    X.MatMul h n w -> go2 $ \f g -> Y.Call (Y.Function "jikka::matmul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g]
-    X.MatPow n -> go2 $ \f k -> Y.Call (Y.Function "jikka::matpow" [Y.TyIntValue (fromIntegral n)]) [f, k]
-    X.VecFloorMod n -> go2 $ \x m -> Y.Call (Y.Function "jikka::vecfloormod" [Y.TyIntValue (fromIntegral n)]) [x, m]
-    X.MatFloorMod h w -> go2 $ \f m -> Y.Call (Y.Function "jikka::matfloormod" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, m]
+    X.MatAp h w -> go2 $ \f x -> Y.Call (Y.Function "jikka::mat::ap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x]
+    X.MatZero n -> go0 $ Y.Call (Y.Function "jikka::mat::zero" [Y.TyIntValue (fromIntegral n)]) []
+    X.MatOne n -> go0 $ Y.Call (Y.Function "jikka::mat::one" [Y.TyIntValue (fromIntegral n)]) []
+    X.MatAdd h w -> go2 $ \f g -> Y.Call (Y.Function "jikka::mat::add" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g]
+    X.MatMul h n w -> go2 $ \f g -> Y.Call (Y.Function "jikka::mat::mul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g]
+    X.MatPow n -> go2 $ \f k -> Y.Call (Y.Function "jikka::mat::pow" [Y.TyIntValue (fromIntegral n)]) [f, k]
+    X.VecFloorMod n -> go2 $ \x m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue (fromIntegral n)]) [x, m]
+    X.MatFloorMod h w -> go2 $ \f m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, m]
     -- modular functions
-    X.ModNegate -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modnegate" []) [e1, e2]
-    X.ModPlus -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modplus" []) [e1, e2, e3]
-    X.ModMinus -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modminus" []) [e1, e2, e3]
-    X.ModMult -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modmult" []) [e1, e2, e3]
-    X.ModInv -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::modinv" []) [e1, e2]
-    X.ModPow -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::modpow" []) [e1, e2, e3]
-    X.ModMatAp h w -> go3 $ \f x m -> Y.Call (Y.Function "jikka::modmatap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x, m]
-    X.ModMatAdd h w -> go3 $ \f g m -> Y.Call (Y.Function "jikka::modmatadd" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g, m]
-    X.ModMatMul h n w -> go3 $ \f g m -> Y.Call (Y.Function "jikka::modmatmul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g, m]
-    X.ModMatPow n -> go3 $ \f k m -> Y.Call (Y.Function "jikka::modmatpow" [Y.TyIntValue (fromIntegral n)]) [f, k, m]
+    X.ModNegate -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::mod::negate" []) [e1, e2]
+    X.ModPlus -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::plus" []) [e1, e2, e3]
+    X.ModMinus -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::minus" []) [e1, e2, e3]
+    X.ModMult -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::mult" []) [e1, e2, e3]
+    X.ModInv -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::mod::inv" []) [e1, e2]
+    X.ModPow -> go3 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::pow" []) [e1, e2, e3]
+    X.ModMatAp h w -> go3 $ \f x m -> Y.Call (Y.Function "jikka::modmat::ap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x, m]
+    X.ModMatAdd h w -> go3 $ \f g m -> Y.Call (Y.Function "jikka::modmat::add" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g, m]
+    X.ModMatMul h n w -> go3 $ \f g m -> Y.Call (Y.Function "jikka::modmat::mul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g, m]
+    X.ModMatPow n -> go3 $ \f k m -> Y.Call (Y.Function "jikka::modmat::pow" [Y.TyIntValue (fromIntegral n)]) [f, k, m]
     -- list functions
     X.Cons t -> go2' $ \x xs -> do
       t <- runType t
@@ -412,7 +412,7 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
               Y.TyInt64
               x
               xs
-              [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::modmult" [] [Y.Var y, Y.Var x, m]))]
+              [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::mod::mult" [] [Y.Var y, Y.Var x, m]))]
           ],
           Y.Var y
         )
@@ -526,10 +526,10 @@ runAppBuiltin env f args = wrapError' ("converting builtin " ++ X.formatBuiltinI
     X.Equal _ -> go2 $ \e1 e2 -> Y.BinOp Y.Equal e1 e2
     X.NotEqual _ -> go2 $ \e1 e2 -> Y.BinOp Y.NotEqual e1 e2
     -- combinational functions
-    X.Fact -> go1 $ \e -> Y.Call (Y.Function "jikka::fact" []) [e]
-    X.Choose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::choose" []) [e1, e2]
-    X.Permute -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::permute" []) [e1, e2]
-    X.MultiChoose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::multichoose" []) [e1, e2]
+    X.Fact -> go1 $ \e -> Y.Call (Y.Function "jikka::notmod::fact" []) [e]
+    X.Choose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::choose" []) [e1, e2]
+    X.Permute -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::permute" []) [e1, e2]
+    X.MultiChoose -> go2 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::multichoose" []) [e1, e2]
     -- data structures
     X.ConvexHullTrickInit -> go0 $ Y.Call Y.ConvexHullTrickCtor []
     X.ConvexHullTrickGetMin -> go2 $ \cht x -> Y.Call (Y.Method "get_min") [cht, x]

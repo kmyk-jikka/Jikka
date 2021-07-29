@@ -336,12 +336,18 @@ formatProgram prog =
       additionalHeader =
         map snd $
           filter
-            (\(key, _) -> key `isInfixOf` unlines body)
-            [ ("jikka::", "#include \"jikka/base.hpp\""),
-              ("jikka::convex_hull_trick", "#include \"jikka/convex_hull_trick.hpp\""),
-              ("atcoder::segtree", "#include \"jikka/segment_tree.hpp\""),
-              ("atcoder::segtree", "#include <atcoder/segtree>"),
-              ("jikka::slope_trick", "#include \"jikka/slope_trick.hpp\"")
+            (\(keys, _) -> any (`isInfixOf` unlines body) keys)
+            [ (["jikka::floor", "jikka::ceil"], "#include \"jikka/divmod.hpp\""),
+              (["jikka::range"], "#include \"jikka/range.hpp\""),
+              (["jikka::error"], "#include \"jikka/error.hpp\""),
+              (["jikka::mod::"], "#include \"jikka/modulo.hpp\""),
+              (["jikka::notmod::"], "#include \"jikka/not_modulo.hpp\""),
+              (["jikka::matrix", "jikka::mat::"], "#include \"jikka/matrix.hpp\""),
+              (["jikka::modmat::"], "#include \"jikka/modulo_matrix.hpp\""),
+              (["jikka::convex_hull_trick"], "#include \"jikka/convex_hull_trick.hpp\""),
+              (["atcoder::segtree"], "#include \"jikka/segment_tree.hpp\""),
+              (["atcoder::segtree"], "#include <atcoder/segtree>"),
+              (["jikka::slope_trick"], "#include \"jikka/slope_trick.hpp\"")
             ]
    in standardHeaders ++ additionalHeader ++ body
 
