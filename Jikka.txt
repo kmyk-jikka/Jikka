@@ -4223,16 +4223,29 @@ subscriptTrg :: Target' -> Expr' -> Target'
 tupleTrg :: [Target'] -> Target'
 
 
+module Jikka.CPlusPlus.Convert.BundleRuntime
+
+-- | <a>run</a> bundles runtime headers to C++ code like <a>`oj-bundle`
+--   command</a>.
+run :: (MonadIO m, MonadError Error m) => Text -> m Text
+instance GHC.Read.Read Jikka.CPlusPlus.Convert.BundleRuntime.PreprocessorState
+instance GHC.Show.Show Jikka.CPlusPlus.Convert.BundleRuntime.PreprocessorState
+instance GHC.Classes.Ord Jikka.CPlusPlus.Convert.BundleRuntime.PreprocessorState
+instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.BundleRuntime.PreprocessorState
+
+
 module Jikka.Main
 data Flag
 Help :: Flag
 Verbose :: Flag
 Version :: Flag
 Target :: String -> Flag
+Bundle :: Bool -> Flag
 data Options
-Options :: Bool -> Maybe Target -> Options
+Options :: Bool -> Maybe Target -> Bool -> Options
 [verbose] :: Options -> Bool
 [target] :: Options -> Maybe Target
+[bundleRuntime] :: Options -> Bool
 defaultOptions :: Options
 header :: String -> String
 options :: [OptDescr Flag]
