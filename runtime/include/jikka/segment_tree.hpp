@@ -1,5 +1,11 @@
 #ifndef JIKKA_SEGMENT_TREE_HPP
 #define JIKKA_SEGMENT_TREE_HPP
+/**
+ * @file jikka/base.hpp
+ * @brief utilities for segment trees of AtCoder Library
+ * @author Kimiyuki Onaka
+ * @copyright Apache License 2.0
+ */
 #include <climits>
 #include <functional>
 

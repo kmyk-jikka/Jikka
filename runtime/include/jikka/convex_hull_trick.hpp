@@ -1,5 +1,11 @@
 #ifndef JIKKA_CONVEX_HULL_TRICK_HPP
 #define JIKKA_CONVEX_HULL_TRICK_HPP
+/**
+ * @file jikka/convex_hull_trick.hpp
+ * @brief Convex Hull Trick
+ * @author Kimiyuki Onaka
+ * @copyright Apache License 2.0
+ */
 #include <cassert>
 #include <climits>
 #include <cstdint>
