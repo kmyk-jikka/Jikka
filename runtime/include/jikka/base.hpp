@@ -1,5 +1,11 @@
 #ifndef JIKKA_BASE_HPP
 #define JIKKA_BASE_HPP
+/**
+ * @file jikka/base.hpp
+ * @brief runtime library for Jikka
+ * @author Kimiyuki Onaka
+ * @copyright Apache License 2.0
+ */
 #include <algorithm>
 #include <array>
 #include <cassert>

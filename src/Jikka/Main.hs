@@ -11,6 +11,7 @@ module Jikka.Main where
 import Data.Maybe (fromMaybe)
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
+import qualified Jikka.CPlusPlus.Convert.BundleRuntime as BundleRuntime
 import Jikka.Common.Error
 import Jikka.Common.Format.Error (hPrintError, hPrintErrorWithText)
 import qualified Jikka.Main.Subcommand.Convert as Convert
@@ -27,11 +28,13 @@ data Flag
   | Verbose
   | Version
   | Target String
+  | Bundle Bool
   deriving (Eq, Ord, Show, Read)
 
 data Options = Options
   { verbose :: Bool,
-    target :: Maybe Target
+    target :: Maybe Target,
+    bundleRuntime :: Bool
   }
   deriving (Eq, Ord, Show, Read)
 
@@ -39,7 +42,8 @@ defaultOptions :: Options
 defaultOptions =
   Options
     { verbose = False,
-      target = Nothing
+      target = Nothing,
+      bundleRuntime = True
     }
 
 header :: String -> String
@@ -50,7 +54,9 @@ options =
   [ Option ['h', '?'] ["help"] (NoArg Help) "",
     Option ['v'] ["verbose"] (NoArg Verbose) "",
     Option [] ["version"] (NoArg Version) "",
-    Option [] ["target"] (ReqArg Target "TARGET") "\"python\", \"rpython\", \"core\" or \"cxx\""
+    Option [] ["target"] (ReqArg Target "TARGET") "\"python\", \"rpython\", \"core\" or \"cxx\"",
+    Option [] ["bundle"] (NoArg (Bundle True)) "bundles runtime headers",
+    Option [] ["no-bundle"] (NoArg (Bundle False)) ""
   ]
 
 main :: String -> [String] -> IO ExitCode
@@ -97,12 +103,18 @@ parseFlags _ = go defaultOptions
       Target target -> do
         target <- parseTarget target
         go (opts {target = Just target}) flags
+      Bundle p -> go (opts {bundleRuntime = p}) flags
 
 runSubcommand :: String -> Options -> FilePath -> ExceptT Error IO ()
 runSubcommand subcmd opts path = case subcmd of
   "convert" -> do
     input <- liftIO $ T.readFile path
-    output <- liftEither $ Convert.run (fromMaybe CPlusPlusTarget (target opts)) path input
+    let target' = fromMaybe CPlusPlusTarget (target opts)
+    output <- liftEither $ Convert.run target' path input
+    output <-
+      if target' == CPlusPlusTarget && bundleRuntime opts
+        then BundleRuntime.run output
+        else return output
     liftIO $ T.putStr output
   "debug" -> Debug.run path
   "execute" -> Execute.run (fromMaybe CoreTarget (target opts)) path
