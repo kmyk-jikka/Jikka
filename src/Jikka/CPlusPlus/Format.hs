@@ -340,7 +340,8 @@ formatProgram prog =
             [ ("jikka::", "#include \"jikka/base.hpp\""),
               ("jikka::convex_hull_trick", "#include \"jikka/convex_hull_trick.hpp\""),
               ("atcoder::segtree", "#include \"jikka/segment_tree.hpp\""),
-              ("atcoder::segtree", "#include <atcoder/segtree>")
+              ("atcoder::segtree", "#include <atcoder/segtree>"),
+              ("jikka::slope_trick", "#include \"jikka/slope_trick.hpp\"")
             ]
    in standardHeaders ++ additionalHeader ++ body
 
