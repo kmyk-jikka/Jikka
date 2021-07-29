@@ -83,7 +83,7 @@ runFile path = do
 
 removeConsecutiveLineDirectives :: [T.Text] -> [T.Text]
 removeConsecutiveLineDirectives = \case
-  (l1 : l2 : lines) | "#line" `T.isPrefixOf` l1 && "#line" `T.isPrefixOf` l2 -> removeConsecutiveLineDirectives (l1 : lines)
+  (l1 : l2 : lines) | "#line" `T.isPrefixOf` l1 && "#line" `T.isPrefixOf` l2 -> removeConsecutiveLineDirectives (l2 : lines)
   (line : lines) -> line : removeConsecutiveLineDirectives lines
   [] -> []
 
