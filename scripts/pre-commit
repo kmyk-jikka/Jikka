@@ -3,24 +3,34 @@ set -ex
 
 # Haskell
 stack exec ormolu -- --mode=check $(find src app test -name \*.hs) \
-    || { echo HINT: Run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; false; }
+    || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; false; }
 stack exec hlint -- src app test
 
 # C++
+which clang-format \
+    || { echo HINT: Please install clang-format; false; }
 for f in $(find runtime/include examples/data -name \*.\?pp); do diff $f <(clang-format $f); done \
-    || { echo HINT: Run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp);' ; false; }
+    || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp);' ; false; }
 
 # Python
+isort --version \
+    || { echo HINT: Please install isort with running '$ pip3 install -r scripts/requirements.txt'; false; }
 isort --check-only --diff scripts/*.py examples/data/*.py \
-    || { echo HINT: Run '$ isort scripts/*.py examples/data/*.py'; false; }
+    || { echo HINT: Please run '$ isort scripts/*.py examples/data/*.py'; false; }
+yapf --version \
+    || { echo HINT: Please install yapf with running '$ pip3 install -r scripts/requirements.txt'; false; }
 yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py \
-    || { echo HINT: Run 'yapf --in-place '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py'; false; }
+    || { echo HINT: Please run 'yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; false; }
 mypy scripts/*.py examples/data/*.py
 
 # YAML
+which yarn \
+    || { echo HINT: Please install Yarn 'https://classic.yarnpkg.com/en/docs/install/'; false; }
+yarn prettier --version \
+    || { echo HINT: Please run '$ yarn install'; false; }
 yarn prettier --check $(git ls-files | grep '\.yml$\|\.yaml$\|\.json$') \
-    || { echo HINT: Run '$ yarn prettier --write $(git ls-files | grep '\.yml$\|\.yaml$\|\.json$')'; false; }
+    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.yml$\|\.yaml$\|\.json$'\'')'; false; }
 
 # Markdown
 yarn prettier --check $(git ls-files | grep '\.md$') \
-    || { echo HINT: Run '$ yarn prettier --write $(git ls-files | grep '\.md$')'; false; }
+    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.md$'\'')'; false; }
