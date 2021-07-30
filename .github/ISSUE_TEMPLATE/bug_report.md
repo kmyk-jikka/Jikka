@@ -1,14 +1,12 @@
 ---
 name: Bug report / バグ報告
 about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
-
+title: ""
+labels: ""
+assignees: ""
 ---
 
 ## Summary / 概要
-
 
 ## Steps to reproduce / 再現方法
 
@@ -16,20 +14,19 @@ assignees: ''
 1.  yyy
 1.  zzz
 
-``` python
+```python
 # Pelase include your Python code that you used
 ```
 
 environments:
 
--   version: (please write the versions of related things, e.g. `$ stack run --version`)
+- version: (please write the versions of related things, e.g. `$ stack run --version`)
 
 ## Expected behavior / 期待される挙動
 
-
 ## Actual behavior / 実際の挙動
 
-``` console
+```console
 $ echo Please paste the log here
 Please paste the log here
 ```

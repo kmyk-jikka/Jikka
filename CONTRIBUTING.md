@@ -2,15 +2,13 @@
 
 (このドキュメントの日本語バージョン: [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md))
 
-
 ## How can I contribute to this project?
 
 Currently, you can help us with the following ways:
 
--   Please find tasks of competitive programming which are seems to be automatically solved, and reporting them in [comments of an issue](https://github.com/kmyk/Jikka/issues/25).
-    -   If possible, please send to us pull requests which add Python codes with stupid algorithms and test cases for the tasks to [examples/wip/](https://github.com/kmyk/Jikka/tree/master/examples/wip) directory.
-    -   The problems which you found and Python codes which you sent are used for testing.
-
+- Please find tasks of competitive programming which are seems to be automatically solved, and reporting them in [comments of an issue](https://github.com/kmyk/Jikka/issues/25).
+  - If possible, please send to us pull requests which add Python codes with stupid algorithms and test cases for the tasks to [examples/wip/](https://github.com/kmyk/Jikka/tree/master/examples/wip) directory.
+  - The problems which you found and Python codes which you sent are used for testing.
 
 ## Development process and conventions
 
@@ -20,7 +18,7 @@ Use the following commands to run tests.
 [Hspec](https://hspec.github.io/) and [Doctest](https://hackage.haskell.org/package/doctest) are enabled.
 Also contents of [examples/](https://github.com/kmyk/Jikka/tree/master/examples) directory are verified.
 
-``` console
+```console
 $ stack test
 $ bash examples/test.sh
 ```
@@ -32,14 +30,14 @@ The GitHub Actions for tests is defined at [.github/workflows/test.yml](https://
 Use the following commands to check formatting.
 [Ormolu](https://github.com/tweag/ormolu) and [HLint](https://github.com/ndmitchell/hlint) are enabled.
 
-``` console
+```console
 $ stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
 $ stack exec hlint -- src app test
 ```
 
 Use the following command to fix formatting automatically as possible.
 
-``` console
+```console
 $ stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
 ```
 
@@ -50,7 +48,7 @@ The GitHub Actions for formatting if defined at [.github/workflows/format.yml](h
 [Haddock](https://www.haskell.org/haddock/) is used for internal documents of internal implementation.
 Run the following command to generate documents locally.
 
-``` console
+```console
 $ stack haddock
 ```
 

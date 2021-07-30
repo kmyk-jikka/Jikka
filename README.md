@@ -12,13 +12,11 @@ Jikka takes such problems as input in the form of a program of a very restricted
 Jikka はそのような問題を自動で解きます。
 そのような問題をとても制限された Python のサブセット言語のコードの形で入力として受け取り、計算量を落とすような最適化を行い、C++ の実装に変換して出力します。
 
-
 ## Usage
 
-``` console
+```console
 $ jikka convert PYTHON_FILE
 ```
-
 
 ## How to Install
 
@@ -30,7 +28,7 @@ Go [Releases page](https://github.com/kmyk/Jikka/releases) and download `jikka-v
 
 [Stack](https://www.haskellstack.org/) is required. If you are using Ubuntu, you can install Stack with `$ sudo apt install haskell-stack`.
 
-``` console
+```console
 $ git clone https://github.com/kmyk/Jikka.git
 $ cd Jikka
 $ stack install
@@ -40,33 +38,31 @@ $ stack install
 
 [Cabal](https://www.haskell.org/cabal/) is required. This is bundled [Haskell Platform](https://www.haskell.org/platform/). If you are using Ubuntu, you can install Stack with `$ sudo apt install haskell-platform`.
 
-``` console
+```console
 $ cabal update
 $ cabal install Jikka
 ```
-
 
 ## Documents
 
 for users:
 
--   [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
-    -   [docs/language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) (Japanese translation)
--   [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
-  -   [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
--   [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
--   [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
--   a blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
+- [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
+  - [docs/language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) (Japanese translation)
+- [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
+- [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
+- [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
+- [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
+- a blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
 
 for developpers:
 
--   [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
-    -   [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
--   [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
--   [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
--   [Haddock](https://hackage.haskell.org/package/Jikka)
-    -   [Haddock (master)](https://kmyk.github.io/Jikka/)
-
+- [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
+  - [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
+- [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
+- [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
+- [Haddock](https://hackage.haskell.org/package/Jikka)
+  - [Haddock (master)](https://kmyk.github.io/Jikka/)
 
 ## Examples
 
@@ -74,7 +70,7 @@ for developpers:
 
 Input, O(N):
 
-``` python
+```python
 def f(n: int) -> int:
     a = 0
     b = 1
@@ -90,7 +86,7 @@ def solve(n: int) -> int:
 
 Output, O(log N):
 
-``` c++
+```c++
 #include "jikka/all.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -199,7 +195,6 @@ int main() {
   }
 }
 ```
-
 
 ## License
 

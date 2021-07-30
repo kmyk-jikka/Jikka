@@ -1,0 +1,18 @@
+name: format-markdown
+
+on: [push, pull_request]
+
+jobs:
+  format-markdown:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Run Prettier
+        run: |
+          yarn prettier --check $(git ls-files | grep '\.md$')
+        shell: bash
