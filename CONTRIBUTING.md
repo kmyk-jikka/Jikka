@@ -27,8 +27,13 @@ The GitHub Actions for tests is defined at [.github/workflows/test.yml](https://
 
 ### Formatting
 
-Use the following commands to check formatting.
+There is a script at `scripte/pre-commit` which checkes formatting of all files.
+We recommend to configure this as the pre-commit hook with running `$ ln -s $(pwd)/scripts/pre-commit .git/hooks/pre-commit`.
+
+#### Haskell
+
 [Ormolu](https://github.com/tweag/ormolu) and [HLint](https://github.com/ndmitchell/hlint) are enabled.
+Use the following commands to check formatting.
 
 ```console
 $ stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
@@ -42,6 +47,25 @@ $ stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
 ```
 
 The GitHub Actions for formatting if defined at [.github/workflows/format.yml](https://github.com/kmyk/Jikka/blob/master/.github/workflows/format.yml).
+
+#### C++
+
+[clang-format](https://clang.llvm.org/docs/ClangFormat.html) is enabled.
+
+#### Python
+
+[yapf](https://github.com/google/yapf) and [isort](https://github.com/PyCQA/isort) are enabled.
+You can install these with `$ pip3 install -r scripts/requirements.txt`.
+
+#### Markdown
+
+[Prettier](https://prettier.io/) is enabled.
+you can install this with installing [Yarn](https://yarnpkg.com/) and running `$ yarn install`.
+
+#### YAML
+
+[Prettier](https://prettier.io/) is enabled.
+you can install this with installing [Yarn](https://yarnpkg.com/) and running `$ yarn install`.
 
 ### Documents
 

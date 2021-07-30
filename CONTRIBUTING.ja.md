@@ -27,8 +27,13 @@ $ bash examples/test.sh
 
 ### Formatting
 
-フォーマットの検査には以下のコマンドを実行してください。
+すべてのフォーマットをまとめて検査してくれるスクリプトが `scripte/pre-commit` にあります。
+`$ ln -s $(pwd)/scripts/pre-commit .git/hooks/pre-commit` を実行して pre-commit hook に設定しておくとよいでしょう。
+
+#### Haskell
+
 [Ormolu](https://github.com/tweag/ormolu) と [HLint](https://github.com/ndmitchell/hlint) が有効になっています。
+フォーマットの検査には以下のコマンドを実行してください。
 
 ```console
 $ stack exec ormolu -- --mode=check $(find src app test -name \*.hs)
@@ -42,6 +47,25 @@ $ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)
 ```
 
 フォーマットのための GitHub Actions は [.github/workflows/format.yml](https://github.com/kmyk/Jikka/blob/master/.github/workflows/format.yml) で定義されています。
+
+#### C++
+
+[clang-format](https://clang.llvm.org/docs/ClangFormat.html) が有効になっています。
+
+#### Python
+
+[yapf](https://github.com/google/yapf) と [isort](https://github.com/PyCQA/isort) が有効になっています。
+これらは `$ pip3 install -r scripts/requirements.txt` とすればインストールできます。
+
+#### Markdown
+
+[Prettier](https://prettier.io/) が有効になっています。
+これは [Yarn](https://yarnpkg.com/) を使って `$ yarn install` とすればインストールできます。
+
+#### YAML
+
+[Prettier](https://prettier.io/) が有効になっています。
+これは [Yarn](https://yarnpkg.com/) を使って `$ yarn install` とすればインストールできます。
 
 ### Documents
 
