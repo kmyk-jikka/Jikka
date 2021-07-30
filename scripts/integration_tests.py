@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 import concurrent.futures
+import functools
 import glob
+import json
 import os
 import pathlib
 import platform
@@ -24,6 +26,12 @@ def compile_cxx(src_path: pathlib.Path, dst_path: pathlib.Path):
     CXXFLAGS = ['-std=c++17', '-Wall', '-O2', '-I', str(pathlib.Path('runtime', 'ac-library'))]
     command = [CXX, *CXXFLAGS, '-o', str(dst_path), str(src_path)]
     subprocess.check_call(command, timeout=5 * TIMEOUT_FACTOR)
+
+
+@functools.lru_cache(maxsize=None)
+def get_alias_mapping() -> Dict[str, str]:
+    with open(pathlib.Path('examples', 'data', 'aliases.json')) as fh:
+        return json.load(fh)
 
 
 def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[pathlib.Path]:
@@ -78,6 +86,14 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
                         logger.error('%s: %s: failed to generate an output of a random case: %s', str(script), str(inputcase), e)
                         return []
             inputcases.append(inputcase)
+
+    # resolve alias
+    aliases = get_alias_mapping()
+    if script.stem in aliases:
+        if inputcases:
+            logger.error("%s: there must not be test cases when it uses an alias: %s", str(script), list(map(str, inputcases)))
+            return []
+        return collect_input_cases(script.parent / (aliases[script.stem] + script.suffix), tempdir=tempdir)
 
     return inputcases
 
@@ -170,6 +186,8 @@ def find_unused_test_cases() -> List[pathlib.Path]:
     errors = list(pathlib.Path('examples', 'errors').glob('*.py'))
     unused = []
     for path in pathlib.Path('examples', 'data').glob('*'):
+        if path.name == 'aliases.json':
+            continue
         name = path.name[:-len(''.join(path.suffixes))]
         if name not in [script.stem for script in scripts + errors]:
             unused.append(path)

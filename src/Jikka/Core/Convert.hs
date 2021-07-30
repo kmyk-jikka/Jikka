@@ -29,6 +29,7 @@ import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.ConvexHullTrick as ConvexHullTrick
 import qualified Jikka.Core.Convert.CumulativeSum as CumulativeSum
 import qualified Jikka.Core.Convert.Eta as Eta
+import qualified Jikka.Core.Convert.KubaruToMorau as KubaruToMorau
 import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
 import qualified Jikka.Core.Convert.MatrixExponentiation as MatrixExponentiation
 import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
@@ -56,6 +57,7 @@ run'' prog = do
   prog <- CloseSum.run prog
   prog <- CloseAll.run prog
   prog <- CloseMin.run prog
+  prog <- KubaruToMorau.run prog
   prog <- CumulativeSum.run prog
   prog <- SegmentTree.run prog
   prog <- BubbleLet.run prog

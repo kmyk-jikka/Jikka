@@ -37,9 +37,6 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
-hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
-hoistMaybe = MaybeT . pure
-
 -- | This is something commutative because only one kind of @c@ is allowed.
 plusPair :: (ArithmeticalExpr, ArithmeticalExpr) -> (ArithmeticalExpr, ArithmeticalExpr) -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
 plusPair (a1, c1) (a2, _) | isZeroArithmeticalExpr a2 = Just (a1, c1)
