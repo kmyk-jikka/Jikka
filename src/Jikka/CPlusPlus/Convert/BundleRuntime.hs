@@ -1,6 +1,8 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.BundleRuntime
@@ -19,10 +21,40 @@ import Control.Monad.State.Strict
 import Data.Char
 import qualified Data.Set as S
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import Jikka.Common.Error
+
+#ifdef JIKKA_EMBED_RUNTIME
+import Jikka.Common.FileEmbed (embedDir)
+#else
+import qualified Data.Text.IO as T
 import Paths_Jikka
 import System.IO.Error
+#endif
+
+-- Pragmas needs type annotations when OverloadedStrings is used. See https://github.com/ndmitchell/hlint/issues/372
+{-# ANN module ("HLint: ignore Unused LANGUAGE pragma" :: String) #-}
+
+#ifdef JIKKA_EMBED_RUNTIME
+embeddedRuntimeFiles :: [(FilePath, T.Text)]
+embeddedRuntimeFiles = $(embedDir "runtime/include")
+#endif
+
+{-# ANN readRuntimeFile ("HLint: ignore Redundant return" :: String) #-}
+readRuntimeFile :: (MonadIO m, MonadError Error m) => FilePath -> m T.Text
+readRuntimeFile path = do
+  return () -- Without this, Ormolu fails with "The GHC parser (in Haddock mode) failed: parse error on input `='"
+
+#ifdef JIKKA_EMBED_RUNTIME
+  case lookup ("runtime/include/" ++ path) embeddedRuntimeFiles of
+    Just file -> return file
+    Nothing -> throwInternalError $ "failed to open file. It may need recompile the binary?: " ++ path
+#else
+  resolvedPath <- liftIO $ getDataFileName ("runtime/include/" ++ path)
+  file <- liftIO $ tryIOError (T.readFile resolvedPath)
+  case file of
+    Left err -> throwInternalError $ "faild to open file " ++ path ++ ": " ++ show err
+    Right file -> return file
+#endif
 
 data PreprocessorState = PreprocessorState
   { definedMacros :: S.Set String,
@@ -59,11 +91,7 @@ runLines path lineno lines = concat <$> zipWithM (runLine path) [lineno ..] line
 
 runFile :: (MonadIO m, MonadError Error m, MonadState PreprocessorState m) => FilePath -> m [T.Text]
 runFile path = do
-  resolvedPath <- liftIO $ getDataFileName ("runtime/include/" ++ path)
-  file <- liftIO $ tryIOError (T.readFile resolvedPath)
-  file <- case file of
-    Left err -> throwInternalError $ "faild to open file " ++ path ++ ": " ++ show err
-    Right file -> return file
+  file <- readRuntimeFile path
   let lines = T.lines file
   let macro = map (\c -> if isAlphaNum c then toUpper c else '_') path
   when (length lines < 3) $ do

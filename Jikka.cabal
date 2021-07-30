@@ -36,11 +36,17 @@ source-repository head
   type: git
   location: https://github.com/kmyk/Jikka
 
+flag embed-runtime
+  description: Embed files under runtime/include/ to the compiled binary.
+  manual: True
+  default: False
+
 library
   exposed-modules:
       Jikka.Common.Alpha
       Jikka.Common.Combinatorics
       Jikka.Common.Error
+      Jikka.Common.FileEmbed
       Jikka.Common.Format.AutoIndent
       Jikka.Common.Format.Color
       Jikka.Common.Format.Error
@@ -152,10 +158,14 @@ library
     , base >=4.12 && <5
     , containers >=0.6.0 && <0.7
     , deepseq >=1.4.4 && <1.5
+    , directory >=1.3.3 && <1.4
     , mtl >=2.2.2 && <2.3
+    , template-haskell >=2.14.0 && <2.17
     , text >=1.2.3 && <1.3
     , transformers >=0.5.6 && <0.6
     , vector >=0.12.3 && <0.13
+  if flag(embed-runtime)
+    cpp-options: -DJIKKA_EMBED_RUNTIME
   default-language: Haskell2010
 
 executable jikka
@@ -172,7 +182,9 @@ executable jikka
     , base >=4.12 && <5
     , containers >=0.6.0 && <0.7
     , deepseq >=1.4.4 && <1.5
+    , directory >=1.3.3 && <1.4
     , mtl >=2.2.2 && <2.3
+    , template-haskell >=2.14.0 && <2.17
     , text >=1.2.3 && <1.3
     , transformers >=0.5.6 && <0.6
     , vector >=0.12.3 && <0.13
@@ -193,8 +205,10 @@ test-suite jikka-doctest
     , base >=4.12 && <5
     , containers >=0.6.0 && <0.7
     , deepseq >=1.4.4 && <1.5
+    , directory >=1.3.3 && <1.4
     , doctest
     , mtl >=2.2.2 && <2.3
+    , template-haskell >=2.14.0 && <2.17
     , text >=1.2.3 && <1.3
     , transformers >=0.5.6 && <0.6
     , vector >=0.12.3 && <0.13
@@ -261,10 +275,12 @@ test-suite jikka-test
     , base >=4.12 && <5
     , containers >=0.6.0 && <0.7
     , deepseq >=1.4.4 && <1.5
+    , directory >=1.3.3 && <1.4
     , hlint
     , hspec
     , mtl >=2.2.2 && <2.3
     , ormolu
+    , template-haskell >=2.14.0 && <2.17
     , text >=1.2.3 && <1.3
     , transformers >=0.5.6 && <0.6
     , vector >=0.12.3 && <0.13
