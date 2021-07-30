@@ -75,7 +75,7 @@ main name args = do
       putStr usage
       return ExitSuccess
     (parsed, _, []) | Version `elem` parsed -> do
-      putStrLn $ showVersion version
+      putStrLn $ 'v' : showVersion version
       return ExitSuccess
     (parsed, [subcmd, path], []) -> case parseFlags name parsed of
       Left err -> do
@@ -128,7 +128,7 @@ runSubcommand subcmd opts path = case subcmd of
       return $
         if embedOriginalCode opts
           then
-            let headers = ["// This C++ code is transpiled using Jikka transpiler https://github.com/kmyk/Jikka", "// The original Python code:"]
+            let headers = ["// This C++ code is transpiled using Jikka transpiler v" <> T.pack (showVersion version) <> " https://github.com/kmyk/Jikka", "// The original Python code:"]
              in T.unlines (headers ++ map ("//     " <>) (T.lines input)) <> output
           else output
     liftIO $ T.putStr output
