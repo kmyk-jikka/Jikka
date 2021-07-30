@@ -9,64 +9,64 @@ jobs:
   upload-binaries:
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Haskell
-      uses: haskell/actions/setup@v1
-      with:
-        enable-stack: true
+      - name: Set up Haskell
+        uses: haskell/actions/setup@v1
+        with:
+          enable-stack: true
 
-    - uses: actions/cache@v2
-      with:
-        path: |
-          ~/.stack
-          ${{ env.STACK_ROOT }}
-        key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.stack
+            ${{ env.STACK_ROOT }}
+          key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
 
-    - name: Build dependencies
-      run: stack --system-ghc build --test --only-dependencies
+      - name: Build dependencies
+        run: stack --system-ghc build --test --only-dependencies
 
-    - name: Build
-      run: stack --system-ghc build --ghc-options=-Werror --flags Jikka:embed-runtime
+      - name: Build
+        run: stack --system-ghc build --ghc-options=-Werror --flags Jikka:embed-runtime
 
-    - name: Set extension to .exe on Windows
-      id: get_ext
-      run: |
-        if [ ${{ matrix.os }} == windows-latest ]; then
-          ext=.exe
-        fi
-        echo "::set-output name=ext::$ext"
-      shell: bash
+      - name: Set extension to .exe on Windows
+        id: get_ext
+        run: |
+          if [ ${{ matrix.os }} == windows-latest ]; then
+            ext=.exe
+          fi
+          echo "::set-output name=ext::$ext"
+        shell: bash
 
-    - name: Get binary path
-      id: get_binary_path
-      run: |
-        echo "::set-output name=binary_path::$(stack --system-ghc path --local-install-root)/bin/jikka${{ steps.get_ext.outputs.ext }}"
-      shell: bash
+      - name: Get binary path
+        id: get_binary_path
+        run: |
+          echo "::set-output name=binary_path::$(stack --system-ghc path --local-install-root)/bin/jikka${{ steps.get_ext.outputs.ext }}"
+        shell: bash
 
-    - name: Compress binary
-      uses: svenstaro/upx-action@2.0.1
-      with:
-        file: ${{ steps.get_binary_path.outputs.binary_path }}
+      - name: Compress binary
+        uses: svenstaro/upx-action@2.0.1
+        with:
+          file: ${{ steps.get_binary_path.outputs.binary_path }}
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        path: ${{ steps.get_binary_path.outputs.binary_path }}
-        name: jikka-{{ runner.os }}${{ steps.get_ext.outputs.ext }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: ${{ steps.get_binary_path.outputs.binary_path }}
+          name: jikka-{{ runner.os }}${{ steps.get_ext.outputs.ext }}
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ steps.get_binary_path.outputs.binary_path }}
-        asset_name: jikka-${{ github.event.release.tag_name }}-${{ runner.os }}${{ steps.get_ext.outputs.ext }}
-        asset_content_type: application/octet-stream
-      if: github.event_name == "release"
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.get_binary_path.outputs.binary_path }}
+          asset_name: jikka-${{ github.event.release.tag_name }}-${{ runner.os }}${{ steps.get_ext.outputs.ext }}
+          asset_content_type: application/octet-stream
+        if: github.event_name == "release"

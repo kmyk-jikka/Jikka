@@ -7,27 +7,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Haskell
-      uses: haskell/actions/setup@v1
-      with:
-        enable-stack: true
+      - name: Set up Haskell
+        uses: haskell/actions/setup@v1
+        with:
+          enable-stack: true
 
-    - uses: actions/cache@v2
-      with:
-        path: ~/.stack
-        key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}
+      - uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}
 
-    - name: Build dependencies
-      run: stack --system-ghc build --only-dependencies
+      - name: Build dependencies
+        run: stack --system-ghc build --only-dependencies
 
-    - name: Run Haddock
-      run: stack --system-ghc haddock --haddock-arguments --odir=public
+      - name: Run Haddock
+        run: stack --system-ghc haddock --haddock-arguments --odir=public
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./public
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
