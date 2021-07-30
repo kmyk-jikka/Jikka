@@ -149,6 +149,8 @@ reduceFoldMap =
           x1 <- genVarName'
           return' $ Foldl' t1 t3 (Lam2 x3 t3 x1 t1 (App2 g (Var x3) (App f (Var x1)))) init xs
         -- others
+        Len' t (SetAt' _ xs _ _) -> return' $ Len' t xs
+        Len' t (Scanl' _ _ _ _ xs) -> return' $ Plus' (Len' t xs) (LitInt' 1)
         _ -> return Nothing
 
 reduceFold :: Monad m => RewriteRule m
@@ -176,6 +178,7 @@ reduceFoldBuild =
         Elem' t y (Cons' _ x xs) -> return' $ And' (Equal' t x y) (Elem' t y xs)
         Elem' _ x (Range1' n) -> return' $ And' (LessEqual' IntTy Lit0 x) (LessThan' IntTy x n)
         -- others
+        Len' t (Build' _ _ base n) -> return' $ Plus' (Len' t base) n
         _ -> return Nothing
 
 rule :: MonadAlpha m => RewriteRule m
@@ -196,7 +199,7 @@ runProgram = applyRewriteRuleProgram' rule
 -- | `run` does short cut fusion.
 --
 -- * This function is mainly for polymorphic reductions. This dosn't do much about concrete things, e.g., arithmetical operations.
--- * This doesn't do nothing about `Scanl` or `SetAt`.
+-- * This does nothing about `Build`, `Scanl` or `SetAt` except combinations with `Len`.
 --
 -- == Example
 --
