@@ -314,6 +314,21 @@ choose :: Integral a => a -> a -> a
 permute :: Integral a => a -> a -> a
 multichoose :: Integral a => a -> a -> a
 
+module Jikka.Common.FileEmbed
+listDirectoryRecursive :: FilePath -> IO [FilePath]
+
+-- | <a>embedDir</a> find files recursively and embed their contents, like
+--   <a>https://hackage.haskell.org/package/file-embed</a>
+--   <tt>file-embed</tt>&gt;'s <a>@embedDir@</a>.
+--   
+--   <h2>Usage</h2>
+--   
+--   <pre>
+--   myDir :: [(FilePath, Data.Text.Text)]
+--   myDir = $(embedDir "dirName")
+--   </pre>
+embedDir :: FilePath -> Q Exp
+
 module Jikka.Common.Format.AutoIndent
 indent :: String
 dedent :: String
