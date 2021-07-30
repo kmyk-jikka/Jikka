@@ -1,6 +1,7 @@
 name: upload-binaries
 
 on:
+  pull-request:
   release:
     types: [published]
 
@@ -31,7 +32,7 @@ jobs:
       run: stack --system-ghc build --test --only-dependencies
 
     - name: Build
-      run: stack --system-ghc build --ghc-options=-Werror
+      run: stack --system-ghc build --ghc-options=-Werror --flags Jikka:embed-runtime
 
     - name: Set extension to .exe on Windows
       id: get_ext
@@ -53,6 +54,12 @@ jobs:
       with:
         file: ${{ steps.get_binary_path.outputs.binary_path }}
 
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        path: ${{ steps.get_binary_path.outputs.binary_path }}
+        name: jikka-{{ runner.os }}${{ steps.get_ext.outputs.ext }}
+
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1.0.1
       env:
@@ -62,3 +69,4 @@ jobs:
         asset_path: ${{ steps.get_binary_path.outputs.binary_path }}
         asset_name: jikka-${{ github.event.release.tag_name }}-${{ runner.os }}${{ steps.get_ext.outputs.ext }}
         asset_content_type: application/octet-stream
+      if: github.event_name == "release"
