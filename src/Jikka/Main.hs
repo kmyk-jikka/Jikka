@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- |
 -- Module      : Jikka.Main
 -- Description : is the entry point of the @jikka@ command. / @jikka@ コマンドのエントリポイントです。
@@ -9,6 +11,7 @@
 module Jikka.Main where
 
 import Data.Maybe (fromMaybe)
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import qualified Jikka.CPlusPlus.Convert.BundleRuntime as BundleRuntime
@@ -28,13 +31,15 @@ data Flag
   | Verbose
   | Version
   | Target String
-  | Bundle Bool
+  | BundleRuntimeHeaders Bool
+  | EmbedOriginalCode Bool
   deriving (Eq, Ord, Show, Read)
 
 data Options = Options
   { verbose :: Bool,
     target :: Maybe Target,
-    bundleRuntime :: Bool
+    bundleRuntimeHeaders :: Bool,
+    embedOriginalCode :: Bool
   }
   deriving (Eq, Ord, Show, Read)
 
@@ -43,7 +48,8 @@ defaultOptions =
   Options
     { verbose = False,
       target = Nothing,
-      bundleRuntime = True
+      bundleRuntimeHeaders = True,
+      embedOriginalCode = True
     }
 
 header :: String -> String
@@ -55,8 +61,10 @@ options =
     Option ['v'] ["verbose"] (NoArg Verbose) "",
     Option [] ["version"] (NoArg Version) "",
     Option [] ["target"] (ReqArg Target "TARGET") "\"python\", \"rpython\", \"core\" or \"cxx\"",
-    Option [] ["bundle"] (NoArg (Bundle True)) "bundles runtime headers",
-    Option [] ["no-bundle"] (NoArg (Bundle False)) ""
+    Option [] ["bundle-runtime-headers"] (NoArg (BundleRuntimeHeaders True)) "bundles C++ runtime headers",
+    Option [] ["no-bundle-runtime-headers"] (NoArg (BundleRuntimeHeaders False)) "",
+    Option [] ["embed-original-code"] (NoArg (EmbedOriginalCode True)) "embeds the original Python code",
+    Option [] ["no-embed-original-code"] (NoArg (EmbedOriginalCode False)) ""
   ]
 
 main :: String -> [String] -> IO ExitCode
@@ -67,7 +75,7 @@ main name args = do
       putStr usage
       return ExitSuccess
     (parsed, _, []) | Version `elem` parsed -> do
-      putStrLn $ showVersion version
+      putStrLn $ 'v' : showVersion version
       return ExitSuccess
     (parsed, [subcmd, path], []) -> case parseFlags name parsed of
       Left err -> do
@@ -103,7 +111,8 @@ parseFlags _ = go defaultOptions
       Target target -> do
         target <- parseTarget target
         go (opts {target = Just target}) flags
-      Bundle p -> go (opts {bundleRuntime = p}) flags
+      BundleRuntimeHeaders p -> go (opts {bundleRuntimeHeaders = p}) flags
+      EmbedOriginalCode p -> go (opts {embedOriginalCode = p}) flags
 
 runSubcommand :: String -> Options -> FilePath -> ExceptT Error IO ()
 runSubcommand subcmd opts path = case subcmd of
@@ -112,9 +121,16 @@ runSubcommand subcmd opts path = case subcmd of
     let target' = fromMaybe CPlusPlusTarget (target opts)
     output <- liftEither $ Convert.run target' path input
     output <-
-      if target' == CPlusPlusTarget && bundleRuntime opts
+      if target' == CPlusPlusTarget && bundleRuntimeHeaders opts
         then BundleRuntime.run output
         else return output
+    output <-
+      return $
+        if embedOriginalCode opts
+          then
+            let headers = ["// This C++ code is transpiled using Jikka transpiler v" <> T.pack (showVersion version) <> " https://github.com/kmyk/Jikka", "// The original Python code:"]
+             in T.unlines (headers ++ map ("//     " <>) (T.lines input)) <> output
+          else output
     liftIO $ T.putStr output
   "debug" -> Debug.run path
   "execute" -> Execute.run (fromMaybe CoreTarget (target opts)) path
