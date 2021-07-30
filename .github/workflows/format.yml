@@ -27,3 +27,8 @@ jobs:
 
       - name: Run HLint
         run: stack --system-ghc exec hlint -- src app test
+
+      - name: Check .cabal is up-to-date
+        run: |
+          stack --system-ghc build --only-configure
+          git diff --exit-code *.cabal

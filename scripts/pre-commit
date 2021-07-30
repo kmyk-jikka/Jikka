@@ -5,6 +5,9 @@ set -ex
 stack exec ormolu -- --mode=check $(find src app test -name \*.hs) \
     || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; false; }
 stack exec hlint -- src app test
+stack build --only-configure
+git diff --exit-code *.cabal \
+    || { echo HINT: Please run '$ git add *.cabal'; false; }
 
 # C++
 which clang-format \
