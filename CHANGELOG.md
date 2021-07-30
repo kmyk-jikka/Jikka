@@ -157,16 +157,15 @@ int main() {
 }
 ```
 
-
 ## 2021-07-21: v5.0.10.0
 
--   The generated C++ code is optimized.
--   `list.append` is added in the restricted Python.
+- The generated C++ code is optimized.
+- `list.append` is added in the restricted Python.
 
 ## 2021-07-14: v5.0.9.0
 
--   The generated C++ code becomes more natural.
--   The restricted Python allows to write `main` function and uses it to analyze input/output format.
+- The generated C++ code becomes more natural.
+- The restricted Python allows to write `main` function and uses it to analyze input/output format.
 
 Input:
 
@@ -291,14 +290,13 @@ Many internal cleanups are done.
 Now our core language is very close to GHC' Core.
 It's curried and has a system for rewrite-rules.
 
-
 ## 2021-06-29: v5.0.6.0
 
 Error reporting and error recovery are improved.
 
 Input:
 
-``` python
+```python
 def solve(n: int) -> bool:
     a = n + True  # err
     b = 2 * n
@@ -307,7 +305,7 @@ def solve(n: int) -> bool:
 
 Output:
 
-``` console
+```console
 Type Error (line 2 column 13) (user's mistake?): Jikka.RestrictedPython.Convert.TypeInfer: failed to solve type equations: failed to unify type int and type bool: type int is not type bool
 1 |def solve(n: int) -> bool:
 2 |    a = n + True  # err
@@ -322,8 +320,7 @@ Type Error (line 4 column 12) (user's mistake?): Jikka.RestrictedPython.Convert.
 
 contributions:
 
--   @Koki-Yamaguchi fixed build on macOS ([#28](https://github.com/kmyk/Jikka/pull/28))
-
+- @Koki-Yamaguchi fixed build on macOS ([#28](https://github.com/kmyk/Jikka/pull/28))
 
 ## 2021-06-25: v5.0.5.0
 
@@ -332,7 +329,7 @@ Now it can convert a O(N) Python code for fibonacci to O(log N) C++ code.
 
 Input, O(N):
 
-``` python
+```python
 def f(n: int) -> int:
     a = 0
     b = 1
@@ -348,7 +345,7 @@ def solve(n: int) -> int:
 
 Output, O(log N):
 
-``` c++
+```c++
 #include "jikka/all.hpp"
 #include <algorithm>
 #include <cstdint>
@@ -403,7 +400,7 @@ However, this version didn't reach the usable version.
 
 Input O(N^2):
 
-``` sml
+```sml
 let given N : [2, 200001) in
 let given A : N -> 200001 in
 
@@ -415,7 +412,7 @@ Output O(N):
 
 The generated function (+ main function written by hands) gets AC: <https://atcoder.jp/contests/abc134/submissions/6526623>
 
-``` c++
+```c++
 vector<int64_t> solve(int64_t N, const vector<int64_t> & A) {
     vector<int64_t> t1(N + 1);
     t1[0] = INT64_MIN;
@@ -444,7 +441,7 @@ vector<int64_t> solve(int64_t N, const vector<int64_t> & A) {
 
 Input O(k n):
 
-``` sml
+```sml
 # vim: set filetype=sml:
 # Jikka v3
 
@@ -457,7 +454,7 @@ sum K (fun i -> max N (fun j -> i + 2 * A j))
 
 Output O(k + n):
 
-``` c++
+```c++
 int64_t solve(int64_t N, const vector<int64_t> & A) {
     int64_t K = 100000;
     int64_t a2 = 0;
@@ -474,14 +471,14 @@ int64_t solve(int64_t N, const vector<int64_t> & A) {
 
 ## 2019-07-10: v2
 
->   競技プログラミングの問題の形式的な表現を受けとり、それに対する解法を出力するプログラムです。
+> 競技プログラミングの問題の形式的な表現を受けとり、それに対する解法を出力するプログラムです。
 
 `v2` is the second prototype.
 This version reads a mathematical expression written in ML-like language, and only writes a internal AST.
 
 Input:
 
-``` ml
+```ml
 # Jikka v2
 # https://atcoder.jp/contests/code-festival-2015-final-open/tasks/codefestival_2015_final_d
 
@@ -498,7 +495,7 @@ f i t = count N (\ j. j < N and j /= i and S j <= t and t < T j)
 output min N \ i. max K1 \ t. f i t
 ```
 
-``` console
+```console
 
 $ dotnet run
 
@@ -542,7 +539,7 @@ $ dotnet run
 
 ## 2019-07-02: v1
 
->   数式を入力すると C++ での実装を出力してくれるすごいやつ
+> 数式を入力すると C++ での実装を出力してくれるすごいやつ
 
 `v1` is the first prototype.
 This version reads a mathematical expression written in TeX-like notation, and writes a C++ function.
@@ -556,7 +553,7 @@ Input:
 
 Output:
 
-``` c++
+```c++
 int64_t solve(const vector<int64_t> & A, int64_t N) {
     int64_t t0 = 0;
     for (int64_t i = 0; i < N; ++ i) {

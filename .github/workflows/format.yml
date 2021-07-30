@@ -7,23 +7,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Haskell
-      uses: haskell/actions/setup@v1
-      with:
-        enable-stack: true
+      - name: Set up Haskell
+        uses: haskell/actions/setup@v1
+        with:
+          enable-stack: true
 
-    - uses: actions/cache@v2
-      with:
-        path: ~/.stack
-        key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
+      - uses: actions/cache@v2
+        with:
+          path: ~/.stack
+          key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
 
-    - name: Build dependencies
-      run: stack --system-ghc build --test --only-dependencies
+      - name: Build dependencies
+        run: stack --system-ghc build --test --only-dependencies
 
-    - name: Run Ormolu
-      run: stack --system-ghc exec ormolu -- --mode=check $(find src app test -name \*.hs)
+      - name: Run Ormolu
+        run: stack --system-ghc exec ormolu -- --mode=check $(find src app test -name \*.hs)
 
-    - name: Run HLint
-      run: stack --system-ghc exec hlint -- src app test
+      - name: Run HLint
+        run: stack --system-ghc exec hlint -- src app test
+
+      - name: Check .cabal is up-to-date
+        run: |
+          stack --system-ghc build --only-configure
+          git diff --exit-code *.cabal

@@ -21,8 +21,8 @@ for _ in range(n):
 
 For example, [examples/fib.py](https://github.com/kmyk/Jikka/blob/master/examples/fib.py) runs in O(log n).
 
--   source code [src/Jikka/Core/Convert/MatrixExponentiation.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/MatrixExponentiation.hs)
--   Haddock [Jikka.Core.Convert.MatrixExponentiation](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-MatrixExponentiation.html)
+- source code [src/Jikka/Core/Convert/MatrixExponentiation.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/MatrixExponentiation.hs)
+- Haddock [Jikka.Core.Convert.MatrixExponentiation](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-MatrixExponentiation.html)
 
 ## Cumulative Sum
 
@@ -38,8 +38,8 @@ for i in range(n):
 
 For example, [examples/static_range_sum.py](https://github.com/kmyk/Jikka/blob/master/examples/static_range_sum.py) runs in O(n + q).
 
--   source code [src/Jikka/Core/Convert/CumulativeSum.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/CumulativeSum.hs)
--   Haddock [Jikka.Core.Convert.CumulativeSum](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-CumulativeSum.html)
+- source code [src/Jikka/Core/Convert/CumulativeSum.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/CumulativeSum.hs)
+- Haddock [Jikka.Core.Convert.CumulativeSum](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-CumulativeSum.html)
 
 ## Segment Tree
 
@@ -56,8 +56,8 @@ for i in range(n):
 
 For example, [examples/dp_q.py](https://github.com/kmyk/Jikka/blob/master/examples/dp_q.py) runs in O(n log n).
 
--   source code [src/Jikka/Core/Convert/SegmentTree.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/SegmentTree.hs)
--   Haddock [Jikka.Core.Convert.SegmentTree](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-SegmentTree.html)
+- source code [src/Jikka/Core/Convert/SegmentTree.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/SegmentTree.hs)
+- Haddock [Jikka.Core.Convert.SegmentTree](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-SegmentTree.html)
 
 ## Convex Hull Trick
 
@@ -74,5 +74,5 @@ for i in range(n):
 
 For example, [examples/dp_z.py](https://github.com/kmyk/Jikka/blob/master/examples/dp_z.py) runs in O(n log n).
 
--   source code [src/Jikka/Core/Convert/ConvexHullTrick.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ConvexHullTrick.hs)
--   Haddock [Jikka.Core.Convert.ConvexHullTrick](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-ConvexHullTrick.html)
+- source code [src/Jikka/Core/Convert/ConvexHullTrick.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ConvexHullTrick.hs)
+- Haddock [Jikka.Core.Convert.ConvexHullTrick](https://hackage.haskell.org/package/Jikka/docs/Jikka-Core-Convert-ConvexHullTrick.html)
