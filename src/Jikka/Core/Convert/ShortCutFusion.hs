@@ -127,7 +127,6 @@ reduceMapMap =
         -- reduce `Sorted`
         Sorted' t (Reversed' _ xs) -> return' $ Sorted' t xs
         Sorted' t (Sorted' _ xs) -> return' $ Sorted' t xs
-        -- others
         _ -> return Nothing
 
 reduceFoldMap :: MonadAlpha m => RewriteRule m
@@ -151,6 +150,7 @@ reduceFoldMap =
         -- others
         Len' t (SetAt' _ xs _ _) -> return' $ Len' t xs
         Len' t (Scanl' _ _ _ _ xs) -> return' $ Plus' (Len' t xs) (LitInt' 1)
+        At' t (SetAt' _ xs i' x) i -> return' $ If' t (Equal' IntTy i' i) x (At' t xs i)
         _ -> return Nothing
 
 reduceFold :: Monad m => RewriteRule m
@@ -199,7 +199,7 @@ runProgram = applyRewriteRuleProgram' rule
 -- | `run` does short cut fusion.
 --
 -- * This function is mainly for polymorphic reductions. This dosn't do much about concrete things, e.g., arithmetical operations.
--- * This does nothing about `Build`, `Scanl` or `SetAt` except combinations with `Len`.
+-- * This does nothing about `Build`, `Scanl` or `SetAt` except combinations with `Len` or `At`.
 --
 -- == Example
 --
