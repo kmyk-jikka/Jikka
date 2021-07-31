@@ -215,7 +215,7 @@ instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Program
 module Jikka.CPlusPlus.Language.VariableAnalysis
 data ReadWriteList
 ReadWriteList :: Set VarName -> Set VarName -> ReadWriteList
-[readList] :: ReadWriteList -> Set VarName
+[readList'] :: ReadWriteList -> Set VarName
 [writeList] :: ReadWriteList -> Set VarName
 readVariable :: VarName -> ReadWriteList
 writeVariable :: VarName -> ReadWriteList
@@ -1192,7 +1192,6 @@ pattern AppBuiltin2 :: Builtin -> Expr -> Expr -> Expr
 pattern AppBuiltin3 :: Builtin -> Expr -> Expr -> Expr -> Expr
 pattern Lam2 :: VarName -> Type -> VarName -> Type -> Expr -> Expr
 pattern Lam3 :: VarName -> Type -> VarName -> Type -> VarName -> Type -> Expr -> Expr
-pattern LamId :: VarName -> Type -> Expr
 
 -- | <a>ToplevelExpr</a> is the toplevel exprs. In our core, "let rec" is
 --   allowed only on the toplevel.
@@ -1454,6 +1453,10 @@ instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.ArithmeticalExpr
 instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticalExpr.ArithmeticalExpr
 instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.ArithmeticalExpr
 
+module Jikka.Core.Language.LambdaPatterns
+pattern LamId :: Type -> Expr
+pattern LamConst :: Type -> Expr -> Expr
+
 module Jikka.Core.Language.Runtime
 floorDiv :: MonadError Error m => Integer -> Integer -> m Integer
 floorMod :: MonadError Error m => Integer -> Integer -> m Integer
@@ -1509,6 +1512,12 @@ isConstantTimeExpr :: Expr -> Bool
 --   k</tt>. * This assumes that there are no name conflicts.
 replaceLenF :: MonadError Error m => VarName -> VarName -> Integer -> Expr -> m Expr
 
+-- | <a>getRecurrenceFormulaBase</a> makes a pair <tt>((a_0, ..., a_{k -
+--   1}), a)</tt> from <tt>setat (... (setat a 0 a_0) ...) (k - 1) a_{k -
+--   1})</tt>.
+getRecurrenceFormulaBase :: Expr -> ([Expr], Expr)
+hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
+
 
 module Jikka.Core.Language.Beta
 
@@ -1535,10 +1544,20 @@ formatBuiltin :: Builtin -> [Expr] -> String
 formatType :: Type -> String
 formatExpr :: Expr -> String
 formatProgram :: Program -> String
+instance GHC.Read.Read Jikka.Core.Format.Prec
+instance GHC.Show.Show Jikka.Core.Format.Prec
+instance GHC.Classes.Ord Jikka.Core.Format.Prec
+instance GHC.Classes.Eq Jikka.Core.Format.Prec
+instance GHC.Read.Read Jikka.Core.Format.Assoc
+instance GHC.Show.Show Jikka.Core.Format.Assoc
+instance GHC.Enum.Enum Jikka.Core.Format.Assoc
+instance GHC.Classes.Ord Jikka.Core.Format.Assoc
+instance GHC.Classes.Eq Jikka.Core.Format.Assoc
 instance GHC.Read.Read Jikka.Core.Format.Builtin'
 instance GHC.Show.Show Jikka.Core.Format.Builtin'
 instance GHC.Classes.Ord Jikka.Core.Format.Builtin'
 instance GHC.Classes.Eq Jikka.Core.Format.Builtin'
+instance GHC.Enum.Enum Jikka.Core.Format.Prec
 
 
 module Jikka.Core.Language.TypeCheck
@@ -1953,7 +1972,8 @@ module Jikka.Core.Convert.ShortCutFusion
 --   <ul>
 --   <li>This function is mainly for polymorphic reductions. This dosn't do
 --   much about concrete things, e.g., arithmetical operations.</li>
---   <li>This doesn't do nothing about <a>Scanl</a> or <a>SetAt</a>.</li>
+--   <li>This does nothing about <a>Build</a>, <a>Scanl</a> or <a>SetAt</a>
+--   except combinations with <a>Len</a> or <a>At</a>.</li>
 --   </ul>
 --   
 --   <h2>Example</h2>
@@ -2218,6 +2238,47 @@ getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -
 getRecurrenceFormulaStep :: MonadAlpha m => Int -> Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 
 
+module Jikka.Core.Convert.KubaruToMorau
+
+-- | <a>run</a> converts Kubaru DP (for each &lt;math&gt;, updates (
+--   mathrm{dp}(j) gets f(mathrm{dp}(j), mathrm{dp}(i)) ) for each
+--   &lt;math&gt;) to Morau DP (for each &lt;math&gt;, computes (
+--   mathrm{dp}(i) = F(lbrace mathrm{dp}(j) mid j lt i rbrace) )).
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   foldl (fun dp i -&gt;
+--       foldl (fun dp j -&gt;
+--           setAt dp j (
+--               f dp[j] dp[i])
+--           ) dp (range (i + 1) n)
+--       ) dp (range n)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   build (fun dp' -&gt;
+--       foldl (fun dp_i j -&gt;
+--           f dp_i dp'[j]
+--           ) dp[i] (range i)
+--       ) [] n
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+-- | TODO: remove the assumption that the length of <tt>a</tt> is equals to
+--   <tt>n</tt>
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+
+-- | <tt>runFunctionBody c i j step y x k</tt> returns <tt>step'(y, x, i,
+--   k)</tt> s.t. <tt>step(c, i, j) = step'(c[i + j + 1], c[i], i, i + j +
+--   1)</tt>
+runFunctionBody :: (MonadAlpha m, MonadError Error m) => VarName -> VarName -> VarName -> Expr -> VarName -> VarName -> VarName -> MaybeT m Expr
+
+
 module Jikka.Core.Convert.Eta
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: MonadAlpha m => RewriteRule m
@@ -2252,7 +2313,7 @@ module Jikka.Core.Convert.ConvexHullTrick
 --   in &lt;math&gt;.
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
-parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
+parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr, Maybe Expr))
 
 -- | <a>parseLinearFunctionBody</a>` parses the body of a linear function
 --   which can be decomposed to convex hull trick.
