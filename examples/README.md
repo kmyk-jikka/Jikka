@@ -24,10 +24,13 @@
   - Educational DP Contest [Q - Flowers](https://atcoder.jp/contests/dp/tasks/dp_q)
   - A lazy propagation segment tree / 遅延伝播セグメント木
   - submission at v5.0.11.0: <https://atcoder.jp/contests/dp/submissions/24561829>
-- :heavy_check_mark: AC `dp_z.py`
+- :heavy_check_mark: AC `dp_z-morau.py`
   - Educational DP Contest [Z - Frog 3](https://atcoder.jp/contests/dp/tasks/dp_z)
   - Convex hull trick
   - submission at v5.0.11.0: <https://atcoder.jp/contests/dp/submissions/24563891>
+- :heavy_check_mark: AC `dp_z-kubaru.py`
+  - The Kubaru DP version of `dp_z-morau.py`.
+  - submission at v5.1.0.0: <https://atcoder.jp/contests/dp/submissions/24701829>
 - :hourglass: TLE `abc134_c.py`
   - AtCoder Beginner Contest 134 [C - Exception Handling](https://atcoder.jp/contests/abc134/tasks/abc134_c)
   - Cumulative sums from both sides / 両側からの累積和
