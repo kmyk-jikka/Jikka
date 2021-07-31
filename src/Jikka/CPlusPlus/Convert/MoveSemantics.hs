@@ -51,10 +51,21 @@ runAssignExpr = \case
   AssignIncr e -> AssignIncr <$> runLeftExpr e
   AssignDecr e -> AssignDecr <$> runLeftExpr e
 
-isMovable :: VarName -> [[Statement]] -> Bool
-isMovable x cont =
-  let ReadWriteList rs _ = analyzeStatements (concat cont)
-   in x `S.notMember` rs
+isMovableTo :: VarName -> VarName -> [[Statement]] -> Bool
+isMovableTo x y cont
+  | x `S.notMember` readList' (analyzeStatements (concat cont)) = True
+  | otherwise =
+    let go = \case
+          [] -> False
+          (Assign (AssignExpr SimpleAssign (LeftVar x') (Var y')) : cont')
+            | x' == x && y' == y ->
+              let ReadWriteList _ ws' = analyzeStatements cont'
+                  ReadWriteList rs ws = analyzeStatements (concat (tail cont))
+               in y `S.notMember` S.unions [ws', rs, ws]
+          (stmt : cont) ->
+            let ReadWriteList rs ws = analyzeStatement stmt
+             in x `S.notMember` S.unions [rs, ws] && go cont
+     in go (head cont)
 
 runStatement :: MonadState (M.Map VarName VarName) m => Statement -> [[Statement]] -> m [Statement]
 runStatement stmt cont = case stmt of
@@ -88,16 +99,16 @@ runStatement stmt cont = case stmt of
       DeclareCopy e -> DeclareCopy <$> runExpr e
       DeclareInitialize es -> DeclareInitialize <$> mapM runExpr es
     case init of
-      DeclareCopy (Var x) | x `isMovable` cont -> do
+      DeclareCopy (Var x) | (x `isMovableTo` y) cont -> do
         modify' (M.insert y x)
         return []
       DeclareCopy (Call ConvexHullTrickCtor []) -> return [Declare t y DeclareDefault]
       DeclareCopy (Call ConvexHullTrickCopyAddLine [Var x, a, b])
-        | x `isMovable` cont -> do
+        | (x `isMovableTo` y) cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
       DeclareCopy (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
-        | x `isMovable` cont -> do
+        | (x `isMovableTo` y) cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "set" [i, a]]
       _ -> do
@@ -111,13 +122,13 @@ runStatement stmt cont = case stmt of
       AssignExpr SimpleAssign (LeftVar y) (Var x) | x == y -> return []
       AssignExpr SimpleAssign (LeftVar y) (Call ConvexHullTrickCopyAddLine [Var x, a, b])
         | x == y -> return [callMethod' (Var x) "add_line" [a, b]]
-        | x `isMovable` cont -> do
+        | (x `isMovableTo` y) cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
         | otherwise -> return [Assign e]
       AssignExpr SimpleAssign (LeftVar y) (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
         | x == y -> return [callMethod' (Var x) "set" [i, a]]
-        | x `isMovable` cont -> do
+        | (x `isMovableTo` y) cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "set" [i, a]]
         | otherwise -> return [Assign e]
