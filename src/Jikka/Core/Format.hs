@@ -131,9 +131,12 @@ formatSemigroup = \case
 
 data Builtin'
   = Fun [Type] String
-  | PrefixOp String
+  | PrefixOp [Type] String
   | InfixOp [Type] String Prec Assoc
   | At' Type
+  | SetAt' Type
+  | Tuple' [Type]
+  | Proj' [Type] Integer
   | If' Type
   deriving (Eq, Ord, Show, Read)
 
@@ -146,29 +149,29 @@ infixOp = InfixOp []
 analyzeBuiltin :: Builtin -> Builtin'
 analyzeBuiltin = \case
   -- arithmetical functions
-  Negate -> PrefixOp "-"
+  Negate -> PrefixOp [] "-"
   Plus -> infixOp "+" addPrec LeftToRight
   Minus -> infixOp "-" addPrec LeftToRight
   Mult -> infixOp "*" multPrec LeftToRight
   FloorDiv -> infixOp "/" multPrec LeftToRight
   FloorMod -> infixOp "%" multPrec LeftToRight
-  CeilDiv -> fun "ceildiv"
-  CeilMod -> fun "ceilmod"
+  CeilDiv -> infixOp "/^" multPrec LeftToRight
+  CeilMod -> infixOp "%^" multPrec LeftToRight
   Pow -> infixOp "**" powerPrec RightToLeft
   -- advanced arithmetical functions
   Abs -> fun "abs"
   Gcd -> fun "gcd"
   Lcm -> fun "lcm"
-  Min2 t -> Fun [t] "min"
-  Max2 t -> Fun [t] "max"
+  Min2 t -> InfixOp [t] "<?" appendPrec LeftToRight
+  Max2 t -> InfixOp [t] ">?" appendPrec LeftToRight
   -- logical functions
-  Not -> PrefixOp "not"
+  Not -> PrefixOp [] "not"
   And -> infixOp "and" andPrec RightToLeft
   Or -> infixOp "or" orPrec RightToLeft
   Implies -> infixOp "implies" impliesPrec RightToLeft
   If t -> If' t
   -- bitwise functions
-  BitNot -> PrefixOp "~"
+  BitNot -> PrefixOp [] "~"
   BitAnd -> infixOp "&" multPrec LeftToRight
   BitOr -> infixOp "|" appendPrec LeftToRight
   BitXor -> infixOp "^" addPrec LeftToRight
@@ -205,26 +208,26 @@ analyzeBuiltin = \case
   Map t1 t2 -> Fun [t1, t2] "map"
   Filter t -> Fun [t] "filter"
   At t -> At' t
-  SetAt t -> Fun [t] "setAt"
+  SetAt t -> SetAt' t
   Elem t -> Fun [t] "elem"
   Sum -> fun "sum"
   Product -> fun "product"
   ModSum -> fun "modsum"
   ModProduct -> fun "modproduct"
-  Min1 t -> Fun [t] "min1"
-  Max1 t -> Fun [t] "max1"
+  Min1 t -> Fun [t] "min"
+  Max1 t -> Fun [t] "max"
   ArgMin t -> Fun [t] "argmin"
   ArgMax t -> Fun [t] "argmax"
   All -> fun "all"
   Any -> fun "any"
   Sorted t -> Fun [t] "sort"
   Reversed t -> Fun [t] "reverse"
-  Range1 -> fun "range1"
+  Range1 -> fun "range"
   Range2 -> fun "range2"
   Range3 -> fun "range3"
   -- tuple functions
-  Tuple ts -> Fun ts "tuple"
-  Proj ts n -> Fun ts ("proj" ++ show n)
+  Tuple ts -> Tuple' ts
+  Proj ts n -> Proj' ts (toInteger n)
   -- comparison
   LessThan t -> InfixOp [t] "<" comparePrec NoAssoc
   LessEqual t -> InfixOp [t] "<=" comparePrec NoAssoc
@@ -258,9 +261,12 @@ formatFunCall f = \case
 formatBuiltinIsolated' :: Builtin' -> String
 formatBuiltinIsolated' = \case
   Fun ts name -> name ++ formatTemplate ts
-  PrefixOp op -> paren op
+  PrefixOp ts op -> paren $ op ++ formatTemplate ts
   InfixOp ts op _ _ -> paren $ op ++ formatTemplate ts
   At' t -> paren $ "at" ++ formatTemplate [t]
+  SetAt' t -> paren $ "set-at" ++ formatTemplate [t]
+  Tuple' ts -> paren $ "tuple" ++ formatTemplate ts
+  Proj' ts n -> paren $ "proj-" ++ show n ++ formatTemplate ts
   If' t -> paren $ "if-then-else" ++ formatTemplate [t]
 
 formatBuiltinIsolated :: Builtin -> String
@@ -269,9 +275,13 @@ formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
 formatBuiltin' :: Builtin' -> [Expr] -> (String, Prec)
 formatBuiltin' builtin args = case (builtin, args) of
   (Fun _ name, _) -> formatFunCall (name, identPrec) args
-  (PrefixOp op, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
+  (PrefixOp _ op, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
   (InfixOp _ op prec assoc, e1 : e2 : args) -> formatFunCall (resolvePrecLeft prec assoc (formatExpr' e1) ++ " " ++ op ++ " " ++ resolvePrecRight prec assoc (formatExpr' e2), prec) args
   (At' _, e1 : e2 : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e1) ++ "[" ++ resolvePrec parenPrec (formatExpr' e2) ++ "]", identPrec) args
+  (SetAt' _, e1 : e2 : e3 : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e1) ++ "[" ++ resolvePrec parenPrec (formatExpr' e2) ++ " := " ++ resolvePrec parenPrec (formatExpr' e3) ++ "]", identPrec) args
+  (Tuple' [_], e : args) -> formatFunCall (paren (resolvePrec commaPrec (formatExpr' e) ++ ","), identPrec) args
+  (Tuple' ts, args) | length args >= length ts -> formatFunCall (paren (intercalate ", " (map (resolvePrec commaPrec . formatExpr') (take (length ts) args))), identPrec) (drop (length ts) args)
+  (Proj' _ n, e : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e) ++ "." ++ show n, identPrec) args
   (If' _, e1 : e2 : e3 : args) -> formatFunCall ("if" ++ " " ++ resolvePrec parenPrec (formatExpr' e1) ++ " then " ++ resolvePrec parenPrec (formatExpr' e2) ++ " else " ++ resolvePrec lambdaPrec (formatExpr' e3), lambdaPrec) args
   _ -> formatFunCall (formatBuiltinIsolated' builtin, identPrec) args
 
@@ -305,7 +315,7 @@ formatExpr' = \case
   Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' e1) ++ "\n" ++ dedent ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
 
 formatExpr :: Expr -> String
-formatExpr = unwords . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec . formatExpr'
+formatExpr = unlines . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec . formatExpr'
 
 formatToplevelExpr :: ToplevelExpr -> [String]
 formatToplevelExpr = \case
