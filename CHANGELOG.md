@@ -1,5 +1,10 @@
 # Changelog for Jikka
 
+## 2021-08-01: v5.1.0.0
+
+- Now Kubaru DP is converted to Morau DP.
+- The runtime headers are automatically bundled to generated C++ code.
+
 ## 2021-07-28: v5.0.11.1
 
 Uploaded to Hackage: <https://hackage.haskell.org/package/Jikka>
