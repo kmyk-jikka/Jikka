@@ -11,8 +11,8 @@
 ## About BREAKING CHANGE
 
 This language specification is in initial development.
-While the second major version is zero (`v5.0.y.z`), anything MAY change at any time.
-See also [item (4.) of Semantic Versioning](https://semver.org/#spec-item-4).
+Aything MAY change at any time.
+Especially, please be careful when you write code incompatible to Python, including our language extensions.
 
 ## Syntax
 

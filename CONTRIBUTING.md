@@ -82,5 +82,4 @@ Use [Conventional Commits](https://www.conventionalcommits.org/).
 
 ### Versioning
 
-[Semantic Versioning](https://semver.org/lang/ja/) is used with regard to the Python-like language as its public API.
-However, it has two MAJOR version that come from [Haskell Package Versioning Policy](https://pvp.haskell.org/).
+Conforming to [Haskell Package Versioning Policy](https://pvp.haskell.org/).
