@@ -373,11 +373,6 @@ pattern Lam2 x1 t1 x2 t2 e = Lam x1 t1 (Lam x2 t2 e)
 
 pattern Lam3 x1 t1 x2 t2 x3 t3 e = Lam x1 t1 (Lam x2 t2 (Lam x3 t3 e))
 
-pattern LamId x t <-
-  (\case Lam x t (Var y) | x == y -> Just (x, t); _ -> Nothing -> Just (x, t))
-  where
-    LamId x t = Lam x t (Var x)
-
 -- | `ToplevelExpr` is the toplevel exprs. In our core, "let rec" is allowed only on the toplevel.
 --
 -- \[

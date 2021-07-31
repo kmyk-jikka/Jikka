@@ -6,7 +6,7 @@ import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 
 data ReadWriteList = ReadWriteList
-  { readList :: S.Set VarName,
+  { readList' :: S.Set VarName,
     writeList :: S.Set VarName
   }
   deriving (Eq, Ord, Show, Read)

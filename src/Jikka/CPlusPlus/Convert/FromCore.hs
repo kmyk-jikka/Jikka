@@ -77,7 +77,9 @@ runLiteral env = \case
     case stmts of
       [] -> return e
       _ -> throwInternalError "now builtin values don't use statements"
-  X.LitInt n -> return $ Y.Lit (Y.LitInt64 n)
+  X.LitInt n
+    | - (2 ^ 63) <= n && n < 2 ^ 63 -> return $ Y.Lit (Y.LitInt64 n)
+    | otherwise -> throwInternalError $ "integer value is too large for int64_t: " ++ show n
   X.LitBool p -> return $ Y.Lit (Y.LitBool p)
   X.LitNil t -> do
     t <- runType t

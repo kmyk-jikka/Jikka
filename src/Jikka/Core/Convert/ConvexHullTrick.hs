@@ -37,9 +37,6 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
-hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
-hoistMaybe = MaybeT . pure
-
 -- | This is something commutative because only one kind of @c@ is allowed.
 plusPair :: (ArithmeticalExpr, ArithmeticalExpr) -> (ArithmeticalExpr, ArithmeticalExpr) -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
 plusPair (a1, c1) (a2, _) | isZeroArithmeticalExpr a2 = Just (a1, c1)
@@ -112,47 +109,48 @@ parseLinearFunctionBody' f i j e = result <$> go e
         _ -> Nothing
       _ -> Nothing
 
-parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr))
+parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr, Maybe Expr))
 parseLinearFunctionBody f i k = runMaybeT . go
   where
+    goMin e j step size = case unNPlusKPattern (parseArithmeticalExpr size) of
+      Just (i', k') | i' == i && k' == k -> do
+        (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
+        -- raname @j@ to @i@
+        a <- lift $ substitute j (Var i) a
+        c <- lift $ substitute j (Var i) c
+        return (LitInt' 1, a, b, c, d, (`Minus'` d) <$> e)
+      _ -> hoistMaybe Nothing
+    goMax e j step size = do
+      (sign, a, b, c, d, e) <- goMin e j step size
+      return (Negate' sign, a, Negate' b, Negate' c, d, Negate' <$> e)
     go = \case
-      Min1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case unNPlusKPattern (parseArithmeticalExpr size) of
-        Just (i', k') | i' == i && k' == k -> do
-          (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
-          -- raname @j@ to @i@
-          a <- lift $ substitute j (Var i) a
-          c <- lift $ substitute j (Var i) c
-          return (LitInt' 1, a, b, c, d)
-        _ -> hoistMaybe Nothing
-      Max1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> case unNPlusKPattern (parseArithmeticalExpr size) of
-        Just (i', k') | i' == i && k' == k -> do
-          (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
-          -- raname @j@ to @i@
-          a <- lift $ substitute j (Var i) a
-          c <- lift $ substitute j (Var i) c
-          return (LitInt' (-1), a, Negate' b, Negate' c, d)
-        _ -> hoistMaybe Nothing
+      Min1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> goMin Nothing j step size
+      Max1' _ (Map' _ _ (Lam j _ step) (Range1' size)) -> goMax Nothing j step size
+      Min1' _ (Cons' _ e (Map' _ _ (Lam j _ step) (Range1' size))) -> goMin (Just e) j step size
+      Max1' _ (Cons' _ e (Map' _ _ (Lam j _ step) (Range1' size))) -> goMax (Just e) j step size
+      Min1' _ (Snoc' _ (Map' _ _ (Lam j _ step) (Range1' size)) e) -> goMin (Just e) j step size
+      Max1' _ (Snoc' _ (Map' _ _ (Lam j _ step) (Range1' size)) e) -> goMax (Just e) j step size
       Negate' e -> do
-        (sign, a, b, c, d) <- go e
-        return (Negate' sign, a, b, c, Negate' d)
+        (sign, a, b, c, d, e) <- go e
+        return (Negate' sign, a, b, c, Negate' d, e)
       Plus' e1 e2 | isConstantTimeExpr e2 -> do
-        (sign, a, b, c, d) <- go e1
-        return (sign, a, b, c, Plus' d e2)
+        (sign, a, b, c, d, e) <- go e1
+        return (sign, a, b, c, Plus' d e2, e)
       Plus' e1 e2 | isConstantTimeExpr e1 -> do
-        (sign, a, b, c, d) <- go e2
-        return (sign, a, b, c, Plus' e1 d)
+        (sign, a, b, c, d, e) <- go e2
+        return (sign, a, b, c, Plus' e1 d, e)
       Minus' e1 e2 | isConstantTimeExpr e2 -> do
-        (sign, a, b, c, d) <- go e1
-        return (sign, a, b, c, Minus' d e2)
+        (sign, a, b, c, d, e) <- go e1
+        return (sign, a, b, c, Minus' d e2, e)
       Minus' e1 e2 | isConstantTimeExpr e1 -> do
-        (sign, a, b, c, d) <- go e2
-        return (Negate' sign, a, b, c, Minus' e1 d)
+        (sign, a, b, c, d, e) <- go e2
+        return (Negate' sign, a, b, c, Minus' e1 d, e)
       Mult' e1 e2 | isConstantTimeExpr e2 -> do
-        (sign, a, b, c, d) <- go e1
-        return (Mult' sign e2, a, b, c, Mult' d e2)
+        (sign, a, b, c, d, e) <- go e1
+        return (Mult' sign e2, a, b, c, Mult' d e2, e)
       Mult' e1 e2 | isConstantTimeExpr e1 -> do
-        (sign, a, b, c, d) <- go e2
-        return (Mult' e1 sign, a, b, c, Mult' e1 d)
+        (sign, a, b, c, d, e) <- go e2
+        return (Mult' e1 sign, a, b, c, Mult' e1 d, e)
       _ -> hoistMaybe Nothing
 
 getLength :: Expr -> Maybe Integer
@@ -166,27 +164,57 @@ rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule = RewriteRule $ \_ -> \case
   -- build (fun f -> step(f)) base n
   Build' IntTy (Lam f _ step) base n -> runMaybeT $ do
+    let ts = [ConvexHullTrickTy, ListTy IntTy]
     i <- lift genVarName'
     k <- hoistMaybe $ getLength base
     step <- replaceLenF f i k step
-    -- step(f) = sign(f) * min (map (fun j -> a(f, j) c(f) + b(f, j)) (range (i + k))) + d(f)
-    (sign, a, c, b, d) <- MaybeT $ parseLinearFunctionBody f i k step
-    x <- lift genVarName'
-    y <- lift genVarName'
-    f' <- lift $ genVarName f
-    let ts = [ConvexHullTrickTy, ListTy IntTy]
-    -- base' = (empty, base)
-    let base' = uncurryApp (Tuple' ts) [ConvexHullTrickInit', base]
+    -- step(f) = sign() * min (cons e(f, i) (map (fun j -> a(f, j) c(f, i) + b(f, j)) (range (i + k)))) + d(f, i)
+    (sign, a, c, b, d, e) <- MaybeT $ parseLinearFunctionBody f i k step
+    -- Update base when k = 0. If user's program has no bugs, it uses min(cons(x, xs)) when k = 0.
+    (base, n, k, c, d, e) <- case (e, k) of
+      (Just e, 0) -> do
+        e0 <- lift $ substitute i (LitInt' 0) e
+        d0 <- lift $ substitute i (LitInt' 0) d
+        let base' = Let f (ListTy IntTy) base $ Snoc' IntTy base (Plus' (Mult' sign e0) d0)
+        c <- lift $ substitute i (Plus' (Var i) (LitInt' 1)) c
+        d <- lift $ substitute i (Plus' (Var i) (LitInt' 1)) d
+        e <- lift $ substitute i (Plus' (Var i) (LitInt' 1)) e
+        return (base', Minus' n (LitInt' 1), k + 1, c, d, Just e)
+      _ -> return (base, n, k, c, d, e)
+    -- base' = (cht, base)
+    base' <- do
+      x <- lift genVarName'
+      f' <- lift $ genVarName f
+      i' <- lift $ genVarName i
+      a <- lift $ substitute f (Var f') a
+      b <- lift $ substitute f (Var f') b
+      a <- lift $ substitute i (Var i') a
+      b <- lift $ substitute i (Var i') b
+      -- cht for base[0], ..., base[k - 1]
+      let cht = Foldl' IntTy ConvexHullTrickTy (Lam2 x ConvexHullTrickTy i' IntTy (ConvexHullTrickInsert' (Var x) a b)) ConvexHullTrickInit' (Range1' (LitInt' k))
+      return $
+        Let f' (ListTy IntTy) base $
+          uncurryApp (Tuple' ts) [cht, Var f']
     -- step' = fun (cht, f) i ->
-    --     let f' = setat f index(i) (min cht f[i + k] + c(i))
+    --     let f' = setat f index(i) value(..)
     --     in let cht' = update cht a(i) b(i)
     --     in (cht', f')
-    let step' =
-          Lam2 x (TupleTy ts) i IntTy $
-            Let f (ListTy IntTy) (Proj' ts 1 (Var x)) $
+    step' <- do
+      x <- lift genVarName'
+      -- value(..) = (min e (min cht f[i + k] + c(i)))
+      let value = Plus' (Mult' sign (maybe id (\e -> Min2' IntTy e) e (ConvexHullTrickGetMin' (Proj' ts 0 (Var x)) c))) d
+      y <- lift genVarName'
+      f' <- lift $ genVarName f
+      a <- lift $ substitute f (Var f') a
+      b <- lift $ substitute f (Var f') b
+      a <- lift $ substitute i (Plus' (Var i) (LitInt' k)) a
+      b <- lift $ substitute i (Plus' (Var i) (LitInt' k)) b
+      return $
+        Lam2 x (TupleTy ts) i IntTy $
+          Let f (ListTy IntTy) (Proj' ts 1 (Var x)) $
+            Let f' (ListTy IntTy) (Snoc' IntTy (Var f) value) $
               Let y ConvexHullTrickTy (ConvexHullTrickInsert' (Proj' ts 0 (Var x)) a b) $
-                Let f' (ListTy IntTy) (Snoc' IntTy (Var f) (Plus' (Mult' sign (ConvexHullTrickGetMin' (Var y) c)) d)) $
-                  uncurryApp (Tuple' ts) [Var y, Var f']
+                uncurryApp (Tuple' ts) [Var y, Var f']
     -- proj 1 (foldl step' base' (range (n - 1)))
     return $ Proj' ts 1 (Foldl' IntTy (TupleTy ts) step' base' (Range1' n))
   _ -> return Nothing

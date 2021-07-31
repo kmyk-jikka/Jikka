@@ -36,6 +36,7 @@ import Jikka.Core.Format (formatExpr)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
+import Jikka.Core.Language.LambdaPatterns
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
@@ -87,7 +88,7 @@ reduceMap =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
         -- reduce `Map`
-        Map' _ _ (LamId _ _) xs -> return' xs
+        Map' _ _ (LamId _) xs -> return' xs
         -- reduce `Filter`
         Filter' t (Lam _ _ LitFalse) _ -> return' (Nil' t)
         Filter' _ (Lam _ _ LitTrue) xs -> return' xs
@@ -104,7 +105,7 @@ reduceMapMap =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
         -- reduce `Map`
-        Map' _ _ (LamId _ _) xs -> return' xs
+        Map' _ _ (LamId _) xs -> return' xs
         Map' _ t3 g (Map' t1 _ f xs) -> do
           x <- genVarName'
           let h = Lam x t1 (App g (App f (Var x)))
@@ -127,7 +128,6 @@ reduceMapMap =
         -- reduce `Sorted`
         Sorted' t (Reversed' _ xs) -> return' $ Sorted' t xs
         Sorted' t (Sorted' _ xs) -> return' $ Sorted' t xs
-        -- others
         _ -> return Nothing
 
 reduceFoldMap :: MonadAlpha m => RewriteRule m
@@ -149,6 +149,9 @@ reduceFoldMap =
           x1 <- genVarName'
           return' $ Foldl' t1 t3 (Lam2 x3 t3 x1 t1 (App2 g (Var x3) (App f (Var x1)))) init xs
         -- others
+        Len' t (SetAt' _ xs _ _) -> return' $ Len' t xs
+        Len' t (Scanl' _ _ _ _ xs) -> return' $ Plus' (Len' t xs) (LitInt' 1)
+        At' t (SetAt' _ xs i' x) i -> return' $ If' t (Equal' IntTy i' i) x (At' t xs i)
         _ -> return Nothing
 
 reduceFold :: Monad m => RewriteRule m
@@ -176,6 +179,7 @@ reduceFoldBuild =
         Elem' t y (Cons' _ x xs) -> return' $ And' (Equal' t x y) (Elem' t y xs)
         Elem' _ x (Range1' n) -> return' $ And' (LessEqual' IntTy Lit0 x) (LessThan' IntTy x n)
         -- others
+        Len' t (Build' _ _ base n) -> return' $ Plus' (Len' t base) n
         _ -> return Nothing
 
 rule :: MonadAlpha m => RewriteRule m
@@ -196,7 +200,7 @@ runProgram = applyRewriteRuleProgram' rule
 -- | `run` does short cut fusion.
 --
 -- * This function is mainly for polymorphic reductions. This dosn't do much about concrete things, e.g., arithmetical operations.
--- * This doesn't do nothing about `Scanl` or `SetAt`.
+-- * This does nothing about `Build`, `Scanl` or `SetAt` except combinations with `Len` or `At`.
 --
 -- == Example
 --

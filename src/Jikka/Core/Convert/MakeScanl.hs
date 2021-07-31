@@ -32,8 +32,6 @@ where
 
 import Control.Monad.Trans.Maybe
 import qualified Data.Map as M
-import Data.Maybe
-import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.ArithmeticalExpr
@@ -56,17 +54,6 @@ reduceScanlBuild = simpleRewriteRule $ \case
   Scanl' _ t2 _ init (Nil' _) -> Just $ Cons' t2 init (Nil' t2)
   Scanl' t1 t2 f init (Cons' _ x xs) -> Just $ Cons' t2 init (Scanl' t1 t2 f (App2 f init x) xs)
   _ -> Nothing
-
--- | `getRecurrenceFormulaBase` makes a pair @((a_0, ..., a_{k - 1}), a)@ from @setat (... (setat a 0 a_0) ...) (k - 1) a_{k - 1})@.
-getRecurrenceFormulaBase :: Expr -> ([Expr], Expr)
-getRecurrenceFormulaBase = go (V.replicate recurrenceLimit Nothing)
-  where
-    recurrenceLimit :: Num a => a
-    recurrenceLimit = 20
-    go :: V.Vector (Maybe Expr) -> Expr -> ([Expr], Expr)
-    go base = \case
-      SetAt' _ e (LitInt' i) e' | 0 <= i && i < recurrenceLimit -> go (base V.// [(fromInteger i, Just e')]) e
-      e -> (map fromJust (takeWhile isJust (V.toList base)), e)
 
 -- | `getRecurrenceFormulaStep1` removes `At` in @body@.
 getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
@@ -112,9 +99,6 @@ getRecurrenceFormulaStep shift size t a i body = do
   return $ case go body of
     Just body -> Just $ Lam2 x (TupleTy ts) i IntTy (uncurryApp (Tuple' ts) (map (\i -> Proj' ts i (Var x)) [1 .. size - 1] ++ [body]))
     Nothing -> Nothing
-
-hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
-hoistMaybe = MaybeT . pure
 
 -- |
 -- * This assumes that `Range2` and `Range3` are already converted to `Range1` (`Jikka.Core.Convert.ShortCutFusion`).

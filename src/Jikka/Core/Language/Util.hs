@@ -3,10 +3,13 @@
 
 module Jikka.Core.Language.Util where
 
+import Control.Arrow
 import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import Control.Monad.Writer (execWriter, tell)
-import Data.Maybe (isJust)
+import Data.Maybe
 import Data.Monoid (Dual (..))
+import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
@@ -352,3 +355,23 @@ replaceLenF f i k = go
       Lam x t body -> Lam x t <$> (if x == f then return body else go body)
       Let y _ _ _ | y == i -> throwInternalError "Jikka.Core.Language.Util.replaceLenF: name conflict"
       Let y t e1 e2 -> Let y t <$> go e1 <*> (if y == f then return e2 else go e2)
+
+-- | `getRecurrenceFormulaBase` makes a pair @((a_0, ..., a_{k - 1}), a)@ from @setat (... (setat a 0 a_0) ...) (k - 1) a_{k - 1})@.
+getRecurrenceFormulaBase :: Expr -> ([Expr], Expr)
+getRecurrenceFormulaBase = go (V.replicate recurrenceLimit Nothing)
+  where
+    recurrenceLimit :: Num a => a
+    recurrenceLimit = 20
+    go :: V.Vector (Maybe (Expr, Type)) -> Expr -> ([Expr], Expr)
+    go base = \case
+      SetAt' t e (LitInt' i) e'
+        | 0 <= i && i < recurrenceLimit -> go (base V.// [(fromInteger i, Just (e', t))]) e
+        | otherwise -> second (\e -> SetAt' t e (LitInt' i) e') $ go base e
+      e ->
+        let (base', base'') = span isJust (V.toList base)
+            base''' = map (fst . fromJust) base'
+            e'' = foldr (\(i, e') e -> maybe id (\(e', t) e -> SetAt' t e (LitInt' i) e') e' e) e (zip [toInteger (length base') ..] base'')
+         in (base''', e'')
+
+hoistMaybe :: Applicative m => Maybe a -> MaybeT m a
+hoistMaybe = MaybeT . pure

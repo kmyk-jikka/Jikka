@@ -275,7 +275,9 @@ evaluateExpr env = \case
   Var x -> case lookup x env of
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just val -> return val
-  Lit lit -> literalToValue lit
+  Lit lit -> case lit of
+    LitBuiltin ConvexHullTrickInit -> callBuiltin ConvexHullTrickInit []
+    _ -> literalToValue lit
   If' _ p e1 e2 -> do
     p <- valueToBool =<< evaluateExpr env p
     if p
