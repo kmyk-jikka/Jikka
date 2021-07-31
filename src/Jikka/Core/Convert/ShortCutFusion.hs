@@ -36,6 +36,7 @@ import Jikka.Core.Format (formatExpr)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
+import Jikka.Core.Language.LambdaPatterns
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
@@ -87,7 +88,7 @@ reduceMap =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
         -- reduce `Map`
-        Map' _ _ (LamId _ _) xs -> return' xs
+        Map' _ _ (LamId _) xs -> return' xs
         -- reduce `Filter`
         Filter' t (Lam _ _ LitFalse) _ -> return' (Nil' t)
         Filter' _ (Lam _ _ LitTrue) xs -> return' xs
@@ -104,7 +105,7 @@ reduceMapMap =
   let return' = return . Just
    in RewriteRule $ \_ -> \case
         -- reduce `Map`
-        Map' _ _ (LamId _ _) xs -> return' xs
+        Map' _ _ (LamId _) xs -> return' xs
         Map' _ t3 g (Map' t1 _ f xs) -> do
           x <- genVarName'
           let h = Lam x t1 (App g (App f (Var x)))

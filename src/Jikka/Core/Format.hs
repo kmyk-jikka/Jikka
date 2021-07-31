@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 -- |
 -- Module      : Jikka.Core.Format
@@ -24,7 +25,10 @@ import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Text (Text, pack)
 import Jikka.Common.Format.AutoIndent
+import Jikka.Core.Language.BuiltinPatterns (pattern Range1')
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.FreeVars (isUnusedVar)
+import Jikka.Core.Language.LambdaPatterns
 import Jikka.Core.Language.Util
 
 -- | See also Table 2 of <https://www.haskell.org/onlinereport/decls.html Haskell Online Report, 4 Declarations and Bindings>.
@@ -274,6 +278,7 @@ formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
 
 formatBuiltin' :: Builtin' -> [Expr] -> (String, Prec)
 formatBuiltin' builtin args = case (builtin, args) of
+  (Fun _ "map", [Lam x IntTy e, Range1' n]) | x `isUnusedVar` e -> formatFunCall ("replicate", identPrec) [n, e]
   (Fun _ name, _) -> formatFunCall (name, identPrec) args
   (PrefixOp _ op, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
   (InfixOp _ op prec assoc, e1 : e2 : args) -> formatFunCall (resolvePrecLeft prec assoc (formatExpr' e1) ++ " " ++ op ++ " " ++ resolvePrecRight prec assoc (formatExpr' e2), prec) args
@@ -309,6 +314,8 @@ formatExpr' = \case
           Var x -> formatFunCall (unVarName x, identPrec) args
           Lit (LitBuiltin builtin) -> (formatBuiltin builtin args, identPrec)
           _ -> formatFunCall (formatExpr' f) args
+  LamId _ -> ("id", identPrec)
+  LamConst _ e -> formatFunCall ("const", identPrec) [e]
   e@(Lam _ _ _) ->
     let (args, body) = uncurryLam e
      in ("fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' body) ++ "\n" ++ dedent ++ "\n", lambdaPrec)
