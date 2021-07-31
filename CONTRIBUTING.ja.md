@@ -82,5 +82,4 @@ $ stack haddock
 
 ### Versioning
 
-受け入れる Python 風言語の仕様を public API と見なしての [Semantic Versioning](https://semver.org/lang/ja/) が使われています。
-ただし [Haskell Package Versioning Policy](https://pvp.haskell.org/) に由来して MAJOR versions をふたつ持っています。
+[Haskell Package Versioning Policy](https://pvp.haskell.org/) に準拠しています。
