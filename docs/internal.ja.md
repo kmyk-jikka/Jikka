@@ -146,6 +146,10 @@ Jikka の最適化の本体部分です。
 思い付く限りのあらゆる最適化を手当たり次第に試します。
 その多くは [rewrite rule](https://wiki.haskell.org/GHC/Using_rules) という形で書かれています。
 
+いまのところ、最適化は rewrite rule などで変換可能な箇所を探して貪欲に変換をかけるという形で行われています。
+つまり、DFS やビームサーチなどのような探索は行われていません。
+探索を必要とするような複雑な最適化は今後の課題となっています。
+
 - ファイル: [src/Jikka/Core/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert.hs) [Jikka.Core.Convert](https://kmyk.github.io/Jikka/Jikka-Core-Convert.html)
 - ディレクトリ: [src/Jikka/Core/Convert/](https://github.com/kmyk/Jikka/tree/master/src/Jikka/Core/Convert)
 
