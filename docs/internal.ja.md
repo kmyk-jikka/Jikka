@@ -27,7 +27,7 @@ Jikka の内部のおおまかな構成は以下を順に実行するものに�
 ## 2. Python コードの構文解析をして Python の構文木を得る
 
 [Python の文法仕様](https://docs.python.org/ja/3/reference/grammar.html) に従い Python の構文解析をします。
-[lex](https://ja.wikipedia.org/wiki/Lex) (その Hakell 版 [alex](https://www.haskell.org/alex/)) と [yacc](https://ja.wikipedia.org/wiki/Yacc) (同 [happy](https://www.haskell.org/happy/)) を用いて LALR(1) 構文解析器を生成して用いています。
+[lex](https://ja.wikipedia.org/wiki/Lex) (その Haskell 版 [alex](https://www.haskell.org/alex/)) と [yacc](https://ja.wikipedia.org/wiki/Yacc) (同 [happy](https://www.haskell.org/happy/)) を用いて LALR(1) 構文解析器を生成して用いています。
 
 - ファイル: lex [src/Jikka/Python/Parse/Happy.y](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Parse/Happy.y) ([Jikka.Python.Parse.Happy](https://kmyk.github.io/Jikka/Jikka-Python-Parse-Alex.html))
 - ファイル: yacc [src/Jikka/Python/Parse/Alex.x](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Parse/Alex.x) ([Jikka.Python.Parse.Alex](https://kmyk.github.io/Jikka/Jikka-Python-Parse-Happy.html))
