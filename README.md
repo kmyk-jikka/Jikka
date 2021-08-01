@@ -61,6 +61,7 @@ for developpers:
   - [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
 - [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
 - [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
+- [docs/internal.ja.md(https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md (Japanese)
 - [Haddock](https://hackage.haskell.org/package/Jikka)
   - [Haddock (master)](https://kmyk.github.io/Jikka/)
 
