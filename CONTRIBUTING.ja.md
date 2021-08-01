@@ -2,14 +2,6 @@
 
 (The English version of this document: [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md))
 
-## どのようにしてこのプロジェクトに貢献できますか？
-
-いまのところ、以下をしていただけると助かります:
-
-- 自動的に解けそうな競技プログラミングの問題を探して [issue のコメント欄](https://github.com/kmyk/Jikka/issues/25)で報告してください。
-  - 可能なら、その問題の愚直解の Python コードやテストケースを作って [examples/wip/](https://github.com/kmyk/Jikka/tree/master/examples/wip) ディレクトリに追加するプルリクを出してください。
-  - 見つけてもらった問題や送ってもらった Python コードはテストに利用されます。
-
 ## Development process and conventions
 
 ### Tests
@@ -20,10 +12,20 @@
 
 ```console
 $ stack test
-$ bash examples/test.sh
+$ python3 scripts/integration_tests.py
 ```
 
 テストのための GitHub Actions は [.github/workflows/test.yml](https://github.com/kmyk/Jikka/blob/master/.github/workflows/test.yml) で定義されています。
+
+#### Integration Tests
+
+`$ python3 scripts/integration_tests.py` を実行すると [examples/](https://github.com/kmyk/Jikka/tree/master/examples) ディレクトリの中身を用いてテストが実行されます。
+`examples/XXX.py` という Python ファイルごとに、`examples/data/XXX.YYY.in` `examples/data/XXX.YYY.out` のようなファイル名のテストケースを探しまた `examples/data/XXX.ZZZ.generator.py` `examples/data/XXX.solver.py` などからテストケースを生成して、これを Python / 制限された Python / core / C++ として実行してそれぞれすべてが正しく動作することを検証します。
+
+`$ python3 scripts/integration_tests.py -k XXX` とすると `XXX` をファイル名に含むテストだけを実行することができます。
+
+テストケースが多くて困ることはあまりありません。
+Jikka を用いて実際のコンテストの問題が解けたとき (あるいは解けそうなとき) は、ぜひそれをテストケースとして追加するプルリクエストを送ってください。
 
 ### Formatting
 

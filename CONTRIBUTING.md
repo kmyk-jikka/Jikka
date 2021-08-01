@@ -2,14 +2,6 @@
 
 (このドキュメントの日本語バージョン: [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md))
 
-## How can I contribute to this project?
-
-Currently, you can help us with the following ways:
-
-- Please find tasks of competitive programming which are seems to be automatically solved, and reporting them in [comments of an issue](https://github.com/kmyk/Jikka/issues/25).
-  - If possible, please send to us pull requests which add Python codes with stupid algorithms and test cases for the tasks to [examples/wip/](https://github.com/kmyk/Jikka/tree/master/examples/wip) directory.
-  - The problems which you found and Python codes which you sent are used for testing.
-
 ## Development process and conventions
 
 ### Tests
@@ -20,10 +12,20 @@ Also contents of [examples/](https://github.com/kmyk/Jikka/tree/master/examples)
 
 ```console
 $ stack test
-$ bash examples/test.sh
+$ python3 examples/integration_tests.py
 ```
 
 The GitHub Actions for tests is defined at [.github/workflows/test.yml](https://github.com/kmyk/Jikka/blob/master/.github/workflows/test.yml).
+
+#### Integration Tests
+
+`$ python3 scripts/integration_tests.py` runs tests using files under [examples/](https://github.com/kmyk/Jikka/tree/master/examples).
+For each Python file `examples/XXX.py`, it finds test cases like `examples/data/XXX.YYY.in` `examples/data/XXX.YYY.out` or generates test cases from `examples/data/XXX.ZZZ.generator.py` `examples/data/XXX.solver.py`, and then executes it as Python / our restricted Python / our core / C++, and verifies the results.
+
+With `$ python3 scripts/integration_tests.py -k XXX`, you can run only specific tests which contains `XXX` in its file name.
+
+We are collecting more test cases.
+When you solved a real problems of competitive programmings using Jikka, please send a pull request which adds it as a new test case.
 
 ### Formatting
 
