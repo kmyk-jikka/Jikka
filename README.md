@@ -45,23 +45,29 @@ $ cabal install Jikka
 
 ## Documents
 
-for users:
+For users:
 
 - [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
   - [docs/language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) (Japanese translation)
+  - The language specification of our restricted Python / Jikka で使われる制限された Python の言語仕様
 - [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
-- [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
+  - [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
+  - A list of optimizations which Jikka does / Jikka が行なってくれる最適化の一覧
 - [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
 - [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
-- a blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
 
-for developpers:
+For developpers:
 
 - [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
   - [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
-- [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
+- My blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
+  - 競技プログラミングの問題を自動で解くとはどういうことなのかについて
 - [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
-- [docs/internal.ja.md(https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md (Japanese)
+  - 動作原理や関連する理論について
+- [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
+  - 実装方針について
+- [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md (Japanese)
+  - 具体的な処理の流れについて
 - [Haddock](https://hackage.haskell.org/package/Jikka)
   - [Haddock (master)](https://kmyk.github.io/Jikka/)
 
