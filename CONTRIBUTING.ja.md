@@ -4,6 +4,20 @@
 
 ## Development process and conventions
 
+### Running directly from source code
+
+開発時は [Stack](https://www.haskellstack.org/) を使ってください。
+Stack は Ubuntu なら `$ sudo apt install haskell-stack` でインストールできます。
+
+ソースコードに変更を加えたものを実行するには、以下のコマンドを実行してください。
+
+- `$ stack run convert XXX.py` とすると `src/` 以下をビルドしたものを使って実行される
+- `$ stack run -- convert --target core XXX.py` は C++ でなく core 言語として出力する
+- `$ stack run -- convert --target rpython XXX.py` は C++ でなく制限された Python 言語として出力する
+- `$ stack run execute XXX.py < YYY.in` は core 言語の構文木を直接実行する
+- `$ stack run execute --target rpython XXX.py < YYY.in` は制限された Python の構文木を直接実行する
+- `$ python3 XXX.py < YYY.in'` あるいは `$ python3 -c 'import XXX; print(XXX.main(1, 2, [3, 4, 5]))'` のようにすると通常の Python として実行できる
+
 ### Tests
 
 テストには以下のコマンドを実行してください。
