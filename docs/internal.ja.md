@@ -211,6 +211,113 @@ int solve(int n, vector<int> a) {
 }
 ```
 
+- ファイル: [src/Jikka/Core/Convert/CumulativeSum.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/CumulativeSum.hs) ([Jikka.Core.Convert.CumulativeSum](https://kmyk.github.io/Jikka/Jikka-Core-Convert-CumulativeSum.html))
+- ファイル: [src/Jikka/Core/Convert/BubbleLet.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/BubbleLet.hs) ([Jikka.Core.Convert.BubbleLet](https://kmyk.github.io/Jikka/Jikka-Core-Convert-BubbleLet.html))
+
+### 具体的な実装コード例: Short Cut Fusion
+
+[Short cut fusion](https://wiki.haskell.org/Short_cut_fusion) を行うための module [Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/Jikka-Core-Convert-ShortCutFusion.html) の実装を見てみましょう。
+たとえばその中の `reduceFoldBuild` という rewrite rule は [`v5.1.0.0` の時点](https://github.com/kmyk/Jikka/blob/795726a626ca3653555f6c5c176eb81de26b6d58/src/Jikka/Core/Convert/ShortCutFusion.hs#L162-L183)では次のようになっています。
+
+```haskell
+reduceFoldBuild :: MonadAlpha m => RewriteRule m
+reduceFoldBuild =
+  let return' = return . Just
+   in RewriteRule $ \_ -> \case
+        -- reduce `Foldl`
+        Foldl' _ _ _ init (Nil' _) -> return' init
+        Foldl' t1 t2 g init (Cons' _ x xs) -> return' $ Foldl' t1 t2 g (App2 g init x) xs
+        -- reduce `Len`
+        Len' _ (Nil' _) -> return' Lit0
+        Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)
+        Len' _ (Range1' n) -> return' n
+        -- reduce `At`
+        At' t (Nil' _) i -> return' $ Bottom' t $ "cannot subscript empty list: index = " ++ formatExpr i
+        At' t (Cons' _ x xs) i -> return' $ If' t (Equal' IntTy i Lit0) x (At' t xs (Minus' i Lit1))
+        At' _ (Range1' _) i -> return' i
+        -- reduce `Elem`
+        Elem' _ _ (Nil' _) -> return' LitFalse
+        Elem' t y (Cons' _ x xs) -> return' $ And' (Equal' t x y) (Elem' t y xs)
+        Elem' _ x (Range1' n) -> return' $ And' (LessEqual' IntTy Lit0 x) (LessThan' IntTy x n)
+        -- others
+        Len' t (Build' _ _ base n) -> return' $ Plus' (Len' t base) n
+        _ -> return Nothing
+```
+
+たとえば `Len' _ (Nil' _) -> return' Lit0` という行は `length []` という部分式を `0` という式で置き換えるという rewrite rule を、`Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)` という行は `length (cons x xs)` という部分式を `1 + length xs` という式で置き換えるという rewrite rule を表現しています。
+
+- ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/Jikka-Core-Convert-ShortCutFusion.html))
+
+### 具体的な実装コード例: セグメント木
+
+データ構造を扱う例として、セグメント木についての実装を見てみましょう。
+
+Module [Jikka.Core.Convert.SegmentTree](https://kmyk.github.io/Jikka/Jikka-Core-Convert-SegmentTree.html) は関数 `reduceCumulativeSum` を持ちます。
+これは [foldl](https://hackage.haskell.org/package/base/docs/Prelude.html#v:foldl) の中で累積和が使われているが、しかし累積和を取られている配列が動的に更新されるために単純に累積和を `foldl` の外には出せない場合 (たとえば次のような Python コードに対応するもの) に対し、セグメント木を用いた変形を施します。
+
+```python
+def solve(n: int, a: List[int], q: int, l: List[int], r: List[int]) -> List[int]:
+    for i in range(q):
+        # a[l[i]] = sum(a[:r[i])
+        b = [0]
+        for j in range(n):
+            b.append(b[j] + a[j])
+        a[l[i]] = b[r[i]]
+    return a
+```
+
+関数 `reduceCumulativeSum ` は [`v5.1.0.0` の時点](https://github.com/kmyk/Jikka/blob/795726a626ca3653555f6c5c176eb81de26b6d58/src/Jikka/Core/Convert/SegmentTree.hs#L123-L143) で次のような実装になっています。
+
+```haskell
+-- | `reduceCumulativeSum` converts combinations of cumulative sums and array assignments to segment trees.
+reduceCumulativeSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceCumulativeSum = RewriteRule $ \_ -> \case
+  -- foldl (fun a i -> setat a index(i) e(a, i)) base incides
+  Foldl' t1 t2 (Lam2 a _ i _ (SetAt' t (Var a') index e)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+    let sums = listCumulativeSum (Var a) e -- (A)
+    guard $ not (null sums)
+    let semigrps = nub (sort (map fst sums))
+    let ts = t2 : map SegmentTreeTy semigrps
+    c <- lift $ genVarName a
+    let proj i = Proj' ts i (Var c)
+    let e' = replaceWithSegtrees a (zip semigrps (map proj [1 ..])) e -- (B)
+    guard $ e' /= e
+    e' <- lift $ substitute a (proj 0) e'
+    b' <- lift $ genVarName a
+    let updateSegtrees i semigrp = SegmentTreeSetPoint' semigrp (proj i) index (At' t (Var b') index) -- (C)
+    let step = Lam2 c (TupleTy ts) i t1 (Let b' t2 (SetAt' t (proj 0) index e') (uncurryApp (Tuple' ts) (Var b' : zipWith updateSegtrees [1 ..] semigrps))) -- (D)
+    b <- lift $ genVarName a
+    let base' = Var b : map (\semigrp -> SegmentTreeInitList' semigrp (Var b)) semigrps -- (E)
+    return $ Let b t2 base (Proj' ts 0 (Foldl' t1 (TupleTy ts) step (uncurryApp (Tuple' ts) base') indices)) -- (F)
+  _ -> return Nothing
+```
+
+この関数 `reduceCumulativeSum ` は `foldl (\a i -> setat a index(i) e(a, i)) base incides` という形の式をまず探します。
+ただしここに登場する型や式などは以下のようになります。
+
+- 型 `t`
+- 式 `base` (型は `[t]`)
+- 式 `indices` (型は `[Int]`)
+- 変数 `a` (型は `[t]`)
+- 変数 `i` (型は `Int`)
+- 組み込み関数 `setat` (型は `[t] -> Int -> t -> [t]`)
+- 式 `index(i)` (変数 `i` のみを使って書かれ、変数 `a` は現れない、型は `Int`)
+- 式 `e(a, i)` (変数 `a` および変数 `i` を使って書かれ、型は `t`)
+
+関数 `reduceCumulativeSum ` は、まず冒頭の (A) の行で `listCumulativeSum` を呼んで式 `e(a, i)` 中で累積和が用いられている箇所を列挙します。
+ここから対応する半群を抜き出し、そして (B) の行で `replaceWithSegtrees` を呼んで式 `e(a, i)` 中の累積和をセグメント木を利用する式で置き換えます。
+また (C) の行でセグメント木を更新する式を作り、(D) の行で `foldl` に渡す関数の本体を作ります。
+さらに (E) の行でセグメント木の初期状態を作るような式 `base'` を用意し、(F) の行で結果の式を作って返却します。
+
+ここでセグメント木を用いるために core 言語には [`data-structure` 型](https://kmyk.github.io/Jikka/Jikka-Core-Language-Expr.html#t:Type) があり、また[組み込み関数 `SegmentTreeInitList` `SegmentTreeGetRange` `SegmentTreeSetPoint`](https://kmyk.github.io/Jikka/Jikka-Core-Language-Expr.html#t:Builtin) も用意されています。
+たとえば組み込み関数 `SegmentTreeSetPoint` は `S: semigroup` に対し `segment−tree(S) → int → S → segment−tree(S)` という型を持ちます。
+
+同様に、core 言語が変換されていく先である C++ においても、セグメント木に関連する型や組み込み関数が定義されています。
+
+- ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.SegmentTree](https://kmyk.github.io/Jikka/Jikka-Core-Convert-SegmentTree.html))
+- ファイル: [src/Jikka/Core/Language/Expr.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Language/Expr.hs) ([Jikka.Core.Language.Expr](https://kmyk.github.io/Jikka/Jikka-Core-Language-Expr.html))
+- ファイル: [src/Jikka/CPlusPlus/Language/Expr.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Language/Expr.hs) ([Jikka.CPlusPlus.Language.Expr](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Language-Expr.html))
+
 ## 7. core 言語の構文木を C++ の構文木に変換する
 
 core 言語の構文木を C++ の構文木に変換します。
