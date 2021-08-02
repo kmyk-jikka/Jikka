@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 
 module Jikka.Core.Language.Util where
 
@@ -29,134 +30,149 @@ genVarName x = do
 genVarName' :: MonadAlpha m => m VarName
 genVarName' = genVarName (VarName "_")
 
-mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
-mapTypeBuiltin f = \case
-  -- arithmetical functions
-  Negate -> Negate
-  Plus -> Plus
-  Minus -> Minus
-  Mult -> Mult
-  FloorDiv -> FloorDiv
-  FloorMod -> FloorMod
-  CeilDiv -> CeilDiv
-  CeilMod -> CeilMod
-  Pow -> Pow
-  -- advanced arithmetical functions
-  Abs -> Abs
-  Gcd -> Gcd
-  Lcm -> Lcm
-  Min2 t -> Min2 (f t)
-  Max2 t -> Max2 (f t)
-  Iterate t -> Iterate (f t)
-  -- logical functionslogical
-  Not -> Not
-  And -> And
-  Or -> Or
-  Implies -> Implies
-  If t -> If (f t)
-  -- bitwise functionsbitwise
-  BitNot -> BitNot
-  BitAnd -> BitAnd
-  BitOr -> BitOr
-  BitXor -> BitXor
-  BitLeftShift -> BitLeftShift
-  BitRightShift -> BitRightShift
-  -- matrix functions
-  MatAp h w -> MatAp h w
-  MatZero n -> MatZero n
-  MatOne n -> MatOne n
-  MatAdd h w -> MatAdd h w
-  MatMul h n w -> MatMul h n w
-  MatPow n -> MatPow n
-  VecFloorMod n -> VecFloorMod n
-  MatFloorMod h w -> MatFloorMod h w
-  -- modular functionsmodular
-  ModNegate -> ModNegate
-  ModPlus -> ModPlus
-  ModMinus -> ModMinus
-  ModMult -> ModMult
-  ModInv -> ModInv
-  ModPow -> ModPow
-  ModMatAp h w -> ModMatAp h w
-  ModMatAdd h w -> ModMatAdd h w
-  ModMatMul h n w -> ModMatMul h n w
-  ModMatPow n -> ModMatPow n
-  -- list functionslist
-  Cons t -> Cons (f t)
-  Snoc t -> Snoc (f t)
-  Foldl t1 t2 -> Foldl (f t1) (f t2)
-  Scanl t1 t2 -> Scanl (f t1) (f t2)
-  Build t -> Build (f t)
-  Len t -> Len (f t)
-  Map t1 t2 -> Map (f t1) (f t2)
-  Filter t -> Filter (f t)
-  At t -> At (f t)
-  SetAt t -> SetAt (f t)
-  Elem t -> Elem (f t)
-  Sum -> Sum
-  Product -> Product
-  ModSum -> ModSum
-  ModProduct -> ModProduct
-  Min1 t -> Min1 (f t)
-  Max1 t -> Max1 (f t)
-  ArgMin t -> ArgMin (f t)
-  ArgMax t -> ArgMax (f t)
-  All -> All
-  Any -> Any
-  Sorted t -> Sorted (f t)
-  Reversed t -> Reversed (f t)
-  Range1 -> Range1
-  Range2 -> Range2
-  Range3 -> Range3
-  -- tuple functions
-  Tuple ts -> Tuple (map f ts)
-  Proj ts n -> Proj (map f ts) n
-  -- comparison
-  LessThan t -> LessThan (f t)
-  LessEqual t -> LessEqual (f t)
-  GreaterThan t -> GreaterThan (f t)
-  GreaterEqual t -> GreaterEqual (f t)
-  Equal t -> Equal (f t)
-  NotEqual t -> NotEqual (f t)
-  -- combinational functions
-  Fact -> Fact
-  Choose -> Choose
-  Permute -> Permute
-  MultiChoose -> MultiChoose
-  -- data structures
-  ConvexHullTrickInit -> ConvexHullTrickInit
-  ConvexHullTrickInsert -> ConvexHullTrickInsert
-  ConvexHullTrickGetMin -> ConvexHullTrickGetMin
-  SegmentTreeInitList semigrp -> SegmentTreeInitList semigrp
-  SegmentTreeGetRange semigrp -> SegmentTreeGetRange semigrp
-  SegmentTreeSetPoint semigrp -> SegmentTreeSetPoint semigrp
-
-mapTypeLiteral :: (Type -> Type) -> Literal -> Literal
-mapTypeLiteral f = \case
-  LitBuiltin builtin -> LitBuiltin (mapTypeBuiltin f builtin)
-  LitInt n -> LitInt n
-  LitBool p -> LitBool p
-  LitNil t -> LitNil (f t)
-  LitBottom t err -> LitBottom (f t) err
-
-mapTypeExpr :: (Type -> Type) -> Expr -> Expr
-mapTypeExpr f = go
+mapSubTypesM :: Monad m => (Type -> m Type) -> Type -> m Type
+mapSubTypesM f = go
   where
     go = \case
-      Var x -> Var x
-      Lit lit -> Lit (mapTypeLiteral f lit)
-      App f e -> App (go f) (go e)
-      Lam x t body -> Lam x (f t) (go body)
-      Let x t e1 e2 -> Let x (f t) (go e1) (go e2)
+      VarTy x -> f $ VarTy x
+      IntTy -> f IntTy
+      BoolTy -> f BoolTy
+      ListTy t -> f . ListTy =<< f t
+      TupleTy ts -> f . TupleTy =<< mapM f ts
+      FunTy t1 t2 -> f =<< (FunTy <$> f t1 <*> f t2)
+      DataStructureTy ds -> f $ DataStructureTy ds
 
-mapTypeToplevelExpr :: (Type -> Type) -> ToplevelExpr -> ToplevelExpr
-mapTypeToplevelExpr f = \case
-  ResultExpr e -> ResultExpr (mapTypeExpr f e)
-  ToplevelLet x t e cont -> ToplevelLet x (f t) (mapTypeExpr f e) (mapTypeToplevelExpr f cont)
-  ToplevelLetRec g args ret body cont -> ToplevelLetRec g (map (second f) args) (f ret) (mapTypeExpr f body) (mapTypeToplevelExpr f cont)
+mapTypeBuiltinM :: Monad m => (Type -> m Type) -> Builtin -> m Builtin
+mapTypeBuiltinM f = \case
+  -- arithmetical functions
+  Negate -> return Negate
+  Plus -> return Plus
+  Minus -> return Minus
+  Mult -> return Mult
+  FloorDiv -> return FloorDiv
+  FloorMod -> return FloorMod
+  CeilDiv -> return CeilDiv
+  CeilMod -> return CeilMod
+  Pow -> return Pow
+  -- advanced arithmetical functions
+  Abs -> return Abs
+  Gcd -> return Gcd
+  Lcm -> return Lcm
+  Min2 t -> Min2 <$> f t
+  Max2 t -> Max2 <$> f t
+  Iterate t -> Iterate <$> f t
+  -- logical functionslogical
+  Not -> return Not
+  And -> return And
+  Or -> return Or
+  Implies -> return Implies
+  If t -> If <$> f t
+  -- bitwise functionsbitwise
+  BitNot -> return BitNot
+  BitAnd -> return BitAnd
+  BitOr -> return BitOr
+  BitXor -> return BitXor
+  BitLeftShift -> return BitLeftShift
+  BitRightShift -> return BitRightShift
+  -- matrix functions
+  MatAp h w -> return $ MatAp h w
+  MatZero n -> return $ MatZero n
+  MatOne n -> return $ MatOne n
+  MatAdd h w -> return $ MatAdd h w
+  MatMul h n w -> return $ MatMul h n w
+  MatPow n -> return $ MatPow n
+  VecFloorMod n -> return $ VecFloorMod n
+  MatFloorMod h w -> return $ MatFloorMod h w
+  -- modular functionsmodular
+  ModNegate -> return ModNegate
+  ModPlus -> return ModPlus
+  ModMinus -> return ModMinus
+  ModMult -> return ModMult
+  ModInv -> return ModInv
+  ModPow -> return ModPow
+  ModMatAp h w -> return $ ModMatAp h w
+  ModMatAdd h w -> return $ ModMatAdd h w
+  ModMatMul h n w -> return $ ModMatMul h n w
+  ModMatPow n -> return $ ModMatPow n
+  -- list functionslist
+  Cons t -> Cons <$> f t
+  Snoc t -> Snoc <$> f t
+  Foldl t1 t2 -> Foldl <$> f t1 <*> f t2
+  Scanl t1 t2 -> Scanl <$> f t1 <*> f t2
+  Build t -> Build <$> f t
+  Len t -> Len <$> f t
+  Map t1 t2 -> Map <$> f t1 <*> f t2
+  Filter t -> Filter <$> f t
+  At t -> At <$> f t
+  SetAt t -> SetAt <$> f t
+  Elem t -> Elem <$> f t
+  Sum -> return Sum
+  Product -> return Product
+  ModSum -> return ModSum
+  ModProduct -> return ModProduct
+  Min1 t -> Min1 <$> f t
+  Max1 t -> Max1 <$> f t
+  ArgMin t -> ArgMin <$> f t
+  ArgMax t -> ArgMax <$> f t
+  All -> return All
+  Any -> return Any
+  Sorted t -> Sorted <$> f t
+  Reversed t -> Reversed <$> f t
+  Range1 -> return Range1
+  Range2 -> return Range2
+  Range3 -> return Range3
+  -- tuple functions
+  Tuple ts -> Tuple <$> mapM f ts
+  Proj ts n -> Proj <$> mapM f ts <*> pure n
+  -- comparison
+  LessThan t -> LessThan <$> f t
+  LessEqual t -> LessEqual <$> f t
+  GreaterThan t -> GreaterThan <$> f t
+  GreaterEqual t -> GreaterEqual <$> f t
+  Equal t -> Equal <$> f t
+  NotEqual t -> NotEqual <$> f t
+  -- combinational functions
+  Fact -> return Fact
+  Choose -> return Choose
+  Permute -> return Permute
+  MultiChoose -> return MultiChoose
+  -- data structures
+  ConvexHullTrickInit -> return ConvexHullTrickInit
+  ConvexHullTrickInsert -> return ConvexHullTrickInsert
+  ConvexHullTrickGetMin -> return ConvexHullTrickGetMin
+  SegmentTreeInitList semigrp -> return $ SegmentTreeInitList semigrp
+  SegmentTreeGetRange semigrp -> return $ SegmentTreeGetRange semigrp
+  SegmentTreeSetPoint semigrp -> return $ SegmentTreeSetPoint semigrp
+
+mapTypeLiteralM :: Monad m => (Type -> m Type) -> Literal -> m Literal
+mapTypeLiteralM f = \case
+  LitBuiltin builtin -> LitBuiltin <$> mapTypeBuiltinM f builtin
+  LitInt n -> return $ LitInt n
+  LitBool p -> return $ LitBool p
+  LitNil t -> LitNil <$> f t
+  LitBottom t err -> LitBottom <$> f t <*> pure err
+
+mapTypeExprM :: Monad m => (Type -> m Type) -> Expr -> m Expr
+mapTypeExprM f = go
+  where
+    go = \case
+      Var x -> return $ Var x
+      Lit lit -> Lit <$> mapTypeLiteralM f lit
+      App f e -> App <$> go f <*> go e
+      Lam x t body -> Lam x <$> f t <*> go body
+      Let x t e1 e2 -> Let x <$> f t <*> go e1 <*> go e2
+
+mapTypeToplevelExprM :: Monad m => (Type -> m Type) -> ToplevelExpr -> m ToplevelExpr
+mapTypeToplevelExprM f = \case
+  ResultExpr e -> ResultExpr <$> mapTypeExprM f e
+  ToplevelLet x t e cont -> ToplevelLet x <$> f t <*> mapTypeExprM f e <*> mapTypeToplevelExprM f cont
+  ToplevelLetRec g args ret body cont -> ToplevelLetRec g <$> mapM (\(x, t) -> (x,) <$> f t) args <*> f ret <*> mapTypeExprM f body <*> mapTypeToplevelExprM f cont
+
+mapTypeProgramM :: Monad m => (Type -> m Type) -> Program -> m Program
+mapTypeProgramM = mapTypeToplevelExprM
 
 mapTypeProgram :: (Type -> Type) -> Program -> Program
-mapTypeProgram = mapTypeToplevelExpr
+mapTypeProgram f prog = runIdentity (mapTypeProgramM (return . f) prog)
 
 -- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
