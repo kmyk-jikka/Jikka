@@ -54,6 +54,7 @@ For users:
   - [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
   - A list of optimizations which Jikka does / Jikka が行なってくれる最適化の一覧
 - [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
+  - [gallery](https://kmyk.github.io/Jikka/gallery)
 - [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
 
 For developpers:
@@ -69,7 +70,7 @@ For developpers:
 - [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md (Japanese)
   - 具体的な処理の流れについて
 - [Haddock](https://hackage.haskell.org/package/Jikka)
-  - [Haddock (master)](https://kmyk.github.io/Jikka/)
+  - [Haddock (master)](https://kmyk.github.io/Jikka/haddock)
 
 ## Examples
 

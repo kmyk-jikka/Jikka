@@ -1,5 +1,7 @@
 # examples/
 
+Please check also the [gallery](https://kmyk.github.io/Jikka/gallery).
+
 ## Real tasks of competitive programming
 
 - :heavy_check_mark: AC `static_range_sum.py`
