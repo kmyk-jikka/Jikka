@@ -24,7 +24,6 @@ module Jikka.Core.Convert.TypeInfer
   )
 where
 
-import Control.Arrow (second)
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict (MonadWriter, execWriterT, tell)
 import qualified Data.Map.Strict as M
@@ -169,39 +168,8 @@ substUnit = \case
   FunTy t ret -> FunTy (substUnit t) (substUnit ret)
   DataStructureTy ds -> DataStructureTy ds
 
--- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
-subst' :: Subst -> Type -> Type
-subst' sigma = substUnit . subst sigma
-
-substBuiltin :: Subst -> Builtin -> Builtin
-substBuiltin sigma = mapTypeInBuiltin (subst' sigma)
-
-substLiteral :: Subst -> Literal -> Literal
-substLiteral sigma = \case
-  LitBuiltin builtin -> LitBuiltin (substBuiltin sigma builtin)
-  LitInt n -> LitInt n
-  LitBool p -> LitBool p
-  LitNil t -> LitNil (subst' sigma t)
-  LitBottom t err -> LitBottom (subst' sigma t) err
-
-substExpr :: Subst -> Expr -> Expr
-substExpr sigma = go
-  where
-    go = \case
-      Var x -> Var x
-      Lit lit -> Lit (substLiteral sigma lit)
-      App f e -> App (go f) (go e)
-      Lam x t body -> Lam x (subst' sigma t) (go body)
-      Let x t e1 e2 -> Let x (subst sigma t) (go e1) (go e2)
-
-substToplevelExpr :: Subst -> ToplevelExpr -> ToplevelExpr
-substToplevelExpr sigma = \case
-  ResultExpr e -> ResultExpr (substExpr sigma e)
-  ToplevelLet x t e cont -> ToplevelLet x (subst' sigma t) (substExpr sigma e) (substToplevelExpr sigma cont)
-  ToplevelLetRec f args ret body cont -> ToplevelLetRec f (map (second (subst' sigma)) args) (subst' sigma ret) (substExpr sigma body) (substToplevelExpr sigma cont)
-
 substProgram :: Subst -> Program -> Program
-substProgram = substToplevelExpr
+substProgram sigma = mapTypeProgram (substUnit . subst sigma)
 
 -- | `run` does type inference.
 --

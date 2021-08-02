@@ -29,8 +29,8 @@ genVarName x = do
 genVarName' :: MonadAlpha m => m VarName
 genVarName' = genVarName (VarName "_")
 
-mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
-mapTypeInBuiltin f = \case
+mapTypeBuiltin :: (Type -> Type) -> Builtin -> Builtin
+mapTypeBuiltin f = \case
   -- arithmetical functions
   Negate -> Negate
   Plus -> Plus
@@ -130,6 +130,33 @@ mapTypeInBuiltin f = \case
   SegmentTreeInitList semigrp -> SegmentTreeInitList semigrp
   SegmentTreeGetRange semigrp -> SegmentTreeGetRange semigrp
   SegmentTreeSetPoint semigrp -> SegmentTreeSetPoint semigrp
+
+mapTypeLiteral :: (Type -> Type) -> Literal -> Literal
+mapTypeLiteral f = \case
+  LitBuiltin builtin -> LitBuiltin (mapTypeBuiltin f builtin)
+  LitInt n -> LitInt n
+  LitBool p -> LitBool p
+  LitNil t -> LitNil (f t)
+  LitBottom t err -> LitBottom (f t) err
+
+mapTypeExpr :: (Type -> Type) -> Expr -> Expr
+mapTypeExpr f = go
+  where
+    go = \case
+      Var x -> Var x
+      Lit lit -> Lit (mapTypeLiteral f lit)
+      App f e -> App (go f) (go e)
+      Lam x t body -> Lam x (f t) (go body)
+      Let x t e1 e2 -> Let x (f t) (go e1) (go e2)
+
+mapTypeToplevelExpr :: (Type -> Type) -> ToplevelExpr -> ToplevelExpr
+mapTypeToplevelExpr f = \case
+  ResultExpr e -> ResultExpr (mapTypeExpr f e)
+  ToplevelLet x t e cont -> ToplevelLet x (f t) (mapTypeExpr f e) (mapTypeToplevelExpr f cont)
+  ToplevelLetRec g args ret body cont -> ToplevelLetRec g (map (second f) args) (f ret) (mapTypeExpr f body) (mapTypeToplevelExpr f cont)
+
+mapTypeProgram :: (Type -> Type) -> Program -> Program
+mapTypeProgram = mapTypeToplevelExpr
 
 -- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
