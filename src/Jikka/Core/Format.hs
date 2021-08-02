@@ -108,11 +108,12 @@ resolvePrecRight cur assoc (s, prv)
 
 formatType' :: Type -> (String, Prec)
 formatType' = \case
-  VarTy (TypeName a) -> (a, identPrec)
+  VarTy (TypeName a) -> ('\'' : a, identPrec)
   IntTy -> ("int", identPrec)
   BoolTy -> ("bool", identPrec)
   ListTy t -> (resolvePrec funCallPrec (formatType' t) ++ " list", funCallPrec)
   TupleTy ts -> case ts of
+    [] -> ("unit", identPrec)
     [t] -> (resolvePrec (pred multPrec) (formatType' t) ++ ",", multPrec)
     _ -> (intercalate " * " (map (resolvePrec (pred multPrec) . formatType') ts), multPrec)
   FunTy t1 t2 ->
