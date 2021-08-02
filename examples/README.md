@@ -1,8 +1,6 @@
 # examples/
 
-## Scripts
-
-### Real tasks of competitive programming
+## Real tasks of competitive programming
 
 - :heavy_check_mark: AC `static_range_sum.py`
   - Library Checker [Static Range Sum](https://judge.yosupo.jp/problem/static_range_sum)
@@ -50,7 +48,7 @@
   - Educational DP Contest [W - Intervals](https://atcoder.jp/contests/dp/tasks/dp_w)
   - A lazy propagation segment tree / 遅延伝播セグメント木
 
-### Toy scripts
+## Toy scripts
 
 - :heavy_check_mark: AC `sum.py`
   - A simple sum. This is compiled to a closed-form expr. ([Wolfram&#124;Alpha](https://www.wolframalpha.com/input/?i=%5Csum_x%5E%7Bn+-+1%7D+%28ax+%2B+b%29))
@@ -60,7 +58,7 @@
   - Factorial.
   - TODO: This should be compiled to a loop from a recursion.
 
-### Examples for debug
+## Examples for debug
 
 - :heavy_check_mark: AC `higher_order_function.py`
   - An example of higher order functions.

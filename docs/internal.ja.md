@@ -96,9 +96,9 @@ Python を構文解析した段階では [`ast` module](https://docs.python.org/
 型推論には Hindley/Milner 型推論アルゴリズムを用いています。
 このアルゴリズムは、型変数についての等式を収集し、得られた連立方程式を解くことで型を復元します。
 
-- ファイル: [src/Jikka/RestrictedPython/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert.hs) [Jikka.RestrictedPython.Convert](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert.html)
-- ファイル: 変数名の検査とリネーム [src/Jikka/RestrictedPython/Convert/Alpha.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/Alpha.hs) [Jikka.RestrictedPython.Convert.Alpha](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-Alpha.html)
-- ファイル: 型推論 [src/Jikka/RestrictedPython/Convert/TypeInfer.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/TypeInfer.hs) [Jikka.RestrictedPython.Convert.TypeInfer](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-TypeInfer.html)
+- ファイル: [src/Jikka/RestrictedPython/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert.hs) ([Jikka.RestrictedPython.Convert](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert.html))
+- ファイル: 変数名の検査とリネーム [src/Jikka/RestrictedPython/Convert/Alpha.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/Alpha.hs) ([Jikka.RestrictedPython.Convert.Alpha](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-Alpha.html))
+- ファイル: 型推論 [src/Jikka/RestrictedPython/Convert/TypeInfer.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/TypeInfer.hs) ([Jikka.RestrictedPython.Convert.TypeInfer](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-TypeInfer.html))
 - 参考文献: [型システム入門 プログラミング言語と型の理論](https://www.amazon.co.jp/dp/B07CBB69SS) (通称: TaPL)
 
 ## 5. 制限された Python の構文木を core 言語の構文木に変換する
@@ -150,7 +150,7 @@ Jikka の最適化の本体部分です。
 つまり、DFS やビームサーチなどのような探索は行われていません。
 探索を必要とするような複雑な最適化は今後の課題となっています。
 
-- ファイル: [src/Jikka/Core/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert.hs) [Jikka.Core.Convert](https://kmyk.github.io/Jikka/Jikka-Core-Convert.html)
+- ファイル: [src/Jikka/Core/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert.hs) ([Jikka.Core.Convert](https://kmyk.github.io/Jikka/Jikka-Core-Convert.html))
 - ディレクトリ: [src/Jikka/Core/Convert/](https://github.com/kmyk/Jikka/tree/master/src/Jikka/Core/Convert)
 
 ### 例: 累積和
@@ -362,15 +362,16 @@ int solve(int n) {
 }
 ```
 
-- ファイル: [src/Jikka/CPlusPlus/Convert/FromCore.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/FromCore.hs) [Jikka.CPlusPlus.Convert.FromCore](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert-FromCore.html)
+- ファイル: [src/Jikka/CPlusPlus/Convert/FromCore.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/FromCore.hs) ([Jikka.CPlusPlus.Convert.FromCore](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert-FromCore.html))
 
 ## 8. C++ の構文木の後処理をする
 
 core 言語の構文木から変換してきたときに発生して非効率的な部分を解消するような変換を行います。
 主には不必要な copy を move に変換します。
+また、変換結果を眺めて必要な `#include` 文を補います。
 
-- ファイル: [src/Jikka/CPlusPlus/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert.hs) [Jikka.CPlusPlus.Convert](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert.html)
-- ファイル: copy から move への変換 [src/Jikka/CPlusPlus/Convert/MoveSemantics.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/MoveSemantics.hs) [Jikka.CPlusPlus.Convert.MoveSemantics](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert-MoveSemantics.html)
+- ファイル: [src/Jikka/CPlusPlus/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert.hs) ([Jikka.CPlusPlus.Convert](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert.html))
+- ファイル: copy から move への変換 [src/Jikka/CPlusPlus/Convert/MoveSemantics.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/MoveSemantics.hs) ([Jikka.CPlusPlus.Convert.MoveSemantics](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert-MoveSemantics.html))
 
 ### 例
 
