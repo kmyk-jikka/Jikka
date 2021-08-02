@@ -67,7 +67,7 @@ For developpers:
   - 動作原理や関連する理論について
 - [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
   - 実装方針について
-- [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md (Japanese)
+- [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md) (Japanese)
   - 具体的な処理の流れについて
 - [Haddock](https://hackage.haskell.org/package/Jikka)
   - [Haddock (master)](https://kmyk.github.io/Jikka/haddock)
