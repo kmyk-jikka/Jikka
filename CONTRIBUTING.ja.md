@@ -4,7 +4,7 @@
 
 ## Development process and conventions
 
-### Running directly from source code
+### Execution
 
 開発時は [Stack](https://www.haskellstack.org/) を使ってください。
 Stack は Ubuntu なら `$ sudo apt install haskell-stack` でインストールできます。

@@ -23,11 +23,15 @@ jobs:
         run: stack --system-ghc build --only-dependencies
 
       - name: Run Haddock
-        run: stack --system-ghc haddock --haddock-arguments --odir=public
+        run: stack --system-ghc haddock --haddock-arguments --odir=docs/gh-pages/haddock
+
+      - name: Make Garalley
+        run: |
+          python3 scripts/make_gallery.py > docs/gh-pages/gallery/data.json
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+          publish_dir: ./docs/gh-pages
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}

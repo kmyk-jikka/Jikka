@@ -22,15 +22,15 @@ Jikka の内部のおおまかな構成は以下を順に実行するものに�
 また core 言語はほとんど Haskell と言ってよいもので、これは Haskell のコンパイラである GHC の中間言語 [GHC Core](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/core-syn-type) に類似した中間言語になっています。
 
 - modules の一覧 [Jikka](https://kmyk.github.io/Jikka/)
-- ファイル: [src/Jikka/Main/Subcommand/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Main/Subcommand/Convert.hs) ([Jikka.Main.Subcommand.Convert](https://kmyk.github.io/Jikka/Jikka-Main-Subcommand-Convert.html))
+- ファイル: [src/Jikka/Main/Subcommand/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Main/Subcommand/Convert.hs) ([Jikka.Main.Subcommand.Convert](https://kmyk.github.io/Jikka/haddock/Jikka-Main-Subcommand-Convert.html))
 
 ## 2. Python コードの構文解析をして Python の構文木を得る
 
 [Python の文法仕様](https://docs.python.org/ja/3/reference/grammar.html) に従い Python の構文解析をします。
 [lex](https://ja.wikipedia.org/wiki/Lex) (その Haskell 版 [alex](https://www.haskell.org/alex/)) と [yacc](https://ja.wikipedia.org/wiki/Yacc) (同 [happy](https://www.haskell.org/happy/)) を用いて LALR(1) 構文解析器を生成して用いています。
 
-- ファイル: lex [src/Jikka/Python/Parse/Happy.y](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Parse/Happy.y) ([Jikka.Python.Parse.Happy](https://kmyk.github.io/Jikka/Jikka-Python-Parse-Alex.html))
-- ファイル: yacc [src/Jikka/Python/Parse/Alex.x](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Parse/Alex.x) ([Jikka.Python.Parse.Alex](https://kmyk.github.io/Jikka/Jikka-Python-Parse-Happy.html))
+- ファイル: lex [src/Jikka/Python/Parse/Happy.y](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Parse/Happy.y) ([Jikka.Python.Parse.Happy](https://kmyk.github.io/Jikka/haddock/Jikka-Python-Parse-Alex.html))
+- ファイル: yacc [src/Jikka/Python/Parse/Alex.x](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Parse/Alex.x) ([Jikka.Python.Parse.Alex](https://kmyk.github.io/Jikka/haddock/Jikka-Python-Parse-Happy.html))
 - 参考文献: [最新コンパイラ構成技法](https://www.amazon.co.jp/dp/4798114685) (通称: タイガーブック)
 
 ### 例
@@ -83,7 +83,7 @@ Module(
 Python を構文解析した段階では [`ast` module](https://docs.python.org/ja/3/library/ast.html) と同一の完全な構文木 ([data Expr](https://hackage.haskell.org/package/Jikka/docs/Jikka-Python-Language-Expr.html#t:Expr)) を得ています。
 この構文木から不要な部分を削除し、我々の制限された Python のための扱いやすい構文木 ([data Expr](https://hackage.haskell.org/package/Jikka/docs/Jikka-RestrictedPython-Language-Expr.html#t:Expr)) を得ます。
 
-- ファイル: [src/Jikka/Python/Convert/ToRestrictedPython.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Convert/ToRestrictedPython.hs) ([Jikka.Python.Convert.ToRestrictedPython](https://kmyk.github.io/Jikka/Jikka-Python-Convert-ToRestrictedPython.html))
+- ファイル: [src/Jikka/Python/Convert/ToRestrictedPython.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Python/Convert/ToRestrictedPython.hs) ([Jikka.Python.Convert.ToRestrictedPython](https://kmyk.github.io/Jikka/haddock/Jikka-Python-Convert-ToRestrictedPython.html))
 
 ## 4. 制限された Python の構文木の前処理をする
 
@@ -96,9 +96,9 @@ Python を構文解析した段階では [`ast` module](https://docs.python.org/
 型推論には Hindley/Milner 型推論アルゴリズムを用いています。
 このアルゴリズムは、型変数についての等式を収集し、得られた連立方程式を解くことで型を復元します。
 
-- ファイル: [src/Jikka/RestrictedPython/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert.hs) [Jikka.RestrictedPython.Convert](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert.html)
-- ファイル: 変数名の検査とリネーム [src/Jikka/RestrictedPython/Convert/Alpha.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/Alpha.hs) [Jikka.RestrictedPython.Convert.Alpha](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-Alpha.html)
-- ファイル: 型推論 [src/Jikka/RestrictedPython/Convert/TypeInfer.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/TypeInfer.hs) [Jikka.RestrictedPython.Convert.TypeInfer](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-TypeInfer.html)
+- ファイル: [src/Jikka/RestrictedPython/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert.hs) ([Jikka.RestrictedPython.Convert](https://kmyk.github.io/Jikka/haddock/Jikka-RestrictedPython-Convert.html))
+- ファイル: 変数名の検査とリネーム [src/Jikka/RestrictedPython/Convert/Alpha.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/Alpha.hs) ([Jikka.RestrictedPython.Convert.Alpha](https://kmyk.github.io/Jikka/haddock/Jikka-RestrictedPython-Convert-Alpha.html))
+- ファイル: 型推論 [src/Jikka/RestrictedPython/Convert/TypeInfer.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/TypeInfer.hs) ([Jikka.RestrictedPython.Convert.TypeInfer](https://kmyk.github.io/Jikka/haddock/Jikka-RestrictedPython-Convert-TypeInfer.html))
 - 参考文献: [型システム入門 プログラミング言語と型の理論](https://www.amazon.co.jp/dp/B07CBB69SS) (通称: TaPL)
 
 ## 5. 制限された Python の構文木を core 言語の構文木に変換する
@@ -138,7 +138,7 @@ solve n =
     in a3
 ```
 
-- ファイル: [src/Jikka/RestrictedPython/Convert/ToCore.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/ToCore.hs) ([Jikka.RestrictedPython.Convert.ToCore](https://kmyk.github.io/Jikka/Jikka-RestrictedPython-Convert-ToCore.html))
+- ファイル: [src/Jikka/RestrictedPython/Convert/ToCore.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/RestrictedPython/Convert/ToCore.hs) ([Jikka.RestrictedPython.Convert.ToCore](https://kmyk.github.io/Jikka/haddock/Jikka-RestrictedPython-Convert-ToCore.html))
 
 ## 6. core 言語の構文木を最適化する
 
@@ -150,7 +150,7 @@ Jikka の最適化の本体部分です。
 つまり、DFS やビームサーチなどのような探索は行われていません。
 探索を必要とするような複雑な最適化は今後の課題となっています。
 
-- ファイル: [src/Jikka/Core/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert.hs) [Jikka.Core.Convert](https://kmyk.github.io/Jikka/Jikka-Core-Convert.html)
+- ファイル: [src/Jikka/Core/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert.hs) ([Jikka.Core.Convert](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert.html))
 - ディレクトリ: [src/Jikka/Core/Convert/](https://github.com/kmyk/Jikka/tree/master/src/Jikka/Core/Convert)
 
 ### 例: 累積和
@@ -215,12 +215,12 @@ int solve(int n, vector<int> a) {
 }
 ```
 
-- ファイル: [src/Jikka/Core/Convert/CumulativeSum.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/CumulativeSum.hs) ([Jikka.Core.Convert.CumulativeSum](https://kmyk.github.io/Jikka/Jikka-Core-Convert-CumulativeSum.html))
-- ファイル: [src/Jikka/Core/Convert/BubbleLet.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/BubbleLet.hs) ([Jikka.Core.Convert.BubbleLet](https://kmyk.github.io/Jikka/Jikka-Core-Convert-BubbleLet.html))
+- ファイル: [src/Jikka/Core/Convert/CumulativeSum.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/CumulativeSum.hs) ([Jikka.Core.Convert.CumulativeSum](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-CumulativeSum.html))
+- ファイル: [src/Jikka/Core/Convert/BubbleLet.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/BubbleLet.hs) ([Jikka.Core.Convert.BubbleLet](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-BubbleLet.html))
 
 ### 具体的な実装コード例: Short Cut Fusion
 
-[Short cut fusion](https://wiki.haskell.org/Short_cut_fusion) を行うための module [Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/Jikka-Core-Convert-ShortCutFusion.html) の実装を見てみましょう。
+[Short cut fusion](https://wiki.haskell.org/Short_cut_fusion) を行うための module [Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-ShortCutFusion.html) の実装を見てみましょう。
 たとえばその中の `reduceFoldBuild` という rewrite rule は [`v5.1.0.0` の時点](https://github.com/kmyk/Jikka/blob/795726a626ca3653555f6c5c176eb81de26b6d58/src/Jikka/Core/Convert/ShortCutFusion.hs#L162-L183)では次のようになっています。
 
 ```haskell
@@ -250,13 +250,13 @@ reduceFoldBuild =
 
 たとえば `Len' _ (Nil' _) -> return' Lit0` という行は `length []` という部分式を `0` という式で置き換えるという rewrite rule を、`Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)` という行は `length (cons x xs)` という部分式を `1 + length xs` という式で置き換えるという rewrite rule を表現しています。
 
-- ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/Jikka-Core-Convert-ShortCutFusion.html))
+- ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-ShortCutFusion.html))
 
 ### 具体的な実装コード例: セグメント木
 
 データ構造を扱う例として、セグメント木についての実装を見てみましょう。
 
-Module [Jikka.Core.Convert.SegmentTree](https://kmyk.github.io/Jikka/Jikka-Core-Convert-SegmentTree.html) は関数 `reduceCumulativeSum` を持ちます。
+Module [Jikka.Core.Convert.SegmentTree](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-SegmentTree.html) は関数 `reduceCumulativeSum` を持ちます。
 これは [foldl](https://hackage.haskell.org/package/base/docs/Prelude.html#v:foldl) の中で累積和が使われているが、しかし累積和を取られている配列が動的に更新されるために単純に累積和を `foldl` の外には出せない場合 (たとえば次のような Python コードに対応するもの) に対し、セグメント木を用いた変形を施します。
 
 ```python
@@ -313,14 +313,14 @@ reduceCumulativeSum = RewriteRule $ \_ -> \case
 また (C) の行でセグメント木を更新する式を作り、(D) の行で `foldl` に渡す関数の本体を作ります。
 さらに (E) の行でセグメント木の初期状態を作るような式 `base'` を用意し、(F) の行で結果の式を作って返却します。
 
-ここでセグメント木を用いるために core 言語には [`data-structure` 型](https://kmyk.github.io/Jikka/Jikka-Core-Language-Expr.html#t:Type) があり、また[組み込み関数 `SegmentTreeInitList` `SegmentTreeGetRange` `SegmentTreeSetPoint`](https://kmyk.github.io/Jikka/Jikka-Core-Language-Expr.html#t:Builtin) も用意されています。
+ここでセグメント木を用いるために core 言語には [`data-structure` 型](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Language-Expr.html#t:Type) があり、また[組み込み関数 `SegmentTreeInitList` `SegmentTreeGetRange` `SegmentTreeSetPoint`](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Language-Expr.html#t:Builtin) も用意されています。
 たとえば組み込み関数 `SegmentTreeSetPoint` は `S: semigroup` に対し `segment−tree(S) → int → S → segment−tree(S)` という型を持ちます。
 
 同様に、core 言語が変換されていく先である C++ においても、セグメント木に関連する型や組み込み関数が定義されています。
 
-- ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.SegmentTree](https://kmyk.github.io/Jikka/Jikka-Core-Convert-SegmentTree.html))
-- ファイル: [src/Jikka/Core/Language/Expr.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Language/Expr.hs) ([Jikka.Core.Language.Expr](https://kmyk.github.io/Jikka/Jikka-Core-Language-Expr.html))
-- ファイル: [src/Jikka/CPlusPlus/Language/Expr.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Language/Expr.hs) ([Jikka.CPlusPlus.Language.Expr](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Language-Expr.html))
+- ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.SegmentTree](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-SegmentTree.html))
+- ファイル: [src/Jikka/Core/Language/Expr.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Language/Expr.hs) ([Jikka.Core.Language.Expr](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Language-Expr.html))
+- ファイル: [src/Jikka/CPlusPlus/Language/Expr.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Language/Expr.hs) ([Jikka.CPlusPlus.Language.Expr](https://kmyk.github.io/Jikka/haddock/Jikka-CPlusPlus-Language-Expr.html))
 
 ## 7. core 言語の構文木を C++ の構文木に変換する
 
@@ -362,15 +362,16 @@ int solve(int n) {
 }
 ```
 
-- ファイル: [src/Jikka/CPlusPlus/Convert/FromCore.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/FromCore.hs) [Jikka.CPlusPlus.Convert.FromCore](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert-FromCore.html)
+- ファイル: [src/Jikka/CPlusPlus/Convert/FromCore.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/FromCore.hs) ([Jikka.CPlusPlus.Convert.FromCore](https://kmyk.github.io/Jikka/haddock/Jikka-CPlusPlus-Convert-FromCore.html))
 
 ## 8. C++ の構文木の後処理をする
 
 core 言語の構文木から変換してきたときに発生して非効率的な部分を解消するような変換を行います。
 主には不必要な copy を move に変換します。
+また、変換結果を眺めて必要な `#include` 文を補います。
 
-- ファイル: [src/Jikka/CPlusPlus/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert.hs) [Jikka.CPlusPlus.Convert](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert.html)
-- ファイル: copy から move への変換 [src/Jikka/CPlusPlus/Convert/MoveSemantics.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/MoveSemantics.hs) [Jikka.CPlusPlus.Convert.MoveSemantics](https://kmyk.github.io/Jikka/Jikka-CPlusPlus-Convert-MoveSemantics.html)
+- ファイル: [src/Jikka/CPlusPlus/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert.hs) ([Jikka.CPlusPlus.Convert](https://kmyk.github.io/Jikka/haddock/Jikka-CPlusPlus-Convert.html))
+- ファイル: copy から move への変換 [src/Jikka/CPlusPlus/Convert/MoveSemantics.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Convert/MoveSemantics.hs) ([Jikka.CPlusPlus.Convert.MoveSemantics](https://kmyk.github.io/Jikka/haddock/Jikka-CPlusPlus-Convert-MoveSemantics.html))
 
 ### 例
 
