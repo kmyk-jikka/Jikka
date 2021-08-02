@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- Module      : Jikka.Core.Convert.ShortCutFusion
@@ -38,6 +40,7 @@ import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.LambdaPatterns
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
@@ -48,40 +51,22 @@ import Jikka.Core.Language.Util
 -- * `Nil` and `Cons` are kept as is.
 reduceBuild :: MonadAlpha m => RewriteRule m
 reduceBuild =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        Range2' l r -> do
-          let n = Minus' r l
-          x <- genVarName'
-          let f = Lam x IntTy (Plus' l (Var x))
-          return' $ Map' IntTy IntTy f (Range1' n)
-        Range3' l r step -> do
-          let n = CeilDiv' (Minus' r l) step
-          x <- genVarName'
-          let f = Lam x IntTy (Plus' l (Mult' step (Var x)))
-          return' $ Map' IntTy IntTy f (Range1' n)
-        _ -> return Nothing
+  mconcat
+    [ [r| "range2" forall l r. range2 l r = map? (fun i -> l + i) (range (r - l)) |],
+      [r| "range3" forall l r step. range3 l r step = map? (fun i -> l + i * step) (range ((r - l) /^ step)) |]
+    ]
 
 reduceMapBuild :: MonadAlpha m => RewriteRule m
 reduceMapBuild =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- reduce `Sorted`
-        Sorted' _ (Nil' t) -> return' $ Nil' t
-        Sorted' _ (Range1' n) -> return' $ Range1' n
-        -- reduce `Reversed`
-        Reversed' _ (Nil' t) -> return' $ Nil' t
-        Reversed' _ (Range1' n) -> do
-          x <- genVarName'
-          let f = Lam x IntTy (Minus' (Minus' n (Var x)) (LitInt' 1))
-          return' $ Map' IntTy IntTy f n
-        -- reduce `Filter`
-        Filter' _ _ (Nil' t) -> return' $ Nil' t
-        -- reduce `Map`
-        Map' _ _ _ (Nil' t) -> return' $ Nil' t
-        Map' t1 t2 f (Cons' _ x xs) -> return' $ Cons' t2 (App f x) (Map' t1 t2 f xs)
-        -- others
-        _ -> return Nothing
+  mconcat
+    [ [r| "sorted/nil" sorted? nil? = nil? |],
+      [r| "sorted/range" forall n. sorted? (range n) = range n |],
+      [r| "reversed/nil" reversed? nil? = nil? |],
+      [r| "reversed/range" forall n. reversed? (range n) = map? (fun i -> n - i - 1) (range n) |],
+      [r| "filter/nil" filter? _ nil? = nil? |],
+      [r| "map/nil" map? _ nil? = nil? |],
+      [r| "map/cons" forall f x xs. map? f (cons? x xs) = cons? (f x) (map? f xs) |]
+    ]
 
 reduceMap :: Monad m => RewriteRule m
 reduceMap =
