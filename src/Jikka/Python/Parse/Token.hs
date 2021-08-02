@@ -1,5 +1,5 @@
 -- |
--- Module      : Jikka.Core.Parse.Token
+-- Module      : Jikka.Python.Parse.Token
 -- Description : defines tokens of the standard Python. / 標準の Python の字句要素を定義します。
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
