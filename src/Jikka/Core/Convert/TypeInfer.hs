@@ -11,6 +11,8 @@
 -- Portability : portable
 module Jikka.Core.Convert.TypeInfer
   ( run,
+    runExpr,
+    runRule,
 
     -- * internal types and functions
     Equation (..),
@@ -24,6 +26,7 @@ module Jikka.Core.Convert.TypeInfer
   )
 where
 
+import Control.Arrow (second)
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict (MonadWriter, execWriterT, tell)
 import qualified Data.Map.Strict as M
@@ -34,7 +37,7 @@ import Jikka.Core.Format (formatType)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
-import Jikka.Core.Language.TypeCheck (literalToType, typecheckProgram)
+import Jikka.Core.Language.TypeCheck (literalToType, typecheckExpr, typecheckProgram)
 import Jikka.Core.Language.Util
 
 data Equation
@@ -168,8 +171,14 @@ substUnit = \case
   FunTy t ret -> FunTy (substUnit t) (substUnit ret)
   DataStructureTy ds -> DataStructureTy ds
 
+subst' :: Subst -> Type -> Type
+subst' sigma = substUnit . subst sigma
+
 substProgram :: Subst -> Program -> Program
-substProgram sigma = mapTypeProgram (substUnit . subst sigma)
+substProgram sigma = mapTypeProgram (subst' sigma)
+
+substExpr :: Subst -> Expr -> Expr
+substExpr sigma = mapTypeExpr (subst' sigma)
 
 -- | `run` does type inference.
 --
@@ -196,3 +205,28 @@ run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   postcondition $ do
     typecheckProgram prog
   return prog
+
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
+runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+  eqns <- getDual <$> execWriterT (formularizeExpr e)
+  let (eqns', assertions) = sortEquations eqns
+  let eqns'' = mergeAssertions assertions
+  sigma <- solveEquations (eqns' ++ eqns'')
+  env <- return $ map (second (subst' sigma)) env
+  e <- return $ substExpr sigma e
+  postcondition $ do
+    typecheckExpr env e
+  return e
+
+runRule :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m ([(VarName, Type)], Expr, Expr)
+runRule args e1 e2 = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+  eqns <- (getDual <$>) . execWriterT $ do
+    t <- formularizeExpr e1
+    formularizeExpr' e2 t
+  let (eqns', assertions) = sortEquations eqns
+  let eqns'' = mergeAssertions assertions
+  sigma <- solveEquations (eqns' ++ eqns'')
+  args <- return $ map (second (subst sigma)) args -- don't use substUnit
+  e1 <- return $ mapTypeExpr (subst sigma) e1 -- don't use substUnit
+  e2 <- return $ mapTypeExpr (subst sigma) e2 -- don't use substUnit
+  return (args, e1, e2)

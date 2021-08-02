@@ -14,6 +14,7 @@ module Jikka.Core.Language.RewriteRules
     pureRewriteRule,
     simpleRewriteRule,
     applyRewriteRule,
+    applyRewriteRule',
     applyRewriteRuleToplevelExpr,
     applyRewriteRuleProgram,
     applyRewriteRuleProgram',
@@ -61,6 +62,9 @@ simpleRewriteRule f = RewriteRule (\_ e -> return (f e))
 -- * This function doesn't terminate when a given rewrite rule doesn't terminate.
 applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRule = applyRewriteRulePreOrder
+
+applyRewriteRule' :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+applyRewriteRule' f env e = evalStateT (applyRewriteRule f env e) 0
 
 coalesceMaybes :: a -> Maybe a -> b -> Maybe b -> Maybe (a, b)
 coalesceMaybes _ Nothing _ Nothing = Nothing

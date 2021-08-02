@@ -51,6 +51,7 @@ data Token
   | -- literals
     Int Integer
   | Bool Bool
+  | String String
   | -- keywords
     Let
   | Rec
@@ -59,6 +60,8 @@ data Token
   | Then
   | Else
   | Fun
+  | Dot
+  | Forall
   | -- punctuations
     Arrow
   | Equal
@@ -67,6 +70,7 @@ data Token
   | Underscore
   | SingleQuote
   | BackArrow
+  | Question
   | -- parens
     OpenBracket
   | OpenParen

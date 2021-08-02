@@ -23,7 +23,7 @@ spec = describe "run" $ do
           unlines
             [ "let rec solve$0 (n$1: int): int =",
               "    let xs$2: int list =",
-              "        map (fun (i$3: int) ->",
+              "        map? (fun (i$3: int) ->",
               "            i$3 * i$3",
               "        ) (range n$1)",
               "    in sum xs$2",
@@ -38,21 +38,22 @@ spec = describe "run" $ do
             ( Let
                 "xs$2"
                 (ListTy IntTy)
-                ( App2
-                    (Var "map")
+                ( Map'
+                    (VarTy "$100")
+                    (VarTy "$101")
                     ( Lam
                         "i$3"
                         IntTy
                         (Mult' (Var "i$3") (Var "i$3"))
                     )
-                    (App (Var "range") (Var "n$1"))
+                    (Range1' (Var "n$1"))
                 )
-                (App (Var "sum") (Var "xs$2"))
+                (Sum' (Var "xs$2"))
             )
             (ResultExpr (Var "solve$0"))
     run' prog `shouldBe` Right expected
   it "inserts new type variables" $ do
-    let prog = "a[0 <- b][0]"
+    let prog = "a[0 <- b]?[0]?"
     let expected =
           ResultExpr
             (At' (VarTy "$100") (SetAt' (VarTy "$101") (Var "a") (LitInt' 0) (Var "b")) (LitInt' 0))

@@ -97,7 +97,7 @@ builtinToType = \case
   Range3 -> Fun3Ty IntTy IntTy IntTy (ListTy IntTy)
   -- tuple functions
   Tuple ts -> curryFunTy ts (TupleTy ts)
-  Proj ts n -> FunTy (TupleTy ts) (ts !! n)
+  Proj ts n -> FunTy (TupleTy ts) (ts !! fromInteger n)
   -- comparison
   LessThan t -> Fun2Ty t t BoolTy
   LessEqual t -> Fun2Ty t t BoolTy

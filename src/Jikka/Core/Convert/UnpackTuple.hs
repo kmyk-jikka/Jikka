@@ -43,8 +43,8 @@ rule =
           _ -> return Nothing
         App (Tuple' [_]) (Proj' [_] 0 e) -> return' e
         Proj' ts i e -> case curryApp e of
-          (Tuple' _, es) -> return' $ es !! i
-          (Lit (LitBuiltin (If _)), [e1, e2, e3]) -> return' $ If' (ts !! i) e1 (Proj' ts i e2) (Proj' ts i e3)
+          (Tuple' _, es) -> return' $ es !! fromInteger i
+          (Lit (LitBuiltin (If _)), [e1, e2, e3]) -> return' $ If' (ts !! fromInteger i) e1 (Proj' ts i e2) (Proj' ts i e3)
           _ -> return Nothing
         Foldl' t2 (TupleTy [t1]) (Lam x1 (TupleTy [_]) (Lam x2 _ body)) e es -> do
           body' <- substitute x1 (App (Tuple' [t1]) (Var x1)) (Proj' [t1] 0 body)

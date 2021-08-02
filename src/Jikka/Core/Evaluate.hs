@@ -185,8 +185,8 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     BitRightShift -> go2 valueToInt valueToInt ValInt $ \a b -> a `shift` fromInteger (- b)
     -- matrix functions
     MatAp _ _ -> go2' valueToMatrix valueToVector valueFromVector matap'
-    MatZero n -> go0 valueFromMatrix (matzero n)
-    MatOne n -> go0 valueFromMatrix (matone n)
+    MatZero n -> go0 valueFromMatrix (matzero (fromInteger n))
+    MatOne n -> go0 valueFromMatrix (matone (fromInteger n))
     MatAdd _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matadd'
     MatMul _ _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matmul'
     MatPow _ -> go2' valueToMatrix valueToInt valueFromMatrix matpow'
@@ -232,7 +232,7 @@ callBuiltin builtin args = wrapError' ("while calling builtin " ++ formatBuiltin
     Range3 -> go3' valueToInt valueToInt valueToInt ValList range3
     -- tuple functions
     Tuple ts -> goN (length ts) pure ValTuple id
-    Proj _ n -> go1 valueToTuple id (!! n)
+    Proj _ n -> go1 valueToTuple id (!! fromInteger n)
     -- -- comparison
     LessThan _ -> go2 pure pure ValBool $ \a b -> compareValues a b == Just LT
     LessEqual _ -> go2 pure pure ValBool $ \a b -> compareValues a b /= Just GT

@@ -162,6 +162,9 @@ mapTypeExprM f = go
       Lam x t body -> Lam x <$> f t <*> go body
       Let x t e1 e2 -> Let x <$> f t <*> go e1 <*> go e2
 
+mapTypeExpr :: (Type -> Type) -> Expr -> Expr
+mapTypeExpr f e = runIdentity (mapTypeExprM (return . f) e)
+
 mapTypeToplevelExprM :: Monad m => (Type -> m Type) -> ToplevelExpr -> m ToplevelExpr
 mapTypeToplevelExprM f = \case
   ResultExpr e -> ResultExpr <$> mapTypeExprM f e

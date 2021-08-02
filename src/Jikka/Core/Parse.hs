@@ -5,6 +5,7 @@ module Jikka.Core.Parse
     parseProgram,
     parseExpr,
     parseType,
+    parseRule,
   )
 where
 
@@ -14,6 +15,11 @@ import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import qualified Jikka.Core.Parse.Alex as L
 import qualified Jikka.Core.Parse.Happy as P
+
+parseRule :: (MonadAlpha m, MonadError Error m) => String -> m (String, [(VarName, Type)], Expr, Expr)
+parseRule input = do
+  tokens <- L.run input
+  P.runRule tokens
 
 parseType :: (MonadAlpha m, MonadError Error m) => String -> m Type
 parseType input = do

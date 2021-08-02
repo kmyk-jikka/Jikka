@@ -1,6 +1,7 @@
 {
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 
 -- vim: filetype=haskell
 
@@ -18,6 +19,7 @@ module Jikka.Core.Parse.Happy
     ( runProgram
     , runExpr
     , runType
+    , runRule
     ) where
 
 import Data.List (intercalate)
@@ -33,6 +35,7 @@ import qualified Jikka.Core.Parse.Token as L
 %name runProgram_ program
 %name runExpr_ expression
 %name runType_ type
+%name runRule_ rule
 %tokentype { WithLoc L.Token }
 %monad { Either Error }
 %error { happyErrorExpList }
@@ -42,6 +45,7 @@ import qualified Jikka.Core.Parse.Token as L
     -- literals
     INTEGER         { WithLoc _ (L.Int _) }
     BOOLEAN         { WithLoc _ (L.Bool _) }
+    STRING          { WithLoc _ (L.String _) }
 
     -- keywords
     "let"           { WithLoc _ L.Let }
@@ -51,6 +55,7 @@ import qualified Jikka.Core.Parse.Token as L
     "if"            { WithLoc _ L.If }
     "then"          { WithLoc _ L.Then }
     "else"          { WithLoc _ L.Else }
+    "forall"        { WithLoc _ L.Forall }
 
     -- punctuations
     "->"            { WithLoc _ L.Arrow }
@@ -59,7 +64,9 @@ import qualified Jikka.Core.Parse.Token as L
     "="             { WithLoc _ L.Equal }
     "_"             { WithLoc _ L.Underscore }
     "'"             { WithLoc _ L.SingleQuote }
+    "."             { WithLoc _ L.Dot }
     "<-"            { WithLoc _ L.BackArrow }
+    "?"             { WithLoc _ L.Question }
 
     -- parens
     "["             { WithLoc _ L.OpenBracket }
@@ -67,16 +74,77 @@ import qualified Jikka.Core.Parse.Token as L
     "]"             { WithLoc _ L.CloseBracket }
     ")"             { WithLoc _ L.CloseParen }
 
-    -- identifier
+    -- types
     "int"           { WithLoc _ (L.Ident "int") }
     "bool"          { WithLoc _ (L.Ident "bool") }
     "list"          { WithLoc _ (L.Ident "list") }
     "unit"          { WithLoc _ (L.Ident "unit") }
     "convex_hull_trick" { WithLoc _ (L.Ident "convex_hull_trick") }
     "segment_tree"  { WithLoc _ (L.Ident "segment_tree") }
-    "int.plus"      { WithLoc _ (L.Ident "int.plus") }
-    "int.min"       { WithLoc _ (L.Ident "int.min") }
-    "int.max"       { WithLoc _ (L.Ident "int.max") }
+    "int_plus"      { WithLoc _ (L.Ident "int_plus") }
+    "int_min"       { WithLoc _ (L.Ident "int_min") }
+    "int_max"       { WithLoc _ (L.Ident "int_max") }
+
+    -- builtins
+    "nil"           { WithLoc _ (L.Ident "nil") }
+    "abs"           { WithLoc _ (L.Ident "abs") }
+    "gcd"           { WithLoc _ (L.Ident "gcd") }
+    "lcm"           { WithLoc _ (L.Ident "lcm") }
+    "iterate"       { WithLoc _ (L.Ident "iterate") }
+    "matap"         { WithLoc _ (L.Ident "matap") }
+    "matzero"       { WithLoc _ (L.Ident "matzero") }
+    "matone"        { WithLoc _ (L.Ident "matone") }
+    "matadd"        { WithLoc _ (L.Ident "matadd") }
+    "matmul"        { WithLoc _ (L.Ident "matmul") }
+    "matpow"        { WithLoc _ (L.Ident "matpow") }
+    "vecfloormod"   { WithLoc _ (L.Ident "vecfloormod") }
+    "matfloormod"   { WithLoc _ (L.Ident "matfloormod") }
+    "modnegate"     { WithLoc _ (L.Ident "modnegate") }
+    "modplus"       { WithLoc _ (L.Ident "modplus") }
+    "modminus"      { WithLoc _ (L.Ident "modminus") }
+    "modmult"       { WithLoc _ (L.Ident "modmult") }
+    "modinv"        { WithLoc _ (L.Ident "modinv") }
+    "modpow"        { WithLoc _ (L.Ident "modpow") }
+    "modmatap"      { WithLoc _ (L.Ident "modmatap") }
+    "modmatadd"     { WithLoc _ (L.Ident "modmatadd") }
+    "modmatmul"     { WithLoc _ (L.Ident "modmatmul") }
+    "modmatpow"     { WithLoc _ (L.Ident "modmatpow") }
+    "cons"          { WithLoc _ (L.Ident "cons") }
+    "snoc"          { WithLoc _ (L.Ident "snoc") }
+    "foldl"         { WithLoc _ (L.Ident "foldl") }
+    "scanl"         { WithLoc _ (L.Ident "scanl") }
+    "build"         { WithLoc _ (L.Ident "build") }
+    "len"           { WithLoc _ (L.Ident "len") }
+    "map"           { WithLoc _ (L.Ident "map") }
+    "filter"        { WithLoc _ (L.Ident "filter") }
+    "elem"          { WithLoc _ (L.Ident "elem") }
+    "sum"           { WithLoc _ (L.Ident "sum") }
+    "product"       { WithLoc _ (L.Ident "product") }
+    "modsum"        { WithLoc _ (L.Ident "modsum") }
+    "modproduct"    { WithLoc _ (L.Ident "modproduct") }
+    "min"           { WithLoc _ (L.Ident "min") }
+    "max"           { WithLoc _ (L.Ident "max") }
+    "argmin"        { WithLoc _ (L.Ident "argmin") }
+    "argmax"        { WithLoc _ (L.Ident "argmax") }
+    "all"           { WithLoc _ (L.Ident "all") }
+    "any"           { WithLoc _ (L.Ident "any") }
+    "sorted"        { WithLoc _ (L.Ident "sorted") }
+    "reversed"      { WithLoc _ (L.Ident "reversed") }
+    "range"         { WithLoc _ (L.Ident "range") }
+    "range2"        { WithLoc _ (L.Ident "range2") }
+    "range3"        { WithLoc _ (L.Ident "range3") }
+    "fact"          { WithLoc _ (L.Ident "fact") }
+    "choose"        { WithLoc _ (L.Ident "choose") }
+    "permute"       { WithLoc _ (L.Ident "permute") }
+    "multichoose"   { WithLoc _ (L.Ident "multichoose") }
+    "cht_init"      { WithLoc _ (L.Ident "cht_init") }
+    "cht_getmin"    { WithLoc _ (L.Ident "cht_getmin") }
+    "cht_insert"    { WithLoc _ (L.Ident "cht_insert") }
+    "segtree_init"  { WithLoc _ (L.Ident "segtree_init") }
+    "segtree_getrange"    { WithLoc _ (L.Ident "segtree_getrange") }
+    "segtree_setpoint"    { WithLoc _ (L.Ident "segtree_setpoint") }
+
+    -- identifiers
     IDENT           { WithLoc _ (L.Ident _) }
 
     -- arithmetic operators
@@ -118,6 +186,10 @@ import qualified Jikka.Core.Parse.Token as L
 
 program :: { Program }
     : topdecls                         { $1 }
+
+rule :: { (String, [(VarName, Type)], Expr, Expr) }
+    : STRING expression "=" expression                            { let L.String name = value $1 in (name, [], $2, $4) }
+    | STRING "forall" list1(arg) "." expression "=" expression    { let L.String name = value $1 in (name, $3, $5, $7) }
 
 -- utilities
 opt(p) -- :: { Maybe a }
@@ -161,15 +233,15 @@ atom_type :: { Type }
     | atom_type "list"                 { ListTy $1 }
     | "unit"                           { TupleTy [] }
     | datastructure                    { DataStructureTy $1 }
+    | "(" type ")"                     { $2 }
 
 tuple_type :: { Type }
     : atom_type                        { $1 }
-    | atom_type "*" sep1(atom_type, "*") { TupleTy ($1 : $3) }
+    | atom_type "*" sep1(atom_type, "*")    { TupleTy ($1 : $3) }
 
 type :: { Type }
     : tuple_type                       { $1 }
     | tuple_type "->" type             { FunTy $1 $3 }
-    | "(" type ")"                     { $2 }
 
 -- Data Structures
 datastructure :: { DataStructure }
@@ -177,36 +249,114 @@ datastructure :: { DataStructure }
     | "segment_tree" "<" semigroup ">" { SegmentTree $3 }
 
 semigroup :: { Semigroup' }
-    : "int.plus"                      { SemigroupIntPlus }
-    | "int.min"                       { SemigroupIntMin }
-    | "int.max"                       { SemigroupIntMax }
+    : "int_plus"                      { SemigroupIntPlus }
+    | "int_min"                       { SemigroupIntMin }
+    | "int_max"                       { SemigroupIntMax }
 
 -- Arguments
 arg :: { (VarName, Type) }
-    : "(" identifier ":" type ")"      { ($2, $4) }
+    : identifier                       { ($1, underscoreTy) }
+    | "(" identifier ":" type ")"      { ($2, $4) }
 
 -- Atoms
 atom :: { Expr }
     : identifier                       { Var $1 }
     | literal                          { Lit $1 }
     | parenth_form                     { $1 }
+    | builtin                          { Lit (LitBuiltin $1) }
 
--- Identifiers
 identifier :: { VarName }
     : IDENT                            { let (L.Ident x) = value $1 in VarName x }
     | "_"                              { VarName "_" }
 
--- Literals
-literal :: { Literal }
-    : INTEGER                          { let (L.Int n) = value $1 in LitInt n }
-    | BOOLEAN                          { let (L.Bool p) = value $1 in LitBool p }
+integer :: { Integer }
+    : INTEGER                          { let (L.Int n) = value $1 in n }
 
--- Parenthesized forms
+literal :: { Literal }
+    : integer                          { LitInt $1 }
+    | BOOLEAN                          { let (L.Bool p) = value $1 in LitBool p }
+    | "nil" "?"                        { LitNil underscoreTy }
+    | "nil" atom_type                  { LitNil $2 }
+
 parenth_form :: { Expr }
-    : "(" ")"                                               { makeTuple [] }
+    : "(" ")" atom_type                                     {% makeTuple [] $3 }
     | "(" expression ")"                                    { $2 }
-    | "(" expression "," ")"                                { makeTuple [$2] }
-    | "(" expression "," expression_list ")"                { makeTuple ($2 : $4) }
+    | "(" expression "," ")" atom_type                      {% makeTuple [$2] $5 }
+    | "(" expression "," expression_list ")" atom_type      {% makeTuple ($2 : $4) $6 }
+
+builtin :: { Builtin }
+    : "abs"                            { Abs }
+    | "gcd"                            { Gcd }
+    | "lcm"                            { Lcm }
+    | "iterate" "?"                    { Iterate underscoreTy }
+    | "iterate" atom_type              { Iterate $2 }
+    | "matap" integer integer          { MatAp $2 $3 }
+    | "matzero" integer                { MatZero $2 }
+    | "matone" integer                 { MatOne $2 }
+    | "matadd" integer integer         { MatAdd $2 $3 }
+    | "matmul" integer integer integer { MatMul $2 $3 $4 }
+    | "matpow" integer                 { MatPow $2 }
+    | "vecfloormod" integer            { VecFloorMod $2 }
+    | "matfloormod" integer integer    { MatFloorMod $2 $3 }
+    | "modnegate"                      { ModNegate }
+    | "modplus"                        { ModPlus }
+    | "modminus"                       { ModMinus }
+    | "modmult"                        { ModMult }
+    | "modinv"                         { ModInv }
+    | "modpow"                         { ModPow }
+    | "modmatap" integer integer       { ModMatAp $2 $3 }
+    | "modmatadd" integer integer      { ModMatAdd $2 $3 }
+    | "modmatmul" integer integer integer    { ModMatMul $2 $3 $4 }
+    | "modmatpow" integer              { ModMatPow $2 }
+    | "cons" "?"                       { Cons underscoreTy }
+    | "cons" atom_type                 { Cons $2 }
+    | "snoc" "?"                       { Snoc underscoreTy }
+    | "snoc" atom_type                 { Snoc $2 }
+    | "foldl" "?"                      { Foldl underscoreTy underscoreTy }
+    | "foldl" atom_type atom_type      { Foldl $2 $3 }
+    | "scanl" "?"                      { Scanl underscoreTy underscoreTy }
+    | "scanl" atom_type atom_type      { Scanl $2 $3 }
+    | "build" "?"                      { Build underscoreTy }
+    | "build" atom_type                { Build $2 }
+    | "len" "?"                        { Len underscoreTy }
+    | "len" atom_type                  { Len $2 }
+    | "map" "?"                        { Map underscoreTy underscoreTy }
+    | "map" atom_type atom_type        { Map $2 $3 }
+    | "filter" "?"                     { Filter underscoreTy }
+    | "filter" atom_type               { Filter $2 }
+    | "elem" "?"                       { Elem underscoreTy }
+    | "elem" atom_type                 { Elem $2 }
+    | "sum"                            { Sum }
+    | "product"                        { Product }
+    | "modsum"                         { ModSum }
+    | "modproduct"                     { ModProduct }
+    | "min" "?"                        { Min1 underscoreTy }
+    | "min" atom_type                  { Min1 $2 }
+    | "max" "?"                        { Max1 underscoreTy }
+    | "max" atom_type                  { Max1 $2 }
+    | "argmin" "?"                     { ArgMin underscoreTy }
+    | "argmin" atom_type               { ArgMin $2 }
+    | "argmax" "?"                     { ArgMax underscoreTy }
+    | "argmax" atom_type               { ArgMax $2 }
+    | "all"                            { All }
+    | "any"                            { Any }
+    | "sorted" "?"                     { Sorted underscoreTy }
+    | "sorted" atom_type               { Sorted $2 }
+    | "reversed" "?"                   { Reversed underscoreTy }
+    | "reversed" atom_type             { Reversed $2 }
+    | "range"                          { Range1 }
+    | "range2"                         { Range2 }
+    | "range3"                         { Range3 }
+    | "fact"                           { Fact }
+    | "choose"                         { Choose }
+    | "permute"                        { Permute }
+    | "multichoose"                    { MultiChoose }
+    | "cht_init"                       { ConvexHullTrickInit }
+    | "cht_getmin"                     { ConvexHullTrickGetMin }
+    | "cht_insert"                     { ConvexHullTrickInsert }
+    | "segtree_init" semigroup         { SegmentTreeInitList $2 }
+    | "segtree_getrange" semigroup     { SegmentTreeGetRange $2 }
+    | "segtree_setpoint" semigroup     { SegmentTreeSetPoint $2 }
 
 -- Primaries
 primary :: { Expr }
@@ -216,8 +366,11 @@ primary :: { Expr }
 
 -- Subscriptions
 subscription :: { Expr }
-    : primary "[" expression "]"                            { At' underscoreTy $1 $3 }
-    | primary "[" expression "<-" expression "]"            { SetAt' underscoreTy $1 $3 $5 }
+    : primary "[" expression "]" atom_type                  { At' $5 $1 $3 }
+    | primary "[" expression "]" "?"                        { At' underscoreTy $1 $3 }
+    | primary "[" expression "<-" expression "]" atom_type  { SetAt' $7 $1 $3 $5 }
+    | primary "[" expression "<-" expression "]" "?"        { SetAt' underscoreTy $1 $3 $5 }
+    | primary "." integer atom_type                         {% makeProj $1 $3 $4 }
 
 -- The power operator
 power :: { Expr }
@@ -264,20 +417,20 @@ or_expr :: { Expr }
 -- Min and max operations
 min_expr :: { Expr }
     : or_expr                                               { $1 }
-    | min_expr "<?" or_expr                                 { Min2' underscoreTy $1 $3 }
-    | min_expr ">?" or_expr                                 { Max2' underscoreTy $1 $3 }
+    | min_expr "<?" atom_type or_expr                       { Min2' $3 $1 $4 }
+    | min_expr ">?" atom_type or_expr                       { Max2' $3 $1 $4 }
 
 -- Comparisons
 comparison :: { Expr }
     : min_expr                                              { $1 }
-    | comparison comp_operator min_expr                     { $2 $1 $3 }
-comp_operator :: { Expr -> Expr -> Expr }
-    : "=="                                                  { Equal' underscoreTy }
-    | "/="                                                  { NotEqual' underscoreTy }
-    | "<"                                                   { LessThan' underscoreTy }
-    | ">"                                                   { GreaterThan' underscoreTy }
-    | "<="                                                  { LessEqual' underscoreTy }
-    | ">="                                                  { GreaterEqual' underscoreTy }
+    | comparison comp_operator atom_type min_expr           { $2 $3 $1 $4 }
+comp_operator :: { Type -> Expr -> Expr -> Expr }
+    : "=="                                                  { Equal' }
+    | "/="                                                  { NotEqual' }
+    | "<"                                                   { LessThan' }
+    | ">"                                                   { GreaterThan' }
+    | "<="                                                  { LessEqual' }
+    | ">="                                                  { GreaterEqual' }
 
 -- Boolean operations
 not_test :: { Expr }
@@ -297,7 +450,7 @@ implies_test :: { Expr }
 
 -- Conditional expressions
 conditional_expression :: { Expr }
-    : "if" expression "then" expression "else" expression   { If' underscoreTy $2 $4 $6 }
+    : "if" atom_type expression "then" expression "else" expression   { If' $2 $3 $5 $7 }
 
 -- Lambda
 lambda_expr :: { Expr }
@@ -326,15 +479,20 @@ expression_list :: { [Expr] }
 underscoreTy :: Type
 underscoreTy = VarTy (TypeName "_")
 
-makeTuple :: [Expr] -> Expr
-makeTuple es =
-    let ts = replicate (length es) underscoreTy
-    in uncurryApp (Tuple' ts) es
+makeTuple :: MonadError Error m => [Expr] -> Type -> m Expr
+makeTuple es t = case t of
+    TupleTy ts | length ts == length es -> return $ uncurryApp (Tuple' ts) es
+    _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for tuple"
+
+makeProj :: MonadError Error m => Expr -> Integer -> Type -> m Expr
+makeProj e n t = case t of
+    TupleTy ts -> return $ Proj' ts n e
+    _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for proj"
 
 replaceUnderscores :: MonadAlpha m => Type -> m Type
 replaceUnderscores = mapSubTypesM go where
   go = \case
-    VarTy (TypeName "_") ->genType
+    VarTy (TypeName "_") -> genType
     t -> return t
 
 happyErrorExpList :: MonadError Error m => ([WithLoc L.Token], [String]) -> m a
@@ -355,6 +513,14 @@ happyErrorExpList (tokens, expected) = throwSyntaxErrorAt' loc' msg where
     wrap :: String -> String
     wrap ('\'' : s) = '`' : s
     wrap s = "`" ++ s ++ "'"
+
+runRule :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m (String, [(VarName, Type)], Expr, Expr)
+runRule tokens = wrapError' "Jikka.Core.Parse.Happy.runRule" $ do
+    (name, args, e1, e2) <- liftEither $ runRule_ tokens
+    args <- mapM (\(x, t) -> (x,) <$> mapSubTypesM replaceUnderscores t) args
+    e1 <- mapTypeExprM replaceUnderscores e1
+    e2 <- mapTypeExprM replaceUnderscores e2
+    return (name, args, e1, e2)
 
 runType :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Type
 runType tokens = wrapError' "Jikka.Core.Parse.Happy.runType" $ do
