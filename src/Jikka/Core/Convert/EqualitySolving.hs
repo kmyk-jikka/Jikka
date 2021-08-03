@@ -27,12 +27,6 @@ import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 
--- |
--- == List of functions which are reduced
---
--- === Basic arithmetical functions
---
--- * `Equal` \(: \int \to \int\)
 rule :: Monad m => RewriteRule m
 rule = simpleRewriteRule $ \case
   -- reduce identity
