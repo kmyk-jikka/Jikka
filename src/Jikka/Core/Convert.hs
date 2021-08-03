@@ -28,6 +28,7 @@ import qualified Jikka.Core.Convert.ConstantFolding as ConstantFolding
 import qualified Jikka.Core.Convert.ConstantPropagation as ConstantPropagation
 import qualified Jikka.Core.Convert.ConvexHullTrick as ConvexHullTrick
 import qualified Jikka.Core.Convert.CumulativeSum as CumulativeSum
+import qualified Jikka.Core.Convert.EqualitySolving as EqualitySolving
 import qualified Jikka.Core.Convert.Eta as Eta
 import qualified Jikka.Core.Convert.KubaruToMorau as KubaruToMorau
 import qualified Jikka.Core.Convert.MakeScanl as MakeScanl
@@ -53,6 +54,7 @@ run'' prog = do
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
   prog <- ConstantFolding.run prog
+  prog <- EqualitySolving.run prog
   prog <- ShortCutFusion.run prog
   prog <- CloseSum.run prog
   prog <- CloseAll.run prog
