@@ -50,8 +50,8 @@ For users:
 - [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
   - [docs/language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) (Japanese translation)
   - The language specification of our restricted Python / Jikka で使われる制限された Python の言語仕様
-- [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
-  - [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md) (Japanese translation)
+- [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/optimization.md)
+  - [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/optimization.ja.md) (Japanese translation)
   - A list of optimizations which Jikka does / Jikka が行なってくれる最適化の一覧
 - [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
   - [gallery](https://kmyk.github.io/Jikka/gallery)
