@@ -38,7 +38,6 @@ import Jikka.Core.Format (formatExpr)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
-import Jikka.Core.Language.LambdaPatterns
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
@@ -70,15 +69,11 @@ reduceMapBuild =
 
 reduceMap :: Monad m => RewriteRule m
 reduceMap =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- reduce `Map`
-        Map' _ _ (LamId _) xs -> return' xs
-        -- reduce `Filter`
-        Filter' t (Lam _ _ LitFalse) _ -> return' (Nil' t)
-        Filter' _ (Lam _ _ LitTrue) xs -> return' xs
-        -- others
-        _ -> return Nothing
+  mconcat
+    [ [r| "map/id" forall xs. map (fun x -> x) xs = xs |],
+      [r| "filter/const-false" forall xs. filter (fun _ -> false) xs = nil |],
+      [r| "filter/const-true" forall xs. filter (fun _ -> true) xs = xs |]
+    ]
 
 -- |
 -- * Functions are reordered as:
@@ -87,57 +82,36 @@ reduceMap =
 --   * `Filter` (funcitons to reduce lengths) is firstly applied to lists
 reduceMapMap :: MonadAlpha m => RewriteRule m
 reduceMapMap =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- reduce `Map`
-        Map' _ _ (LamId _) xs -> return' xs
-        Map' _ t3 g (Map' t1 _ f xs) -> do
-          x <- genVarName'
-          let h = Lam x t1 (App g (App f (Var x)))
-          return' $ Map' t1 t3 h xs
-        Map' t1 t2 f (Reversed' _ xs) -> return' $ Reversed' t2 (Map' t1 t2 f xs)
-        -- reduce `Filter`
-        Filter' t2 g (Map' t1 _ f xs) -> do
-          x <- genVarName'
-          let h = Lam x t1 (App g (App f (Var x)))
-          return' $ Map' t1 t2 f (Filter' t1 h xs)
-        Filter' t g (Filter' _ f xs) -> do
-          x <- genVarName'
-          let h = Lam x t (And' (App g (Var x)) (App f (Var x)))
-          return' $ Filter' t h xs
-        Filter' t f (Sorted' _ xs) -> return' $ Sorted' t (Filter' t f xs)
-        Filter' t f (Reversed' _ xs) -> return' $ Reversed' t (Filter' t f xs)
-        -- reduce `Reversed`
-        Reversed' _ (Reversed' _ xs) -> return' xs
-        Reversed' _ (Map' t1 t2 f xs) -> return' $ Map' t1 t2 f (Reversed' t1 xs)
-        -- reduce `Sorted`
-        Sorted' t (Reversed' _ xs) -> return' $ Sorted' t xs
-        Sorted' t (Sorted' _ xs) -> return' $ Sorted' t xs
-        _ -> return Nothing
+  mconcat
+    [ [r| "map/map" forall f g xs. map g (map f xs) = map (fun x -> g (f x)) xs |],
+      [r| "map/reversed" forall f xs. map f (reversed xs) = reversed (map f xs) |],
+      [r| "filter/filter" forall f g xs. filter g (filter f xs) = filter (fun x -> f x and g x) xs |],
+      [r| "filter/sorted" forall f xs. filter f (sorted xs) = sorted (filter f xs) |],
+      [r| "filter/reversed" forall f xs. filter f (reversed xs) = reversed (filter f xs) |],
+      [r| "reversed/reversed" forall xs. reversed (reversed xs) = xs |],
+      [r| "sorted/reversed" forall xs. sorted (reversed xs) = sorted xs |],
+      [r| "sorted/sorted" forall xs. sorted (sorted xs) = sorted xs |]
+    ]
 
 reduceFoldMap :: MonadAlpha m => RewriteRule m
 reduceFoldMap =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- reduce `Reversed`
-        Len' t (Reversed' _ xs) -> return' $ Len' t xs
-        Elem' t x (Reversed' _ xs) -> return' $ Elem' t x xs
-        At' t (Reversed' _ xs) i -> return' $ At' t xs (Minus' (Minus' (Len' t xs) i) Lit1)
-        -- reduce `Sorted`
-        Len' t (Sorted' _ xs) -> return' $ Len' t xs
-        Elem' t x (Sorted' _ xs) -> return' $ Elem' t x xs
-        -- reduce `Map`
-        Len' _ (Map' t1 _ _ xs) -> return' $ Len' t1 xs
-        At' _ (Map' t1 _ f xs) i -> return' $ App f (At' t1 xs i)
-        Foldl' _ t3 g init (Map' t1 _ f xs) -> do
-          x3 <- genVarName'
-          x1 <- genVarName'
-          return' $ Foldl' t1 t3 (Lam2 x3 t3 x1 t1 (App2 g (Var x3) (App f (Var x1)))) init xs
-        -- others
-        Len' t (SetAt' _ xs _ _) -> return' $ Len' t xs
-        Len' t (Scanl' _ _ _ _ xs) -> return' $ Plus' (Len' t xs) (LitInt' 1)
-        At' t (SetAt' _ xs i' x) i -> return' $ If' t (Equal' IntTy i' i) x (At' t xs i)
-        _ -> return Nothing
+  mconcat
+    [ -- reduce `Reversed`
+      [r| "len/reversed" forall xs. len (reversed xs) = len xs |],
+      [r| "elem/reversed" forall x xs. elem x (reversed xs) = elem x xs |],
+      [r| "at/reversed" forall xs i. (reversed xs)[i] = xs[len(xs) - i - 1] |],
+      -- reduce `Sorted`
+      [r| "len/sorted" forall xs. len (sorted xs) = len xs |],
+      [r| "elem/sorted" forall x xs. elem x (sorted xs) = elem x xs |],
+      -- reduce `Map`
+      [r| "len/map" forall f xs. len (map f xs) = len xs |],
+      [r| "at/map" forall f xs i. (map f xs)[i] = f xs[i] |],
+      [r| "foldl/map" forall g init f xs. foldl g init (map f xs) = foldl (fun y x -> g y (f x)) init xs|],
+      -- others
+      [r| "len/setat" forall xs i x. len xs[i <- x] = len xs |],
+      [r| "len/scanl" forall f init xs. len (scanl f init xs) = len xs + 1 |],
+      [r| "at/setat" forall xs i x j. xs[i <- x][j] = if i == j then x else xs[j] |]
+    ]
 
 reduceFold :: Monad m => RewriteRule m
 reduceFold = simpleRewriteRule $ \case
@@ -146,26 +120,27 @@ reduceFold = simpleRewriteRule $ \case
 
 reduceFoldBuild :: MonadAlpha m => RewriteRule m
 reduceFoldBuild =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- reduce `Foldl`
-        Foldl' _ _ _ init (Nil' _) -> return' init
-        Foldl' t1 t2 g init (Cons' _ x xs) -> return' $ Foldl' t1 t2 g (App2 g init x) xs
-        -- reduce `Len`
-        Len' _ (Nil' _) -> return' Lit0
-        Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)
-        Len' _ (Range1' n) -> return' n
-        -- reduce `At`
-        At' t (Nil' _) i -> return' $ Bottom' t $ "cannot subscript empty list: index = " ++ formatExpr i
-        At' t (Cons' _ x xs) i -> return' $ If' t (Equal' IntTy i Lit0) x (At' t xs (Minus' i Lit1))
-        At' _ (Range1' _) i -> return' i
-        -- reduce `Elem`
-        Elem' _ _ (Nil' _) -> return' LitFalse
-        Elem' t y (Cons' _ x xs) -> return' $ And' (Equal' t x y) (Elem' t y xs)
-        Elem' _ x (Range1' n) -> return' $ And' (LessEqual' IntTy Lit0 x) (LessThan' IntTy x n)
-        -- others
-        Len' t (Build' _ _ base n) -> return' $ Plus' (Len' t base) n
-        _ -> return Nothing
+  mconcat
+    [ -- reduce `Foldl`
+      [r| "foldl/nil" forall f init. foldl f init nil = init |],
+      [r| "foldl/cons" forall f init x xs. foldl f init (cons x xs) = foldl f (f init x) xs |],
+      -- reduce `Len`
+      [r| "len/nil" len nil = 0 |],
+      [r| "len/cons" forall x xs. len (cons x xs) = 1 + len xs |],
+      [r| "len/range" forall n. len (range n) = n |],
+      -- reduce `At`
+      simpleRewriteRule $ \case
+        At' t (Nil' _) i -> Just $ Bottom' t $ "cannot subscript empty list: index = " ++ formatExpr i
+        _ -> Nothing,
+      [r| "at/cons" forall x xs i. (cons x xs)[i] = if i == 0 then x else xs[i - 1] |],
+      [r| "at/range" forall n i. (range n)[i] = i |],
+      -- reduce `Elem`
+      [r| "elem/nil" forall y. elem y nil = false |],
+      [r| "elem/cons" forall y x xs. elem y (cons x xs) = y == x or elem y xs |],
+      [r| "elem/range" forall i n. elem i (range n) = 0 <= i and i < n |],
+      -- others
+      [r| "len/build" forall f base n. len (build f base n) = len base + n |]
+    ]
 
 rule :: MonadAlpha m => RewriteRule m
 rule =
