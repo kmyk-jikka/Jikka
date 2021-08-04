@@ -122,7 +122,7 @@ multSumExpr e1 e2 =
     { sumExprList =
         let es1 = parseProductExpr (LitInt' (sumExprConst e1)) : sumExprList e1
             es2 = parseProductExpr (LitInt' (sumExprConst e2)) : sumExprList e2
-         in map (uncurry multProductExpr) ((,) <$> es1 <*> es2),
+         in tail $ map (uncurry multProductExpr) ((,) <$> es1 <*> es2),
       sumExprConst = sumExprConst e1 * sumExprConst e2
     }
 
