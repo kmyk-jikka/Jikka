@@ -53,13 +53,13 @@ formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
 formularizeVarName :: MonadWriter Eqns m => VarName -> Type -> m ()
 formularizeVarName x t = tell $ Dual [TypeAssertion x t]
 
-formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
+formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> m Type
 formularizeExpr = \case
   Var x -> do
     t <- genType
     formularizeVarName x t
     return t
-  Lit lit -> return $ literalToType lit
+  Lit lit -> literalToType lit
   App f e -> do
     ret <- genType
     t <- formularizeExpr e
@@ -74,12 +74,12 @@ formularizeExpr = \case
     formularizeExpr' e1 t
     formularizeExpr e2
 
-formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> Type -> m ()
+formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> Type -> m ()
 formularizeExpr' e t = do
   t' <- formularizeExpr e
   formularizeType t t'
 
-formularizeToplevelExpr :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelExpr -> m Type
+formularizeToplevelExpr :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => ToplevelExpr -> m Type
 formularizeToplevelExpr = \case
   ResultExpr e -> formularizeExpr e
   ToplevelLet x t e cont -> do
@@ -92,7 +92,7 @@ formularizeToplevelExpr = \case
     formularizeExpr' body ret
     formularizeToplevelExpr cont
 
-formularizeProgram :: MonadAlpha m => Program -> m [Equation]
+formularizeProgram :: (MonadAlpha m, MonadError Error m) => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (formularizeToplevelExpr prog)
 
 sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])

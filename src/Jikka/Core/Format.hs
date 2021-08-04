@@ -135,123 +135,117 @@ formatSemigroup = \case
   SemigroupIntMax -> "int.max"
 
 data Builtin'
-  = Fun [Type] String
-  | PrefixOp [Type] String
-  | InfixOp [Type] String Prec Assoc
-  | At' Type
-  | SetAt' Type
-  | Tuple' [Type]
-  | Proj' [Type] Integer
-  | If' Type
+  = Fun String
+  | PrefixOp String
+  | InfixOp String Prec Assoc
+  | At'
+  | SetAt'
+  | Tuple'
+  | Proj' Integer
+  | If'
   deriving (Eq, Ord, Show, Read)
-
-fun :: String -> Builtin'
-fun = Fun []
-
-infixOp :: String -> Prec -> Assoc -> Builtin'
-infixOp = InfixOp []
 
 analyzeBuiltin :: Builtin -> Builtin'
 analyzeBuiltin = \case
   -- arithmetical functions
-  Negate -> PrefixOp [] "-"
-  Plus -> infixOp "+" addPrec LeftToRight
-  Minus -> infixOp "-" addPrec LeftToRight
-  Mult -> infixOp "*" multPrec LeftToRight
-  FloorDiv -> infixOp "/" multPrec LeftToRight
-  FloorMod -> infixOp "%" multPrec LeftToRight
-  CeilDiv -> infixOp "/^" multPrec LeftToRight
-  CeilMod -> infixOp "%^" multPrec LeftToRight
-  Pow -> infixOp "**" powerPrec RightToLeft
+  Negate -> PrefixOp "-"
+  Plus -> InfixOp "+" addPrec LeftToRight
+  Minus -> InfixOp "-" addPrec LeftToRight
+  Mult -> InfixOp "*" multPrec LeftToRight
+  FloorDiv -> InfixOp "/" multPrec LeftToRight
+  FloorMod -> InfixOp "%" multPrec LeftToRight
+  CeilDiv -> InfixOp "/^" multPrec LeftToRight
+  CeilMod -> InfixOp "%^" multPrec LeftToRight
+  Pow -> InfixOp "**" powerPrec RightToLeft
   -- advanced arithmetical functions
-  Abs -> fun "abs"
-  Gcd -> fun "gcd"
-  Lcm -> fun "lcm"
-  Min2 t -> InfixOp [t] "<?" appendPrec LeftToRight
-  Max2 t -> InfixOp [t] ">?" appendPrec LeftToRight
+  Abs -> Fun "abs"
+  Gcd -> Fun "gcd"
+  Lcm -> Fun "lcm"
+  Min2 -> InfixOp "<?" appendPrec LeftToRight
+  Max2 -> InfixOp ">?" appendPrec LeftToRight
   -- logical functions
-  Not -> PrefixOp [] "not"
-  And -> infixOp "and" andPrec RightToLeft
-  Or -> infixOp "or" orPrec RightToLeft
-  Implies -> infixOp "implies" impliesPrec RightToLeft
-  If t -> If' t
+  Not -> PrefixOp "not"
+  And -> InfixOp "and" andPrec RightToLeft
+  Or -> InfixOp "or" orPrec RightToLeft
+  Implies -> InfixOp "implies" impliesPrec RightToLeft
+  If -> If'
   -- bitwise functions
-  BitNot -> PrefixOp [] "~"
-  BitAnd -> infixOp "&" multPrec LeftToRight
-  BitOr -> infixOp "|" appendPrec LeftToRight
-  BitXor -> infixOp "^" addPrec LeftToRight
-  BitLeftShift -> infixOp "<<" powerPrec LeftToRight
-  BitRightShift -> infixOp ">>" powerPrec LeftToRight
+  BitNot -> PrefixOp "~"
+  BitAnd -> InfixOp "&" multPrec LeftToRight
+  BitOr -> InfixOp "|" appendPrec LeftToRight
+  BitXor -> InfixOp "^" addPrec LeftToRight
+  BitLeftShift -> InfixOp "<<" powerPrec LeftToRight
+  BitRightShift -> InfixOp ">>" powerPrec LeftToRight
   -- matrix functions
-  MatAp _ _ -> fun "matap"
-  MatZero _ -> fun "matzero"
-  MatOne _ -> fun "matone"
-  MatAdd _ _ -> fun "matadd"
-  MatMul _ _ _ -> fun "matmul"
-  MatPow _ -> fun "matpow"
-  VecFloorMod _ -> fun "vecfloormod"
-  MatFloorMod _ _ -> fun "matfloormod"
+  MatAp _ _ -> Fun "matap"
+  MatZero _ -> Fun "matzero"
+  MatOne _ -> Fun "matone"
+  MatAdd _ _ -> Fun "matadd"
+  MatMul _ _ _ -> Fun "matmul"
+  MatPow _ -> Fun "matpow"
+  VecFloorMod _ -> Fun "vecfloormod"
+  MatFloorMod _ _ -> Fun "matfloormod"
   -- modular functions
-  ModNegate -> fun "modnegate"
-  ModPlus -> fun "modplus"
-  ModMinus -> fun "modminus"
-  ModMult -> fun "modmult"
-  ModInv -> fun "modinv"
-  ModPow -> fun "modpow"
-  ModMatAp _ _ -> fun "modmatap"
-  ModMatAdd _ _ -> fun "modmatadd"
-  ModMatMul _ _ _ -> fun "modmatmul"
-  ModMatPow _ -> fun "modmatpow"
+  ModNegate -> Fun "modnegate"
+  ModPlus -> Fun "modplus"
+  ModMinus -> Fun "modminus"
+  ModMult -> Fun "modmult"
+  ModInv -> Fun "modinv"
+  ModPow -> Fun "modpow"
+  ModMatAp _ _ -> Fun "modmatap"
+  ModMatAdd _ _ -> Fun "modmatadd"
+  ModMatMul _ _ _ -> Fun "modmatmul"
+  ModMatPow _ -> Fun "modmatpow"
   -- list functions
-  Cons t -> Fun [t] "cons"
-  Snoc t -> Fun [t] "snoc"
-  Foldl t1 t2 -> Fun [t1, t2] "foldl"
-  Scanl t1 t2 -> Fun [t1, t2] "scanl"
-  Build t -> Fun [t] "build"
-  Iterate t -> Fun [t] "iterate"
-  Len t -> Fun [t] "len"
-  Map t1 t2 -> Fun [t1, t2] "map"
-  Filter t -> Fun [t] "filter"
-  At t -> At' t
-  SetAt t -> SetAt' t
-  Elem t -> Fun [t] "elem"
-  Sum -> fun "sum"
-  Product -> fun "product"
-  ModSum -> fun "modsum"
-  ModProduct -> fun "modproduct"
-  Min1 t -> Fun [t] "min"
-  Max1 t -> Fun [t] "max"
-  ArgMin t -> Fun [t] "argmin"
-  ArgMax t -> Fun [t] "argmax"
-  All -> fun "all"
-  Any -> fun "any"
-  Sorted t -> Fun [t] "sort"
-  Reversed t -> Fun [t] "reverse"
-  Range1 -> fun "range"
-  Range2 -> fun "range2"
-  Range3 -> fun "range3"
+  Cons -> Fun "cons"
+  Snoc -> Fun "snoc"
+  Foldl -> Fun "foldl"
+  Scanl -> Fun "scanl"
+  Build -> Fun "build"
+  Iterate -> Fun "iterate"
+  Len -> Fun "len"
+  Map -> Fun "map"
+  Filter -> Fun "filter"
+  At -> At'
+  SetAt -> SetAt'
+  Elem -> Fun "elem"
+  Sum -> Fun "sum"
+  Product -> Fun "product"
+  ModSum -> Fun "modsum"
+  ModProduct -> Fun "modproduct"
+  Min1 -> Fun "min"
+  Max1 -> Fun "max"
+  ArgMin -> Fun "argmin"
+  ArgMax -> Fun "argmax"
+  All -> Fun "all"
+  Any -> Fun "any"
+  Sorted -> Fun "sort"
+  Reversed -> Fun "reverse"
+  Range1 -> Fun "range"
+  Range2 -> Fun "range2"
+  Range3 -> Fun "range3"
   -- tuple functions
-  Tuple ts -> Tuple' ts
-  Proj ts n -> Proj' ts (toInteger n)
+  Tuple -> Tuple'
+  Proj n -> Proj' n
   -- comparison
-  LessThan t -> InfixOp [t] "<" comparePrec NoAssoc
-  LessEqual t -> InfixOp [t] "<=" comparePrec NoAssoc
-  GreaterThan t -> InfixOp [t] ">" comparePrec NoAssoc
-  GreaterEqual t -> InfixOp [t] ">=" comparePrec NoAssoc
-  Equal t -> InfixOp [t] "==" comparePrec NoAssoc
-  NotEqual t -> InfixOp [t] "!=" comparePrec NoAssoc
+  LessThan -> InfixOp "<" comparePrec NoAssoc
+  LessEqual -> InfixOp "<=" comparePrec NoAssoc
+  GreaterThan -> InfixOp ">" comparePrec NoAssoc
+  GreaterEqual -> InfixOp ">=" comparePrec NoAssoc
+  Equal -> InfixOp "==" comparePrec NoAssoc
+  NotEqual -> InfixOp "!=" comparePrec NoAssoc
   -- combinational functions
-  Fact -> fun "fact"
-  Choose -> fun "choose"
-  Permute -> fun "permute"
-  MultiChoose -> fun "multichoose"
+  Fact -> Fun "fact"
+  Choose -> Fun "choose"
+  Permute -> Fun "permute"
+  MultiChoose -> Fun "multichoose"
   -- data structures
-  ConvexHullTrickInit -> fun "cht.init"
-  ConvexHullTrickGetMin -> fun "cht.getmin"
-  ConvexHullTrickInsert -> fun "cht.insert"
-  SegmentTreeInitList _ -> fun "segtree.initlist"
-  SegmentTreeGetRange _ -> fun "segtree.getrange"
-  SegmentTreeSetPoint _ -> fun "segtree.setpoint"
+  ConvexHullTrickInit -> Fun "cht.init"
+  ConvexHullTrickGetMin -> Fun "cht.getmin"
+  ConvexHullTrickInsert -> Fun "cht.insert"
+  SegmentTreeInitList _ -> Fun "segtree.initlist"
+  SegmentTreeGetRange _ -> Fun "segtree.getrange"
+  SegmentTreeSetPoint _ -> Fun "segtree.setpoint"
 
 formatTemplate :: [Type] -> String
 formatTemplate = \case
@@ -263,40 +257,40 @@ formatFunCall f = \case
   [] -> f
   args -> (resolvePrec funCallPrec f ++ "(" ++ intercalate ", " (map (resolvePrec commaPrec . formatExpr') args) ++ ")", funCallPrec)
 
-formatBuiltinIsolated' :: Builtin' -> String
-formatBuiltinIsolated' = \case
-  Fun ts name -> name ++ formatTemplate ts
-  PrefixOp ts op -> paren $ op ++ formatTemplate ts
-  InfixOp ts op _ _ -> paren $ op ++ formatTemplate ts
-  At' t -> paren $ "at" ++ formatTemplate [t]
-  SetAt' t -> paren $ "set-at" ++ formatTemplate [t]
-  Tuple' ts -> paren $ "tuple" ++ formatTemplate ts
-  Proj' ts n -> paren $ "proj-" ++ show n ++ formatTemplate ts
-  If' t -> paren $ "if-then-else" ++ formatTemplate [t]
+formatBuiltinIsolated' :: Builtin' -> [Type] -> String
+formatBuiltinIsolated' builtin ts = case builtin of
+  Fun name -> name ++ formatTemplate ts
+  PrefixOp op -> paren $ op ++ formatTemplate ts
+  InfixOp op _ _ -> paren $ op ++ formatTemplate ts
+  At' -> paren $ "at" ++ formatTemplate ts
+  SetAt' -> paren $ "set-at" ++ formatTemplate ts
+  Tuple' -> paren $ "tuple" ++ formatTemplate ts
+  Proj' n -> paren $ "proj-" ++ show n ++ formatTemplate ts
+  If' -> paren $ "if-then-else" ++ formatTemplate ts
 
-formatBuiltinIsolated :: Builtin -> String
-formatBuiltinIsolated = formatBuiltinIsolated' . analyzeBuiltin
+formatBuiltinIsolated :: Builtin -> [Type] -> String
+formatBuiltinIsolated builtin ts = formatBuiltinIsolated' (analyzeBuiltin builtin) ts
 
-formatBuiltin' :: Builtin' -> [Expr] -> (String, Prec)
-formatBuiltin' builtin args = case (builtin, args) of
-  (Fun _ "map", [Lam x IntTy e, Range1' n]) | x `isUnusedVar` e -> formatFunCall ("replicate", identPrec) [n, e]
-  (Fun _ name, _) -> formatFunCall (name, identPrec) args
-  (PrefixOp _ op, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
-  (InfixOp _ op prec assoc, e1 : e2 : args) -> formatFunCall (resolvePrecLeft prec assoc (formatExpr' e1) ++ " " ++ op ++ " " ++ resolvePrecRight prec assoc (formatExpr' e2), prec) args
-  (At' _, e1 : e2 : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e1) ++ "[" ++ resolvePrec parenPrec (formatExpr' e2) ++ "]", identPrec) args
-  (SetAt' _, e1 : e2 : e3 : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e1) ++ "[" ++ resolvePrec parenPrec (formatExpr' e2) ++ " := " ++ resolvePrec parenPrec (formatExpr' e3) ++ "]", identPrec) args
-  (Tuple' [_], e : args) -> formatFunCall (paren (resolvePrec commaPrec (formatExpr' e) ++ ","), identPrec) args
-  (Tuple' ts, args) | length args >= length ts -> formatFunCall (paren (intercalate ", " (map (resolvePrec commaPrec . formatExpr') (take (length ts) args))), identPrec) (drop (length ts) args)
-  (Proj' _ n, e : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e) ++ "." ++ show n, identPrec) args
-  (If' _, e1 : e2 : e3 : args) -> formatFunCall ("if" ++ " " ++ resolvePrec parenPrec (formatExpr' e1) ++ " then " ++ resolvePrec parenPrec (formatExpr' e2) ++ " else " ++ resolvePrec lambdaPrec (formatExpr' e3), lambdaPrec) args
-  _ -> formatFunCall (formatBuiltinIsolated' builtin, identPrec) args
+formatBuiltin' :: Builtin' -> [Type] -> [Expr] -> (String, Prec)
+formatBuiltin' builtin ts args = case (builtin, ts, args) of
+  (Fun "map", _, [Lam x IntTy e, Range1' n]) | x `isUnusedVar` e -> formatFunCall ("replicate", identPrec) [n, e]
+  (Fun name, _, _) -> formatFunCall (name, identPrec) args
+  (PrefixOp op, _, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
+  (InfixOp op prec assoc, _, e1 : e2 : args) -> formatFunCall (resolvePrecLeft prec assoc (formatExpr' e1) ++ " " ++ op ++ " " ++ resolvePrecRight prec assoc (formatExpr' e2), prec) args
+  (At', _, e1 : e2 : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e1) ++ "[" ++ resolvePrec parenPrec (formatExpr' e2) ++ "]", identPrec) args
+  (SetAt', _, e1 : e2 : e3 : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e1) ++ "[" ++ resolvePrec parenPrec (formatExpr' e2) ++ " := " ++ resolvePrec parenPrec (formatExpr' e3) ++ "]", identPrec) args
+  (Tuple', [_], e : args) -> formatFunCall (paren (resolvePrec commaPrec (formatExpr' e) ++ ","), identPrec) args
+  (Tuple', _, args) | length args >= length ts -> formatFunCall (paren (intercalate ", " (map (resolvePrec commaPrec . formatExpr') (take (length ts) args))), identPrec) (drop (length ts) args)
+  (Proj' n, _, e : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e) ++ "." ++ show n, identPrec) args
+  (If', _, e1 : e2 : e3 : args) -> formatFunCall ("if" ++ " " ++ resolvePrec parenPrec (formatExpr' e1) ++ " then " ++ resolvePrec parenPrec (formatExpr' e2) ++ " else " ++ resolvePrec lambdaPrec (formatExpr' e3), lambdaPrec) args
+  _ -> formatFunCall (formatBuiltinIsolated' builtin ts, identPrec) args
 
-formatBuiltin :: Builtin -> [Expr] -> String
-formatBuiltin f args = resolvePrec parenPrec (formatBuiltin' (analyzeBuiltin f) args)
+formatBuiltin :: Builtin -> [Type] -> [Expr] -> String
+formatBuiltin f ts args = resolvePrec parenPrec (formatBuiltin' (analyzeBuiltin f) ts args)
 
 formatLiteral :: Literal -> String
 formatLiteral = \case
-  LitBuiltin builtin -> formatBuiltinIsolated builtin
+  LitBuiltin builtin ts -> formatBuiltinIsolated builtin ts
   LitInt n -> show n
   LitBool p -> map toLower $ show p
   LitNil t -> "nil" ++ formatTemplate [t]
@@ -313,7 +307,7 @@ formatExpr' = \case
     let (f, args) = curryApp e
      in case f of
           Var x -> formatFunCall (unVarName x, identPrec) args
-          Lit (LitBuiltin builtin) -> (formatBuiltin builtin args, identPrec)
+          Lit (LitBuiltin builtin ts) -> (formatBuiltin builtin ts args, identPrec)
           _ -> formatFunCall (formatExpr' f) args
   LamId _ -> ("id", identPrec)
   LamConst _ e -> formatFunCall ("const", identPrec) [e]

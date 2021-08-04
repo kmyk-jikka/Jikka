@@ -42,111 +42,9 @@ mapSubTypesM f = go
       FunTy t1 t2 -> f =<< (FunTy <$> f t1 <*> f t2)
       DataStructureTy ds -> f $ DataStructureTy ds
 
-mapTypeBuiltinM :: Monad m => (Type -> m Type) -> Builtin -> m Builtin
-mapTypeBuiltinM f = \case
-  -- arithmetical functions
-  Negate -> return Negate
-  Plus -> return Plus
-  Minus -> return Minus
-  Mult -> return Mult
-  FloorDiv -> return FloorDiv
-  FloorMod -> return FloorMod
-  CeilDiv -> return CeilDiv
-  CeilMod -> return CeilMod
-  Pow -> return Pow
-  -- advanced arithmetical functions
-  Abs -> return Abs
-  Gcd -> return Gcd
-  Lcm -> return Lcm
-  Min2 t -> Min2 <$> f t
-  Max2 t -> Max2 <$> f t
-  Iterate t -> Iterate <$> f t
-  -- logical functionslogical
-  Not -> return Not
-  And -> return And
-  Or -> return Or
-  Implies -> return Implies
-  If t -> If <$> f t
-  -- bitwise functionsbitwise
-  BitNot -> return BitNot
-  BitAnd -> return BitAnd
-  BitOr -> return BitOr
-  BitXor -> return BitXor
-  BitLeftShift -> return BitLeftShift
-  BitRightShift -> return BitRightShift
-  -- matrix functions
-  MatAp h w -> return $ MatAp h w
-  MatZero n -> return $ MatZero n
-  MatOne n -> return $ MatOne n
-  MatAdd h w -> return $ MatAdd h w
-  MatMul h n w -> return $ MatMul h n w
-  MatPow n -> return $ MatPow n
-  VecFloorMod n -> return $ VecFloorMod n
-  MatFloorMod h w -> return $ MatFloorMod h w
-  -- modular functionsmodular
-  ModNegate -> return ModNegate
-  ModPlus -> return ModPlus
-  ModMinus -> return ModMinus
-  ModMult -> return ModMult
-  ModInv -> return ModInv
-  ModPow -> return ModPow
-  ModMatAp h w -> return $ ModMatAp h w
-  ModMatAdd h w -> return $ ModMatAdd h w
-  ModMatMul h n w -> return $ ModMatMul h n w
-  ModMatPow n -> return $ ModMatPow n
-  -- list functionslist
-  Cons t -> Cons <$> f t
-  Snoc t -> Snoc <$> f t
-  Foldl t1 t2 -> Foldl <$> f t1 <*> f t2
-  Scanl t1 t2 -> Scanl <$> f t1 <*> f t2
-  Build t -> Build <$> f t
-  Len t -> Len <$> f t
-  Map t1 t2 -> Map <$> f t1 <*> f t2
-  Filter t -> Filter <$> f t
-  At t -> At <$> f t
-  SetAt t -> SetAt <$> f t
-  Elem t -> Elem <$> f t
-  Sum -> return Sum
-  Product -> return Product
-  ModSum -> return ModSum
-  ModProduct -> return ModProduct
-  Min1 t -> Min1 <$> f t
-  Max1 t -> Max1 <$> f t
-  ArgMin t -> ArgMin <$> f t
-  ArgMax t -> ArgMax <$> f t
-  All -> return All
-  Any -> return Any
-  Sorted t -> Sorted <$> f t
-  Reversed t -> Reversed <$> f t
-  Range1 -> return Range1
-  Range2 -> return Range2
-  Range3 -> return Range3
-  -- tuple functions
-  Tuple ts -> Tuple <$> mapM f ts
-  Proj ts n -> Proj <$> mapM f ts <*> pure n
-  -- comparison
-  LessThan t -> LessThan <$> f t
-  LessEqual t -> LessEqual <$> f t
-  GreaterThan t -> GreaterThan <$> f t
-  GreaterEqual t -> GreaterEqual <$> f t
-  Equal t -> Equal <$> f t
-  NotEqual t -> NotEqual <$> f t
-  -- combinational functions
-  Fact -> return Fact
-  Choose -> return Choose
-  Permute -> return Permute
-  MultiChoose -> return MultiChoose
-  -- data structures
-  ConvexHullTrickInit -> return ConvexHullTrickInit
-  ConvexHullTrickInsert -> return ConvexHullTrickInsert
-  ConvexHullTrickGetMin -> return ConvexHullTrickGetMin
-  SegmentTreeInitList semigrp -> return $ SegmentTreeInitList semigrp
-  SegmentTreeGetRange semigrp -> return $ SegmentTreeGetRange semigrp
-  SegmentTreeSetPoint semigrp -> return $ SegmentTreeSetPoint semigrp
-
 mapTypeLiteralM :: Monad m => (Type -> m Type) -> Literal -> m Literal
 mapTypeLiteralM f = \case
-  LitBuiltin builtin -> LitBuiltin <$> mapTypeBuiltinM f builtin
+  LitBuiltin builtin ts -> LitBuiltin builtin <$> mapM f ts
   LitInt n -> return $ LitInt n
   LitBool p -> return $ LitBool p
   LitNil t -> LitNil <$> f t
@@ -290,15 +188,15 @@ isConstantTimeBuiltin = \case
   Abs -> True
   Gcd -> True
   Lcm -> True
-  Min2 _ -> True
-  Max2 _ -> True
-  Iterate _ -> False
+  Min2 -> True
+  Max2 -> True
+  Iterate -> False
   -- logical functions
   Not -> True
   And -> True
   Or -> True
   Implies -> True
-  If _ -> True
+  If -> True
   -- bitwise functions
   BitNot -> True
   BitAnd -> True
@@ -327,42 +225,42 @@ isConstantTimeBuiltin = \case
   ModMatMul _ _ _ -> True
   ModMatPow _ -> True
   -- list functions
-  Cons _ -> False
-  Snoc _ -> False
-  Foldl _ _ -> False
-  Scanl _ _ -> False
-  Build _ -> False
-  Len _ -> True
-  Map _ _ -> False
-  Filter _ -> False
-  At _ -> True
-  SetAt _ -> False
-  Elem _ -> False
+  Cons -> False
+  Snoc -> False
+  Foldl -> False
+  Scanl -> False
+  Build -> False
+  Len -> True
+  Map -> False
+  Filter -> False
+  At -> True
+  SetAt -> False
+  Elem -> False
   Sum -> False
   Product -> False
   ModSum -> False
   ModProduct -> False
-  Min1 _ -> False
-  Max1 _ -> False
-  ArgMin _ -> False
-  ArgMax _ -> False
+  Min1 -> False
+  Max1 -> False
+  ArgMin -> False
+  ArgMax -> False
   All -> False
   Any -> False
-  Sorted _ -> False
-  Reversed _ -> False
+  Sorted -> False
+  Reversed -> False
   Range1 -> False
   Range2 -> False
   Range3 -> False
   -- tuple functions
-  Tuple _ -> True
-  Proj _ _ -> True
+  Tuple -> True
+  Proj _ -> True
   -- comparison
-  LessThan _ -> True
-  LessEqual _ -> True
-  GreaterThan _ -> True
-  GreaterEqual _ -> True
-  Equal _ -> True
-  NotEqual _ -> True
+  LessThan -> True
+  LessEqual -> True
+  GreaterThan -> True
+  GreaterEqual -> True
+  Equal -> True
+  NotEqual -> True
   -- combinational functions
   Fact -> True
   Choose -> True
@@ -382,7 +280,7 @@ isConstantTimeExpr = \case
   Var _ -> True
   Lit _ -> True
   e@(App _ _) -> case curryApp e of
-    (Lit (LitBuiltin f), args) -> isConstantTimeBuiltin f && all isConstantTimeExpr args
+    (Lit (LitBuiltin f _), args) -> isConstantTimeBuiltin f && all isConstantTimeExpr args
     _ -> False
   Lam _ _ _ -> True
   Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2

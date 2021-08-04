@@ -263,7 +263,7 @@ atom :: { Expr }
     : identifier                       { Var $1 }
     | literal                          { Lit $1 }
     | parenth_form                     { $1 }
-    | builtin                          { Lit (LitBuiltin $1) }
+    | builtin                          { Lit (uncurry LitBuiltin $1) }
 
 identifier :: { VarName }
     : IDENT                            { let (L.Ident x) = value $1 in VarName x }
@@ -284,79 +284,79 @@ parenth_form :: { Expr }
     | "(" expression "," ")" atom_type                      {% makeTuple [$2] $5 }
     | "(" expression "," expression_list ")" atom_type      {% makeTuple ($2 : $4) $6 }
 
-builtin :: { Builtin }
-    : "abs"                            { Abs }
-    | "gcd"                            { Gcd }
-    | "lcm"                            { Lcm }
-    | "iterate" "?"                    { Iterate underscoreTy }
-    | "iterate" atom_type              { Iterate $2 }
-    | "matap" integer integer          { MatAp $2 $3 }
-    | "matzero" integer                { MatZero $2 }
-    | "matone" integer                 { MatOne $2 }
-    | "matadd" integer integer         { MatAdd $2 $3 }
-    | "matmul" integer integer integer { MatMul $2 $3 $4 }
-    | "matpow" integer                 { MatPow $2 }
-    | "vecfloormod" integer            { VecFloorMod $2 }
-    | "matfloormod" integer integer    { MatFloorMod $2 $3 }
-    | "modnegate"                      { ModNegate }
-    | "modplus"                        { ModPlus }
-    | "modminus"                       { ModMinus }
-    | "modmult"                        { ModMult }
-    | "modinv"                         { ModInv }
-    | "modpow"                         { ModPow }
-    | "modmatap" integer integer       { ModMatAp $2 $3 }
-    | "modmatadd" integer integer      { ModMatAdd $2 $3 }
-    | "modmatmul" integer integer integer    { ModMatMul $2 $3 $4 }
-    | "modmatpow" integer              { ModMatPow $2 }
-    | "cons" "?"                       { Cons underscoreTy }
-    | "cons" atom_type                 { Cons $2 }
-    | "snoc" "?"                       { Snoc underscoreTy }
-    | "snoc" atom_type                 { Snoc $2 }
-    | "foldl" "?"                      { Foldl underscoreTy underscoreTy }
-    | "foldl" atom_type atom_type      { Foldl $2 $3 }
-    | "scanl" "?"                      { Scanl underscoreTy underscoreTy }
-    | "scanl" atom_type atom_type      { Scanl $2 $3 }
-    | "build" "?"                      { Build underscoreTy }
-    | "build" atom_type                { Build $2 }
-    | "len" "?"                        { Len underscoreTy }
-    | "len" atom_type                  { Len $2 }
-    | "map" "?"                        { Map underscoreTy underscoreTy }
-    | "map" atom_type atom_type        { Map $2 $3 }
-    | "filter" "?"                     { Filter underscoreTy }
-    | "filter" atom_type               { Filter $2 }
-    | "elem" "?"                       { Elem underscoreTy }
-    | "elem" atom_type                 { Elem $2 }
-    | "sum"                            { Sum }
-    | "product"                        { Product }
-    | "modsum"                         { ModSum }
-    | "modproduct"                     { ModProduct }
-    | "min" "?"                        { Min1 underscoreTy }
-    | "min" atom_type                  { Min1 $2 }
-    | "max" "?"                        { Max1 underscoreTy }
-    | "max" atom_type                  { Max1 $2 }
-    | "argmin" "?"                     { ArgMin underscoreTy }
-    | "argmin" atom_type               { ArgMin $2 }
-    | "argmax" "?"                     { ArgMax underscoreTy }
-    | "argmax" atom_type               { ArgMax $2 }
-    | "all"                            { All }
-    | "any"                            { Any }
-    | "sorted" "?"                     { Sorted underscoreTy }
-    | "sorted" atom_type               { Sorted $2 }
-    | "reversed" "?"                   { Reversed underscoreTy }
-    | "reversed" atom_type             { Reversed $2 }
-    | "range"                          { Range1 }
-    | "range2"                         { Range2 }
-    | "range3"                         { Range3 }
-    | "fact"                           { Fact }
-    | "choose"                         { Choose }
-    | "permute"                        { Permute }
-    | "multichoose"                    { MultiChoose }
-    | "cht_init"                       { ConvexHullTrickInit }
-    | "cht_getmin"                     { ConvexHullTrickGetMin }
-    | "cht_insert"                     { ConvexHullTrickInsert }
-    | "segtree_init" semigroup         { SegmentTreeInitList $2 }
-    | "segtree_getrange" semigroup     { SegmentTreeGetRange $2 }
-    | "segtree_setpoint" semigroup     { SegmentTreeSetPoint $2 }
+builtin :: { (Builtin, [Type]) }
+    : "abs"                            { (Abs, []) }
+    | "gcd"                            { (Gcd, []) }
+    | "lcm"                            { (Lcm, []) }
+    | "iterate" "?"                    { (Iterate, [underscoreTy]) }
+    | "iterate" atom_type              { (Iterate, [$2]) }
+    | "matap" integer integer          { (MatAp $2 $3, []) }
+    | "matzero" integer                { (MatZero $2, []) }
+    | "matone" integer                 { (MatOne $2, []) }
+    | "matadd" integer integer         { (MatAdd $2 $3, []) }
+    | "matmul" integer integer integer { (MatMul $2 $3 $4, []) }
+    | "matpow" integer                 { (MatPow $2, []) }
+    | "vecfloormod" integer            { (VecFloorMod $2, []) }
+    | "matfloormod" integer integer    { (MatFloorMod $2 $3, []) }
+    | "modnegate"                      { (ModNegate, []) }
+    | "modplus"                        { (ModPlus, []) }
+    | "modminus"                       { (ModMinus, []) }
+    | "modmult"                        { (ModMult, []) }
+    | "modinv"                         { (ModInv, []) }
+    | "modpow"                         { (ModPow, []) }
+    | "modmatap" integer integer       { (ModMatAp $2 $3, []) }
+    | "modmatadd" integer integer      { (ModMatAdd $2 $3, []) }
+    | "modmatmul" integer integer integer    { (ModMatMul $2 $3 $4, []) }
+    | "modmatpow" integer              { (ModMatPow $2, []) }
+    | "cons" "?"                       { (Cons, [underscoreTy]) }
+    | "cons" atom_type                 { (Cons, [$2]) }
+    | "snoc" "?"                       { (Snoc, [underscoreTy]) }
+    | "snoc" atom_type                 { (Snoc, [$2]) }
+    | "foldl" "?"                      { (Foldl, [underscoreTy, underscoreTy]) }
+    | "foldl" atom_type atom_type      { (Foldl, [$2, $3]) }
+    | "scanl" "?"                      { (Scanl, [underscoreTy, underscoreTy]) }
+    | "scanl" atom_type atom_type      { (Scanl, [$2, $3]) }
+    | "build" "?"                      { (Build, [underscoreTy]) }
+    | "build" atom_type                { (Build, [$2]) }
+    | "len" "?"                        { (Len, [underscoreTy]) }
+    | "len" atom_type                  { (Len, [$2]) }
+    | "map" "?"                        { (Map, [underscoreTy, underscoreTy]) }
+    | "map" atom_type atom_type        { (Map, [$2, $3]) }
+    | "filter" "?"                     { (Filter, [underscoreTy]) }
+    | "filter" atom_type               { (Filter, [$2]) }
+    | "elem" "?"                       { (Elem, [underscoreTy]) }
+    | "elem" atom_type                 { (Elem, [$2]) }
+    | "sum"                            { (Sum, []) }
+    | "product"                        { (Product, []) }
+    | "modsum"                         { (ModSum, []) }
+    | "modproduct"                     { (ModProduct, []) }
+    | "min" "?"                        { (Min1, [underscoreTy]) }
+    | "min" atom_type                  { (Min1, [$2]) }
+    | "max" "?"                        { (Max1, [underscoreTy]) }
+    | "max" atom_type                  { (Max1, [$2]) }
+    | "argmin" "?"                     { (ArgMin, [underscoreTy]) }
+    | "argmin" atom_type               { (ArgMin, [$2]) }
+    | "argmax" "?"                     { (ArgMax, [underscoreTy]) }
+    | "argmax" atom_type               { (ArgMax, [$2]) }
+    | "all"                            { (All, []) }
+    | "any"                            { (Any, []) }
+    | "sorted" "?"                     { (Sorted, [underscoreTy]) }
+    | "sorted" atom_type               { (Sorted, [$2]) }
+    | "reversed" "?"                   { (Reversed, [underscoreTy]) }
+    | "reversed" atom_type             { (Reversed, [$2]) }
+    | "range"                          { (Range1, []) }
+    | "range2"                         { (Range2, []) }
+    | "range3"                         { (Range3, []) }
+    | "fact"                           { (Fact, []) }
+    | "choose"                         { (Choose, []) }
+    | "permute"                        { (Permute, []) }
+    | "multichoose"                    { (MultiChoose, []) }
+    | "cht_init"                       { (ConvexHullTrickInit, []) }
+    | "cht_getmin"                     { (ConvexHullTrickGetMin, []) }
+    | "cht_insert"                     { (ConvexHullTrickInsert, []) }
+    | "segtree_init" semigroup         { (SegmentTreeInitList $2, []) }
+    | "segtree_getrange" semigroup     { (SegmentTreeGetRange $2, []) }
+    | "segtree_setpoint" semigroup     { (SegmentTreeSetPoint $2, []) }
 
 -- Primaries
 primary :: { Expr }
