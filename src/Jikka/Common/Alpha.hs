@@ -22,6 +22,8 @@ import Control.Monad.Reader
 import Control.Monad.Signatures
 import Control.Monad.State.Strict
 import Control.Monad.Writer.Strict
+import Data.Unique
+import Language.Haskell.TH (Q)
 
 class Monad m => MonadAlpha m where
   nextCounter :: m Int
@@ -84,3 +86,9 @@ evalAlpha f i = runIdentity (evalAlphaT f i)
 
 resetAlphaT :: Monad m => Int -> AlphaT m ()
 resetAlphaT i = AlphaT $ \_ -> return ((), i)
+
+instance MonadAlpha IO where
+  nextCounter = hashUnique <$> newUnique
+
+instance MonadAlpha Q where
+  nextCounter = liftIO nextCounter

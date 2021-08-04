@@ -20,7 +20,7 @@ data Value
   | ValBool Bool
   | ValList (V.Vector Value)
   | ValTuple [Value]
-  | ValBuiltin Builtin [Value]
+  | ValBuiltin Builtin [Type] [Value]
   | -- | The `Env` may contain the `ValLambda` cyclicly.
     ValLambda (Maybe VarName) Env VarName Type Expr
   deriving (Eq, Read)
@@ -29,7 +29,7 @@ type Env = [(VarName, Value)]
 
 literalToValue :: MonadError Error m => Literal -> m Value
 literalToValue = \case
-  LitBuiltin builtin -> return $ ValBuiltin builtin []
+  LitBuiltin builtin ts -> return $ ValBuiltin builtin ts []
   LitInt n -> return $ ValInt n
   LitBool p -> return $ ValBool p
   LitNil _ -> return $ ValList V.empty
@@ -122,8 +122,8 @@ formatValue = \case
   ValList xs -> "[" ++ intercalate ", " (map formatValue (V.toList xs)) ++ "]"
   ValTuple [x] -> "(" ++ formatValue x ++ ",)"
   ValTuple xs -> "(" ++ intercalate ", " (map formatValue xs) ++ ")"
-  ValBuiltin builtin [] -> formatBuiltinIsolated builtin
-  ValBuiltin builtin args -> formatBuiltinIsolated builtin ++ "(" ++ intercalate ", " (map formatValue args) ++ ")"
+  ValBuiltin builtin ts [] -> formatBuiltinIsolated builtin ts
+  ValBuiltin builtin ts args -> formatBuiltinIsolated builtin ts ++ "(" ++ intercalate ", " (map formatValue args) ++ ")"
   ValLambda _ _ x t body -> formatExpr (Lam x t body) -- Don't show env because it may be cyclic.
 
 readValueIO :: (MonadError Error m, MonadIO m) => IOFormat -> m ([Value], M.Map String Value)

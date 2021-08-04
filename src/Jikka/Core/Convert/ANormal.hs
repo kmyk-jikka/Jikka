@@ -60,7 +60,7 @@ runExpr env = \case
     f <- runExpr env f
     args <- mapM (runExpr env) args
     case (f, args) of
-      (Lit (LitBuiltin (If _)), [e1, e2, e3]) -> do
+      (Lit (LitBuiltin If _), [e1, e2, e3]) -> do
         (_, ctx, e1) <- destruct env e1
         return $ ctx (App3 f e1 e2 e3)
       _ -> runApp env f args

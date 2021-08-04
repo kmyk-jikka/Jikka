@@ -31,6 +31,7 @@ module Jikka.Core.Convert.MakeScanl
 where
 
 import Control.Monad.Trans.Maybe
+import Data.List
 import qualified Data.Map as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -56,7 +57,7 @@ reduceScanlBuild = simpleRewriteRule $ \case
   _ -> Nothing
 
 -- | `getRecurrenceFormulaStep1` removes `At` in @body@.
-getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
+getRecurrenceFormulaStep1 :: MonadAlpha m => Integer -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 getRecurrenceFormulaStep1 shift t a i body = do
   x <- genVarName a
   let proj k =
@@ -78,13 +79,13 @@ getRecurrenceFormulaStep1 shift t a i body = do
     Nothing -> Nothing
 
 -- | `getRecurrenceFormulaStep` replaces `At` in @body@ with `Proj`.
-getRecurrenceFormulaStep :: MonadAlpha m => Int -> Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
+getRecurrenceFormulaStep :: MonadAlpha m => Integer -> Integer -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 getRecurrenceFormulaStep shift size t a i body = do
   x <- genVarName a
-  let ts = replicate size t
+  let ts = replicate (fromInteger size) t
   let proj k =
         if 0 <= toInteger shift + k && toInteger shift + k < toInteger size
-          then Just $ Proj' ts (shift + fromInteger k) (Var x)
+          then Just $ Proj' ts (shift + k) (Var x)
           else Nothing
   let go :: Expr -> Maybe Expr
       go = \case
@@ -129,9 +130,9 @@ reduceFoldlSetAtRecurrence = RewriteRule $ \_ -> \case
       _ -> do
         let ts = replicate (length base) t2
         let base' = uncurryApp (Tuple' ts) base
-        step <- MaybeT $ getRecurrenceFormulaStep (- length base + fromInteger k) (length base) t2 a i step
+        step <- MaybeT $ getRecurrenceFormulaStep (- genericLength base + k) (genericLength base) t2 a i step
         x <- lift (genVarName a)
-        return $ foldr (Cons' t2) (Map' (TupleTy ts) t2 (Lam x (TupleTy ts) (Proj' ts (length base - 1) (Var x))) (Scanl' IntTy (TupleTy ts) step base' (Range1' n))) (init base)
+        return $ foldr (Cons' t2) (Map' (TupleTy ts) t2 (Lam x (TupleTy ts) (Proj' ts (genericLength base - 1) (Var x))) (Scanl' IntTy (TupleTy ts) step base' (Range1' n))) (init base)
   _ -> return Nothing
 
 -- | `checkAccumulationFormulaStep` checks that all `At` in @body@ about @a@ are @At a i@.

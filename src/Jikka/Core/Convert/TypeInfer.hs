@@ -11,6 +11,8 @@
 -- Portability : portable
 module Jikka.Core.Convert.TypeInfer
   ( run,
+    runExpr,
+    runRule,
 
     -- * internal types and functions
     Equation (..),
@@ -35,7 +37,7 @@ import Jikka.Core.Format (formatType)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
-import Jikka.Core.Language.TypeCheck (literalToType, typecheckProgram)
+import Jikka.Core.Language.TypeCheck (literalToType, typecheckExpr, typecheckProgram)
 import Jikka.Core.Language.Util
 
 data Equation
@@ -51,13 +53,13 @@ formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
 formularizeVarName :: MonadWriter Eqns m => VarName -> Type -> m ()
 formularizeVarName x t = tell $ Dual [TypeAssertion x t]
 
-formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> m Type
+formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> m Type
 formularizeExpr = \case
   Var x -> do
     t <- genType
     formularizeVarName x t
     return t
-  Lit lit -> return $ literalToType lit
+  Lit lit -> literalToType lit
   App f e -> do
     ret <- genType
     t <- formularizeExpr e
@@ -72,12 +74,12 @@ formularizeExpr = \case
     formularizeExpr' e1 t
     formularizeExpr e2
 
-formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m) => Expr -> Type -> m ()
+formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> Type -> m ()
 formularizeExpr' e t = do
   t' <- formularizeExpr e
   formularizeType t t'
 
-formularizeToplevelExpr :: (MonadWriter Eqns m, MonadAlpha m) => ToplevelExpr -> m Type
+formularizeToplevelExpr :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => ToplevelExpr -> m Type
 formularizeToplevelExpr = \case
   ResultExpr e -> formularizeExpr e
   ToplevelLet x t e cont -> do
@@ -90,7 +92,7 @@ formularizeToplevelExpr = \case
     formularizeExpr' body ret
     formularizeToplevelExpr cont
 
-formularizeProgram :: MonadAlpha m => Program -> m [Equation]
+formularizeProgram :: (MonadAlpha m, MonadError Error m) => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (formularizeToplevelExpr prog)
 
 sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
@@ -169,39 +171,14 @@ substUnit = \case
   FunTy t ret -> FunTy (substUnit t) (substUnit ret)
   DataStructureTy ds -> DataStructureTy ds
 
--- | `subst'` does `subst` and replaces all undetermined type variables with the unit type.
 subst' :: Subst -> Type -> Type
 subst' sigma = substUnit . subst sigma
 
-substBuiltin :: Subst -> Builtin -> Builtin
-substBuiltin sigma = mapTypeInBuiltin (subst' sigma)
-
-substLiteral :: Subst -> Literal -> Literal
-substLiteral sigma = \case
-  LitBuiltin builtin -> LitBuiltin (substBuiltin sigma builtin)
-  LitInt n -> LitInt n
-  LitBool p -> LitBool p
-  LitNil t -> LitNil (subst' sigma t)
-  LitBottom t err -> LitBottom (subst' sigma t) err
+substProgram :: Subst -> Program -> Program
+substProgram sigma = mapTypeProgram (subst' sigma)
 
 substExpr :: Subst -> Expr -> Expr
-substExpr sigma = go
-  where
-    go = \case
-      Var x -> Var x
-      Lit lit -> Lit (substLiteral sigma lit)
-      App f e -> App (go f) (go e)
-      Lam x t body -> Lam x (subst' sigma t) (go body)
-      Let x t e1 e2 -> Let x (subst sigma t) (go e1) (go e2)
-
-substToplevelExpr :: Subst -> ToplevelExpr -> ToplevelExpr
-substToplevelExpr sigma = \case
-  ResultExpr e -> ResultExpr (substExpr sigma e)
-  ToplevelLet x t e cont -> ToplevelLet x (subst' sigma t) (substExpr sigma e) (substToplevelExpr sigma cont)
-  ToplevelLetRec f args ret body cont -> ToplevelLetRec f (map (second (subst' sigma)) args) (subst' sigma ret) (substExpr sigma body) (substToplevelExpr sigma cont)
-
-substProgram :: Subst -> Program -> Program
-substProgram = substToplevelExpr
+substExpr sigma = mapTypeExpr (subst' sigma)
 
 -- | `run` does type inference.
 --
@@ -228,3 +205,28 @@ run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   postcondition $ do
     typecheckProgram prog
   return prog
+
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
+runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+  eqns <- getDual <$> execWriterT (formularizeExpr e)
+  let (eqns', assertions) = sortEquations eqns
+  let eqns'' = mergeAssertions assertions
+  sigma <- solveEquations (eqns' ++ eqns'')
+  env <- return $ map (second (subst' sigma)) env
+  e <- return $ substExpr sigma e
+  postcondition $ do
+    typecheckExpr env e
+  return e
+
+runRule :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m ([(VarName, Type)], Expr, Expr)
+runRule args e1 e2 = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+  eqns <- (getDual <$>) . execWriterT $ do
+    t <- formularizeExpr e1
+    formularizeExpr' e2 t
+  let (eqns', assertions) = sortEquations eqns
+  let eqns'' = mergeAssertions assertions
+  sigma <- solveEquations (eqns' ++ eqns'')
+  args <- return $ map (second (subst sigma)) args -- don't use substUnit
+  e1 <- return $ mapTypeExpr (subst sigma) e1 -- don't use substUnit
+  e2 <- return $ mapTypeExpr (subst sigma) e2 -- don't use substUnit
+  return (args, e1, e2)

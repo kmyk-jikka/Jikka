@@ -7,9 +7,7 @@ import Test.DocTest
 main :: IO ()
 main = doctest
     [ "src/Jikka/Common/"
-    , "src/Jikka/Core/"
-    , "src/Jikka/CPlusPlus/"
     , "src/Jikka/Python/Convert/"
     , "src/Jikka/Python/Language/"
-    , "src/Jikka/RestrictedPython/"
+    , "src/Jikka/RestrictedPython/Language/"
     ]

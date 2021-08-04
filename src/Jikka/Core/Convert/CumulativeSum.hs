@@ -49,7 +49,7 @@ rule = RewriteRule $ \_ -> \case
                 then At' IntTy (Var b) n
                 else Minus' (At' IntTy (Var b) (Plus' n (formatArithmeticalExpr shift))) (At' IntTy (Var b) (formatArithmeticalExpr shift))
         return . Just $
-          Let b (ListTy IntTy) (Scanl' IntTy IntTy (Lit (LitBuiltin Plus)) Lit0 a) e
+          Let b (ListTy IntTy) (Scanl' IntTy IntTy (Builtin Plus) Lit0 a) e
       _ -> return Nothing
   Max1' t (Cons' _ a0 (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n))) | x' == x && x `isUnusedVar` a -> do
     Just <$> cumulativeMax (Max2' t) t (Just a0) a n

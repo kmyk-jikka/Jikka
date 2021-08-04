@@ -14,6 +14,7 @@ module Jikka.Core.Convert.PropagateMod
   )
 where
 
+import Data.List
 import Data.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -81,11 +82,11 @@ putFloorMod (Mod m) =
         LitInt' n -> case m of
           LitInt' m -> return' $ LitInt' (n `mod` m)
           _ -> return Nothing
-        Proj' ts i e | isVectorTy' ts -> return' $ Proj' ts i (VecFloorMod' (length ts) e m)
+        Proj' ts i e | isVectorTy' ts -> return' $ Proj' ts i (VecFloorMod' (genericLength ts) e m)
         Proj' ts i e
           | isMatrixTy' ts ->
             let (h, w) = fromJust (sizeOfMatrixTy (TupleTy ts))
-             in return' $ Proj' ts i (MatFloorMod' h w e m)
+             in return' $ Proj' ts i (MatFloorMod' (toInteger h) (toInteger w) e m)
         Map' t1 t2 f xs -> do
           f <- putFloorMod (Mod m) f
           case f of
@@ -144,7 +145,7 @@ putVecFloorMod env = putFloorModGeneric fallback
     fallback e (Mod m) = do
       t <- typecheckExpr env e
       case t of
-        TupleTy ts -> return $ VecFloorMod' (length ts) e m
+        TupleTy ts -> return $ VecFloorMod' (genericLength ts) e m
         _ -> throwInternalError $ "not a vector: " ++ formatType t
 
 putMatFloorMod :: (MonadError Error m, MonadAlpha m) => [(VarName, Type)] -> Mod -> Expr -> m Expr
@@ -153,7 +154,7 @@ putMatFloorMod env = putFloorModGeneric fallback
     fallback e (Mod m) = do
       t <- typecheckExpr env e
       case t of
-        TupleTy ts@(TupleTy ts' : _) -> return $ MatFloorMod' (length ts) (length ts') e m
+        TupleTy ts@(TupleTy ts' : _) -> return $ MatFloorMod' (genericLength ts) (genericLength ts') e m
         _ -> throwInternalError $ "not a matrix: " ++ formatType t
 
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m

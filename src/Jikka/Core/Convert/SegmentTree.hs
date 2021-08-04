@@ -69,26 +69,26 @@ pattern CumulativeSumFlip t f e es <-
           x2 = findUnusedVarName (VarName "x") f
        in Scanl' t t (Lam2 x1 t x2 t (App (App f (Var x2)) (Var x1))) e es
 
-builtinToSemigroup :: Builtin -> Maybe Semigroup'
-builtinToSemigroup = \case
-  Plus -> Just SemigroupIntPlus
-  Min2 IntTy -> Just SemigroupIntMin
-  Max2 IntTy -> Just SemigroupIntMax
+builtinToSemigroup :: Builtin -> [Type] -> Maybe Semigroup'
+builtinToSemigroup builtin ts = case (builtin, ts) of
+  (Plus, []) -> Just SemigroupIntPlus
+  (Min2, [IntTy]) -> Just SemigroupIntMin
+  (Max2, [IntTy]) -> Just SemigroupIntMax
   _ -> Nothing
 
-semigroupToBuiltin :: Semigroup' -> Builtin
+semigroupToBuiltin :: Semigroup' -> (Builtin, [Type])
 semigroupToBuiltin = \case
-  SemigroupIntPlus -> Plus
-  SemigroupIntMin -> Min2 IntTy
-  SemigroupIntMax -> Max2 IntTy
+  SemigroupIntPlus -> (Plus, [])
+  SemigroupIntMin -> (Min2, [IntTy])
+  SemigroupIntMax -> (Max2, [IntTy])
 
 unCumulativeSum :: Expr -> Expr -> Maybe (Semigroup', Expr)
 unCumulativeSum a = \case
-  CumulativeSum _ (Lit (LitBuiltin op)) b a' | a' == a -> case builtinToSemigroup op of
+  CumulativeSum _ (Lit (LitBuiltin op ts)) b a' | a' == a -> case builtinToSemigroup op ts of
     Just semigrp -> Just (semigrp, b)
     Nothing -> Nothing
   -- Semigroups must be commutative to use CumulativeSumFlip.
-  CumulativeSumFlip _ (Lit (LitBuiltin op)) b a' | a' == a -> case builtinToSemigroup op of
+  CumulativeSumFlip _ (Lit (LitBuiltin op ts)) b a' | a' == a -> case builtinToSemigroup op ts of
     Just semigrp -> Just (semigrp, b)
     Nothing -> Nothing
   _ -> Nothing
@@ -103,7 +103,7 @@ replaceWithSegtrees a segtrees = go M.empty
     go env = \case
       At' _ (check env -> Just (e, b, semigrp)) i ->
         let e' = SegmentTreeGetRange' semigrp e (LitInt' 0) i
-         in AppBuiltin2 (semigroupToBuiltin semigrp) b e'
+         in App2 (Lit (uncurry LitBuiltin (semigroupToBuiltin semigrp))) b e'
       Var x -> Var x
       Lit lit -> Lit lit
       App e1 e2 -> App (go env e1) (go env e2)
@@ -113,10 +113,11 @@ replaceWithSegtrees a segtrees = go M.empty
          in case check env e1' of
               Just (e1', b, semigrp) -> go (M.insert x (e1', b, semigrp) env) e2
               Nothing -> Let x t (go env e1) (go env e2)
+    check :: M.Map VarName (Expr, Expr, Semigroup') -> Expr -> Maybe (Expr, Expr, Semigroup')
     check env = \case
       Var x -> M.lookup x env
-      CumulativeSum _ (Lit (LitBuiltin op)) b (Var a') | a' == a -> case lookup op (map (first semigroupToBuiltin) segtrees) of
-        Just e -> Just (e, b, fromJust (builtinToSemigroup op))
+      CumulativeSum _ (Lit (LitBuiltin op ts)) b (Var a') | a' == a -> case lookup (op, ts) (map (first semigroupToBuiltin) segtrees) of
+        Just e -> Just (e, b, fromJust (builtinToSemigroup op ts))
         Nothing -> Nothing
       _ -> Nothing
 
