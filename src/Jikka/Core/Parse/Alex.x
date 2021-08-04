@@ -74,7 +74,7 @@ tokens :-
     "'"             { tok SingleQuote }
     "."             { tok Dot }
     "<-"            { tok BackArrow }
-    "?"             { tok Question }
+    "@"             { tok At }
 
     -- parens
     "["             { tok OpenBracket }

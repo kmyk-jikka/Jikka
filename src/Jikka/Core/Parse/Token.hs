@@ -70,7 +70,7 @@ data Token
   | Underscore
   | SingleQuote
   | BackArrow
-  | Question
+  | At
   | -- parens
     OpenBracket
   | OpenParen

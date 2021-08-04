@@ -52,20 +52,20 @@ import Jikka.Core.Language.Util
 reduceBuild :: MonadAlpha m => RewriteRule m
 reduceBuild =
   mconcat
-    [ [r| "range2" forall l r. range2 l r = map? (fun i -> l + i) (range (r - l)) |],
-      [r| "range3" forall l r step. range3 l r step = map? (fun i -> l + i * step) (range ((r - l) /^ step)) |]
+    [ [r| "range2" forall l r. range2 l r = map (fun i -> l + i) (range (r - l)) |],
+      [r| "range3" forall l r step. range3 l r step = map (fun i -> l + i * step) (range ((r - l) /^ step)) |]
     ]
 
 reduceMapBuild :: MonadAlpha m => RewriteRule m
 reduceMapBuild =
   mconcat
-    [ [r| "sorted/nil" sorted? nil? = nil? |],
-      [r| "sorted/range" forall n. sorted? (range n) = range n |],
-      [r| "reversed/nil" reversed? nil? = nil? |],
-      [r| "reversed/range" forall n. reversed? (range n) = map? (fun i -> n - i - 1) (range n) |],
-      [r| "filter/nil" filter? _ nil? = nil? |],
-      [r| "map/nil" map? _ nil? = nil? |],
-      [r| "map/cons" forall f x xs. map? f (cons? x xs) = cons? (f x) (map? f xs) |]
+    [ [r| "sorted/nil" sorted nil = nil |],
+      [r| "sorted/range" forall n. sorted (range n) = range n |],
+      [r| "reversed/nil" reversed nil = nil |],
+      [r| "reversed/range" forall n. reversed (range n) = map (fun i -> n - i - 1) (range n) |],
+      [r| "filter/nil" filter _ nil = nil |],
+      [r| "map/nil" map _ nil = nil |],
+      [r| "map/cons" forall f x xs. map f (cons x xs) = cons (f x) (map f xs) |]
     ]
 
 reduceMap :: Monad m => RewriteRule m

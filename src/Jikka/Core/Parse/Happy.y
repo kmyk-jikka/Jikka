@@ -66,7 +66,7 @@ import qualified Jikka.Core.Parse.Token as L
     "'"             { WithLoc _ L.SingleQuote }
     "."             { WithLoc _ L.Dot }
     "<-"            { WithLoc _ L.BackArrow }
-    "?"             { WithLoc _ L.Question }
+    "@"             { WithLoc _ L.At }
 
     -- parens
     "["             { WithLoc _ L.OpenBracket }
@@ -275,21 +275,24 @@ integer :: { Integer }
 literal :: { Literal }
     : integer                          { LitInt $1 }
     | BOOLEAN                          { let (L.Bool p) = value $1 in LitBool p }
-    | "nil" "?"                        { LitNil underscoreTy }
-    | "nil" atom_type                  { LitNil $2 }
+    | "nil"                            { LitNil underscoreTy }
+    | "nil" "@" atom_type              { LitNil $3 }
 
 parenth_form :: { Expr }
-    : "(" ")" atom_type                                     {% makeTuple [] $3 }
+    : "(" ")"                                               {% makeTuple [] UnitTy }
+    | "(" ")" "@" atom_type                                 {% makeTuple [] $4 }
     | "(" expression ")"                                    { $2 }
-    | "(" expression "," ")" atom_type                      {% makeTuple [$2] $5 }
-    | "(" expression "," expression_list ")" atom_type      {% makeTuple ($2 : $4) $6 }
+    | "(" expression "," ")"                                {% makeTuple [$2] (TupleTy [underscoreTy]) }
+    | "(" expression "," ")" "@" atom_type                  {% makeTuple [$2] $6 }
+    | "(" expression "," expression_list ")"                {% makeTuple ($2 : $4) (TupleTy (replicate (length ($2 : $4)) underscoreTy)) }
+    | "(" expression "," expression_list ")" "@" atom_type  {% makeTuple ($2 : $4) $7 }
 
 builtin :: { (Builtin, [Type]) }
     : "abs"                            { (Abs, []) }
     | "gcd"                            { (Gcd, []) }
     | "lcm"                            { (Lcm, []) }
-    | "iterate" "?"                    { (Iterate, [underscoreTy]) }
-    | "iterate" atom_type              { (Iterate, [$2]) }
+    | "iterate"                        { (Iterate, [underscoreTy]) }
+    | "iterate" "@" atom_type          { (Iterate, [$3]) }
     | "matap" integer integer          { (MatAp $2 $3, []) }
     | "matzero" integer                { (MatZero $2, []) }
     | "matone" integer                 { (MatOne $2, []) }
@@ -308,42 +311,42 @@ builtin :: { (Builtin, [Type]) }
     | "modmatadd" integer integer      { (ModMatAdd $2 $3, []) }
     | "modmatmul" integer integer integer    { (ModMatMul $2 $3 $4, []) }
     | "modmatpow" integer              { (ModMatPow $2, []) }
-    | "cons" "?"                       { (Cons, [underscoreTy]) }
-    | "cons" atom_type                 { (Cons, [$2]) }
-    | "snoc" "?"                       { (Snoc, [underscoreTy]) }
-    | "snoc" atom_type                 { (Snoc, [$2]) }
-    | "foldl" "?"                      { (Foldl, [underscoreTy, underscoreTy]) }
-    | "foldl" atom_type atom_type      { (Foldl, [$2, $3]) }
-    | "scanl" "?"                      { (Scanl, [underscoreTy, underscoreTy]) }
-    | "scanl" atom_type atom_type      { (Scanl, [$2, $3]) }
-    | "build" "?"                      { (Build, [underscoreTy]) }
-    | "build" atom_type                { (Build, [$2]) }
-    | "len" "?"                        { (Len, [underscoreTy]) }
-    | "len" atom_type                  { (Len, [$2]) }
-    | "map" "?"                        { (Map, [underscoreTy, underscoreTy]) }
-    | "map" atom_type atom_type        { (Map, [$2, $3]) }
-    | "filter" "?"                     { (Filter, [underscoreTy]) }
-    | "filter" atom_type               { (Filter, [$2]) }
-    | "elem" "?"                       { (Elem, [underscoreTy]) }
-    | "elem" atom_type                 { (Elem, [$2]) }
+    | "cons"                           { (Cons, [underscoreTy]) }
+    | "cons" "@" atom_type             { (Cons, [$3]) }
+    | "snoc"                           { (Snoc, [underscoreTy]) }
+    | "snoc" "@" atom_type             { (Snoc, [$3]) }
+    | "foldl"                          { (Foldl, [underscoreTy, underscoreTy]) }
+    | "foldl" "@" atom_type "@" atom_type    { (Foldl, [$3, $5]) }
+    | "scanl"                          { (Scanl, [underscoreTy, underscoreTy]) }
+    | "scanl" "@" atom_type "@" atom_type    { (Scanl, [$3, $5]) }
+    | "build"                          { (Build, [underscoreTy]) }
+    | "build" "@" atom_type            { (Build, [$3]) }
+    | "len"                            { (Len, [underscoreTy]) }
+    | "len" "@" atom_type              { (Len, [$3]) }
+    | "map"                            { (Map, [underscoreTy, underscoreTy]) }
+    | "map" "@" atom_type "@" atom_type    { (Map, [$3, $5]) }
+    | "filter"                         { (Filter, [underscoreTy]) }
+    | "filter" "@" atom_type           { (Filter, [$3]) }
+    | "elem"                           { (Elem, [underscoreTy]) }
+    | "elem" "@" atom_type             { (Elem, [$3]) }
     | "sum"                            { (Sum, []) }
     | "product"                        { (Product, []) }
     | "modsum"                         { (ModSum, []) }
     | "modproduct"                     { (ModProduct, []) }
-    | "min" "?"                        { (Min1, [underscoreTy]) }
-    | "min" atom_type                  { (Min1, [$2]) }
-    | "max" "?"                        { (Max1, [underscoreTy]) }
-    | "max" atom_type                  { (Max1, [$2]) }
-    | "argmin" "?"                     { (ArgMin, [underscoreTy]) }
-    | "argmin" atom_type               { (ArgMin, [$2]) }
-    | "argmax" "?"                     { (ArgMax, [underscoreTy]) }
-    | "argmax" atom_type               { (ArgMax, [$2]) }
+    | "min"                            { (Min1, [underscoreTy]) }
+    | "min" "@" atom_type              { (Min1, [$3]) }
+    | "max"                            { (Max1, [underscoreTy]) }
+    | "max" "@" atom_type              { (Max1, [$3]) }
+    | "argmin"                         { (ArgMin, [underscoreTy]) }
+    | "argmin" "@" atom_type           { (ArgMin, [$3]) }
+    | "argmax"                         { (ArgMax, [underscoreTy]) }
+    | "argmax" "@" atom_type           { (ArgMax, [$3]) }
     | "all"                            { (All, []) }
     | "any"                            { (Any, []) }
-    | "sorted" "?"                     { (Sorted, [underscoreTy]) }
-    | "sorted" atom_type               { (Sorted, [$2]) }
-    | "reversed" "?"                   { (Reversed, [underscoreTy]) }
-    | "reversed" atom_type             { (Reversed, [$2]) }
+    | "sorted"                         { (Sorted, [underscoreTy]) }
+    | "sorted" "@" atom_type           { (Sorted, [$3]) }
+    | "reversed"                       { (Reversed, [underscoreTy]) }
+    | "reversed" "@" atom_type         { (Reversed, [$3]) }
     | "range"                          { (Range1, []) }
     | "range2"                         { (Range2, []) }
     | "range3"                         { (Range3, []) }
@@ -366,11 +369,12 @@ primary :: { Expr }
 
 -- Subscriptions
 subscription :: { Expr }
-    : primary "[" expression "]" atom_type                  { At' $5 $1 $3 }
-    | primary "[" expression "]" "?"                        { At' underscoreTy $1 $3 }
-    | primary "[" expression "<-" expression "]" atom_type  { SetAt' $7 $1 $3 $5 }
-    | primary "[" expression "<-" expression "]" "?"        { SetAt' underscoreTy $1 $3 $5 }
-    | primary "." integer atom_type                         {% makeProj $1 $3 $4 }
+    : primary "[" expression "]"                            { At' underscoreTy $1 $3 }
+    | primary "[" expression "]" "@" atom_type              { At' $6 $1 $3 }
+    | primary "[" expression "<-" expression "]"            { SetAt' underscoreTy $1 $3 $5 }
+    | primary "[" expression "<-" expression "]" "@" atom_type    { SetAt' $8 $1 $3 $5 }
+    -- | primary "." integer                                   {% makeProj $1 $3 underscoreTy }
+    | primary "." integer "@" atom_type                     {% makeProj $1 $3 $5 }
 
 -- The power operator
 power :: { Expr }
@@ -417,13 +421,16 @@ or_expr :: { Expr }
 -- Min and max operations
 min_expr :: { Expr }
     : or_expr                                               { $1 }
-    | min_expr "<?" atom_type or_expr                       { Min2' $3 $1 $4 }
-    | min_expr ">?" atom_type or_expr                       { Max2' $3 $1 $4 }
+    | min_expr "<?" or_expr                                 { Min2' underscoreTy $1 $3 }
+    | min_expr "<?" "@" atom_type or_expr                   { Min2' $4 $1 $5 }
+    | min_expr ">?" or_expr                                 { Max2' underscoreTy $1 $3 }
+    | min_expr ">?" "@" atom_type or_expr                   { Max2' $4 $1 $5 }
 
 -- Comparisons
 comparison :: { Expr }
     : min_expr                                              { $1 }
-    | comparison comp_operator atom_type min_expr           { $2 $3 $1 $4 }
+    | comparison comp_operator min_expr                     { $2 underscoreTy $1 $3 }
+    | comparison comp_operator "@" atom_type min_expr       { $2 $4 $1 $5 }
 comp_operator :: { Type -> Expr -> Expr -> Expr }
     : "=="                                                  { Equal' }
     | "/="                                                  { NotEqual' }
@@ -450,7 +457,8 @@ implies_test :: { Expr }
 
 -- Conditional expressions
 conditional_expression :: { Expr }
-    : "if" atom_type expression "then" expression "else" expression   { If' $2 $3 $5 $7 }
+    : "if" expression "then" expression "else" expression   { If' underscoreTy $2 $4 $6 }
+    | "if" "@" atom_type expression "then" expression "else" expression    { If' $3 $4 $6 $8 }
 
 -- Lambda
 lambda_expr :: { Expr }
