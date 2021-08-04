@@ -74,7 +74,7 @@ For developpers:
 
 ## Examples
 
-### `examples/fact.py` (`v5.0.5.0`)
+### `examples/fib.py` (`v5.0.5.0`)
 
 Input, O(N):
 
