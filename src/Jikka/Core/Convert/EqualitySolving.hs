@@ -41,7 +41,7 @@ rule = simpleRewriteRule $ \case
   -- reduce injective function
   Equal' t (Minus' (Negate' a) (Negate' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
   Equal' t (Minus' (Not' a) (Not' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
-  Equal' BoolTy (Minus' (BitNot' a) (BitNot' b)) Lit0 -> Just $ Equal' BoolTy (Minus' a b) Lit0
+  Equal' t (Minus' (BitNot' a) (BitNot' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
   Equal' t (Minus' (Fact' a) (Fact' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
   -- unpack list equality
   Equal' _ (Nil' _) (Cons' _ _ _) -> Just LitFalse
