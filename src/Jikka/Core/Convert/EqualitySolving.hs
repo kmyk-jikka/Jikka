@@ -39,7 +39,7 @@ rule = simpleRewriteRule $ \case
   Equal' t (Minus' (BitNot' a) (BitNot' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
   Equal' t (Minus' (Fact' a) (Fact' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
   -- unpack list equality
-  Equal' _ (Nil' _) _ -> Just LitFalse
+  Equal' _ (Nil' _) (Cons' _ _ _) -> Just LitFalse
   Equal' (ListTy t) (Cons' _ x xs) (Cons' _ y ys) -> Just $ And' (Equal' t x y) (Equal' (ListTy t) xs ys)
   -- reduce boolean equality
   Equal' _ a LitTrue -> Just a
