@@ -28,7 +28,7 @@ import Jikka.Common.Error
 import Jikka.Common.Location
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Util (curryLam, genType, mapSubTypesM, mapTypeExprM, mapTypeProgramM, uncurryApp)
+import Jikka.Core.Language.Util
 import qualified Jikka.Core.Parse.Token as L
 }
 
@@ -364,7 +364,6 @@ builtin :: { (Builtin, [Type]) }
 primary :: { Expr }
     : atom                                                  { $1 }
     | subscription                                          { $1 }
-    | primary atom                                          { App $1 $2 }
 
 -- Subscriptions
 subscription :: { Expr }
@@ -375,10 +374,15 @@ subscription :: { Expr }
     -- | primary "." integer                                   {% makeProj $1 $3 underscoreTy }
     | primary "." integer "@" atom_type                     {% makeProj $1 $3 $5 }
 
+-- Function applications
+funapp :: { Expr }
+    : primary                                              { $1 }
+    | funapp primary                                       { App $1 $2 }
+
 -- The power operator
 power :: { Expr }
-    : primary                                               { $1 }
-    | primary "**" u_expr                                   { Pow' $1 $3 }
+    : funapp                                                { $1 }
+    | funapp "**" u_expr                                    { Pow' $1 $3 }
 
 -- Unary arithmetic and bitwise operations
 u_expr :: { Expr }
@@ -496,11 +500,17 @@ makeProj e n t = case t of
     TupleTy ts -> return $ Proj' ts n e
     _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for proj"
 
-replaceUnderscores :: MonadAlpha m => Type -> m Type
-replaceUnderscores = mapSubTypesM go where
+replaceUnderscoresT :: MonadAlpha m => Type -> m Type
+replaceUnderscoresT = mapSubTypesM go where
   go = \case
     VarTy (TypeName "_") -> genType
     t -> return t
+
+replaceUnderscoresE :: MonadAlpha m => [(VarName, Type)] -> Expr -> m Expr
+replaceUnderscoresE env = mapExprM go env where
+  go _ = \case
+    Var (VarName "_") -> Var <$> genVarName'
+    e -> return e
 
 happyErrorExpList :: MonadError Error m => ([WithLoc L.Token], [String]) -> m a
 happyErrorExpList (tokens, expected) = throwSyntaxErrorAt' loc' msg where
@@ -524,23 +534,26 @@ happyErrorExpList (tokens, expected) = throwSyntaxErrorAt' loc' msg where
 runRule :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m (String, [(VarName, Type)], Expr, Expr)
 runRule tokens = wrapError' "Jikka.Core.Parse.Happy.runRule" $ do
     (name, args, e1, e2) <- liftEither $ runRule_ tokens
-    args <- mapM (\(x, t) -> (x,) <$> mapSubTypesM replaceUnderscores t) args
-    e1 <- mapTypeExprM replaceUnderscores e1
-    e2 <- mapTypeExprM replaceUnderscores e2
+    args <- mapM (\(x, t) -> (x,) <$> replaceUnderscoresT t) args
+    e1 <- mapTypeExprM replaceUnderscoresT e1
+    e2 <- mapTypeExprM replaceUnderscoresT e2
+    -- Don't replace underscores in exprs
     return (name, args, e1, e2)
 
 runType :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Type
 runType tokens = wrapError' "Jikka.Core.Parse.Happy.runType" $ do
     t <- liftEither $ runType_ tokens
-    replaceUnderscores t
+    replaceUnderscoresT t
 
 runExpr :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Expr
 runExpr tokens = wrapError' "Jikka.Core.Parse.Happy.runExpr" $ do
     e <- liftEither $ runExpr_ tokens
-    mapTypeExprM replaceUnderscores e
+    mapTypeExprM replaceUnderscoresT e
+    mapExprM replaceUnderscoresE [] e
 
 runProgram :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Program
 runProgram tokens = wrapError' "Jikka.Core.Parse.Happy.runProgram" $ do
     prog <- liftEither $ runProgram_ tokens
-    mapTypeProgramM replaceUnderscores prog
+    prog <- mapTypeProgramM replaceUnderscoresT prog
+    mapExprProgramM replaceUnderscoresE prog
 }

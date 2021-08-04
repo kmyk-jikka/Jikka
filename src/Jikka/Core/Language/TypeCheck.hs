@@ -167,12 +167,15 @@ typecheckExpr env = \case
     case tf of
       FunTy te' ret | te' == te -> return ret
       _ -> throwInternalError $ "wrong type funcall: function = " ++ formatExpr f ++ " and argument = " ++ formatExpr e ++ ", function's type = " ++ formatType tf ++ ", but argument's type = " ++ formatType te
-  Lam x t e -> FunTy t <$> typecheckExpr ((x, t) : env) e
+  Lam x t e ->
+    let env' = if x == VarName "_" then env else (x, t) : env
+     in FunTy t <$> typecheckExpr env' e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     when (t /= t') $ do
       throwInternalError $ "wrong type binding: " ++ formatExpr (Let x t e1 e2)
-    typecheckExpr ((x, t) : env) e2
+    let env' = if x == VarName "_" then env else (x, t) : env
+    typecheckExpr env' e2
 
 typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckToplevelExpr env = \case

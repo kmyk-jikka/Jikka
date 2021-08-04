@@ -117,7 +117,8 @@ toPatE = \case
   Lam x t e -> do
     t <- toPatT t
     y <- lift $ fromVarName x
-    modify' (\env -> env {vars = (x, Just (VarE y)) : vars env})
+    y' <- lift [e|Var $(pure (VarE y))|]
+    modify' (\env -> env {vars = (x, Just y') : vars env})
     e <- toPatE e
     lift [p|Lam $(pure (VarP y)) $(pure t) $(pure e)|]
   Let x t e1 e2 -> do
@@ -212,6 +213,13 @@ ruleExp s = do
           typeVars = []
         }
   (pat, env) <- runStateT (toPatE e1) env
+  supressUnusedMatchesWarnings <- (concat <$>) . forM (vars env) $ \case
+    (_, Just e) -> do
+      e <- [e|return $(pure e)|]
+      return [NoBindS e]
+    _ -> return []
+  supressUnusedMatchesWarnings' <- forM (typeVars env) $ \(_, y) -> do
+    NoBindS <$> [e|return $(pure (VarE y))|]
   ((stmts, exp), _) <- runStateT (toExpE e2) env
   rewriteRule' <- [e|RewriteRule|]
   return' <- [e|return|]
@@ -221,7 +229,7 @@ ruleExp s = do
     AppE rewriteRule' $
       LamE [WildP] $
         LamCaseE
-          [ Match pat (NormalB (DoE (stmts ++ [NoBindS (AppE return' (AppE just exp))]))) [],
+          [ Match pat (NormalB (DoE (supressUnusedMatchesWarnings ++ supressUnusedMatchesWarnings' ++ stmts ++ [NoBindS (AppE return' (AppE just exp))]))) [],
             Match WildP (NormalB (AppE return' nothing)) []
           ]
 
