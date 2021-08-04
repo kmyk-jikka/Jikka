@@ -33,11 +33,11 @@ rule = simpleRewriteRule $ \case
   Equal' _ a b | a == b -> Just LitTrue
   -- align value on the right side to 0
   Equal' IntTy a b | b /= Lit0 -> Just $ Equal' IntTy (Minus' a b) Lit0
-  LessThan' IntTy a b | b /= Lit0 -> Just $ Equal' IntTy (Minus' a b) Lit0
-  LessEqual' IntTy a b | b /= Lit0 -> Just $ Equal' IntTy (Minus' a b) Lit0
-  GreaterThan' IntTy a b | b /= Lit0 -> Just $ Equal' IntTy (Minus' a b) Lit0
-  GreaterEqual' IntTy a b | b /= Lit0 -> Just $ Equal' IntTy (Minus' a b) Lit0
-  NotEqual' IntTy a b | b /= Lit0 -> Just $ Equal' IntTy (Minus' a b) Lit0
+  LessThan' IntTy a b | b /= Lit0 -> Just $ LessThan' IntTy (Minus' a b) Lit0
+  LessEqual' IntTy a b | b /= Lit0 -> Just $ LessEqual' IntTy (Minus' a b) Lit0
+  GreaterThan' IntTy a b | b /= Lit0 -> Just $ GreaterThan' IntTy (Minus' a b) Lit0
+  GreaterEqual' IntTy a b | b /= Lit0 -> Just $ GreaterEqual' IntTy (Minus' a b) Lit0
+  NotEqual' IntTy a b | b /= Lit0 -> Just $ NotEqual' IntTy (Minus' a b) Lit0
   -- reduce injective function
   Equal' t (Minus' (Negate' a) (Negate' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
   Equal' t (Minus' (Not' a) (Not' b)) Lit0 -> Just $ Equal' t (Minus' a b) Lit0
