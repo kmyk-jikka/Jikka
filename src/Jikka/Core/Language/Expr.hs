@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -16,14 +17,15 @@
 -- They are similar to the GHC Core language.
 module Jikka.Core.Language.Expr where
 
+import Data.Data
 import Data.String (IsString)
 
-newtype VarName = VarName String deriving (Eq, Ord, Show, Read, IsString)
+newtype VarName = VarName String deriving (Eq, Ord, Show, Read, Data, Typeable, IsString)
 
 unVarName :: VarName -> String
 unVarName (VarName name) = name
 
-newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, IsString)
+newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, Data, Typeable, IsString)
 
 unTypeName :: TypeName -> String
 unTypeName (TypeName name) = name
@@ -53,18 +55,18 @@ data Type
   | TupleTy [Type]
   | FunTy Type Type
   | DataStructureTy DataStructure
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 data DataStructure
   = ConvexHullTrick
   | SegmentTree Semigroup'
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 data Semigroup'
   = SemigroupIntPlus
   | SemigroupIntMin
   | SemigroupIntMax
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 -- | TODO: What is the difference between `Literal` and `Builtin`?
 data Builtin
@@ -97,11 +99,11 @@ data Builtin
   | -- | \(: \int \to \int \to \int\)
     Lcm
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \alpha\)
-    Min2 Type
+    Min2
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \alpha\)
-    Max2 Type
+    Max2
   | -- | iterated application \((\lambda k f x. f^k(x)): \forall \alpha. \int \to (\alpha \to \alpha) \to \alpha \to \alpha\)
-    Iterate Type
+    Iterate
   | -- logical functions
 
     -- | \(: \bool \to \bool\)
@@ -113,7 +115,7 @@ data Builtin
   | -- | \(: \bool \to \bool \to \bool\)
     Implies
   | -- | \(: \forall \alpha. \bool \to \alpha \to \alpha \to \alpha\)
-    If Type
+    If
   | -- bitwise functions
 
     -- | \(: \int \to \int\)
@@ -131,21 +133,21 @@ data Builtin
   | -- matrix functions
 
     -- | matrix application \(: \int^{H \times W} \to \int^W \to \int^H\)
-    MatAp Int Int
+    MatAp Integer Integer
   | -- | zero matrix \(: \to \int^{n \times n}\)
-    MatZero Int
+    MatZero Integer
   | -- | unit matrix \(: \to \int^{n \times n}\)
-    MatOne Int
+    MatOne Integer
   | -- | matrix addition \(: \int^{H \times W} \to \int^{H \times W} \to \int^{H \times W}\)
-    MatAdd Int Int
+    MatAdd Integer Integer
   | -- | matrix multiplication \(: \int^{H \times n} \to \int^{n \times W} \to \int^{H \times W}\)
-    MatMul Int Int Int
+    MatMul Integer Integer Integer
   | -- | matrix power \(: \int^{n \times n} \to \int \to \int^{n \times n}\)
-    MatPow Int
+    MatPow Integer
   | -- | vector point-wise floor-mod \(: \int^{n} \to \int \to \int^{n}\)
-    VecFloorMod Int
+    VecFloorMod Integer
   | -- | matrix point-wise floor-mod \(: \int^{H \times W} \to \int \to \int^{H \times W}\)
-    MatFloorMod Int Int
+    MatFloorMod Integer Integer
   | -- modular functions
 
     -- | \(: \int \to \int \to \int\)
@@ -161,37 +163,37 @@ data Builtin
   | -- | \(: \int \to \int \to \int \to \int\)
     ModPow
   | -- | matrix application \(: \int^{H \times W} \to \int^W \to \int \to \int^H\)
-    ModMatAp Int Int
+    ModMatAp Integer Integer
   | -- | matrix addition \(: \int^{H \times W} \to \int^{H \times W} \to \int \to \int^{H \times W}\)
-    ModMatAdd Int Int
+    ModMatAdd Integer Integer
   | -- | matrix multiplication \(: \int^{H \times n} \to \int^{n \times W} \to \int \to \int^{H \times W}\)
-    ModMatMul Int Int Int
+    ModMatMul Integer Integer Integer
   | -- | matrix power \(: \int^{n \times n} \to \int \to \int^{n \times n}\)
-    ModMatPow Int
+    ModMatPow Integer
   | -- list functions
 
     -- | \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)
-    Cons Type
+    Cons
   | -- | \(: \forall \alpha. \list(alpha) \to \alpha \to \list(\alpha)\)
-    Snoc Type
+    Snoc
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \beta\)
-    Foldl Type Type
+    Foldl
   | -- | \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
-    Scanl Type Type
+    Scanl
   | -- | \(\lambda f a n.\) repeat @a <- snoc a (f a)@ @n@ times \(: \forall \alpha. (\list(\alpha) \to \alpha) \to \list(\alpha) \to \int \to \list(\alpha)\)
-    Build Type
+    Build
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
-    Len Type
+    Len
   | -- | \(: \forall \alpha \beta. (\alpha \to \beta) \to \list(\alpha) \to \list(\beta)\)
-    Map Type Type
+    Map
   | -- | \(: \forall \alpha \beta. (\alpha \to \bool) \to \list(\alpha) \to \list(\beta)\)
-    Filter Type
+    Filter
   | -- | \(: \forall \alpha. \list(\alpha) \to \int \to \alpha\)
-    At Type
+    At
   | -- | \(: \forall \alpha. \list(\alpha) \to \int \to \alpha \to \list(\alpha)\)
-    SetAt Type
+    SetAt
   | -- | \(: \forall \alpha. \alpha \to \list(\alpha) \to \bool\)
-    Elem Type
+    Elem
   | -- | \(: \list(\int) \to \int\)
     Sum
   | -- | \(: \list(\int) \to \int\)
@@ -201,21 +203,21 @@ data Builtin
   | -- | \(: \list(\int) \to \int \to \int\)
     ModProduct
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
-    Min1 Type
+    Min1
   | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
-    Max1 Type
+    Max1
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
-    ArgMin Type
+    ArgMin
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
-    ArgMax Type
+    ArgMax
   | -- | \(: \list(\bool) \to \bool\)
     All
   | -- | \(: \list(\bool) \to \bool\)
     Any
   | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
-    Sorted Type
+    Sorted
   | -- | \(: \forall \alpha. \list(\alpha) \to \list(\alpha)\)
-    Reversed Type
+    Reversed
   | -- | \(: \int \to \list(\int)\)
     Range1
   | -- | \(: \int \to \int \to \list(\int)\)
@@ -225,23 +227,23 @@ data Builtin
   | -- tuple functions
 
     -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \to \dots \to \alpha _ {n - 1} \to \alpha_0 \times \dots \times \alpha _ {n - 1}\)
-    Tuple [Type]
+    Tuple
   | -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_i\)
-    Proj [Type] Int
+    Proj Integer
   | -- comparison
 
     -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
-    LessThan Type
+    LessThan
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
-    LessEqual Type
+    LessEqual
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
-    GreaterThan Type
+    GreaterThan
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
-    GreaterEqual Type
+    GreaterEqual
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
-    Equal Type
+    Equal
   | -- | \(: \forall \alpha. \alpha \to \alpha \to \bool\)
-    NotEqual Type
+    NotEqual
   | -- combinational functions
 
     -- | \(: \int \to \int\)
@@ -266,10 +268,10 @@ data Builtin
     SegmentTreeGetRange Semigroup'
   | -- | \(: \forall S. \mathrm{segment-tree}(S) \to \int \to S \to \mathrm{segment-tree}(S)\)
     SegmentTreeSetPoint Semigroup'
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 data Literal
-  = LitBuiltin Builtin
+  = LitBuiltin Builtin [Type]
   | -- | \(: \forall \alpha. \int\)
     LitInt Integer
   | -- | \(: \forall \alpha. \bool\)
@@ -278,7 +280,7 @@ data Literal
     LitNil Type
   | -- | \(: \bot : \forall \alpha. \alpha\). The second argument is its error message.
     LitBottom Type String
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 -- | `Expr` represents the exprs of our core language. This is similar to the `Expr` of GHC Core.
 -- See also [commentary/compiler/core-syn-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/core-syn-type).
@@ -290,6 +292,7 @@ data Literal
 --         \vert & e_0(e_1, e_2, \dots, e_n) \\
 --         \vert & \lambda ~ x_0\colon \tau_0, x_1\colon \tau_1, \dots, x_{n-1}\colon \tau_{n-1}. ~ e \\
 --         \vert & \mathbf{let} ~ x\colon \tau = e_1 ~ \mathbf{in} ~ e_2
+--         \vert & \tau
 --     \end{array}
 -- \]
 data Expr
@@ -301,7 +304,7 @@ data Expr
     Lam VarName Type Expr
   | -- | This "let" is not recursive.
     Let VarName Type Expr Expr
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 pattern Fun2Ty t1 t2 ret = FunTy t1 (FunTy t2 ret)
 
@@ -327,11 +330,15 @@ pattern FunLTy t <-
   where
     FunLTy t = FunTy (ListTy t) t
 
-vectorTy :: Int -> Type
-vectorTy n = TupleTy (replicate n IntTy)
+vectorTy :: Integer -> Type
+vectorTy n
+  | 0 <= n && n < 10000 = TupleTy (replicate (fromInteger n) IntTy)
+  | otherwise = error $ "Jikka.Core.Language.Expr.vectorTy: invalid size: " ++ show n
 
-matrixTy :: Int -> Int -> Type
-matrixTy h w = TupleTy (replicate h (TupleTy (replicate w IntTy)))
+matrixTy :: Integer -> Integer -> Type
+matrixTy h w
+  | 0 <= h && h < 10000 && 0 <= w && w < 10000 = TupleTy (replicate (fromInteger h) (TupleTy (replicate (fromInteger w) IntTy)))
+  | otherwise = error $ "Jikka.Core.Language.Expr.matrixTy: invalid size: " ++ show (h, w)
 
 pattern UnitTy = TupleTy []
 
@@ -355,7 +362,11 @@ pattern LitTrue = Lit (LitBool True)
 
 pattern LitFalse = Lit (LitBool False)
 
-pattern Builtin builtin = Lit (LitBuiltin builtin)
+pattern Builtin builtin = Lit (LitBuiltin builtin [])
+
+pattern Builtin1 builtin t1 = Lit (LitBuiltin builtin [t1])
+
+pattern Builtin2 builtin t1 t2 = Lit (LitBuiltin builtin [t1, t2])
 
 pattern App2 f e1 e2 = App (App f e1) e2
 
@@ -363,11 +374,23 @@ pattern App3 f e1 e2 e3 = App (App (App f e1) e2) e3
 
 pattern App4 f e1 e2 e3 e4 = App (App (App (App f e1) e2) e3) e4
 
-pattern AppBuiltin builtin e1 = App (Lit (LitBuiltin builtin)) e1
+pattern AppBuiltin1 builtin e1 = App (Lit (LitBuiltin builtin [])) e1
 
-pattern AppBuiltin2 builtin e1 e2 = App2 (Lit (LitBuiltin builtin)) e1 e2
+pattern AppBuiltin11 builtin t1 e1 = App (Lit (LitBuiltin builtin [t1])) e1
 
-pattern AppBuiltin3 builtin e1 e2 e3 = App3 (Lit (LitBuiltin builtin)) e1 e2 e3
+pattern AppBuiltin2 builtin e1 e2 = App2 (Lit (LitBuiltin builtin [])) e1 e2
+
+pattern AppBuiltin12 builtin t1 e1 e2 = App2 (Lit (LitBuiltin builtin [t1])) e1 e2
+
+pattern AppBuiltin22 builtin t1 t2 e1 e2 = App2 (Lit (LitBuiltin builtin [t1, t2])) e1 e2
+
+pattern AppBuiltin3 builtin e1 e2 e3 = App3 (Lit (LitBuiltin builtin [])) e1 e2 e3
+
+pattern AppBuiltin13 builtin t1 e1 e2 e3 = App3 (Lit (LitBuiltin builtin [t1])) e1 e2 e3
+
+pattern AppBuiltin23 builtin t1 t2 e1 e2 e3 = App3 (Lit (LitBuiltin builtin [t1, t2])) e1 e2 e3
+
+pattern AppBuiltin14 builtin t1 t2 e1 e2 e3 = App3 (Lit (LitBuiltin builtin [t1, t2])) e1 e2 e3
 
 pattern Lam2 x1 t1 x2 t2 e = Lam x1 t1 (Lam x2 t2 e)
 
@@ -386,6 +409,6 @@ data ToplevelExpr
   = ResultExpr Expr
   | ToplevelLet VarName Type Expr ToplevelExpr
   | ToplevelLetRec VarName [(VarName, Type)] Type Expr ToplevelExpr
-  deriving (Eq, Ord, Show, Read)
+  deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 type Program = ToplevelExpr

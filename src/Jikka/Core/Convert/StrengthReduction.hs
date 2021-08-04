@@ -41,7 +41,7 @@ reduceNegate = simpleRewriteRule $ \case
   Negate' (Negate' e) -> Just e
   Plus' (Negate' e1) (Negate' e2) -> Just $ Negate' (Plus' e1 e2)
   Minus' e1 (Negate' e2) -> Just $ Plus' e1 e2
-  Minus' (Negate' e1) e2 -> Just $ Negate' (Minus' e1 e2)
+  Minus' (Negate' e1) e2 -> Just $ Negate' (Plus' e1 e2)
   -- `Minus` is already removed.
   Mult' (Negate' e1) e2 -> Just $ Negate' (Mult' e1 e2)
   Mult' e1 (Negate' e2) -> Just $ Negate' (Mult' e1 e2)

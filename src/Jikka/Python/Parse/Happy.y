@@ -5,7 +5,7 @@
 -- vim: filetype=haskell
 
 -- |
--- Module      : Jikka.Core.Parse.Happy
+-- Module      : Jikka.Python.Parse.Happy
 -- Description : parses the code of the standard Python with Happy.
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0

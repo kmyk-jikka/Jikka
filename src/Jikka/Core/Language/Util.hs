@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TupleSections #-}
 
 module Jikka.Core.Language.Util where
 
@@ -29,107 +30,50 @@ genVarName x = do
 genVarName' :: MonadAlpha m => m VarName
 genVarName' = genVarName (VarName "_")
 
-mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
-mapTypeInBuiltin f = \case
-  -- arithmetical functions
-  Negate -> Negate
-  Plus -> Plus
-  Minus -> Minus
-  Mult -> Mult
-  FloorDiv -> FloorDiv
-  FloorMod -> FloorMod
-  CeilDiv -> CeilDiv
-  CeilMod -> CeilMod
-  Pow -> Pow
-  -- advanced arithmetical functions
-  Abs -> Abs
-  Gcd -> Gcd
-  Lcm -> Lcm
-  Min2 t -> Min2 (f t)
-  Max2 t -> Max2 (f t)
-  Iterate t -> Iterate (f t)
-  -- logical functionslogical
-  Not -> Not
-  And -> And
-  Or -> Or
-  Implies -> Implies
-  If t -> If (f t)
-  -- bitwise functionsbitwise
-  BitNot -> BitNot
-  BitAnd -> BitAnd
-  BitOr -> BitOr
-  BitXor -> BitXor
-  BitLeftShift -> BitLeftShift
-  BitRightShift -> BitRightShift
-  -- matrix functions
-  MatAp h w -> MatAp h w
-  MatZero n -> MatZero n
-  MatOne n -> MatOne n
-  MatAdd h w -> MatAdd h w
-  MatMul h n w -> MatMul h n w
-  MatPow n -> MatPow n
-  VecFloorMod n -> VecFloorMod n
-  MatFloorMod h w -> MatFloorMod h w
-  -- modular functionsmodular
-  ModNegate -> ModNegate
-  ModPlus -> ModPlus
-  ModMinus -> ModMinus
-  ModMult -> ModMult
-  ModInv -> ModInv
-  ModPow -> ModPow
-  ModMatAp h w -> ModMatAp h w
-  ModMatAdd h w -> ModMatAdd h w
-  ModMatMul h n w -> ModMatMul h n w
-  ModMatPow n -> ModMatPow n
-  -- list functionslist
-  Cons t -> Cons (f t)
-  Snoc t -> Snoc (f t)
-  Foldl t1 t2 -> Foldl (f t1) (f t2)
-  Scanl t1 t2 -> Scanl (f t1) (f t2)
-  Build t -> Build (f t)
-  Len t -> Len (f t)
-  Map t1 t2 -> Map (f t1) (f t2)
-  Filter t -> Filter (f t)
-  At t -> At (f t)
-  SetAt t -> SetAt (f t)
-  Elem t -> Elem (f t)
-  Sum -> Sum
-  Product -> Product
-  ModSum -> ModSum
-  ModProduct -> ModProduct
-  Min1 t -> Min1 (f t)
-  Max1 t -> Max1 (f t)
-  ArgMin t -> ArgMin (f t)
-  ArgMax t -> ArgMax (f t)
-  All -> All
-  Any -> Any
-  Sorted t -> Sorted (f t)
-  Reversed t -> Reversed (f t)
-  Range1 -> Range1
-  Range2 -> Range2
-  Range3 -> Range3
-  -- tuple functions
-  Tuple ts -> Tuple (map f ts)
-  Proj ts n -> Proj (map f ts) n
-  -- comparison
-  LessThan t -> LessThan (f t)
-  LessEqual t -> LessEqual (f t)
-  GreaterThan t -> GreaterThan (f t)
-  GreaterEqual t -> GreaterEqual (f t)
-  Equal t -> Equal (f t)
-  NotEqual t -> NotEqual (f t)
-  -- combinational functions
-  Fact -> Fact
-  Choose -> Choose
-  Permute -> Permute
-  MultiChoose -> MultiChoose
-  -- data structures
-  ConvexHullTrickInit -> ConvexHullTrickInit
-  ConvexHullTrickInsert -> ConvexHullTrickInsert
-  ConvexHullTrickGetMin -> ConvexHullTrickGetMin
-  SegmentTreeInitList semigrp -> SegmentTreeInitList semigrp
-  SegmentTreeGetRange semigrp -> SegmentTreeGetRange semigrp
-  SegmentTreeSetPoint semigrp -> SegmentTreeSetPoint semigrp
+mapSubTypesM :: Monad m => (Type -> m Type) -> Type -> m Type
+mapSubTypesM f = go
+  where
+    go = \case
+      VarTy x -> f $ VarTy x
+      IntTy -> f IntTy
+      BoolTy -> f BoolTy
+      ListTy t -> f . ListTy =<< f t
+      TupleTy ts -> f . TupleTy =<< mapM f ts
+      FunTy t1 t2 -> f =<< (FunTy <$> f t1 <*> f t2)
+      DataStructureTy ds -> f $ DataStructureTy ds
+
+mapTypeLiteralM :: Monad m => (Type -> m Type) -> Literal -> m Literal
+mapTypeLiteralM f = \case
+  LitBuiltin builtin ts -> LitBuiltin builtin <$> mapM f ts
+  LitInt n -> return $ LitInt n
+  LitBool p -> return $ LitBool p
+  LitNil t -> LitNil <$> f t
+  LitBottom t err -> LitBottom <$> f t <*> pure err
+
+mapTypeExprM :: Monad m => (Type -> m Type) -> Expr -> m Expr
+mapTypeExprM f = go
+  where
+    go = \case
+      Var x -> return $ Var x
+      Lit lit -> Lit <$> mapTypeLiteralM f lit
+      App f e -> App <$> go f <*> go e
+      Lam x t body -> Lam x <$> f t <*> go body
+      Let x t e1 e2 -> Let x <$> f t <*> go e1 <*> go e2
+
+mapTypeExpr :: (Type -> Type) -> Expr -> Expr
+mapTypeExpr f e = runIdentity (mapTypeExprM (return . f) e)
+
+mapTypeToplevelExprM :: Monad m => (Type -> m Type) -> ToplevelExpr -> m ToplevelExpr
+mapTypeToplevelExprM f = \case
+  ResultExpr e -> ResultExpr <$> mapTypeExprM f e
+  ToplevelLet x t e cont -> ToplevelLet x <$> f t <*> mapTypeExprM f e <*> mapTypeToplevelExprM f cont
+  ToplevelLetRec g args ret body cont -> ToplevelLetRec g <$> mapM (\(x, t) -> (x,) <$> f t) args <*> f ret <*> mapTypeExprM f body <*> mapTypeToplevelExprM f cont
+
+mapTypeProgramM :: Monad m => (Type -> m Type) -> Program -> m Program
+mapTypeProgramM = mapTypeToplevelExprM
+
+mapTypeProgram :: (Type -> Type) -> Program -> Program
+mapTypeProgram f prog = runIdentity (mapTypeProgramM (return . f) prog)
 
 -- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
@@ -244,15 +188,15 @@ isConstantTimeBuiltin = \case
   Abs -> True
   Gcd -> True
   Lcm -> True
-  Min2 _ -> True
-  Max2 _ -> True
-  Iterate _ -> False
+  Min2 -> True
+  Max2 -> True
+  Iterate -> False
   -- logical functions
   Not -> True
   And -> True
   Or -> True
   Implies -> True
-  If _ -> True
+  If -> True
   -- bitwise functions
   BitNot -> True
   BitAnd -> True
@@ -281,42 +225,42 @@ isConstantTimeBuiltin = \case
   ModMatMul _ _ _ -> True
   ModMatPow _ -> True
   -- list functions
-  Cons _ -> False
-  Snoc _ -> False
-  Foldl _ _ -> False
-  Scanl _ _ -> False
-  Build _ -> False
-  Len _ -> True
-  Map _ _ -> False
-  Filter _ -> False
-  At _ -> True
-  SetAt _ -> False
-  Elem _ -> False
+  Cons -> False
+  Snoc -> False
+  Foldl -> False
+  Scanl -> False
+  Build -> False
+  Len -> True
+  Map -> False
+  Filter -> False
+  At -> True
+  SetAt -> False
+  Elem -> False
   Sum -> False
   Product -> False
   ModSum -> False
   ModProduct -> False
-  Min1 _ -> False
-  Max1 _ -> False
-  ArgMin _ -> False
-  ArgMax _ -> False
+  Min1 -> False
+  Max1 -> False
+  ArgMin -> False
+  ArgMax -> False
   All -> False
   Any -> False
-  Sorted _ -> False
-  Reversed _ -> False
+  Sorted -> False
+  Reversed -> False
   Range1 -> False
   Range2 -> False
   Range3 -> False
   -- tuple functions
-  Tuple _ -> True
-  Proj _ _ -> True
+  Tuple -> True
+  Proj _ -> True
   -- comparison
-  LessThan _ -> True
-  LessEqual _ -> True
-  GreaterThan _ -> True
-  GreaterEqual _ -> True
-  Equal _ -> True
-  NotEqual _ -> True
+  LessThan -> True
+  LessEqual -> True
+  GreaterThan -> True
+  GreaterEqual -> True
+  Equal -> True
+  NotEqual -> True
   -- combinational functions
   Fact -> True
   Choose -> True
@@ -336,7 +280,7 @@ isConstantTimeExpr = \case
   Var _ -> True
   Lit _ -> True
   e@(App _ _) -> case curryApp e of
-    (Lit (LitBuiltin f), args) -> isConstantTimeBuiltin f && all isConstantTimeExpr args
+    (Lit (LitBuiltin f _), args) -> isConstantTimeBuiltin f && all isConstantTimeExpr args
     _ -> False
   Lam _ _ _ -> True
   Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2

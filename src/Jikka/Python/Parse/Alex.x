@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- |
--- Module      : Jikka.Core.Parse.Alex
+-- Module      : Jikka.Python.Parse.Alex
 -- Description : tokenizes the code of the standard Python with Alex.
 -- Copyright   : (c) Kimiyuki Onaka, 2020
 -- License     : Apache License 2.0
@@ -12,7 +12,6 @@
 -- Portability : portable
 --
 -- *   TODO: tokenize float literals
--- *   TODO: tokenize string literals
 module Jikka.Python.Parse.Alex
     ( run
     ) where

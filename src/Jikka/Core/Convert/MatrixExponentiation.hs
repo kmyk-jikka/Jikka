@@ -16,6 +16,7 @@ where
 
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
+import Data.List
 import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -52,13 +53,13 @@ fromAffineMatrix a b =
       bottom = uncurryApp (Tuple' (replicate (w + 1) IntTy)) (replicate w (LitInt' 0) ++ [LitInt' 1])
    in uncurryApp (Tuple' (replicate (h + 1) (TupleTy (replicate (w + 1) IntTy)))) (V.toList (V.zipWith go (unMatrix a) b) ++ [bottom])
 
-toMatrix :: MonadAlpha m => [(VarName, Type)] -> VarName -> Int -> Expr -> m (Maybe (Matrix ArithmeticalExpr, Maybe (V.Vector ArithmeticalExpr)))
+toMatrix :: MonadAlpha m => [(VarName, Type)] -> VarName -> Integer -> Expr -> m (Maybe (Matrix ArithmeticalExpr, Maybe (V.Vector ArithmeticalExpr)))
 toMatrix env x n step =
   case curryApp step of
     (Tuple' _, es) -> runMaybeT $ do
-      xs <- V.fromList <$> replicateM n (lift (genVarName x))
+      xs <- V.fromList <$> replicateM (fromInteger n) (lift (genVarName x))
       let unpackTuple _ e = case e of
-            Proj' _ i (Var x') | x' == x -> Var (xs V.! i)
+            Proj' _ i (Var x') | x' == x -> Var (xs V.! fromInteger i)
             _ -> e
       rows <- MaybeT . return . forM es $ \e -> do
         let e' = mapExpr unpackTuple env e
@@ -69,14 +70,14 @@ toMatrix env x n step =
       return (a, b)
     _ -> return Nothing
 
-addOneToVector :: Int -> VarName -> Expr
+addOneToVector :: Integer -> VarName -> Expr
 addOneToVector n x =
-  let ts = replicate n IntTy
+  let ts = replicate (fromInteger n) IntTy
    in uncurryApp (Tuple' (IntTy : ts)) (map (\i -> Proj' ts i (Var x)) [0 .. n - 1] ++ [LitInt' 1])
 
-removeOneFromVector :: Int -> VarName -> Expr
+removeOneFromVector :: Integer -> VarName -> Expr
 removeOneFromVector n x =
-  let ts = replicate n IntTy
+  let ts = replicate (fromInteger n) IntTy
    in uncurryApp (Tuple' ts) (map (\i -> Proj' (IntTy : ts) i (Var x)) [0 .. n - 1])
 
 rule :: MonadAlpha m => RewriteRule m
@@ -93,7 +94,7 @@ rule = RewriteRule $ \env -> \case
             b' = Mult' (FloorDiv' (Minus' (Pow' a k) (LitInt' 1)) (Minus' a (LitInt' 1))) b -- This division has no remainder.
          in Just $ Plus' (Mult' a' base) b'
   Iterate' (TupleTy ts) k (Lam x _ step) base | isVectorTy' ts -> do
-    let n = length ts
+    let n = genericLength ts
     let go n step base = MatAp' n n (MatPow' n step k) base
     step <- toMatrix env x n step
     case step of

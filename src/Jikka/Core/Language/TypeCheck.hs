@@ -12,111 +12,119 @@
 module Jikka.Core.Language.TypeCheck where
 
 import Jikka.Common.Error
-import Jikka.Core.Format (formatExpr, formatType)
+import Jikka.Core.Format (formatBuiltinIsolated, formatExpr, formatType)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Util
 
-builtinToType :: Builtin -> Type
-builtinToType = \case
-  -- arithmetical functions
-  Negate -> Fun1STy IntTy
-  Plus -> Fun2STy IntTy
-  Minus -> Fun2STy IntTy
-  Mult -> Fun2STy IntTy
-  FloorDiv -> Fun2STy IntTy
-  FloorMod -> Fun2STy IntTy
-  CeilDiv -> Fun2STy IntTy
-  CeilMod -> Fun2STy IntTy
-  Pow -> Fun2STy IntTy
-  -- advanced arithmetical functions
-  Abs -> Fun1STy IntTy
-  Gcd -> Fun2STy IntTy
-  Lcm -> Fun2STy IntTy
-  Min2 t -> Fun2STy t
-  Max2 t -> Fun2STy t
-  Iterate t -> Fun3Ty IntTy (FunTy t t) t t
-  -- logical functions
-  Not -> Fun1STy BoolTy
-  And -> Fun2STy BoolTy
-  Or -> Fun2STy BoolTy
-  Implies -> Fun2STy BoolTy
-  If t -> Fun3Ty BoolTy t t t
-  -- bitwise functions
-  BitNot -> Fun1STy IntTy
-  BitAnd -> Fun2STy IntTy
-  BitOr -> Fun2STy IntTy
-  BitXor -> Fun2STy IntTy
-  BitLeftShift -> Fun2STy IntTy
-  BitRightShift -> Fun2STy IntTy
-  -- matrix functions
-  MatAp h w -> Fun2Ty (matrixTy h w) (vectorTy w) (vectorTy h)
-  MatZero n -> matrixTy n n
-  MatOne n -> matrixTy n n
-  MatAdd h w -> Fun2Ty (matrixTy h w) (matrixTy h w) (matrixTy h w)
-  MatMul h n w -> Fun2Ty (matrixTy h n) (matrixTy n w) (matrixTy h w)
-  MatPow n -> Fun2Ty (matrixTy n n) IntTy (matrixTy n n)
-  VecFloorMod n -> Fun2Ty (vectorTy n) IntTy (vectorTy n)
-  MatFloorMod h w -> Fun2Ty (matrixTy h w) IntTy (matrixTy h w)
-  -- modular functions
-  ModNegate -> Fun2STy IntTy
-  ModPlus -> Fun3STy IntTy
-  ModMinus -> Fun3STy IntTy
-  ModMult -> Fun3STy IntTy
-  ModInv -> Fun2STy IntTy
-  ModPow -> Fun3STy IntTy
-  ModMatAp h w -> Fun3Ty (matrixTy h w) (vectorTy w) IntTy (vectorTy h)
-  ModMatAdd h w -> Fun3Ty (matrixTy h w) (matrixTy h w) IntTy (matrixTy h w)
-  ModMatMul h n w -> Fun3Ty (matrixTy h n) (matrixTy n w) IntTy (matrixTy h w)
-  ModMatPow n -> Fun3Ty (matrixTy n n) IntTy IntTy (matrixTy n n)
-  -- list functions
-  Cons t -> Fun2Ty t (ListTy t) (ListTy t)
-  Snoc t -> Fun2Ty (ListTy t) t (ListTy t)
-  Foldl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
-  Scanl t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
-  Build t -> Fun3Ty (FunTy (ListTy t) t) (ListTy t) IntTy (ListTy t)
-  Len t -> FunTy (ListTy t) IntTy
-  Map t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
-  Filter t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)
-  At t -> Fun2Ty (ListTy t) IntTy t
-  SetAt t -> Fun3Ty (ListTy t) IntTy t (ListTy t)
-  Elem t -> Fun2Ty t (ListTy t) BoolTy
-  Sum -> FunLTy IntTy
-  Product -> FunLTy IntTy
-  ModSum -> Fun2Ty (ListTy IntTy) IntTy IntTy
-  ModProduct -> Fun2Ty (ListTy IntTy) IntTy IntTy
-  Min1 t -> FunLTy t
-  Max1 t -> FunLTy t
-  ArgMin t -> FunTy (ListTy t) IntTy
-  ArgMax t -> FunTy (ListTy t) IntTy
-  All -> FunLTy BoolTy
-  Any -> FunLTy BoolTy
-  Sorted t -> Fun1STy (ListTy t)
-  Reversed t -> Fun1STy (ListTy t)
-  Range1 -> FunTy IntTy (ListTy IntTy)
-  Range2 -> Fun2Ty IntTy IntTy (ListTy IntTy)
-  Range3 -> Fun3Ty IntTy IntTy IntTy (ListTy IntTy)
-  -- tuple functions
-  Tuple ts -> curryFunTy ts (TupleTy ts)
-  Proj ts n -> FunTy (TupleTy ts) (ts !! n)
-  -- comparison
-  LessThan t -> Fun2Ty t t BoolTy
-  LessEqual t -> Fun2Ty t t BoolTy
-  GreaterThan t -> Fun2Ty t t BoolTy
-  GreaterEqual t -> Fun2Ty t t BoolTy
-  Equal t -> Fun2Ty t t BoolTy
-  NotEqual t -> Fun2Ty t t BoolTy
-  -- combinational functions
-  Fact -> Fun1STy IntTy
-  Choose -> Fun2STy IntTy
-  Permute -> Fun2STy IntTy
-  MultiChoose -> Fun2STy IntTy
-  -- data structure
-  ConvexHullTrickInit -> ConvexHullTrickTy
-  ConvexHullTrickGetMin -> Fun2Ty ConvexHullTrickTy IntTy IntTy
-  ConvexHullTrickInsert -> Fun3Ty ConvexHullTrickTy IntTy IntTy ConvexHullTrickTy
-  SegmentTreeInitList semigrp -> FunTy (ListTy (semigroupToType semigrp)) (SegmentTreeTy semigrp)
-  SegmentTreeGetRange semigrp -> Fun3Ty (SegmentTreeTy semigrp) IntTy IntTy (semigroupToType semigrp)
-  SegmentTreeSetPoint semigrp -> Fun3Ty (SegmentTreeTy semigrp) IntTy (semigroupToType semigrp) (SegmentTreeTy semigrp)
+builtinToType :: MonadError Error m => Builtin -> [Type] -> m Type
+builtinToType builtin ts =
+  let go0 f = return f
+      go1 f = case ts of
+        [t1] -> return $ f t1
+        _ -> throwInternalError $ "expected 1 type argument, but got " ++ show (length ts) ++ ": " ++ formatBuiltinIsolated builtin ts
+      go2 f = case ts of
+        [t1, t2] -> return $ f t1 t2
+        _ -> throwInternalError $ "expected 2 type arguments, but got " ++ show (length ts) ++ ": " ++ formatBuiltinIsolated builtin ts
+   in case builtin of
+        -- arithmetical functions
+        Negate -> go0 $ Fun1STy IntTy
+        Plus -> go0 $ Fun2STy IntTy
+        Minus -> go0 $ Fun2STy IntTy
+        Mult -> go0 $ Fun2STy IntTy
+        FloorDiv -> go0 $ Fun2STy IntTy
+        FloorMod -> go0 $ Fun2STy IntTy
+        CeilDiv -> go0 $ Fun2STy IntTy
+        CeilMod -> go0 $ Fun2STy IntTy
+        Pow -> go0 $ Fun2STy IntTy
+        -- advanced arithmetical functions
+        Abs -> go0 $ Fun1STy IntTy
+        Gcd -> go0 $ Fun2STy IntTy
+        Lcm -> go0 $ Fun2STy IntTy
+        Min2 -> go1 $ \t -> Fun2STy t
+        Max2 -> go1 $ \t -> Fun2STy t
+        Iterate -> go1 $ \t -> Fun3Ty IntTy (FunTy t t) t t
+        -- logical functions
+        Not -> go0 $ Fun1STy BoolTy
+        And -> go0 $ Fun2STy BoolTy
+        Or -> go0 $ Fun2STy BoolTy
+        Implies -> go0 $ Fun2STy BoolTy
+        If -> go1 $ \t -> Fun3Ty BoolTy t t t
+        -- bitwise functions
+        BitNot -> go0 $ Fun1STy IntTy
+        BitAnd -> go0 $ Fun2STy IntTy
+        BitOr -> go0 $ Fun2STy IntTy
+        BitXor -> go0 $ Fun2STy IntTy
+        BitLeftShift -> go0 $ Fun2STy IntTy
+        BitRightShift -> go0 $ Fun2STy IntTy
+        -- matrix functions
+        MatAp h w -> go0 $ Fun2Ty (matrixTy h w) (vectorTy w) (vectorTy h)
+        MatZero n -> go0 $ matrixTy n n
+        MatOne n -> go0 $ matrixTy n n
+        MatAdd h w -> go0 $ Fun2Ty (matrixTy h w) (matrixTy h w) (matrixTy h w)
+        MatMul h n w -> go0 $ Fun2Ty (matrixTy h n) (matrixTy n w) (matrixTy h w)
+        MatPow n -> go0 $ Fun2Ty (matrixTy n n) IntTy (matrixTy n n)
+        VecFloorMod n -> go0 $ Fun2Ty (vectorTy n) IntTy (vectorTy n)
+        MatFloorMod h w -> go0 $ Fun2Ty (matrixTy h w) IntTy (matrixTy h w)
+        -- modular functions
+        ModNegate -> go0 $ Fun2STy IntTy
+        ModPlus -> go0 $ Fun3STy IntTy
+        ModMinus -> go0 $ Fun3STy IntTy
+        ModMult -> go0 $ Fun3STy IntTy
+        ModInv -> go0 $ Fun2STy IntTy
+        ModPow -> go0 $ Fun3STy IntTy
+        ModMatAp h w -> go0 $ Fun3Ty (matrixTy h w) (vectorTy w) IntTy (vectorTy h)
+        ModMatAdd h w -> go0 $ Fun3Ty (matrixTy h w) (matrixTy h w) IntTy (matrixTy h w)
+        ModMatMul h n w -> go0 $ Fun3Ty (matrixTy h n) (matrixTy n w) IntTy (matrixTy h w)
+        ModMatPow n -> go0 $ Fun3Ty (matrixTy n n) IntTy IntTy (matrixTy n n)
+        -- list functions
+        Cons -> go1 $ \t -> Fun2Ty t (ListTy t) (ListTy t)
+        Snoc -> go1 $ \t -> Fun2Ty (ListTy t) t (ListTy t)
+        Foldl -> go2 $ \t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) t2
+        Scanl -> go2 $ \t1 t2 -> Fun3Ty (Fun2Ty t2 t1 t2) t2 (ListTy t1) (ListTy t2)
+        Build -> go1 $ \t -> Fun3Ty (FunTy (ListTy t) t) (ListTy t) IntTy (ListTy t)
+        Len -> go1 $ \t -> FunTy (ListTy t) IntTy
+        Map -> go2 $ \t1 t2 -> Fun2Ty (FunTy t1 t2) (ListTy t1) (ListTy t2)
+        Filter -> go1 $ \t -> Fun2Ty (FunTy t BoolTy) (ListTy t) (ListTy t)
+        At -> go1 $ \t -> Fun2Ty (ListTy t) IntTy t
+        SetAt -> go1 $ \t -> Fun3Ty (ListTy t) IntTy t (ListTy t)
+        Elem -> go1 $ \t -> Fun2Ty t (ListTy t) BoolTy
+        Sum -> go0 $ FunLTy IntTy
+        Product -> go0 $ FunLTy IntTy
+        ModSum -> go0 $ Fun2Ty (ListTy IntTy) IntTy IntTy
+        ModProduct -> go0 $ Fun2Ty (ListTy IntTy) IntTy IntTy
+        Min1 -> go1 $ \t -> FunLTy t
+        Max1 -> go1 $ \t -> FunLTy t
+        ArgMin -> go1 $ \t -> FunTy (ListTy t) IntTy
+        ArgMax -> go1 $ \t -> FunTy (ListTy t) IntTy
+        All -> go0 $ FunLTy BoolTy
+        Any -> go0 $ FunLTy BoolTy
+        Sorted -> go1 $ \t -> Fun1STy (ListTy t)
+        Reversed -> go1 $ \t -> Fun1STy (ListTy t)
+        Range1 -> go0 $ FunTy IntTy (ListTy IntTy)
+        Range2 -> go0 $ Fun2Ty IntTy IntTy (ListTy IntTy)
+        Range3 -> go0 $ Fun3Ty IntTy IntTy IntTy (ListTy IntTy)
+        -- tuple functions
+        Tuple -> return $ curryFunTy ts (TupleTy ts)
+        Proj n -> return $ FunTy (TupleTy ts) (ts !! fromInteger n)
+        -- comparison
+        LessThan -> go1 $ \t -> Fun2Ty t t BoolTy
+        LessEqual -> go1 $ \t -> Fun2Ty t t BoolTy
+        GreaterThan -> go1 $ \t -> Fun2Ty t t BoolTy
+        GreaterEqual -> go1 $ \t -> Fun2Ty t t BoolTy
+        Equal -> go1 $ \t -> Fun2Ty t t BoolTy
+        NotEqual -> go1 $ \t -> Fun2Ty t t BoolTy
+        -- combinational functions
+        Fact -> go0 $ Fun1STy IntTy
+        Choose -> go0 $ Fun2STy IntTy
+        Permute -> go0 $ Fun2STy IntTy
+        MultiChoose -> go0 $ Fun2STy IntTy
+        -- data structure
+        ConvexHullTrickInit -> go0 ConvexHullTrickTy
+        ConvexHullTrickGetMin -> go0 $ Fun2Ty ConvexHullTrickTy IntTy IntTy
+        ConvexHullTrickInsert -> go0 $ Fun3Ty ConvexHullTrickTy IntTy IntTy ConvexHullTrickTy
+        SegmentTreeInitList semigrp -> go0 $ FunTy (ListTy (semigroupToType semigrp)) (SegmentTreeTy semigrp)
+        SegmentTreeGetRange semigrp -> go0 $ Fun3Ty (SegmentTreeTy semigrp) IntTy IntTy (semigroupToType semigrp)
+        SegmentTreeSetPoint semigrp -> go0 $ Fun3Ty (SegmentTreeTy semigrp) IntTy (semigroupToType semigrp) (SegmentTreeTy semigrp)
 
 semigroupToType :: Semigroup' -> Type
 semigroupToType = \case
@@ -124,25 +132,25 @@ semigroupToType = \case
   SemigroupIntMin -> IntTy
   SemigroupIntMax -> IntTy
 
-literalToType :: Literal -> Type
+literalToType :: MonadError Error m => Literal -> m Type
 literalToType = \case
-  LitBuiltin builtin -> builtinToType builtin
-  LitInt _ -> IntTy
-  LitBool _ -> BoolTy
-  LitNil t -> ListTy t
-  LitBottom t _ -> t
+  LitBuiltin builtin ts -> builtinToType builtin ts
+  LitInt _ -> return IntTy
+  LitBool _ -> return BoolTy
+  LitNil t -> return $ ListTy t
+  LitBottom t _ -> return t
 
-arityOfBuiltin :: Builtin -> Int
-arityOfBuiltin = \case
-  Min2 _ -> 2
-  Max2 _ -> 2
-  Foldl _ _ -> 3
-  Iterate _ -> 3
-  At _ -> 2
-  Min1 _ -> 1
-  Max1 _ -> 1
-  Proj _ _ -> 1
-  builtin -> length (fst (uncurryFunTy (builtinToType builtin)))
+arityOfBuiltin :: MonadError Error m => Builtin -> [Type] -> m Int
+arityOfBuiltin builtin ts = case builtin of
+  Min2 -> return 2
+  Max2 -> return 2
+  Foldl -> return 3
+  Iterate -> return 3
+  At -> return 2
+  Min1 -> return 1
+  Max1 -> return 1
+  Proj _ -> return 1
+  builtin -> length . fst . uncurryFunTy <$> builtinToType builtin ts
 
 type TypeEnv = [(VarName, Type)]
 
@@ -152,19 +160,22 @@ typecheckExpr env = \case
   Var x -> case lookup x env of
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
     Just t -> return t
-  Lit lit -> return $ literalToType lit
+  Lit lit -> literalToType lit
   App f e -> do
     tf <- typecheckExpr env f
     te <- typecheckExpr env e
     case tf of
       FunTy te' ret | te' == te -> return ret
       _ -> throwInternalError $ "wrong type funcall: function = " ++ formatExpr f ++ " and argument = " ++ formatExpr e ++ ", function's type = " ++ formatType tf ++ ", but argument's type = " ++ formatType te
-  Lam x t e -> FunTy t <$> typecheckExpr ((x, t) : env) e
+  Lam x t e ->
+    let env' = if x == VarName "_" then env else (x, t) : env
+     in FunTy t <$> typecheckExpr env' e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     when (t /= t') $ do
       throwInternalError $ "wrong type binding: " ++ formatExpr (Let x t e1 e2)
-    typecheckExpr ((x, t) : env) e2
+    let env' = if x == VarName "_" then env else (x, t) : env
+    typecheckExpr env' e2
 
 typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckToplevelExpr env = \case
