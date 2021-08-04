@@ -256,6 +256,8 @@ instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Contr
 instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Reader.ReaderT r m)
 instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT s m)
 instance (Jikka.Common.Alpha.MonadAlpha m, GHC.Base.Monoid w) => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Writer.Strict.WriterT w m)
+instance Jikka.Common.Alpha.MonadAlpha GHC.Types.IO
+instance Jikka.Common.Alpha.MonadAlpha Language.Haskell.TH.Syntax.Q
 
 module Jikka.CPlusPlus.Language.Util
 fromLeftExpr :: LeftExpr -> Expr
@@ -905,13 +907,13 @@ Gcd :: Builtin
 Lcm :: Builtin
 
 -- | &lt;math&gt;
-Min2 :: Type -> Builtin
+Min2 :: Builtin
 
 -- | &lt;math&gt;
-Max2 :: Type -> Builtin
+Max2 :: Builtin
 
 -- | iterated application &lt;math&gt;
-Iterate :: Type -> Builtin
+Iterate :: Builtin
 
 -- | &lt;math&gt;
 Not :: Builtin
@@ -926,7 +928,7 @@ Or :: Builtin
 Implies :: Builtin
 
 -- | &lt;math&gt;
-If :: Type -> Builtin
+If :: Builtin
 
 -- | &lt;math&gt;
 BitNot :: Builtin
@@ -947,28 +949,28 @@ BitLeftShift :: Builtin
 BitRightShift :: Builtin
 
 -- | matrix application &lt;math&gt;
-MatAp :: Int -> Int -> Builtin
+MatAp :: Integer -> Integer -> Builtin
 
 -- | zero matrix &lt;math&gt;
-MatZero :: Int -> Builtin
+MatZero :: Integer -> Builtin
 
 -- | unit matrix &lt;math&gt;
-MatOne :: Int -> Builtin
+MatOne :: Integer -> Builtin
 
 -- | matrix addition &lt;math&gt;
-MatAdd :: Int -> Int -> Builtin
+MatAdd :: Integer -> Integer -> Builtin
 
 -- | matrix multiplication &lt;math&gt;
-MatMul :: Int -> Int -> Int -> Builtin
+MatMul :: Integer -> Integer -> Integer -> Builtin
 
 -- | matrix power &lt;math&gt;
-MatPow :: Int -> Builtin
+MatPow :: Integer -> Builtin
 
 -- | vector point-wise floor-mod &lt;math&gt;
-VecFloorMod :: Int -> Builtin
+VecFloorMod :: Integer -> Builtin
 
 -- | matrix point-wise floor-mod &lt;math&gt;
-MatFloorMod :: Int -> Int -> Builtin
+MatFloorMod :: Integer -> Integer -> Builtin
 
 -- | &lt;math&gt;
 ModNegate :: Builtin
@@ -989,50 +991,50 @@ ModInv :: Builtin
 ModPow :: Builtin
 
 -- | matrix application &lt;math&gt;
-ModMatAp :: Int -> Int -> Builtin
+ModMatAp :: Integer -> Integer -> Builtin
 
 -- | matrix addition &lt;math&gt;
-ModMatAdd :: Int -> Int -> Builtin
+ModMatAdd :: Integer -> Integer -> Builtin
 
 -- | matrix multiplication &lt;math&gt;
-ModMatMul :: Int -> Int -> Int -> Builtin
+ModMatMul :: Integer -> Integer -> Integer -> Builtin
 
 -- | matrix power &lt;math&gt;
-ModMatPow :: Int -> Builtin
+ModMatPow :: Integer -> Builtin
 
 -- | &lt;math&gt;
-Cons :: Type -> Builtin
+Cons :: Builtin
 
 -- | &lt;math&gt;
-Snoc :: Type -> Builtin
+Snoc :: Builtin
 
 -- | &lt;math&gt;
-Foldl :: Type -> Type -> Builtin
+Foldl :: Builtin
 
 -- | &lt;math&gt;
-Scanl :: Type -> Type -> Builtin
+Scanl :: Builtin
 
 -- | &lt;math&gt; repeat <tt>a &lt;- snoc a (f a)</tt> <tt>n</tt> times
 --   &lt;math&gt;
-Build :: Type -> Builtin
+Build :: Builtin
 
 -- | &lt;math&gt;
-Len :: Type -> Builtin
+Len :: Builtin
 
 -- | &lt;math&gt;
-Map :: Type -> Type -> Builtin
+Map :: Builtin
 
 -- | &lt;math&gt;
-Filter :: Type -> Builtin
+Filter :: Builtin
 
 -- | &lt;math&gt;
-At :: Type -> Builtin
+At :: Builtin
 
 -- | &lt;math&gt;
-SetAt :: Type -> Builtin
+SetAt :: Builtin
 
 -- | &lt;math&gt;
-Elem :: Type -> Builtin
+Elem :: Builtin
 
 -- | &lt;math&gt;
 Sum :: Builtin
@@ -1047,16 +1049,16 @@ ModSum :: Builtin
 ModProduct :: Builtin
 
 -- | &lt;math&gt;
-Min1 :: Type -> Builtin
+Min1 :: Builtin
 
 -- | &lt;math&gt;
-Max1 :: Type -> Builtin
+Max1 :: Builtin
 
 -- | &lt;math&gt;
-ArgMin :: Type -> Builtin
+ArgMin :: Builtin
 
 -- | &lt;math&gt;
-ArgMax :: Type -> Builtin
+ArgMax :: Builtin
 
 -- | &lt;math&gt;
 All :: Builtin
@@ -1065,10 +1067,10 @@ All :: Builtin
 Any :: Builtin
 
 -- | &lt;math&gt;
-Sorted :: Type -> Builtin
+Sorted :: Builtin
 
 -- | &lt;math&gt;
-Reversed :: Type -> Builtin
+Reversed :: Builtin
 
 -- | &lt;math&gt;
 Range1 :: Builtin
@@ -1080,28 +1082,28 @@ Range2 :: Builtin
 Range3 :: Builtin
 
 -- | &lt;math&gt;
-Tuple :: [Type] -> Builtin
+Tuple :: Builtin
 
 -- | &lt;math&gt;
-Proj :: [Type] -> Int -> Builtin
+Proj :: Integer -> Builtin
 
 -- | &lt;math&gt;
-LessThan :: Type -> Builtin
+LessThan :: Builtin
 
 -- | &lt;math&gt;
-LessEqual :: Type -> Builtin
+LessEqual :: Builtin
 
 -- | &lt;math&gt;
-GreaterThan :: Type -> Builtin
+GreaterThan :: Builtin
 
 -- | &lt;math&gt;
-GreaterEqual :: Type -> Builtin
+GreaterEqual :: Builtin
 
 -- | &lt;math&gt;
-Equal :: Type -> Builtin
+Equal :: Builtin
 
 -- | &lt;math&gt;
-NotEqual :: Type -> Builtin
+NotEqual :: Builtin
 
 -- | &lt;math&gt;
 Fact :: Builtin
@@ -1133,7 +1135,7 @@ SegmentTreeGetRange :: Semigroup' -> Builtin
 -- | &lt;math&gt;
 SegmentTreeSetPoint :: Semigroup' -> Builtin
 data Literal
-LitBuiltin :: Builtin -> Literal
+LitBuiltin :: Builtin -> [Type] -> Literal
 
 -- | &lt;math&gt;
 LitInt :: Integer -> Literal
@@ -1170,8 +1172,8 @@ pattern Fun1STy :: Type -> Type
 pattern Fun2STy :: Type -> Type
 pattern Fun3STy :: Type -> Type
 pattern FunLTy :: Type -> Type
-vectorTy :: Int -> Type
-matrixTy :: Int -> Int -> Type
+vectorTy :: Integer -> Type
+matrixTy :: Integer -> Integer -> Type
 pattern UnitTy :: Type
 pattern ConvexHullTrickTy :: Type
 pattern SegmentTreeTy :: Semigroup' -> Type
@@ -1184,12 +1186,20 @@ pattern LitBool' :: Bool -> Expr
 pattern LitTrue :: Expr
 pattern LitFalse :: Expr
 pattern Builtin :: Builtin -> Expr
+pattern Builtin1 :: Builtin -> Type -> Expr
+pattern Builtin2 :: Builtin -> Type -> Type -> Expr
 pattern App2 :: Expr -> Expr -> Expr -> Expr
 pattern App3 :: Expr -> Expr -> Expr -> Expr -> Expr
 pattern App4 :: Expr -> Expr -> Expr -> Expr -> Expr -> Expr
-pattern AppBuiltin :: Builtin -> Expr -> Expr
+pattern AppBuiltin1 :: Builtin -> Expr -> Expr
+pattern AppBuiltin11 :: Builtin -> Type -> Expr -> Expr
 pattern AppBuiltin2 :: Builtin -> Expr -> Expr -> Expr
+pattern AppBuiltin12 :: Builtin -> Type -> Expr -> Expr -> Expr
+pattern AppBuiltin22 :: Builtin -> Type -> Type -> Expr -> Expr -> Expr
 pattern AppBuiltin3 :: Builtin -> Expr -> Expr -> Expr -> Expr
+pattern AppBuiltin13 :: Builtin -> Type -> Expr -> Expr -> Expr -> Expr
+pattern AppBuiltin23 :: Builtin -> Type -> Type -> Expr -> Expr -> Expr -> Expr
+pattern AppBuiltin14 :: Builtin -> Type -> Type -> Expr -> Expr -> Expr -> Expr
 pattern Lam2 :: VarName -> Type -> VarName -> Type -> Expr -> Expr
 pattern Lam3 :: VarName -> Type -> VarName -> Type -> VarName -> Type -> Expr -> Expr
 
@@ -1203,39 +1213,48 @@ ToplevelLet :: VarName -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
 ToplevelLetRec :: VarName -> [(VarName, Type)] -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
 type Program = ToplevelExpr
 instance Data.String.IsString Jikka.Core.Language.Expr.VarName
+instance Data.Data.Data Jikka.Core.Language.Expr.VarName
 instance GHC.Read.Read Jikka.Core.Language.Expr.VarName
 instance GHC.Show.Show Jikka.Core.Language.Expr.VarName
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.VarName
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.VarName
 instance Data.String.IsString Jikka.Core.Language.Expr.TypeName
+instance Data.Data.Data Jikka.Core.Language.Expr.TypeName
 instance GHC.Read.Read Jikka.Core.Language.Expr.TypeName
 instance GHC.Show.Show Jikka.Core.Language.Expr.TypeName
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.TypeName
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.TypeName
+instance Data.Data.Data Jikka.Core.Language.Expr.Semigroup'
 instance GHC.Read.Read Jikka.Core.Language.Expr.Semigroup'
 instance GHC.Show.Show Jikka.Core.Language.Expr.Semigroup'
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.Semigroup'
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.Semigroup'
+instance Data.Data.Data Jikka.Core.Language.Expr.DataStructure
 instance GHC.Read.Read Jikka.Core.Language.Expr.DataStructure
 instance GHC.Show.Show Jikka.Core.Language.Expr.DataStructure
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.DataStructure
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.DataStructure
+instance Data.Data.Data Jikka.Core.Language.Expr.Type
 instance GHC.Read.Read Jikka.Core.Language.Expr.Type
 instance GHC.Show.Show Jikka.Core.Language.Expr.Type
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.Type
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.Type
+instance Data.Data.Data Jikka.Core.Language.Expr.Builtin
 instance GHC.Read.Read Jikka.Core.Language.Expr.Builtin
 instance GHC.Show.Show Jikka.Core.Language.Expr.Builtin
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.Builtin
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.Builtin
+instance Data.Data.Data Jikka.Core.Language.Expr.Literal
 instance GHC.Read.Read Jikka.Core.Language.Expr.Literal
 instance GHC.Show.Show Jikka.Core.Language.Expr.Literal
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.Literal
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.Literal
+instance Data.Data.Data Jikka.Core.Language.Expr.Expr
 instance GHC.Read.Read Jikka.Core.Language.Expr.Expr
 instance GHC.Show.Show Jikka.Core.Language.Expr.Expr
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.Expr
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.Expr
+instance Data.Data.Data Jikka.Core.Language.Expr.ToplevelExpr
 instance GHC.Read.Read Jikka.Core.Language.Expr.ToplevelExpr
 instance GHC.Show.Show Jikka.Core.Language.Expr.ToplevelExpr
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.ToplevelExpr
@@ -1244,7 +1263,7 @@ instance GHC.Classes.Eq Jikka.Core.Language.Expr.ToplevelExpr
 
 -- | <a>BuiltinPatterns</a> provides pattern synonyms for applications of
 --   <a>Builtin</a> functions. For example, provide a pattern <tt>Sum'
---   e</tt> which is interpreted as <tt>AppBuiltin Sum [e]</tt>, or the
+--   e</tt> which is interpreted as <tt>AppBuiltin1 Sum [e]</tt>, or the
 --   same thing, <tt>App (Lit (LitBuiltin Sum)) [e]</tt>.
 module Jikka.Core.Language.BuiltinPatterns
 pattern Negate' :: Expr -> Expr
@@ -1273,22 +1292,22 @@ pattern BitOr' :: Expr -> Expr -> Expr
 pattern BitXor' :: Expr -> Expr -> Expr
 pattern BitLeftShift' :: Expr -> Expr -> Expr
 pattern BitRightShift' :: Expr -> Expr -> Expr
-pattern MatAp' :: Int -> Int -> Expr -> Expr -> Expr
-pattern MatAdd' :: Int -> Int -> Expr -> Expr -> Expr
-pattern MatMul' :: Int -> Int -> Int -> Expr -> Expr -> Expr
-pattern MatPow' :: Int -> Expr -> Expr -> Expr
-pattern VecFloorMod' :: Int -> Expr -> Expr -> Expr
-pattern MatFloorMod' :: Int -> Int -> Expr -> Expr -> Expr
+pattern MatAp' :: Integer -> Integer -> Expr -> Expr -> Expr
+pattern MatAdd' :: Integer -> Integer -> Expr -> Expr -> Expr
+pattern MatMul' :: Integer -> Integer -> Integer -> Expr -> Expr -> Expr
+pattern MatPow' :: Integer -> Expr -> Expr -> Expr
+pattern VecFloorMod' :: Integer -> Expr -> Expr -> Expr
+pattern MatFloorMod' :: Integer -> Integer -> Expr -> Expr -> Expr
 pattern ModNegate' :: Expr -> Expr -> Expr
 pattern ModPlus' :: Expr -> Expr -> Expr -> Expr
 pattern ModMinus' :: Expr -> Expr -> Expr -> Expr
 pattern ModMult' :: Expr -> Expr -> Expr -> Expr
 pattern ModInv' :: Expr -> Expr -> Expr
 pattern ModPow' :: Expr -> Expr -> Expr -> Expr
-pattern ModMatAp' :: Int -> Int -> Expr -> Expr -> Expr -> Expr
-pattern ModMatAdd' :: Int -> Int -> Expr -> Expr -> Expr -> Expr
-pattern ModMatMul' :: Int -> Int -> Int -> Expr -> Expr -> Expr -> Expr
-pattern ModMatPow' :: Int -> Expr -> Expr -> Expr -> Expr
+pattern ModMatAp' :: Integer -> Integer -> Expr -> Expr -> Expr -> Expr
+pattern ModMatAdd' :: Integer -> Integer -> Expr -> Expr -> Expr -> Expr
+pattern ModMatMul' :: Integer -> Integer -> Integer -> Expr -> Expr -> Expr -> Expr
+pattern ModMatPow' :: Integer -> Expr -> Expr -> Expr -> Expr
 pattern Nil' :: Type -> Expr
 pattern Cons' :: Type -> Expr -> Expr -> Expr
 pattern Snoc' :: Type -> Expr -> Expr -> Expr
@@ -1317,7 +1336,7 @@ pattern Range1' :: Expr -> Expr
 pattern Range2' :: Expr -> Expr -> Expr
 pattern Range3' :: Expr -> Expr -> Expr -> Expr
 pattern Tuple' :: [Type] -> Expr
-pattern Proj' :: [Type] -> Int -> Expr -> Expr
+pattern Proj' :: [Type] -> Integer -> Expr -> Expr
 pattern LessThan' :: Type -> Expr -> Expr -> Expr
 pattern LessEqual' :: Type -> Expr -> Expr -> Expr
 pattern GreaterThan' :: Type -> Expr -> Expr -> Expr
@@ -1473,7 +1492,13 @@ module Jikka.Core.Language.Util
 genType :: MonadAlpha m => m Type
 genVarName :: MonadAlpha m => VarName -> m VarName
 genVarName' :: MonadAlpha m => m VarName
-mapTypeInBuiltin :: (Type -> Type) -> Builtin -> Builtin
+mapSubTypesM :: Monad m => (Type -> m Type) -> Type -> m Type
+mapTypeLiteralM :: Monad m => (Type -> m Type) -> Literal -> m Literal
+mapTypeExprM :: Monad m => (Type -> m Type) -> Expr -> m Expr
+mapTypeExpr :: (Type -> Type) -> Expr -> Expr
+mapTypeToplevelExprM :: Monad m => (Type -> m Type) -> ToplevelExpr -> m ToplevelExpr
+mapTypeProgramM :: Monad m => (Type -> m Type) -> Program -> m Program
+mapTypeProgram :: (Type -> Type) -> Program -> Program
 
 -- | <a>mapExprM</a>` substitutes exprs using given two functions, which
 --   are called in pre-order and post-order.
@@ -1539,8 +1564,8 @@ substituteToplevelExpr :: (MonadAlpha m, MonadError Error m) => VarName -> Expr 
 
 module Jikka.Core.Format
 run :: Applicative m => Program -> m Text
-formatBuiltinIsolated :: Builtin -> String
-formatBuiltin :: Builtin -> [Expr] -> String
+formatBuiltinIsolated :: Builtin -> [Type] -> String
+formatBuiltin :: Builtin -> [Type] -> [Expr] -> String
 formatType :: Type -> String
 formatExpr :: Expr -> String
 formatProgram :: Program -> String
@@ -1561,10 +1586,10 @@ instance GHC.Enum.Enum Jikka.Core.Format.Prec
 
 
 module Jikka.Core.Language.TypeCheck
-builtinToType :: Builtin -> Type
+builtinToType :: MonadError Error m => Builtin -> [Type] -> m Type
 semigroupToType :: Semigroup' -> Type
-literalToType :: Literal -> Type
-arityOfBuiltin :: Builtin -> Int
+literalToType :: MonadError Error m => Literal -> m Type
+arityOfBuiltin :: MonadError Error m => Builtin -> [Type] -> m Int
 type TypeEnv = [(VarName, Type)]
 
 -- | <a>typecheckExpr</a> checks that the given <a>Expr</a> has the correct
@@ -1626,6 +1651,7 @@ simpleRewriteRule :: Monad m => (Expr -> Maybe Expr) -> RewriteRule m
 --   terminate.</li>
 --   </ul>
 applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
+applyRewriteRule' :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
 applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
 applyRewriteRuleProgram :: MonadError Error m => RewriteRule m -> Program -> m (Maybe Program)
 applyRewriteRuleProgram' :: MonadError Error m => RewriteRule m -> Program -> m Program
@@ -1943,10 +1969,12 @@ module Jikka.Core.Convert.TypeInfer
 --   in f(x + x)
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
+runRule :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m ([(VarName, Type)], Expr, Expr)
 data Equation
 TypeEquation :: Type -> Type -> Equation
 TypeAssertion :: VarName -> Type -> Equation
-formularizeProgram :: MonadAlpha m => Program -> m [Equation]
+formularizeProgram :: (MonadAlpha m, MonadError Error m) => Program -> m [Equation]
 sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
 mergeAssertions :: [(VarName, Type)] -> [(Type, Type)]
 
@@ -1962,88 +1990,6 @@ instance GHC.Read.Read Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Show.Show Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Classes.Ord Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Classes.Eq Jikka.Core.Convert.TypeInfer.Equation
-
-
--- | &lt;math&gt;
-module Jikka.Core.Convert.ShortCutFusion
-
--- | <a>run</a> does short cut fusion.
---   
---   <ul>
---   <li>This function is mainly for polymorphic reductions. This dosn't do
---   much about concrete things, e.g., arithmetical operations.</li>
---   <li>This does nothing about <a>Build</a>, <a>Scanl</a> or <a>SetAt</a>
---   except combinations with <a>Len</a> or <a>At</a>.</li>
---   </ul>
---   
---   <h2>Example</h2>
---   
---   Before:
---   
---   <pre>
---   length (map f (cons (-1) (range n)))
---   </pre>
---   
---   After:
---   
---   <pre>
---   n + 1
---   </pre>
---   
---   <h2>List of builtin functions which are reduced</h2>
---   
---   <h3>Build functions</h3>
---   
---   <ul>
---   <li><tt>Nil</tt> &lt;math&gt;</li>
---   <li><a>Cons</a> &lt;math&gt;</li>
---   <li><a>Range1</a> &lt;math&gt;</li>
---   <li><a>Range2</a> &lt;math&gt;</li>
---   <li><a>Range3</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>Map functions</h3>
---   
---   <ul>
---   <li><a>Map</a> &lt;math&gt;</li>
---   <li><a>Filter</a> &lt;math&gt;</li>
---   <li><a>Reversed</a> &lt;math&gt;</li>
---   <li><a>Sorted</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>Fold functions</h3>
---   
---   <ul>
---   <li><a>Foldl</a> &lt;math&gt;</li>
---   <li><a>Len</a> &lt;math&gt;</li>
---   <li><a>At</a> &lt;math&gt;</li>
---   <li><a>Elem</a> &lt;math&gt;</li>
---   </ul>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
-
--- | <ul>
---   <li><a>Range1</a> remains.</li>
---   <li><a>Range2</a> is removed.</li>
---   <li><a>Range3</a> is removed.</li>
---   <li><tt>Nil</tt> and <a>Cons</a> are kept as is.</li>
---   </ul>
-reduceBuild :: MonadAlpha m => RewriteRule m
-reduceMapBuild :: MonadAlpha m => RewriteRule m
-reduceMap :: Monad m => RewriteRule m
-
--- | <ul>
---   <li>Functions are reordered as:</li>
---   <li><tt>Sort</tt> and <a>Reversed</a> (functions to reorder) are
---   lastly applied to lists</li>
---   <li><a>Map</a> (functions to modify lists)</li>
---   <li><a>Filter</a> (funcitons to reduce lengths) is firstly applied to
---   lists</li>
---   </ul>
-reduceMapMap :: MonadAlpha m => RewriteRule m
-reduceFoldMap :: MonadAlpha m => RewriteRule m
-reduceFold :: Monad m => RewriteRule m
-reduceFoldBuild :: MonadAlpha m => RewriteRule m
 
 
 -- | &lt;math&gt;
@@ -2231,11 +2177,11 @@ reduceFoldlSetAtGeneric :: MonadAlpha m => RewriteRule m
 getRecurrenceFormulaBase :: Expr -> ([Expr], Expr)
 
 -- | <a>getRecurrenceFormulaStep1</a> removes <a>At</a> in <tt>body</tt>.
-getRecurrenceFormulaStep1 :: MonadAlpha m => Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
+getRecurrenceFormulaStep1 :: MonadAlpha m => Integer -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 
 -- | <a>getRecurrenceFormulaStep</a> replaces <a>At</a> in <tt>body</tt>
 --   with <a>Proj</a>.
-getRecurrenceFormulaStep :: MonadAlpha m => Int -> Int -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
+getRecurrenceFormulaStep :: MonadAlpha m => Integer -> Integer -> Type -> VarName -> VarName -> Expr -> m (Maybe Expr)
 
 
 module Jikka.Core.Convert.KubaruToMorau
@@ -2515,11 +2461,6 @@ module Jikka.Core.Convert.ArithmeticalExpr
 run :: MonadError Error m => Program -> m Program
 
 
--- | <a>Convert</a> is a module to combine other all optimizers.
-module Jikka.Core.Convert
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
 module Jikka.Core.Convert.ANormal
 
 -- | <a>run</a> makes a given program A-normal form. A program is an
@@ -2554,7 +2495,7 @@ ValInt :: Integer -> Value
 ValBool :: Bool -> Value
 ValList :: Vector Value -> Value
 ValTuple :: [Value] -> Value
-ValBuiltin :: Builtin -> [Value] -> Value
+ValBuiltin :: Builtin -> [Type] -> [Value] -> Value
 
 -- | The <a>Env</a> may contain the <a>ValLambda</a> cyclicly.
 ValLambda :: Maybe VarName -> Env -> VarName -> Type -> Expr -> Value
@@ -2603,10 +2544,208 @@ ValInt :: Integer -> Value
 ValBool :: Bool -> Value
 ValList :: Vector Value -> Value
 ValTuple :: [Value] -> Value
-ValBuiltin :: Builtin -> [Value] -> Value
+ValBuiltin :: Builtin -> [Type] -> [Value] -> Value
 
 -- | The <a>Env</a> may contain the <a>ValLambda</a> cyclicly.
 ValLambda :: Maybe VarName -> Env -> VarName -> Type -> Expr -> Value
+
+
+module Jikka.Core.Parse.Token
+data Operator
+Plus :: Operator
+Minus :: Operator
+Mult :: Operator
+FloorDiv :: Operator
+FloorMod :: Operator
+CeilDiv :: Operator
+CeilMod :: Operator
+Pow :: Operator
+Not :: Operator
+And :: Operator
+Or :: Operator
+Implies :: Operator
+BitNot :: Operator
+BitAnd :: Operator
+BitOr :: Operator
+BitXor :: Operator
+BitLShift :: Operator
+BitRShift :: Operator
+Min :: Operator
+Max :: Operator
+DoubleEqual :: Operator
+NotEqual :: Operator
+LessThan :: Operator
+LessEqual :: Operator
+GreaterThan :: Operator
+GreaterEqual :: Operator
+
+-- | We don't have to classify tokens in detail, but it's convenient for
+--   testing and debugging.
+data Token
+Ident :: String -> Token
+Int :: Integer -> Token
+Bool :: Bool -> Token
+String :: String -> Token
+Let :: Token
+Rec :: Token
+In :: Token
+If :: Token
+Then :: Token
+Else :: Token
+Fun :: Token
+Dot :: Token
+Forall :: Token
+Arrow :: Token
+Equal :: Token
+Colon :: Token
+Comma :: Token
+Underscore :: Token
+BackArrow :: Token
+At :: Token
+OpenBracket :: Token
+OpenParen :: Token
+CloseBracket :: Token
+CloseParen :: Token
+Operator :: Operator -> Token
+type Token' = WithLoc Token
+instance GHC.Read.Read Jikka.Core.Parse.Token.Operator
+instance GHC.Show.Show Jikka.Core.Parse.Token.Operator
+instance GHC.Classes.Ord Jikka.Core.Parse.Token.Operator
+instance GHC.Classes.Eq Jikka.Core.Parse.Token.Operator
+instance GHC.Read.Read Jikka.Core.Parse.Token.Token
+instance GHC.Show.Show Jikka.Core.Parse.Token.Token
+instance GHC.Classes.Ord Jikka.Core.Parse.Token.Token
+instance GHC.Classes.Eq Jikka.Core.Parse.Token.Token
+
+
+-- | See also Haskell's <a>Syntax Reference</a>.
+module Jikka.Core.Parse.Happy
+runProgram :: (MonadAlpha m, MonadError Error m) => [WithLoc Token] -> m Program
+runExpr :: (MonadAlpha m, MonadError Error m) => [WithLoc Token] -> m Expr
+runType :: (MonadAlpha m, MonadError Error m) => [WithLoc Token] -> m Type
+runRule :: (MonadAlpha m, MonadError Error m) => [WithLoc Token] -> m (String, [(VarName, Type)], Expr, Expr)
+
+
+module Jikka.Core.Parse.Alex
+run :: MonadError Error m => String -> m [Token']
+instance GHC.Show.Show Jikka.Core.Parse.Alex.AlexPosn
+instance GHC.Classes.Eq Jikka.Core.Parse.Alex.AlexPosn
+instance GHC.Base.Functor Jikka.Core.Parse.Alex.Alex
+instance GHC.Base.Applicative Jikka.Core.Parse.Alex.Alex
+instance GHC.Base.Monad Jikka.Core.Parse.Alex.Alex
+
+module Jikka.Core.Parse
+run :: (MonadAlpha m, MonadError Error m) => FilePath -> Text -> m Program
+parseProgram :: (MonadAlpha m, MonadError Error m) => String -> m Program
+parseExpr :: (MonadAlpha m, MonadError Error m) => String -> m Expr
+parseType :: (MonadAlpha m, MonadError Error m) => String -> m Type
+parseRule :: (MonadAlpha m, MonadError Error m) => String -> m (String, [(VarName, Type)], Expr, Expr)
+
+module Jikka.Core.Language.QuasiRules
+liftError :: ExceptT Error Q a -> Q a
+lookupValueName :: (MonadTrans t, Monad (t Q), MonadFail (t Q)) => String -> t Q Name
+fromVarName :: VarName -> Q Name
+fromTypeName :: TypeName -> Q Name
+liftDataP :: Data a => a -> Q Pat
+data Env
+Env :: [(VarName, Maybe Exp)] -> [(TypeName, Name)] -> Env
+[vars] :: Env -> [(VarName, Maybe Exp)]
+[typeVars] :: Env -> [(TypeName, Name)]
+toPatT :: Type -> StateT Env Q Pat
+toPatL :: Literal -> StateT Env Q Pat
+toPatE :: Expr -> StateT Env Q Pat
+toExpT :: Type -> StateT Env Q Exp
+toExpL :: Literal -> StateT Env Q Exp
+toExpE :: Expr -> StateT Env Q ([Stmt], Exp)
+ruleExp :: String -> Q Exp
+r :: QuasiQuoter
+
+
+-- | &lt;math&gt;
+module Jikka.Core.Convert.ShortCutFusion
+
+-- | <a>run</a> does short cut fusion.
+--   
+--   <ul>
+--   <li>This function is mainly for polymorphic reductions. This dosn't do
+--   much about concrete things, e.g., arithmetical operations.</li>
+--   <li>This does nothing about <a>Build</a>, <a>Scanl</a> or <a>SetAt</a>
+--   except combinations with <a>Len</a> or <a>At</a>.</li>
+--   </ul>
+--   
+--   <h2>Example</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   length (map f (cons (-1) (range n)))
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   n + 1
+--   </pre>
+--   
+--   <h2>List of builtin functions which are reduced</h2>
+--   
+--   <h3>Build functions</h3>
+--   
+--   <ul>
+--   <li><tt>Nil</tt> &lt;math&gt;</li>
+--   <li><a>Cons</a> &lt;math&gt;</li>
+--   <li><a>Range1</a> &lt;math&gt;</li>
+--   <li><a>Range2</a> &lt;math&gt;</li>
+--   <li><a>Range3</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Map functions</h3>
+--   
+--   <ul>
+--   <li><a>Map</a> &lt;math&gt;</li>
+--   <li><a>Filter</a> &lt;math&gt;</li>
+--   <li><a>Reversed</a> &lt;math&gt;</li>
+--   <li><a>Sorted</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Fold functions</h3>
+--   
+--   <ul>
+--   <li><a>Foldl</a> &lt;math&gt;</li>
+--   <li><a>Len</a> &lt;math&gt;</li>
+--   <li><a>At</a> &lt;math&gt;</li>
+--   <li><a>Elem</a> &lt;math&gt;</li>
+--   </ul>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+
+-- | <ul>
+--   <li><a>Range1</a> remains.</li>
+--   <li><a>Range2</a> is removed.</li>
+--   <li><a>Range3</a> is removed.</li>
+--   <li><tt>Nil</tt> and <a>Cons</a> are kept as is.</li>
+--   </ul>
+reduceBuild :: MonadAlpha m => RewriteRule m
+reduceMapBuild :: MonadAlpha m => RewriteRule m
+reduceMap :: Monad m => RewriteRule m
+
+-- | <ul>
+--   <li>Functions are reordered as:</li>
+--   <li><tt>Sort</tt> and <a>Reversed</a> (functions to reorder) are
+--   lastly applied to lists</li>
+--   <li><a>Map</a> (functions to modify lists)</li>
+--   <li><a>Filter</a> (funcitons to reduce lengths) is firstly applied to
+--   lists</li>
+--   </ul>
+reduceMapMap :: MonadAlpha m => RewriteRule m
+reduceFoldMap :: MonadAlpha m => RewriteRule m
+reduceFold :: Monad m => RewriteRule m
+reduceFoldBuild :: MonadAlpha m => RewriteRule m
+
+
+-- | <a>Convert</a> is a module to combine other all optimizers.
+module Jikka.Core.Convert
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 module Jikka.Main.Target
 data Target
@@ -3038,7 +3177,6 @@ run :: MonadError Error m => [WithLoc Token] -> m Program
 
 -- | <ul>
 --   <li>TODO: tokenize float literals</li>
---   <li>TODO: tokenize string literals</li>
 --   </ul>
 module Jikka.Python.Parse.Alex
 run :: MonadError Error m => String -> m [Token']
