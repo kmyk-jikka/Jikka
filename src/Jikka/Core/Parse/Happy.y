@@ -63,7 +63,6 @@ import qualified Jikka.Core.Parse.Token as L
     ","             { WithLoc _ L.Comma }
     "="             { WithLoc _ L.Equal }
     "_"             { WithLoc _ L.Underscore }
-    "'"             { WithLoc _ L.SingleQuote }
     "."             { WithLoc _ L.Dot }
     "<-"            { WithLoc _ L.BackArrow }
     "@"             { WithLoc _ L.At }
@@ -227,7 +226,7 @@ topdecl :: { ToplevelExpr -> ToplevelExpr }
 
 -- Types
 atom_type :: { Type }
-    : "'" IDENT                        { let (L.Ident x) = value $2 in VarTy (TypeName x) }
+    : IDENT                            { let (L.Ident x) = value $1 in VarTy (TypeName x) }
     | "int"                            { IntTy }
     | "bool"                           { BoolTy }
     | atom_type "list"                 { ListTy $1 }

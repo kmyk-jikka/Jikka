@@ -71,7 +71,6 @@ tokens :-
     ":"             { tok Colon }
     ","             { tok Comma }
     "_"             { tok Underscore }
-    "'"             { tok SingleQuote }
     "."             { tok Dot }
     "<-"            { tok BackArrow }
     "@"             { tok At }

@@ -68,7 +68,6 @@ data Token
   | Colon
   | Comma
   | Underscore
-  | SingleQuote
   | BackArrow
   | At
   | -- parens
