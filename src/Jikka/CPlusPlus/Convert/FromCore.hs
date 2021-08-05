@@ -481,14 +481,14 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.All -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
           ],
           Y.Var y
         )
     X.Any -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
           ],
           Y.Var y
         )
