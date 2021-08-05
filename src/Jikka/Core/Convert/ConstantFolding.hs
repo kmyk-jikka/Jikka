@@ -60,7 +60,7 @@ import Jikka.Core.Language.Runtime
 reduceConstArithmeticalExpr :: Monad m => RewriteRule m
 reduceConstArithmeticalExpr =
   let return' = Just . LitInt'
-   in simpleRewriteRule $ \case
+   in simpleRewriteRule "reduceConstArithmeticalExpr" $ \case
         Negate' (LitInt' a) -> return' $ - a
         Plus' a (LitInt' 0) -> Just a
         Plus' (LitInt' 0) b -> Just b
@@ -105,7 +105,7 @@ reduceConstArithmeticalExpr =
 -- * `Min2` \(: \forall \alpha. \alpha \to \alpha \to \alpha\) (specialized to \(\alpha = \lbrace \bool, \int \rbrace\))
 -- * `Max2` \(: \forall \alpha. \alpha \to \alpha \to \alpha\) (specialized to \(\alpha = \lbrace \bool, \int \rbrace\))
 reduceConstMaxExpr :: Monad m => RewriteRule m
-reduceConstMaxExpr = simpleRewriteRule $ \case
+reduceConstMaxExpr = simpleRewriteRule "reduceConstMaxExpr" $ \case
   Min2' _ (LitInt' a) (LitInt' b) -> Just . LitInt' $ min a b
   Min2' _ (LitBool' a) (LitBool' b) -> Just . LitBool' $ min a b
   Max2' _ (LitInt' a) (LitInt' b) -> Just . LitInt' $ max a b
@@ -123,7 +123,7 @@ reduceConstMaxExpr = simpleRewriteRule $ \case
 -- * `Implies` \(: \bool \to \bool \to \bool\)
 -- * `If` \(: \forall \alpha. \bool \to \alpha \to \alpha \to \alpha\)
 reduceConstBooleanExpr :: Monad m => RewriteRule m
-reduceConstBooleanExpr = simpleRewriteRule $ \case
+reduceConstBooleanExpr = simpleRewriteRule "reduceConstBooleanExpr" $ \case
   Not' (LitBool' a) -> Just $ LitBool' (not a)
   And' _ LitFalse -> Just LitFalse
   And' a LitTrue -> Just a
@@ -154,7 +154,7 @@ reduceConstBooleanExpr = simpleRewriteRule $ \case
 reduceConstBitExpr :: Monad m => RewriteRule m
 reduceConstBitExpr =
   let return' = Just . LitInt'
-   in simpleRewriteRule $ \case
+   in simpleRewriteRule "reduceConstBitExpr" $ \case
         BitNot' (LitInt' a) -> return' $ complement a
         BitAnd' _ (LitInt' 0) -> return' 0
         BitAnd' a (LitInt' (-1)) -> Just a
@@ -192,7 +192,7 @@ reduceConstBitExpr =
 -- * `NotEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 reduceConstComparison :: Monad m => RewriteRule m
 reduceConstComparison =
-  simpleRewriteRule $
+  simpleRewriteRule "reduceConstComparison" $
     (LitBool' <$>) . \case
       LessThan' _ (LitInt' a) (LitInt' b) -> Just $ a < b
       LessEqual' _ (LitBool' a) (LitBool' b) -> Just $ a <= b

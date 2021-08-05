@@ -161,7 +161,7 @@ getLength = \case
   _ -> Nothing
 
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
-rule = RewriteRule $ \_ -> \case
+rule = makeRewriteRule "Jikka.Core.Convert.ConvexHullTrick" $ \_ -> \case
   -- build (fun f -> step(f)) base n
   Build' IntTy (Lam f _ step) base n -> runMaybeT $ do
     let ts = [ConvexHullTrickTy, ListTy IntTy]

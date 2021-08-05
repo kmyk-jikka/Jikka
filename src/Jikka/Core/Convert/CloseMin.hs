@@ -31,7 +31,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 
 reduceMin :: Monad m => RewriteRule m
-reduceMin = simpleRewriteRule $ \case
+reduceMin = simpleRewriteRule "reduceMin" $ \case
   -- list build functions
   Min1' t (Nil' _) -> Just $ Bottom' t "no minimum in empty list"
   Min1' _ (Cons' _ e (Nil' _)) -> Just e
@@ -58,7 +58,7 @@ reduceMin = simpleRewriteRule $ \case
   _ -> Nothing
 
 reduceMax :: Monad m => RewriteRule m
-reduceMax = simpleRewriteRule $ \case
+reduceMax = simpleRewriteRule "reduceMax" $ \case
   -- list build functions
   Max1' t (Nil' _) -> Just $ Bottom' t "no maximum in empty list"
   Max1' _ (Cons' _ e (Nil' _)) -> Just e
@@ -86,7 +86,7 @@ reduceMax = simpleRewriteRule $ \case
 
 -- | TODO: implement this
 reduceArgMin :: Monad m => RewriteRule m
-reduceArgMin = simpleRewriteRule $ \case
+reduceArgMin = simpleRewriteRule "reduceArgMin" $ \case
   -- list map functions
   ArgMin' t (Reversed' _ xs) -> Just $ Minus' (Minus' (Len' t xs) (ArgMin' t xs)) Lit1
   ArgMin' _ (Map' _ _ (Lam x _ e) _) | x `isUnusedVar` e -> Just Lit0
@@ -96,7 +96,7 @@ reduceArgMin = simpleRewriteRule $ \case
 
 -- | TODO: implement this
 reduceArgMax :: Monad m => RewriteRule m
-reduceArgMax = simpleRewriteRule $ \case
+reduceArgMax = simpleRewriteRule "reduceArgMax" $ \case
   -- list map functions
   ArgMax' t (Reversed' _ xs) -> Just $ Minus' (Minus' (Len' t xs) (ArgMax' t xs)) Lit1
   ArgMax' _ (Map' _ _ (Lam x t e) xs) | x `isUnusedVar` e -> Just $ Minus' (Len' t xs) Lit1

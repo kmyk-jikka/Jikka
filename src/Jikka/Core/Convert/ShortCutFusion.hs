@@ -114,7 +114,7 @@ reduceFoldMap =
     ]
 
 reduceFold :: Monad m => RewriteRule m
-reduceFold = simpleRewriteRule $ \case
+reduceFold = simpleRewriteRule "foldl->iterate" $ \case
   Foldl' t1 t2 (Lam2 x2 _ x1 _ body) init xs | x1 `isUnusedVar` body -> Just $ Iterate' t2 (Len' t1 xs) (Lam x2 t2 body) init
   _ -> Nothing
 
@@ -129,7 +129,7 @@ reduceFoldBuild =
       [r| "len/cons" forall x xs. len (cons x xs) = 1 + len xs |],
       [r| "len/range" forall n. len (range n) = n |],
       -- reduce `At`
-      simpleRewriteRule $ \case
+      simpleRewriteRule "at/nil" $ \case
         At' t (Nil' _) i -> Just $ Bottom' t $ "cannot subscript empty list: index = " ++ formatExpr i
         _ -> Nothing,
       [r| "at/cons" forall x xs i. (cons x xs)[i] = if i == 0 then x else xs[i - 1] |],

@@ -29,7 +29,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 
 rule :: MonadAlpha m => RewriteRule m
-rule = simpleRewriteRule $ \case
+rule = simpleRewriteRule "Jikka.Core.Convert.SpecializeFoldl" $ \case
   Foldl' t1 t2 (Lam2 x2 _ x1 _ body) init xs -> case body of
     -- Sum
     Plus' (Var x2') e | x2' == x2 && x2 `isUnusedVar` e -> Just $ Sum' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs))

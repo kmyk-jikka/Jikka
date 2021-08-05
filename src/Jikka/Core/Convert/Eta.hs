@@ -42,7 +42,7 @@ rule :: MonadAlpha m => RewriteRule m
 rule =
   let go :: MonadAlpha m => Expr -> Type -> (Expr -> Expr) -> m (Maybe Expr)
       go e t f = (f <$>) <$> expandExpr t e
-   in RewriteRule $ \_ -> \case
+   in makeRewriteRule "eta-reduction" $ \_ -> \case
         Let x t e1 e2 -> go e1 t (\e1 -> Let x t e1 e2)
         Iterate' t k f x -> go f (FunTy t t) (\f -> Iterate' t k f x)
         Foldl' t1 t2 f init xs -> go f (FunTy t2 (FunTy t1 t1)) (\f -> Foldl' t1 t2 f init xs)

@@ -55,7 +55,7 @@ runFunctionBody c i j step y x k = do
 
 -- | TODO: remove the assumption that the length of @a@ is equals to @n@
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
-rule = RewriteRule $ \_ -> \case
+rule = makeRewriteRule "Jikka.Core.Convert.KubaruToMorau" $ \_ -> \case
   -- foldl (fun b i -> foldl (fun c j -> setAt c index(i, j) step(c, i, j)) b (range m(i))) a (range n)
   Foldl' IntTy (ListTy t2) (Lam2 b _ i _ (Foldl' IntTy (ListTy t2') (Lam2 c _ j _ (SetAt' _ (Var c') index step)) (Var b') (Range1' m))) a (Range1' n)
     | t2' == t2 && b' == b && c == c' && b `isUnusedVar` m && b `isUnusedVar` index && b `isUnusedVar` step && c `isUnusedVar` index -> runMaybeT $ do

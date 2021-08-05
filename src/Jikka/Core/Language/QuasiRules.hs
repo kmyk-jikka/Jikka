@@ -15,7 +15,7 @@ import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Parse (parseRule)
-import Language.Haskell.TH (Body (..), Exp (..), Match (..), Pat (..), Q, Stmt (..))
+import Language.Haskell.TH (Exp (..), Lit (..), Pat (..), Q, Stmt (..))
 import qualified Language.Haskell.TH as TH
 import qualified Language.Haskell.TH.Quote as TH
 import qualified Language.Haskell.TH.Syntax as TH
@@ -213,7 +213,7 @@ toExpE e = do
 
 ruleExp :: String -> Q Exp
 ruleExp s = do
-  (_, args, e1, e2) <- liftError $ parseRule s
+  (name, args, e1, e2) <- liftError $ parseRule s
   (args, e1, e2) <- liftError $ TypeInfer.runRule args e1 e2
   env <-
     return $
@@ -230,17 +230,13 @@ ruleExp s = do
   supressUnusedMatchesWarnings' <- forM (typeVars env) $ \(_, y) -> do
     NoBindS <$> [e|return $(pure (VarE y))|]
   ((stmts, exp), _) <- runStateT (toExpE e2) env
-  rewriteRule' <- [e|RewriteRule|]
-  return' <- [e|return|]
-  just <- [e|Just|]
-  nothing <- [e|Nothing|]
-  return $
-    AppE rewriteRule' $
-      LamE [WildP] $
-        LamCaseE
-          [ Match pat (NormalB (DoE (supressUnusedMatchesWarnings ++ supressUnusedMatchesWarnings' ++ stmts ++ [NoBindS (AppE return' (AppE just exp))]))) [],
-            Match WildP (NormalB (AppE return' nothing)) []
-          ]
+  exp' <- [e|return (Just $(pure exp))|]
+  let stmts' = supressUnusedMatchesWarnings ++ supressUnusedMatchesWarnings' ++ stmts ++ [NoBindS exp']
+  [e|
+    makeRewriteRule $(pure (LitE (StringL name))) $ \_ e -> case e of
+      $(pure pat) -> $(pure (DoE stmts'))
+      _ -> return Nothing
+    |]
 
 r :: TH.QuasiQuoter
 r =

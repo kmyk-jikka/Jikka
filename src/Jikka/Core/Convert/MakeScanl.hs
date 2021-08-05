@@ -51,7 +51,7 @@ import Jikka.Core.Language.Util
 -- * `Cons` \(: \forall \alpha. \alpha \to \list(\alpha) \to \list(\alpha)\)
 -- * `Scanl` \(: \forall \alpha \beta. (\beta \to \alpha \to \beta) \to \beta \to \list(\alpha) \to \list(\beta)\)
 reduceScanlBuild :: Monad m => RewriteRule m
-reduceScanlBuild = simpleRewriteRule $ \case
+reduceScanlBuild = simpleRewriteRule "reduceScanlBuild" $ \case
   Scanl' _ t2 _ init (Nil' _) -> Just $ Cons' t2 init (Nil' t2)
   Scanl' t1 t2 f init (Cons' _ x xs) -> Just $ Cons' t2 init (Scanl' t1 t2 f (App2 f init x) xs)
   _ -> Nothing
@@ -108,7 +108,7 @@ getRecurrenceFormulaStep shift size t a i body = do
 -- * This assumes that combinations `Foldl` and `Map` squashed (`Jikka.Core.Convert.ShortCutFusion`).
 -- * This assumes that constants are already folded (`Jikka.Core.Convert.ConstantFolding`).
 reduceFoldlSetAtRecurrence :: MonadAlpha m => RewriteRule m
-reduceFoldlSetAtRecurrence = RewriteRule $ \_ -> \case
+reduceFoldlSetAtRecurrence = makeRewriteRule "reduceFoldlSetAtRecurrence" $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) step(a, i)) base indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
     -- index(i) = i + k
@@ -157,7 +157,7 @@ checkAccumulationFormulaStep a i = go
 -- * This assumes that combinations `Foldl` and `Map` squashed (`Jikka.Core.Convert.ShortCutFusion`).
 -- * This assumes that constants are already folded (`Jikka.Core.Convert.ConstantFolding`).
 reduceFoldlSetAtAccumulation :: MonadAlpha m => RewriteRule m
-reduceFoldlSetAtAccumulation = RewriteRule $ \_ -> \case
+reduceFoldlSetAtAccumulation = makeRewriteRule "reduceFoldlSetAtAccumulation" $ \_ -> \case
   -- foldl (fun a i -> setat a index() step(a, i)) base indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index && i `isUnusedVar` index -> runMaybeT $ do
     -- step(a, i) = op (at a index()) step'(a, i)
@@ -202,7 +202,7 @@ checkGenericRecurrenceFormulaStep a = \i k -> go (M.fromList [(i, k - 1)])
       Assert e1 e2 -> go env e1 && go env e2
 
 reduceFoldlSetAtGeneric :: MonadAlpha m => RewriteRule m
-reduceFoldlSetAtGeneric = RewriteRule $ \_ -> \case
+reduceFoldlSetAtGeneric = makeRewriteRule "reduceFoldlSetAtGeneric" $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) step(a, i)) base indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
     -- index(i) = i + k

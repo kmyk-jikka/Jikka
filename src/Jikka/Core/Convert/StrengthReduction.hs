@@ -23,7 +23,7 @@ import Jikka.Core.Language.RewriteRules
 
 -- | `eliminateSomeBuiltins` removes some `Builtin` from `Expr` at all.
 eliminateSomeBuiltins :: Monad m => RewriteRule m
-eliminateSomeBuiltins = simpleRewriteRule $ \case
+eliminateSomeBuiltins = simpleRewriteRule "eliminateSomeBuiltins" $ \case
   -- advanced arithmetical functions
   Abs' e -> Just $ Max2' IntTy e (Negate' e)
   Lcm' e1 e2 -> Just $ FloorDiv' (Gcd' e1 e2) (Mult' e1 e2)
@@ -37,7 +37,7 @@ eliminateSomeBuiltins = simpleRewriteRule $ \case
 
 -- | `reduceNegate` brings `Negate` to the root.
 reduceNegate :: Monad m => RewriteRule m
-reduceNegate = simpleRewriteRule $ \case
+reduceNegate = simpleRewriteRule "reduceNegate" $ \case
   Negate' (Negate' e) -> Just e
   Plus' (Negate' e1) (Negate' e2) -> Just $ Negate' (Plus' e1 e2)
   Minus' e1 (Negate' e2) -> Just $ Plus' e1 e2
@@ -52,7 +52,7 @@ reduceNegate = simpleRewriteRule $ \case
 
 -- | `reduceNot` brings `Not` to the root.
 reduceNot :: Monad m => RewriteRule m
-reduceNot = simpleRewriteRule $ \case
+reduceNot = simpleRewriteRule "reduceNot" $ \case
   Not' (Not' e) -> Just e
   And' (Not' e1) (Not' e2) -> Just $ Not' (Or' e1 e2)
   Or' (Not' e1) (Not' e2) -> Just $ Not' (And' e1 e2)
@@ -64,7 +64,7 @@ reduceNot = simpleRewriteRule $ \case
 
 -- | `reduceBitNot` brings `BitNot` to the root.
 reduceBitNot :: Monad m => RewriteRule m
-reduceBitNot = simpleRewriteRule $ \case
+reduceBitNot = simpleRewriteRule "reduceBitNot" $ \case
   BitNot' (BitNot' e) -> Just e
   BitAnd' (BitNot' e1) (BitNot' e2) -> Just $ BitNot' (BitOr' e1 e2)
   BitOr' (BitNot' e1) (BitNot' e2) -> Just $ BitNot' (BitAnd' e1 e2)
@@ -72,8 +72,8 @@ reduceBitNot = simpleRewriteRule $ \case
   BitXor' e1 (BitNot' e2) -> Just $ BitNot' (BitXor' e1 e2)
   _ -> Nothing
 
-misc :: Monad m => RewriteRule m
-misc = simpleRewriteRule $ \case
+reduceMisc :: Monad m => RewriteRule m
+reduceMisc = simpleRewriteRule "reduceMisc" $ \case
   -- arithmetical functions
   Pow' (Pow' e1 e2) e3 -> Just $ Pow' e1 (Plus' e2 e3)
   -- advanced arithmetical functions
@@ -90,7 +90,7 @@ rule =
       reduceNegate,
       reduceNot,
       reduceBitNot,
-      misc
+      reduceMisc
     ]
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program

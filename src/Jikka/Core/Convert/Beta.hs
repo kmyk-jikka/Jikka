@@ -26,7 +26,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 
 rule :: MonadAlpha m => RewriteRule m
-rule = RewriteRule $ \_ -> \case
+rule = makeRewriteRule "beta-reduction" $ \_ -> \case
   App (Lam x _ e1) e2 -> Just <$> substitute x e2 e1
   _ -> return Nothing
 
