@@ -457,6 +457,11 @@ VarDef :: Type -> VarName -> Expr -> ToplevelStatement
 --   T f(T1 x1, T2 x2, ...) { stmt1; stmt2; ... }
 --   </pre>
 FunDef :: Type -> VarName -> [(Type, VarName)] -> [Statement] -> ToplevelStatement
+
+-- | <pre>
+--   static_assert(e, msg);
+--   </pre>
+StaticAssert :: Expr -> String -> ToplevelStatement
 newtype Program
 Program :: [ToplevelStatement] -> Program
 [decls] :: Program -> [ToplevelStatement]
@@ -1477,6 +1482,7 @@ Lam :: VarName -> Type -> Expr -> Expr
 
 -- | This "let" is not recursive.
 Let :: VarName -> Type -> Expr -> Expr -> Expr
+Assert :: Expr -> Expr -> Expr
 pattern Fun2Ty :: Type -> Type -> Type -> Type
 pattern Fun3Ty :: Type -> Type -> Type -> Type -> Type
 pattern Fun1STy :: Type -> Type
@@ -1522,6 +1528,7 @@ data ToplevelExpr
 ResultExpr :: Expr -> ToplevelExpr
 ToplevelLet :: VarName -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
 ToplevelLetRec :: VarName -> [(VarName, Type)] -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
+ToplevelAssert :: Expr -> ToplevelExpr -> ToplevelExpr
 type Program = ToplevelExpr
 instance Data.String.IsString Jikka.Core.Language.Expr.VarName
 instance Data.Data.Data Jikka.Core.Language.Expr.VarName
@@ -1814,6 +1821,7 @@ mapTypeProgram :: (Type -> Type) -> Program -> Program
 -- | <a>mapExprM</a>` substitutes exprs using given two functions, which
 --   are called in pre-order and post-order.
 mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapToplevelExprM' :: Monad m => ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
 mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
 mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
 
@@ -1825,6 +1833,12 @@ mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -
 mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
 mapExprToplevelExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
+
+-- | <a>mapToplevelExprM</a> is a wrapper of <a>mapToplevelExprM</a>`. This
+--   function works in post-order.
+mapToplevelExprM :: Monad m => ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapToplevelExprProgramM :: Monad m => ([(VarName, Type)] -> Program -> m Program) -> Program -> m Program
+mapToplevelExprProgram :: ([(VarName, Type)] -> Program -> Program) -> Program -> Program
 listSubExprs :: Expr -> [Expr]
 uncurryFunTy :: Type -> ([Type], Type)
 uncurryLam :: Expr -> ([(VarName, Type)], Expr)
@@ -2852,6 +2866,7 @@ Then :: Token
 Else :: Token
 Fun :: Token
 Dot :: Token
+Assert :: Token
 Forall :: Token
 Arrow :: Token
 Equal :: Token
