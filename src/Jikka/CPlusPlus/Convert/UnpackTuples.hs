@@ -175,7 +175,8 @@ runStatement stmt cont = case stmt of
                     if shouldBeArray ts
                       then map (\i -> Call At [e, litInt32 i]) [0 .. n - 1]
                       else map (\i -> Call (StdGet i) [e]) [0 .. n - 1]
-            return $ zipWith (\y e -> Assign (AssignExpr SimpleAssign (LeftVar y) e)) (map snd ys) es
+            tmpys <- replicateM (length ts) (newFreshName LocalNameKind)
+            return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts tmpys es ++ zipWith (\y e -> Assign (AssignExpr SimpleAssign (LeftVar y) (Var e))) (map snd ys) tmpys
           Nothing -> return [Assign (AssignExpr SimpleAssign (LeftVar x) e)]
       _ -> do
         forM_ (S.toList (freeVarsAssignExpr e)) $ \x -> do
