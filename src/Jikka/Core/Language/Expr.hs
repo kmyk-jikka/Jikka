@@ -44,7 +44,7 @@ unTypeName (TypeName name) = name
 --         \vert & \list(\tau) \\
 --         \vert & \tau \times \tau \times \dots \times \tau \\
 --         \vert & \tau \to \tau \\
---         \vert & \mathrm{data-structure}
+--         \vert & \mathrm{data\_structure}
 --     \end{array}
 -- \]
 data Type
@@ -297,10 +297,8 @@ data Literal
 data Expr
   = Var VarName
   | Lit Literal
-  | -- | The functions are not curried.
-    App Expr Expr
-  | -- | The lambdas are also not curried.
-    Lam VarName Type Expr
+  | App Expr Expr
+  | Lam VarName Type Expr
   | -- | This "let" is not recursive.
     Let VarName Type Expr Expr
   deriving (Eq, Ord, Show, Read, Data, Typeable)

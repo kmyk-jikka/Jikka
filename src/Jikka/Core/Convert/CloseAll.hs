@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- Module      : Jikka.Core.Convert.CloseAll
@@ -21,63 +23,40 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
 reduceAll :: MonadAlpha m => RewriteRule m
 reduceAll =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- list build functions
-        All' (Nil' _) -> return' LitTrue
-        All' (Cons' _ x xs) -> return' $ And' x (All' xs)
-        -- list map functions
-        All' (Reversed' _ xs) -> return' $ All' xs
-        All' (Sorted' _ xs) -> return' $ All' xs
-        All' (Filter' _ f xs) -> do
-          x <- genVarName'
-          return' $ All' (Map' BoolTy BoolTy (Lam x BoolTy (Implies' (App f (Var x)) (Var x))) xs)
-        All' (Map' _ _ f xs) -> case f of
-          Lam x _ (Not' e) -> do
-            return' $ Not' (Any' (Map' BoolTy BoolTy (Lam x BoolTy e) xs))
-          Lam x _ (And' e1 e2) -> do
-            x1 <- genVarName x
-            x2 <- genVarName x
-            return' $ And' (All' (Map' BoolTy BoolTy (Lam x1 BoolTy e1) xs)) (All' (Map' BoolTy BoolTy (Lam x2 BoolTy e2) xs))
-          _ -> return Nothing
-        -- others
-        _ -> return Nothing
+  mconcat
+    [ -- list build functions
+      [r| "all/nil" all nil = true |],
+      [r| "all/cons" forall x xs. all (cons x xs) = x and all xs |],
+      -- list map functions
+      [r| "all/reversed" forall xs. all (reversed xs) = all xs |],
+      [r| "all/sorted" forall xs. all (sorted xs) = all xs |],
+      [r| "all/filter" forall f xs. all (filter f xs) = all (map (fun x -> f x implies x) xs) |],
+      [r| "all/map/not" forall e xs. all (map (fun x -> not e) xs) = not (any (map (fun x -> e) xs)) |],
+      [r| "all/map/and" forall e1 e2 xs. all (map (fun x -> e1 and e2) xs) = all (map (fun x -> e1) xs) and all (map (fun x -> e2) xs) |]
+    ]
 
 reduceAny :: MonadAlpha m => RewriteRule m
 reduceAny =
-  let return' = return . Just
-   in RewriteRule $ \_ -> \case
-        -- list build functions
-        Any' (Nil' _) -> return' LitFalse
-        Any' (Cons' _ x xs) -> return' $ Or' x (Any' xs)
-        -- list map functions
-        Any' (Reversed' _ xs) -> return' $ Any' xs
-        Any' (Sorted' _ xs) -> return' $ Any' xs
-        Any' (Filter' _ f xs) -> do
-          x <- genVarName'
-          return' $ Any' (Map' BoolTy BoolTy (Lam x BoolTy (And' (App f (Var x)) (Var x))) xs)
-        Any' (Map' _ _ f xs) -> case f of
-          Lam x _ (Not' e) -> do
-            return' $ Not' (All' (Map' BoolTy BoolTy (Lam x BoolTy e) xs))
-          Lam x _ (Or' e1 e2) -> do
-            x1 <- genVarName x
-            x2 <- genVarName x
-            return' $ Or' (Any' (Map' BoolTy BoolTy (Lam x1 BoolTy e1) xs)) (Any' (Map' BoolTy BoolTy (Lam x2 BoolTy e2) xs))
-          Lam x _ (Implies' e1 e2) -> do
-            x1 <- genVarName x
-            x2 <- genVarName x
-            return' $ Or' (Any' (Map' BoolTy BoolTy (Lam x1 BoolTy (Negate' e1)) xs)) (Any' (Map' BoolTy BoolTy (Lam x2 BoolTy e2) xs))
-          _ -> return Nothing
-        -- others
-        _ -> return Nothing
+  mconcat
+    [ -- list build functions
+      [r| "any/nil" any nil = false |],
+      [r| "any/cons" forall x xs. any (cons x xs) = x or any xs |],
+      -- list map functions
+      [r| "any/reversed" forall xs. any (reversed xs) = any xs |],
+      [r| "any/sorted" forall xs. any (sorted xs) = any xs |],
+      [r| "any/filter" forall f xs. any (filter f xs) = any (map (fun x -> f x and x) xs) |],
+      [r| "any/map/not" forall e xs. any (map (fun x -> not e) xs) = not (all (map (fun x -> e) xs)) |],
+      [r| "any/map/or" forall e1 e2 xs. any (map (fun x -> e1 or e2) xs) = any (map (fun x -> e1) xs) or any (map (fun x -> e2) xs) |],
+      [r| "any/map/implies" forall e1 e2 xs. any (map (fun x -> e1 implies e2) xs) = any (map (fun x -> not e1) xs) or any (map (fun x -> e2) xs) |]
+    ]
 
 rule :: MonadAlpha m => RewriteRule m
 rule =
