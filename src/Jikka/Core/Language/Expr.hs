@@ -43,7 +43,7 @@ unTypeName (TypeName name) = name
 --         \vert & \bool \\
 --         \vert & \list(\tau) \\
 --         \vert & \tau \times \tau \times \dots \times \tau \\
---         \vert & \tau \to \tau
+--         \vert & \tau \to \tau \\
 --         \vert & \mathrm{data-structure}
 --     \end{array}
 -- \]
@@ -256,17 +256,17 @@ data Builtin
     MultiChoose
   | -- data structures
 
-    -- | \(: \mathrm{convex-hull-trick}\)
+    -- | \(: \mathrm{convex\_hull\_trick}\)
     ConvexHullTrickInit
-  | -- | \(: \mathrm{convex-hull-trick} \to \int \to \int\)
+  | -- | \(: \mathrm{convex\_hull\_trick} \to \int \to \int\)
     ConvexHullTrickGetMin
-  | -- | \(: \mathrm{convex-hull-trick} \to \int \to \int \to \mathrm{convex-hull-trick}\)
+  | -- | \(: \mathrm{convex\_hull\_trick} \to \int \to \int \to \mathrm{convex\_hull\_trick}\)
     ConvexHullTrickInsert
-  | -- | \(: \forall S. \list(S) \to \mathrm{segment-tree}(S)\)
+  | -- | \(: \list(S) \to \mathrm{segment\_tree}(S)\) for a semigroup \(S)
     SegmentTreeInitList Semigroup'
-  | -- | \(: \forall S. \mathrm{segment-tree}(S) \to \int \to \int \to S\)
+  | -- | \(: \mathrm{segment\_tree}(S) \to \int \to \int \to S\) for a semigroup \(S)
     SegmentTreeGetRange Semigroup'
-  | -- | \(: \forall S. \mathrm{segment-tree}(S) \to \int \to S \to \mathrm{segment-tree}(S)\)
+  | -- | \(: \mathrm{segment\_tree}(S) \to \int \to S \to \mathrm{segment\_tree}(S)\) for a semigroup \(S)
     SegmentTreeSetPoint Semigroup'
   deriving (Eq, Ord, Show, Read, Data, Typeable)
 
@@ -292,7 +292,6 @@ data Literal
 --         \vert & e_0(e_1, e_2, \dots, e_n) \\
 --         \vert & \lambda ~ x_0\colon \tau_0, x_1\colon \tau_1, \dots, x_{n-1}\colon \tau_{n-1}. ~ e \\
 --         \vert & \mathbf{let} ~ x\colon \tau = e_1 ~ \mathbf{in} ~ e_2
---         \vert & \tau
 --     \end{array}
 -- \]
 data Expr
