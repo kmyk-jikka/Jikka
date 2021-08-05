@@ -20,25 +20,83 @@ newtype FunName
 FunName :: String -> FunName
 [unFunName] :: FunName -> String
 data Type
+
+-- | <pre>
+--   auto
+--   </pre>
 TyAuto :: Type
+
+-- | <pre>
+--   void
+--   </pre>
 TyVoid :: Type
+
+-- | <pre>
+--   bool
+--   </pre>
 TyBool :: Type
+
+-- | <pre>
+--   int
+--   </pre>
 TyInt :: Type
+
+-- | <pre>
+--   int32_t
+--   </pre>
 TyInt32 :: Type
+
+-- | <pre>
+--   int64_t
+--   </pre>
 TyInt64 :: Type
+
+-- | <pre>
+--   std::tuple&lt;T1, T2, ...&gt;
+--   </pre>
 TyTuple :: [Type] -> Type
+
+-- | <pre>
+--   std::vector&lt;T&gt;
+--   </pre>
 TyVector :: Type -> Type
+
+-- | <pre>
+--   std::arrya&lt;T, n&gt;
+--   </pre>
 TyArray :: Type -> Integer -> Type
+
+-- | <pre>
+--   std::string
+--   </pre>
 TyString :: Type
+
+-- | <pre>
+--   std::function&lt;Tr (T1, T2, ...)&gt;
+--   </pre>
 TyFunction :: Type -> [Type] -> Type
+
+-- | <pre>
+--   jikka::convex_hull_trick
+--   </pre>
 TyConvexHullTrick :: Type
+
+-- | <pre>
+--   atcoder::segtree&lt;T, op, e&gt;
+--   </pre>
 TySegmentTree :: Monoid' -> Type
 
--- | for template parameters
+-- | an integer <tt>n</tt> for template parameters
 TyIntValue :: Integer -> Type
 data Monoid'
+
+-- | &lt;math&gt;
 MonoidIntPlus :: Monoid'
+
+-- | &lt;math&gt;
 MonoidIntMin :: Monoid'
+
+-- | &lt;math&gt;
 MonoidIntMax :: Monoid'
 data Literal
 LitInt32 :: Integer -> Literal
@@ -47,100 +105,357 @@ LitBool :: Bool -> Literal
 LitChar :: Char -> Literal
 LitString :: String -> Literal
 data Function
+
+-- | other functions
 Function :: FunName -> [Type] -> Function
+
+-- | other methods
 Method :: FunName -> Function
+
+-- | subscription <tt>e1[e2]</tt>
 At :: Function
+
+-- | cast <tt>(T)e</tt>
 Cast :: Type -> Function
+
+-- | functio <tt>std::tuple&lt;T1, T2, ...&gt;(e1, e2, ...)</tt>
 StdTuple :: [Type] -> Function
+
+-- | function <tt>std::get&lt;T, n&gt;(e)</tt>
 StdGet :: Integer -> Function
+
+-- | <pre>
+--   std::array&lt;T, n&gt;{e1, e2, ..., en}
+--   </pre>
 ArrayExt :: Type -> Function
+
+-- | <pre>
+--   std::vector&lt;T&gt;{e1, e2, ...}
+--   </pre>
 VecExt :: Type -> Function
+
+-- | constructors <tt>std::vector&lt;T&gt;()</tt> <i>
+--   <tt>std::vector&lt;T&gt;(n)</tt> </i> <tt>std::vector&lt;T&gt;(n,
+--   e)</tt>
 VecCtor :: Type -> Function
+
+-- | function <tt>std::vector&lt;int&gt; jikka::range(int n)</tt>, which is
+--   similar to Python's <tt>range</tt> or Boost's <tt>boost::range</tt>
 Range :: Function
+
+-- | <tt>size</tt> method of <tt>std::vector&lt;T&gt;</tt>
 MethodSize :: Function
+
+-- | the constructor of <tt>jikka::convex_hull_trick</tt>
 ConvexHullTrickCtor :: Function
+
+-- | This makes a copy of <tt>jikka::convex_hull_trick</tt> and updates it.
+--   This is removed at <a>run</a>.
 ConvexHullTrickCopyAddLine :: Function
+
+-- | the constructors of <tt>atcoder::segtree&lt;T, op, e&gt;</tt>
 SegmentTreeCtor :: Monoid' -> Function
+
+-- | This makes a copy of <tt>atcoder::segtree&lt;T, op, e&gt;</tt> and
+--   updates it. This is removed at <a>run</a>.
 SegmentTreeCopySetPoint :: Monoid' -> Function
 data UnaryOp
+
+-- | <pre>
+--   +
+--   </pre>
 IntNop :: UnaryOp
+
+-- | <pre>
+--   -
+--   </pre>
 Negate :: UnaryOp
+
+-- | <pre>
+--   ~
+--   </pre>
 BitNot :: UnaryOp
+
+-- | <tt>!</tt> / <tt>not</tt>
 Not :: UnaryOp
+
+-- | <pre>
+--   *
+--   </pre>
 Deref :: UnaryOp
 data BinaryOp
+
+-- | <pre>
+--   +
+--   </pre>
 Add :: BinaryOp
+
+-- | <pre>
+--   -
+--   </pre>
 Sub :: BinaryOp
+
+-- | <pre>
+--   *
+--   </pre>
 Mul :: BinaryOp
+
+-- | <pre>
+--   /
+--   </pre>
 Div :: BinaryOp
+
+-- | <pre>
+--   %
+--   </pre>
 Mod :: BinaryOp
+
+-- | <pre>
+--   &amp;
+--   </pre>
 BitAnd :: BinaryOp
+
+-- | <pre>
+--   |
+--   </pre>
 BitOr :: BinaryOp
+
+-- | <pre>
+--   ^
+--   </pre>
 BitXor :: BinaryOp
+
+-- | <pre>
+--   &lt;&lt;
+--   </pre>
 BitLeftShift :: BinaryOp
+
+-- | <pre>
+--   &gt;&gt;
+--   </pre>
 BitRightShift :: BinaryOp
+
+-- | <tt>&amp;&amp;</tt> / <tt>and</tt>
 And :: BinaryOp
+
+-- | <tt>||</tt> / <tt>or</tt>
 Or :: BinaryOp
+
+-- | <pre>
+--   &lt;
+--   </pre>
 LessThan :: BinaryOp
+
+-- | <pre>
+--   &lt;=
+--   </pre>
 LessEqual :: BinaryOp
+
+-- | <pre>
+--   &gt;
+--   </pre>
 GreaterThan :: BinaryOp
+
+-- | <pre>
+--   &gt;=
+--   </pre>
 GreaterEqual :: BinaryOp
+
+-- | <pre>
+--   ==
+--   </pre>
 Equal :: BinaryOp
+
+-- | <pre>
+--   !=
+--   </pre>
 NotEqual :: BinaryOp
 data AssignOp
+
+-- | <pre>
+--   =
+--   </pre>
 SimpleAssign :: AssignOp
+
+-- | <pre>
+--   +=
+--   </pre>
 AddAssign :: AssignOp
+
+-- | <pre>
+--   -=
+--   </pre>
 SubAssign :: AssignOp
+
+-- | <pre>
+--   *=
+--   </pre>
 MulAssign :: AssignOp
+
+-- | <pre>
+--   /=
+--   </pre>
 DivAssign :: AssignOp
+
+-- | <pre>
+--   %=
+--   </pre>
 ModAssign :: AssignOp
+
+-- | <pre>
+--   &lt;&lt;=
+--   </pre>
 BitLeftShiftAssign :: AssignOp
+
+-- | <pre>
+--   &gt;&gt;=
+--   </pre>
 BitRightShiftAssign :: AssignOp
+
+-- | <pre>
+--   &amp;=
+--   </pre>
 BitAndAssign :: AssignOp
+
+-- | <pre>
+--   |=
+--   </pre>
 BitOrAssign :: AssignOp
+
+-- | <pre>
+--   ^=
+--   </pre>
 BitXorAssign :: AssignOp
 data Expr
 Var :: VarName -> Expr
 Lit :: Literal -> Expr
 UnOp :: UnaryOp -> Expr -> Expr
 BinOp :: BinaryOp -> Expr -> Expr -> Expr
+
+-- | <pre>
+--   e1 ? e2 : e3
+--   </pre>
 Cond :: Expr -> Expr -> Expr -> Expr
+
+-- | lambda expression <tt>[=](T1 x1, T2 x2, ...) -&gt; Tr { stmt1; stmt2;
+--   ... }</tt>
 Lam :: [(Type, VarName)] -> Type -> [Statement] -> Expr
+
+-- | <tt>f(e1, e2, ...)</tt> for a fixed function <tt>f</tt>
 Call :: Function -> [Expr] -> Expr
+
+-- | <tt>e(e1, e2, ...)</tt> for an callable expr <tt>e</tt>
 CallExpr :: Expr -> [Expr] -> Expr
 data LeftExpr
+
+-- | <pre>
+--   x
+--   </pre>
 LeftVar :: VarName -> LeftExpr
+
+-- | <pre>
+--   e[i]
+--   </pre>
 LeftAt :: LeftExpr -> Expr -> LeftExpr
 
 -- | <pre>
---   std::get<a>n</a>
+--   std::get&lt;n&gt;
 --   </pre>
 LeftGet :: Integer -> LeftExpr -> LeftExpr
 data AssignExpr
+
+-- | <pre>
+--   e1 = e2
+--   </pre>
 AssignExpr :: AssignOp -> LeftExpr -> Expr -> AssignExpr
+
+-- | <pre>
+--   ++ e
+--   </pre>
 AssignIncr :: LeftExpr -> AssignExpr
+
+-- | <pre>
+--   -- e
+--   </pre>
 AssignDecr :: LeftExpr -> AssignExpr
 data DeclareRight
+
+-- | <pre>
+--   T x;
+--   </pre>
 DeclareDefault :: DeclareRight
+
+-- | <pre>
+--   T x = e;
+--   </pre>
 DeclareCopy :: Expr -> DeclareRight
 
--- | This is only for better formatting. This should not be used while
---   optimization phases.
+-- | <tt>T x(e1, e2, ...);</tt>. This is only for better formatting. This
+--   should not be used while optimization phases.
 DeclareInitialize :: [Expr] -> DeclareRight
 data Statement
+
+-- | <pre>
+--   e;
+--   </pre>
 ExprStatement :: Expr -> Statement
+
+-- | <pre>
+--   { stmt1; stmts2; ...; }
+--   </pre>
 Block :: [Statement] -> Statement
+
+-- | <tt>if (e) { stmt1; stmts2; ...; }</tt> / <tt>if (e) { stmt1; stmts2;
+--   ...; } else { stmt1'; stmt2'; ...; }</tt>
 If :: Expr -> [Statement] -> Maybe [Statement] -> Statement
+
+-- | <pre>
+--   for (T x = e1; e2; e3) { stmt1; stmts2; ...; }
+--   </pre>
 For :: Type -> VarName -> Expr -> Expr -> AssignExpr -> [Statement] -> Statement
+
+-- | <pre>
+--   for (T x : e) { stmt1; stmts2; ...; }
+--   </pre>
 ForEach :: Type -> VarName -> Expr -> [Statement] -> Statement
+
+-- | <pre>
+--   while (e) { stmt1; stmts2; ...; }
+--   </pre>
 While :: Expr -> [Statement] -> Statement
+
+-- | Declarations with/witout initializations. See <a>DeclareRight</a>.
 Declare :: Type -> VarName -> DeclareRight -> Statement
+
+-- | <pre>
+--   auto [x1, x2, ...] = e;
+--   </pre>
 DeclareDestructure :: [VarName] -> Expr -> Statement
+
+-- | <pre>
+--   e1 op= e2;
+--   </pre>
 Assign :: AssignExpr -> Statement
+
+-- | <pre>
+--   assert (e);
+--   </pre>
 Assert :: Expr -> Statement
+
+-- | <pre>
+--   return e;
+--   </pre>
 Return :: Expr -> Statement
 data ToplevelStatement
+
+-- | <pre>
+--   const T x = e;
+--   </pre>
 VarDef :: Type -> VarName -> Expr -> ToplevelStatement
+
+-- | <pre>
+--   T f(T1 x1, T2 x2, ...) { stmt1; stmt2; ... }
+--   </pre>
 FunDef :: Type -> VarName -> [(Type, VarName)] -> [Statement] -> ToplevelStatement
 newtype Program
 Program :: [ToplevelStatement] -> Program
