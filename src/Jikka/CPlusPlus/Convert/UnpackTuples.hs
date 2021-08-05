@@ -22,6 +22,7 @@ import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 
+-- | `runExpr` replaces variables using the @mapping :: M.Map VarName [(Type, VarName)]@.
 runExpr :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Expr -> m Expr
 runExpr = \case
   Var x -> do
@@ -45,10 +46,12 @@ runExpr = \case
   Call f args -> runCall f args
   CallExpr e args -> CallExpr <$> runExpr e <*> mapM runExpr args
 
+-- | `runCall` does the same thing to `runExpr` and also reduces `std::get<i>(e)` and `e[i]`.
 runCall :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Function -> [Expr] -> m Expr
 runCall f args = do
   args <- mapM runExpr args
   case (f, args) of
+    -- std::get<n>(x)
     (StdGet n, [Var x]) -> do
       ys <- gets (M.lookup x)
       case ys of
@@ -58,10 +61,12 @@ runCall f args = do
             throwInternalError "index out of range"
           return $ es !! fromInteger n
         Nothing -> return $ Call f args
+    -- std::get<n>(std::tuple<T1, T2, ...>(e1, e2, ...))
     (StdGet n, [Call (StdTuple _) es]) -> do
       when (n < 0 || toInteger (length es) <= n) $ do
         throwInternalError "index out of range"
       return $ es !! fromInteger n
+    -- x[i]
     (At, [Var x, e2]) -> do
       ys <- gets (M.lookup x)
       case ys of
@@ -78,6 +83,7 @@ runCall f args = do
               return (es !! fromInteger n)
             Nothing -> return $ Call f args
         Nothing -> return $ Call f args
+    -- (std::array<T, n>{e1, e2, ...})[i]
     (At, [Call (ArrayExt _) es, e2]) -> do
       let n = case e2 of
             Lit (LitInt32 n) -> Just n
@@ -103,6 +109,7 @@ runAssignExpr = \case
   AssignIncr e -> AssignIncr <$> runLeftExpr e
   AssignDecr e -> AssignDecr <$> runLeftExpr e
 
+-- | `runStatement` expands assignments to variables of @std::tuple<T1, T2, ...>@ and @std::array<T, n>@.
 runStatement :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Statement -> [[Statement]] -> m [Statement]
 runStatement stmt cont = case stmt of
   ExprStatement e -> do
@@ -135,10 +142,12 @@ runStatement stmt cont = case stmt of
       DeclareCopy e -> DeclareCopy <$> runExpr e
       DeclareInitialize es -> DeclareInitialize <$> mapM runExpr es
     case init of
+      -- std::tuple<T1, T2, ...> x = std::tuple<...>(e1, e2, ...);
       DeclareCopy (Call (StdTuple ts) es) -> do
         ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
         modify' (M.insert x (zip ts ys))
         return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
+      -- std::array<T, n> x = std::array<T, n>{e1, e2, ...};
       DeclareCopy (Call (ArrayExt t) es) -> do
         let ts = replicate (length es) t
         ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
@@ -152,6 +161,7 @@ runStatement stmt cont = case stmt of
   Assign e -> do
     e <- runAssignExpr e
     case e of
+      -- x = e;
       AssignExpr SimpleAssign (LeftVar x) e -> do
         ys <- gets (M.lookup x)
         case ys of
