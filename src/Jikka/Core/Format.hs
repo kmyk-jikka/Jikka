@@ -315,6 +315,7 @@ formatExpr' = \case
     let (args, body) = uncurryLam e
      in ("fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' body) ++ "\n" ++ dedent ++ "\n", lambdaPrec)
   Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' e1) ++ "\n" ++ dedent ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
+  Assert e1 e2 -> ("assert " ++ resolvePrec parenPrec (formatExpr' e1) ++ " in " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
 
 formatExpr :: Expr -> String
 formatExpr = unlines . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec . formatExpr'
@@ -324,6 +325,7 @@ formatToplevelExpr = \case
   ResultExpr e -> lines (resolvePrec lambdaPrec (formatExpr' e))
   ToplevelLet x t e cont -> let' (unVarName x) t e cont
   ToplevelLetRec f args ret e cont -> let' ("rec " ++ unVarName f ++ " " ++ formatFormalArgs args) ret e cont
+  ToplevelAssert e cont -> ["assert " ++ resolvePrec parenPrec (formatExpr' e), "in"] ++ formatToplevelExpr cont
   where
     let' s t e cont =
       ["let " ++ s ++ ": " ++ formatType t ++ " =", indent]

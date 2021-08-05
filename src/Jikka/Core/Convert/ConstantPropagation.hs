@@ -35,6 +35,7 @@ runExpr env = \case
      in if isConstantTimeExpr e1'
           then runExpr (M.insert x e1' env) e2
           else Let x t e1' (runExpr env e2)
+  Assert e1 e2 -> Assert (runExpr env e1) (runExpr env e2)
 
 runToplevelExpr :: Env -> ToplevelExpr -> ToplevelExpr
 runToplevelExpr env = \case
@@ -46,6 +47,7 @@ runToplevelExpr env = \case
           else ToplevelLet x t e' (runToplevelExpr env cont)
   ToplevelLetRec f args ret body cont ->
     ToplevelLetRec f args ret (runExpr env body) (runToplevelExpr env cont)
+  ToplevelAssert e1 e2 -> ToplevelAssert (runExpr env e1) (runToplevelExpr env e2)
 
 run' :: Program -> Program
 run' = runToplevelExpr M.empty

@@ -4,7 +4,7 @@ from typing import *
 INF = 10 ** 18
 
 def solve(n: int, c: int, h: List[int]) -> int:
-    assert 2 <= n <= 10 ** 5
+    assert 2 <= n <= 2 * 10 ** 5
     assert 1 <= c <= 10 ** 12
     assert len(h) == n
     assert all(1 <= h_i <= 10 ** 6 for h_i in h)

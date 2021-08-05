@@ -74,6 +74,7 @@ getRecurrenceFormulaStep1 shift t a i body = do
         App f e -> App <$> go f <*> go e
         Lam x t e -> Lam x t <$> if x == a then Just e else go e
         Let x t e1 e2 -> Let x t <$> go e1 <*> if x == a then Just e2 else go e2
+        Assert f e -> Assert <$> go f <*> go e
   return $ case go body of
     Just body -> Just $ Lam2 x t i IntTy body
     Nothing -> Nothing
@@ -97,6 +98,7 @@ getRecurrenceFormulaStep shift size t a i body = do
         App f e -> App <$> go f <*> go e
         Lam x t e -> Lam x t <$> if x == a then Just e else go e
         Let x t e1 e2 -> Let x t <$> go e1 <*> if x == a then Just e2 else go e2
+        Assert f e -> Assert <$> go f <*> go e
   return $ case go body of
     Just body -> Just $ Lam2 x (TupleTy ts) i IntTy (uncurryApp (Tuple' ts) (map (\i -> Proj' ts i (Var x)) [1 .. size - 1] ++ [body]))
     Nothing -> Nothing
@@ -148,6 +150,7 @@ checkAccumulationFormulaStep a i = go
       App f e -> go f && go e
       Lam x _ e -> x == a || go e
       Let x _ e1 e2 -> go e1 && (x == a || go e2)
+      Assert e1 e2 -> go e1 && go e2
 
 -- |
 -- * This assumes that `Range2` and `Range3` are already converted to `Range1` (`Jikka.Core.Convert.ShortCutFusion`).
@@ -196,6 +199,7 @@ checkGenericRecurrenceFormulaStep a = \i k -> go (M.fromList [(i, k - 1)])
       App f e -> go env f && go env e
       Lam x _ e -> x == a || go env e
       Let x _ e1 e2 -> go env e1 && (x == a || go env e2)
+      Assert e1 e2 -> go env e1 && go env e2
 
 reduceFoldlSetAtGeneric :: MonadAlpha m => RewriteRule m
 reduceFoldlSetAtGeneric = RewriteRule $ \_ -> \case

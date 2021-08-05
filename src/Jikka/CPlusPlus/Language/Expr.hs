@@ -249,6 +249,8 @@ data ToplevelStatement
     VarDef Type VarName Expr
   | -- | @T f(T1 x1, T2 x2, ...) { stmt1; stmt2; ... }@
     FunDef Type VarName [(Type, VarName)] [Statement]
+  | -- | @static_assert(e, msg);@
+    StaticAssert Expr String
   deriving (Eq, Ord, Show, Read)
 
 newtype Program = Program

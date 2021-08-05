@@ -38,6 +38,7 @@ runExpr env = \case
     y <- rename x
     e2 <- runExpr ((x, y) : env) e2
     return $ Let y t e1 e2
+  Assert e1 e2 -> Assert <$> runExpr env e1 <*> runExpr env e2
 
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr env = \case
@@ -57,6 +58,7 @@ runToplevelExpr env = \case
     body <- runExpr (args1 ++ (f, g) : env) body
     cont <- runToplevelExpr ((f, g) : env) cont
     return $ ToplevelLetRec g args2 ret body cont
+  ToplevelAssert e1 e2 -> ToplevelAssert <$> runExpr env e1 <*> runToplevelExpr env e2
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = runToplevelExpr []

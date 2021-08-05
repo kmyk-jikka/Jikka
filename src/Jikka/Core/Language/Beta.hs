@@ -46,6 +46,7 @@ substitute x e = \case
       else do
         (y, e2) <- resolveConflict e (y, e2)
         Let y t e1 <$> substitute x e e2
+  Assert e1 e2 -> Assert <$> substitute x e e1 <*> substitute x e e2
 
 substituteToplevelExpr :: (MonadAlpha m, MonadError Error m) => VarName -> Expr -> ToplevelExpr -> m ToplevelExpr
 substituteToplevelExpr x e = \case
@@ -73,6 +74,7 @@ substituteToplevelExpr x e = \case
                     return (args ++ [(y, t)], body)
               foldM go ([], body) args
         ToplevelLetRec f args ret body <$> substituteToplevelExpr x e cont
+  ToplevelAssert e1 e2 -> ToplevelAssert <$> substitute x e e1 <*> substituteToplevelExpr x e e2
 
 resolveConflict :: MonadAlpha m => Expr -> (VarName, Expr) -> m (VarName, Expr)
 resolveConflict e (x, e') =

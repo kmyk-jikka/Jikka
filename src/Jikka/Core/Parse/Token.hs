@@ -61,6 +61,7 @@ data Token
   | Else
   | Fun
   | Dot
+  | Assert
   | Forall
   | -- punctuations
     Arrow

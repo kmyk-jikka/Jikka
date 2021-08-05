@@ -113,6 +113,7 @@ replaceWithSegtrees a segtrees = go M.empty
          in case check env e1' of
               Just (e1', b, semigrp) -> go (M.insert x (e1', b, semigrp) env) e2
               Nothing -> Let x t (go env e1) (go env e2)
+      Assert e1 e2 -> Assert (go env e1) (go env e2)
     check :: M.Map VarName (Expr, Expr, Semigroup') -> Expr -> Maybe (Expr, Expr, Semigroup')
     check env = \case
       Var x -> M.lookup x env

@@ -26,6 +26,7 @@ isFreeVar x = \case
   App f e -> isFreeVar x f || isFreeVar x e
   Lam y _ e -> x /= y && isFreeVar x e
   Let y _ e1 e2 -> (y /= x && isFreeVar x e1) || isFreeVar x e2
+  Assert e1 e2 -> isFreeVar x e1 || isFreeVar x e2
 
 -- | `isUnusedVar` is the negation of `isFreeVar`.
 --
@@ -44,6 +45,7 @@ isFreeVarOrScopedVar x = \case
   App f e -> isFreeVarOrScopedVar x f || isFreeVarOrScopedVar x e
   Lam y _ e -> x == y || isFreeVarOrScopedVar x e
   Let y _ e1 e2 -> y == x || isFreeVarOrScopedVar x e1 || isFreeVarOrScopedVar x e2
+  Assert e1 e2 -> isFreeVarOrScopedVar x e1 || isFreeVarOrScopedVar x e2
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = \case

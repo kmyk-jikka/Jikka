@@ -55,6 +55,7 @@ import qualified Jikka.Core.Parse.Token as L
     "if"            { WithLoc _ L.If }
     "then"          { WithLoc _ L.Then }
     "else"          { WithLoc _ L.Else }
+    "assert"        { WithLoc _ L.Assert }
     "forall"        { WithLoc _ L.Forall }
 
     -- punctuations
@@ -471,10 +472,15 @@ lambda_expr :: { Expr }
 let_expr :: { Expr }
     : "let" identifier ":" type "=" expression "in" expression    { Let $2 $4 $6 $8 }
 
+-- Assertion
+assert_expr :: { Expr }
+    : "assert" expression "->" expression                       { Assert $2 $4 }
+
 expression_nolet :: { Expr }
     : implies_test                                          { $1 }
     | conditional_expression                                { $1 }
     | lambda_expr                                           { $1 }
+    | assert_expr                                           { $1 }
 expression :: { Expr }
     : expression_nolet                                      { $1 }
     | let_expr                                              { $1 }

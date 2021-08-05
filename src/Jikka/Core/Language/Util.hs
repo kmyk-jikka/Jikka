@@ -59,6 +59,7 @@ mapTypeExprM f = go
       App f e -> App <$> go f <*> go e
       Lam x t body -> Lam x <$> f t <*> go body
       Let x t e1 e2 -> Let x <$> f t <*> go e1 <*> go e2
+      Assert e1 e2 -> Assert <$> go e1 <*> go e2
 
 mapTypeExpr :: (Type -> Type) -> Expr -> Expr
 mapTypeExpr f e = runIdentity (mapTypeExprM (return . f) e)
@@ -68,6 +69,7 @@ mapTypeToplevelExprM f = \case
   ResultExpr e -> ResultExpr <$> mapTypeExprM f e
   ToplevelLet x t e cont -> ToplevelLet x <$> f t <*> mapTypeExprM f e <*> mapTypeToplevelExprM f cont
   ToplevelLetRec g args ret body cont -> ToplevelLetRec g <$> mapM (\(x, t) -> (x,) <$> f t) args <*> f ret <*> mapTypeExprM f body <*> mapTypeToplevelExprM f cont
+  ToplevelAssert e cont -> ToplevelAssert <$> mapTypeExprM f e <*> mapTypeToplevelExprM f cont
 
 mapTypeProgramM :: Monad m => (Type -> m Type) -> Program -> m Program
 mapTypeProgramM = mapTypeToplevelExprM
@@ -86,16 +88,34 @@ mapExprM' pre post env e = do
     App g e -> App <$> go env g <*> go env e
     Lam x t body -> Lam x t <$> go ((x, t) : env) body
     Let y t e1 e2 -> Let y t <$> go env e1 <*> go ((y, t) : env) e2
+    Assert e1 e2 -> Assert <$> go env e1 <*> go env e2
+  post env e
+
+mapToplevelExprM' :: Monad m => ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapToplevelExprM' pre post env e = do
+  e <- pre env e
+  e <- case e of
+    ResultExpr e -> return $ ResultExpr e
+    ToplevelLet y t e cont ->
+      ToplevelLet y t e <$> mapToplevelExprM' pre post ((y, t) : env) cont
+    ToplevelLetRec g args ret body cont ->
+      let env' = (g, foldr (FunTy . snd) ret args) : env
+       in ToplevelLetRec g args ret body <$> mapToplevelExprM' pre post env' cont
+    ToplevelAssert e cont ->
+      ToplevelAssert e <$> mapToplevelExprM' pre post env cont
   post env e
 
 mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprToplevelExprM' pre post env = \case
-  ResultExpr e -> ResultExpr <$> mapExprM' pre post env e
-  ToplevelLet y t e cont ->
-    ToplevelLet y t <$> mapExprM' pre post env e <*> mapExprToplevelExprM' pre post ((y, t) : env) cont
-  ToplevelLetRec g args ret body cont ->
-    let env' = (g, foldr (FunTy . snd) ret args) : env
-     in ToplevelLetRec g args ret <$> mapExprM' pre post (reverse args ++ env') body <*> mapExprToplevelExprM' pre post env' cont
+mapExprToplevelExprM' pre post env = mapToplevelExprM' pre' (\_ e -> return e) env
+  where
+    go = mapExprM' pre post
+    pre' env = \case
+      ResultExpr e -> ResultExpr <$> go env e
+      ToplevelLet y t e cont -> ToplevelLet y t <$> go env e <*> pure cont
+      ToplevelLetRec g args ret body cont ->
+        let env' = (g, foldr (FunTy . snd) ret args) : env
+         in ToplevelLetRec g args ret <$> go (reverse args ++ env') body <*> pure cont
+      ToplevelAssert e cont -> ToplevelAssert <$> go env e <*> pure cont
 
 mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
 mapExprProgramM' pre post = mapExprToplevelExprM' pre post []
@@ -118,6 +138,16 @@ mapExprToplevelExpr f env e = runIdentity $ mapExprToplevelExprM (\env e -> retu
 
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 mapExprProgram f prog = runIdentity $ mapExprProgramM (\env e -> return $ f env e) prog
+
+-- | `mapToplevelExprM` is a wrapper of `mapToplevelExprM'`. This function works in post-order.
+mapToplevelExprM :: Monad m => ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapToplevelExprM f env e = mapToplevelExprM' (\_ e -> return e) f env e
+
+mapToplevelExprProgramM :: Monad m => ([(VarName, Type)] -> Program -> m Program) -> Program -> m Program
+mapToplevelExprProgramM f prog = mapToplevelExprM f [] prog
+
+mapToplevelExprProgram :: ([(VarName, Type)] -> Program -> Program) -> Program -> Program
+mapToplevelExprProgram f prog = runIdentity $ mapToplevelExprProgramM (\env e -> return $ f env e) prog
 
 listSubExprs :: Expr -> [Expr]
 listSubExprs e = getDual . execWriter $ mapExprM go [] e
@@ -284,6 +314,7 @@ isConstantTimeExpr = \case
     _ -> False
   Lam _ _ _ -> True
   Let _ _ e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2
+  Assert e1 e2 -> isConstantTimeExpr e1 && isConstantTimeExpr e2
 
 -- | `replaceLenF` replaces @len(f)@ in an expr with @i + k@.
 -- * This assumes that there are no name conflicts.
@@ -299,6 +330,7 @@ replaceLenF f i k = go
       Lam x t body -> Lam x t <$> (if x == f then return body else go body)
       Let y _ _ _ | y == i -> throwInternalError "Jikka.Core.Language.Util.replaceLenF: name conflict"
       Let y t e1 e2 -> Let y t <$> go e1 <*> (if y == f then return e2 else go e2)
+      Assert e1 e2 -> Assert <$> go e1 <*> go e2
 
 -- | `getRecurrenceFormulaBase` makes a pair @((a_0, ..., a_{k - 1}), a)@ from @setat (... (setat a 0 a_0) ...) (k - 1) a_{k - 1})@.
 getRecurrenceFormulaBase :: Expr -> ([Expr], Expr)

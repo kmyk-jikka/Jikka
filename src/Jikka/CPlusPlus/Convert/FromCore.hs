@@ -481,14 +481,14 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.All -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
           ],
           Y.Var y
         )
     X.Any -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
+        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
           ],
           Y.Var y
         )
@@ -637,6 +637,10 @@ runExpr env = \case
     (stmts1, e1) <- runExpr env e1
     (stmts2, e2) <- runExpr ((x, t, y) : env) e2
     return (stmts1 ++ Y.Declare t' y (Y.DeclareCopy e1) : stmts2, e2)
+  X.Assert e1 e2 -> do
+    (stmts1, e1) <- runExpr env e1
+    (stmts2, e2) <- runExpr env e2
+    return (stmts1 ++ Y.Assert e1 : stmts2, e2)
 
 runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelFunDef env f args ret body = do
@@ -713,6 +717,11 @@ runToplevelExpr env = \case
     stmt <- runToplevelFunDef ((f, t, g) : env) g args ret body
     cont <- runToplevelExpr ((f, t, g) : env) cont
     return $ stmt ++ cont
+  X.ToplevelAssert e cont -> do
+    (stmts, e) <- runExpr env e
+    let stmt = Y.StaticAssert (Y.CallExpr (Y.Lam [] Y.TyBool (stmts ++ [Y.Return e])) []) ""
+    cont <- runToplevelExpr env cont
+    return $ stmt : cont
 
 runProgram :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 runProgram prog = Y.Program <$> runToplevelExpr [] prog

@@ -320,6 +320,8 @@ formatToplevelStatement = \case
         args' = intercalate ", " $ map (\(t, x) -> formatType t ++ " " ++ unVarName x) args
         body' = concatMap formatStatement body
      in [ret' ++ " " ++ unVarName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
+  StaticAssert e msg ->
+    ["static_assert (" ++ resolvePrec CommaPrec (formatExpr e) ++ ", " ++ formatLiteral (LitString msg) ++ ");"]
 
 formatProgram :: Program -> [Code]
 formatProgram prog =
@@ -327,6 +329,7 @@ formatProgram prog =
       standardHeaders =
         [ "#include <algorithm>",
           "#include <array>",
+          "#include <cassert>",
           "#include <cstdint>",
           "#include <functional>",
           "#include <iostream>",

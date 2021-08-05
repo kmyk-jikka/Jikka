@@ -176,6 +176,11 @@ typecheckExpr env = \case
       throwInternalError $ "wrong type binding: " ++ formatExpr (Let x t e1 e2)
     let env' = if x == VarName "_" then env else (x, t) : env
     typecheckExpr env' e2
+  Assert e1 e2 -> do
+    t <- typecheckExpr env e1
+    when (t /= BoolTy) $ do
+      throwInternalError $ "wrong type assertion: expr = " ++ formatExpr e1 ++ " has type = " ++ formatType t
+    typecheckExpr env e2
 
 typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckToplevelExpr env = \case
@@ -193,6 +198,11 @@ typecheckToplevelExpr env = \case
     when (ret' /= ret) $ do
       throwInternalError $ "returned type is not correct: context = (let rec " ++ unVarName f ++ " " ++ unwords (map (\(x, t) -> unVarName x ++ ": " ++ formatType t) args) ++ ": " ++ formatType ret ++ " = " ++ formatExpr body ++ " in ...), expected type = " ++ formatType ret ++ ", actual type = " ++ formatType ret'
     typecheckToplevelExpr ((f, t) : env) cont
+  ToplevelAssert e1 e2 -> do
+    t <- typecheckExpr env e1
+    when (t /= BoolTy) $ do
+      throwInternalError $ "wrong type toplevel assertion: expr = " ++ formatExpr e1 ++ " has type = " ++ formatType t
+    typecheckToplevelExpr env e2
 
 typecheckProgram :: MonadError Error m => Program -> m Type
 typecheckProgram prog = wrapError' "Jikka.Core.Language.TypeCheck.typecheckProgram" $ do

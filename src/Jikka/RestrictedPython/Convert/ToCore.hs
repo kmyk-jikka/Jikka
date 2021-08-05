@@ -387,7 +387,10 @@ runStatements (stmt : stmts) cont = case stmt of
         runStatements stmts cont
   X.For x iter body -> runForStatement x iter body stmts cont
   X.If e body1 body2 -> runIfStatement e body1 body2 stmts cont
-  X.Assert _ -> runStatements stmts cont
+  X.Assert e -> do
+    e <- runExpr e
+    cont <- runStatements stmts cont
+    return $ Y.Assert e cont
   X.Append loc t x e -> do
     case X.exprToTarget x of
       Nothing -> throwSemanticErrorAt' loc "invalid `append` method"

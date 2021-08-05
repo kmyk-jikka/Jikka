@@ -63,6 +63,7 @@ tokens :-
     "if"            { tok If }
     "then"          { tok Then }
     "else"          { tok Else }
+    "assert"        { tok Assert }
     "forall"        { tok Forall }
 
     -- punctuations
