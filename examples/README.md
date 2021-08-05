@@ -64,8 +64,6 @@ Please check also the [gallery](https://kmyk.github.io/Jikka/gallery).
 
 - :heavy_check_mark: AC `higher_order_function.py`
   - An example of higher order functions.
-- :heavy_check_mark: AC `ifs.py`
-  - An example with many if-statements.
 - :heavy_check_mark: AC `list_literal.py`
   - An example of list literals.
 - :heavy_check_mark: AC `method_calls.py`
@@ -76,3 +74,6 @@ Please check also the [gallery](https://kmyk.github.io/Jikka/gallery).
   - An example of symbol errors.
 - :heavy_check_mark: AC `errors/toplevel_expr_statements.py`
   - An example of expr statements in toplevel.
+- :hourglass: compile-time-TLE `wip/many_ifs.py`
+  - An example with many if-statements.
+  - 動きはするけど遅くて困る
