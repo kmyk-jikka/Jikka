@@ -43,6 +43,10 @@ $ cabal update
 $ cabal install Jikka
 ```
 
+## Discussions
+
+Please feel free to use our [GitHub Discussions](https://github.com/kmyk/Jikka/discussions). / [GitHub Discussions](https://github.com/kmyk/Jikka/discussions) があるので気軽に使ってください。
+
 ## Documents
 
 For users:
