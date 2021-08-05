@@ -1472,11 +1472,7 @@ LitBottom :: Type -> String -> Literal
 data Expr
 Var :: VarName -> Expr
 Lit :: Literal -> Expr
-
--- | The functions are not curried.
 App :: Expr -> Expr -> Expr
-
--- | The lambdas are also not curried.
 Lam :: VarName -> Type -> Expr -> Expr
 
 -- | This "let" is not recursive.
@@ -2703,65 +2699,6 @@ reduceModSum :: MonadAlpha m => RewriteRule m
 reduceModProduct :: Monad m => RewriteRule m
 
 
-module Jikka.Core.Convert.CloseAll
-
--- | <a>run</a> reduces <a>All</a> and <a>Any</a>.
---   
---   <h2>Examples</h2>
---   
---   Before:
---   
---   <pre>
---   any (filter (fun x -&gt; x || f x) xs)
---   </pre>
---   
---   After:
---   
---   <pre>
---   any xs || any (map f xs)
---   </pre>
---   
---   <h2>List of builtin functions which are reduced</h2>
---   
---   &lt;math&gt;
---   
---   <h3>Target functions</h3>
---   
---   <ul>
---   <li><a>All</a> &lt;math&gt;</li>
---   <li><a>Any</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>Boolean functions</h3>
---   
---   <ul>
---   <li><a>Not</a> &lt;math&gt;</li>
---   <li><a>And</a> &lt;math&gt;</li>
---   <li><a>Or</a> &lt;math&gt;</li>
---   <li><a>Implies</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>List Build functions</h3>
---   
---   <ul>
---   <li><tt>Nil</tt> &lt;math&gt;</li>
---   <li><a>Cons</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>List Map functions</h3>
---   
---   <ul>
---   <li><a>Map</a> &lt;math&gt;</li>
---   <li><a>Filter</a> &lt;math&gt;</li>
---   <li><a>Reversed</a> &lt;math&gt;</li>
---   <li><a>Sorted</a> &lt;math&gt;</li>
---   </ul>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
-reduceAll :: MonadAlpha m => RewriteRule m
-reduceAny :: MonadAlpha m => RewriteRule m
-
-
 module Jikka.Core.Convert.ArithmeticalExpr
 
 -- | <a>run</a> sorts arithmetical exprs.
@@ -3062,6 +2999,65 @@ reduceMapMap :: MonadAlpha m => RewriteRule m
 reduceFoldMap :: MonadAlpha m => RewriteRule m
 reduceFold :: Monad m => RewriteRule m
 reduceFoldBuild :: MonadAlpha m => RewriteRule m
+
+
+module Jikka.Core.Convert.CloseAll
+
+-- | <a>run</a> reduces <a>All</a> and <a>Any</a>.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   any (filter (fun x -&gt; x || f x) xs)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   any xs || any (map f xs)
+--   </pre>
+--   
+--   <h2>List of builtin functions which are reduced</h2>
+--   
+--   &lt;math&gt;
+--   
+--   <h3>Target functions</h3>
+--   
+--   <ul>
+--   <li><a>All</a> &lt;math&gt;</li>
+--   <li><a>Any</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Boolean functions</h3>
+--   
+--   <ul>
+--   <li><a>Not</a> &lt;math&gt;</li>
+--   <li><a>And</a> &lt;math&gt;</li>
+--   <li><a>Or</a> &lt;math&gt;</li>
+--   <li><a>Implies</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>List Build functions</h3>
+--   
+--   <ul>
+--   <li><tt>Nil</tt> &lt;math&gt;</li>
+--   <li><a>Cons</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>List Map functions</h3>
+--   
+--   <ul>
+--   <li><a>Map</a> &lt;math&gt;</li>
+--   <li><a>Filter</a> &lt;math&gt;</li>
+--   <li><a>Reversed</a> &lt;math&gt;</li>
+--   <li><a>Sorted</a> &lt;math&gt;</li>
+--   </ul>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: MonadAlpha m => RewriteRule m
+reduceAll :: MonadAlpha m => RewriteRule m
+reduceAny :: MonadAlpha m => RewriteRule m
 
 
 -- | <a>Convert</a> is a module to combine other all optimizers.
