@@ -20,27 +20,43 @@ newtype VarName = VarName {unVarName :: String} deriving (Eq, Ord, Show, Read, I
 newtype FunName = FunName {unFunName :: String} deriving (Eq, Ord, Show, Read, IsString)
 
 data Type
-  = TyAuto
-  | TyVoid
-  | TyBool
-  | TyInt
-  | TyInt32
-  | TyInt64
-  | TyTuple [Type]
-  | TyVector Type
-  | TyArray Type Integer
-  | TyString
-  | TyFunction Type [Type]
-  | TyConvexHullTrick
-  | TySegmentTree Monoid'
-  | -- | for template parameters
+  = -- | @auto@
+    TyAuto
+  | -- | @void@
+    TyVoid
+  | -- | @bool@
+    TyBool
+  | -- | @int@
+    TyInt
+  | -- | @int32_t@
+    TyInt32
+  | -- | @int64_t@
+    TyInt64
+  | -- | @std::tuple\<T1, T2, ...\>@
+    TyTuple [Type]
+  | -- | @std::vector\<T\>@
+    TyVector Type
+  | -- | @std::arrya\<T, n\>@
+    TyArray Type Integer
+  | -- | @std::string@
+    TyString
+  | -- | @std::function\<Tr (T1, T2, ...)\>@
+    TyFunction Type [Type]
+  | -- | @jikka::convex_hull_trick@
+    TyConvexHullTrick
+  | -- | @atcoder::segtree\<T, op, e\>@
+    TySegmentTree Monoid'
+  | -- | an integer @n@ for template parameters
     TyIntValue Integer
   deriving (Eq, Ord, Show, Read)
 
 data Monoid'
-  = MonoidIntPlus
-  | MonoidIntMin
-  | MonoidIntMax
+  = -- | \((\mathbb{Z}, +, 0)\)
+    MonoidIntPlus
+  | -- | \((\mathrm{int64\_t}, \min, \mathrm{INT64\_MAX})\)
+    MonoidIntMin
+  | -- | \((\mathrm{int64\_t}, \max, \mathrm{INT64\_MIN})\)
+    MonoidIntMax
   deriving (Eq, Ord, Show, Read)
 
 data Literal
@@ -52,64 +68,113 @@ data Literal
   deriving (Eq, Ord, Show, Read)
 
 data Function
-  = Function FunName [Type]
-  | Method FunName
-  | At
-  | Cast Type
-  | StdTuple [Type]
-  | StdGet Integer
-  | ArrayExt Type
-  | VecExt Type
-  | VecCtor Type
-  | Range
-  | MethodSize
-  | ConvexHullTrickCtor
-  | ConvexHullTrickCopyAddLine
-  | SegmentTreeCtor Monoid'
-  | SegmentTreeCopySetPoint Monoid'
+  = -- | other functions
+    Function FunName [Type]
+  | -- | other methods
+    Method FunName
+  | -- | subscription @e1[e2]@
+    At
+  | -- | cast @(T)e@
+    Cast Type
+  | -- | functio @std::tuple\<T1, T2, ...\>(e1, e2, ...)@
+    StdTuple [Type]
+  | -- | function @std::get\<T, n\>(e)@
+    StdGet Integer
+  | -- | @std::array\<T, n\>{e1, e2, ..., en}@
+    ArrayExt Type
+  | -- | @std::vector\<T\>{e1, e2, ...}@
+    VecExt Type
+  | -- | constructors @std::vector\<T\>()@ / @std::vector\<T\>(n)@ / @std::vector\<T\>(n, e)@
+    VecCtor Type
+  | -- | function @std::vector\<int\> jikka::range(int n)@, which is similar to Python's @range@ or Boost's @boost::range@
+    Range
+  | -- | @size@ method of @std::vector\<T\>@
+    MethodSize
+  | -- | the constructor of @jikka::convex_hull_trick@
+    ConvexHullTrickCtor
+  | -- | This makes a copy of @jikka::convex_hull_trick@ and updates it. This is removed at `Jikka.CPlusPlus.Convert.MoveSemantics.run`.
+    ConvexHullTrickCopyAddLine
+  | -- | the constructors of @atcoder::segtree\<T, op, e\>@
+    SegmentTreeCtor Monoid'
+  | -- | This makes a copy of @atcoder::segtree\<T, op, e\>@ and updates it. This is removed at `Jikka.CPlusPlus.Convert.MoveSemantics.run`.
+    SegmentTreeCopySetPoint Monoid'
   deriving (Eq, Ord, Show, Read)
 
 data UnaryOp
-  = IntNop
-  | Negate
-  | BitNot
-  | Not
-  | Deref
+  = -- | @+@
+    IntNop
+  | -- | @-@
+    Negate
+  | -- | @~@
+    BitNot
+  | -- | @!@ / @not@
+    Not
+  | -- | @*@
+    Deref
   deriving (Eq, Ord, Show, Read)
 
 data BinaryOp
-  = Add
-  | Sub
-  | Mul
-  | Div
-  | Mod
-  | BitAnd
-  | BitOr
-  | BitXor
-  | BitLeftShift
-  | BitRightShift
-  | And
-  | Or
-  | LessThan
-  | LessEqual
-  | GreaterThan
-  | GreaterEqual
-  | Equal
-  | NotEqual
+  = -- | @+@
+    Add
+  | -- | @-@
+    Sub
+  | -- | @*@
+    Mul
+  | -- | @/@
+    Div
+  | -- | @%@
+    Mod
+  | -- | @&@
+    BitAnd
+  | -- | @|@
+    BitOr
+  | -- | @^@
+    BitXor
+  | -- | @\<\<@
+    BitLeftShift
+  | -- | @\>\>@
+    BitRightShift
+  | -- | @&&@ / @and@
+    And
+  | -- | @||@ / @or@
+    Or
+  | -- | @\<@
+    LessThan
+  | -- | @\<=@
+    LessEqual
+  | -- | @\>@
+    GreaterThan
+  | -- | @\>=@
+    GreaterEqual
+  | -- | @==@
+    Equal
+  | -- | @!=@
+    NotEqual
   deriving (Eq, Ord, Show, Read)
 
 data AssignOp
-  = SimpleAssign
-  | AddAssign
-  | SubAssign
-  | MulAssign
-  | DivAssign
-  | ModAssign
-  | BitLeftShiftAssign
-  | BitRightShiftAssign
-  | BitAndAssign
-  | BitOrAssign
-  | BitXorAssign
+  = -- | @=@
+    SimpleAssign
+  | -- | @+=@
+    AddAssign
+  | -- | @-=@
+    SubAssign
+  | -- | @*=@
+    MulAssign
+  | -- | @/=@
+    DivAssign
+  | -- | @%=@
+    ModAssign
+  | -- | @\<\<=@
+    BitLeftShiftAssign
+  | -- | @\>\>=@
+    BitRightShiftAssign
+  | -- | @&=@
+    BitAndAssign
+  | -- | @|=@
+    BitOrAssign
+  | -- | @^=@
+    BitXorAssign
   deriving (Eq, Ord, Show, Read)
 
 data Expr
@@ -117,49 +182,73 @@ data Expr
   | Lit Literal
   | UnOp UnaryOp Expr
   | BinOp BinaryOp Expr Expr
-  | Cond Expr Expr Expr
-  | Lam [(Type, VarName)] Type [Statement]
-  | Call Function [Expr]
-  | CallExpr Expr [Expr]
+  | -- | @e1 ? e2 : e3@
+    Cond Expr Expr Expr
+  | -- | lambda expression @[=](T1 x1, T2 x2, ...) -> Tr { stmt1; stmt2; ... }@
+    Lam [(Type, VarName)] Type [Statement]
+  | -- | @f(e1, e2, ...)@ for a fixed function @f@
+    Call Function [Expr]
+  | -- | @e(e1, e2, ...)@ for an callable expr @e@
+    CallExpr Expr [Expr]
   deriving (Eq, Ord, Show, Read)
 
 data LeftExpr
-  = LeftVar VarName
-  | LeftAt LeftExpr Expr
-  | -- | @std::get<n>@
+  = -- | @x@
+    LeftVar VarName
+  | -- | @e[i]@
+    LeftAt LeftExpr Expr
+  | -- | @std::get\<n\>@
     LeftGet Integer LeftExpr
   deriving (Eq, Ord, Show, Read)
 
 data AssignExpr
-  = AssignExpr AssignOp LeftExpr Expr
-  | AssignIncr LeftExpr
-  | AssignDecr LeftExpr
+  = -- | @e1 = e2@
+    AssignExpr AssignOp LeftExpr Expr
+  | -- | @++ e@
+    AssignIncr LeftExpr
+  | -- | @-- e@
+    AssignDecr LeftExpr
   deriving (Eq, Ord, Show, Read)
 
 data DeclareRight
-  = DeclareDefault
-  | DeclareCopy Expr
-  | -- | This is only for better formatting. This should not be used while optimization phases.
+  = -- | @T x;@
+    DeclareDefault
+  | -- | @T x = e;@
+    DeclareCopy Expr
+  | -- | @T x(e1, e2, ...);@. This is only for better formatting. This should not be used while optimization phases.
     DeclareInitialize [Expr]
   deriving (Eq, Ord, Show, Read)
 
 data Statement
-  = ExprStatement Expr
-  | Block [Statement]
-  | If Expr [Statement] (Maybe [Statement])
-  | For Type VarName Expr Expr AssignExpr [Statement]
-  | ForEach Type VarName Expr [Statement]
-  | While Expr [Statement]
-  | Declare Type VarName DeclareRight
-  | DeclareDestructure [VarName] Expr
-  | Assign AssignExpr
-  | Assert Expr
-  | Return Expr
+  = -- | @e;@
+    ExprStatement Expr
+  | -- | @{ stmt1; stmts2; ...; }@
+    Block [Statement]
+  | -- | @if (e) { stmt1; stmts2; ...; }@ / @if (e) { stmt1; stmts2; ...; } else { stmt1'; stmt2'; ...; }@
+    If Expr [Statement] (Maybe [Statement])
+  | -- | @for (T x = e1; e2; e3) { stmt1; stmts2; ...; }@
+    For Type VarName Expr Expr AssignExpr [Statement]
+  | -- | @for (T x : e) { stmt1; stmts2; ...; }@
+    ForEach Type VarName Expr [Statement]
+  | -- | @while (e) { stmt1; stmts2; ...; }@
+    While Expr [Statement]
+  | -- | Declarations with/witout initializations. See `DeclareRight`.
+    Declare Type VarName DeclareRight
+  | -- | @auto [x1, x2, ...] = e;@
+    DeclareDestructure [VarName] Expr
+  | -- | @e1 op= e2;@
+    Assign AssignExpr
+  | -- | @assert (e);@
+    Assert Expr
+  | -- | @return e;@
+    Return Expr
   deriving (Eq, Ord, Show, Read)
 
 data ToplevelStatement
-  = VarDef Type VarName Expr
-  | FunDef Type VarName [(Type, VarName)] [Statement]
+  = -- | @const T x = e;@
+    VarDef Type VarName Expr
+  | -- | @T f(T1 x1, T2 x2, ...) { stmt1; stmt2; ... }@
+    FunDef Type VarName [(Type, VarName)] [Statement]
   deriving (Eq, Ord, Show, Read)
 
 newtype Program = Program
