@@ -234,7 +234,7 @@ formatExpr = \case
           At -> case args of
             [e1, e2] ->
               let e1' = formatExpr' FunCallPrec e1
-                  e2' = formatExpr' FunCallPrec e2
+                  e2' = formatExpr' ParenPrec e2
                in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
             _ -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: wrong number of arguments for subscription: " ++ show (length args)
           Cast t -> call $ formatType t
