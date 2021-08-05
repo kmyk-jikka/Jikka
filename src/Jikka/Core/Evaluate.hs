@@ -29,7 +29,7 @@ import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Matrix
-import Jikka.Core.Format (formatBuiltinIsolated)
+import Jikka.Core.Format (formatBuiltinIsolated, formatExpr)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
@@ -292,6 +292,11 @@ evaluateExpr env = \case
   Let x _ e1 e2 -> do
     v1 <- evaluateExpr env e1
     evaluateExpr ((x, v1) : env) e2
+  Assert e1 e2 -> do
+    p <- valueToBool =<< evaluateExpr env e1
+    if p
+      then evaluateExpr env e2
+      else throwRuntimeError $ "assertion failed: " ++ formatExpr e1
 
 callToplevelExpr :: (MonadFix m, MonadError Error m) => Env -> ToplevelExpr -> [Value] -> m Value
 callToplevelExpr env e args = case e of
@@ -301,6 +306,11 @@ callToplevelExpr env e args = case e of
   ToplevelLetRec f args' _ body cont -> do
     val <- mfix $ \val -> evaluateExpr ((f, val) : env) (curryLam args' body)
     callToplevelExpr ((f, val) : env) cont args
+  ToplevelAssert e cont -> do
+    p <- valueToBool =<< evaluateExpr env e
+    if p
+      then callToplevelExpr env cont args
+      else throwRuntimeError $ "toplevel assertion failed: " ++ formatExpr e
   ResultExpr e -> do
     val <- evaluateExpr env e
     callValue val args

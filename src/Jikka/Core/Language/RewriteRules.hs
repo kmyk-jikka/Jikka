@@ -85,6 +85,10 @@ applyRewriteRuleToImmediateSubExprs f env = \case
     e1' <- lift $ unRewriteRule f env e1
     e2' <- lift $ unRewriteRule f ((x, t) : env) e2
     return $ fmap (uncurry (Let x t)) (coalesceMaybes e1 e1' e2 e2')
+  Assert e1 e2 -> do
+    e1' <- lift $ unRewriteRule f env e1
+    e2' <- lift $ unRewriteRule f env e2
+    return $ fmap (uncurry Assert) (coalesceMaybes e1 e1' e2 e2')
 
 joinStateT :: Monad m => StateT s (StateT s m) a -> StateT s m a
 joinStateT f = do
@@ -130,6 +134,10 @@ applyRewriteRuleToplevelExpr f env = \case
     body' <- applyRewriteRule f (reverse args ++ env') body
     cont' <- applyRewriteRuleToplevelExpr f env' cont
     return $ fmap (uncurry (ToplevelLetRec g args ret)) (coalesceMaybes body body' cont cont')
+  ToplevelAssert e1 e2 -> do
+    e1' <- applyRewriteRule f env e1
+    e2' <- applyRewriteRuleToplevelExpr f env e2
+    return $ fmap (uncurry ToplevelAssert) (coalesceMaybes e1 e1' e2 e2')
 
 applyRewriteRuleProgram :: MonadError Error m => RewriteRule m -> Program -> m (Maybe Program)
 applyRewriteRuleProgram f prog = evalStateT (applyRewriteRuleToplevelExpr f [] prog) 0

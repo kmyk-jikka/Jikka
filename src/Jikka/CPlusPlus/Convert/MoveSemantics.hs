@@ -152,6 +152,7 @@ runToplevelStatement :: MonadState (M.Map VarName VarName) m => ToplevelStatemen
 runToplevelStatement = \case
   VarDef t x e -> VarDef t x <$> runExpr e
   FunDef ret f args body -> FunDef ret f args <$> runStatements body []
+  StaticAssert e msg -> StaticAssert <$> runExpr e <*> pure msg
 
 runProgram :: Monad m => Program -> m Program
 runProgram (Program decls) = (`evalStateT` M.empty) $ do

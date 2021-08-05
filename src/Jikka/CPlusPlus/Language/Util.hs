@@ -198,6 +198,7 @@ mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement 
 mapExprStatementToplevelStatementM f g = \case
   VarDef t x e -> VarDef t x <$> mapExprStatementExprM f g e
   FunDef ret h args body -> FunDef ret h args <$> mapM (mapExprStatementStatementM f g) body
+  StaticAssert e msg -> StaticAssert <$> mapExprStatementExprM f g e <*> pure msg
 
 mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
 mapExprStatementProgramM f g (Program decls) = Program <$> mapM (mapExprStatementToplevelStatementM f g) decls

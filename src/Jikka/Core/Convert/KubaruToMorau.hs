@@ -50,6 +50,7 @@ runFunctionBody c i j step y x k = do
         Lam x t e
           | x == c || x == i || x == j -> throwRuntimeError "name confliction found"
           | otherwise -> Lam x t <$> go e
+        Assert e1 e2 -> Assert <$> go e1 <*> go e2
   go step
 
 -- | TODO: remove the assumption that the length of @a@ is equals to @n@

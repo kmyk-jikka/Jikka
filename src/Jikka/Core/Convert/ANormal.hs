@@ -22,7 +22,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 
-destruct :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m (TypeEnv, Expr -> Expr, Expr)
+destruct :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m ([(VarName, Type)], Expr -> Expr, Expr)
 destruct env = \case
   e@Var {} -> return (env, id, e)
   e@Lit {} -> return (env, id, e)
@@ -38,8 +38,12 @@ destruct env = \case
     (env, ctx, e1) <- destruct env e1
     (env, ctx', e2) <- destruct ((x, t) : env) e2
     return (env, ctx . Let x t e1 . ctx', e2)
+  Assert e1 e2 -> do
+    (env, ctx, e1) <- destruct env e1
+    (env, ctx', e2) <- destruct env e2
+    return (env, ctx . Assert e1 . ctx', e2)
 
-runApp :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> [Expr] -> m Expr
+runApp :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> [Expr] -> m Expr
 runApp env f args = go env id args
   where
     go :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ([Expr] -> [Expr]) -> [Expr] -> m Expr
@@ -51,7 +55,7 @@ runApp env f args = go env id args
       e <- go env (acc . (arg :)) args
       return $ ctx e
 
-runExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> Expr -> m Expr
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 runExpr env = \case
   Var x -> return $ Var x
   Lit lit -> return $ Lit lit
@@ -70,19 +74,24 @@ runExpr env = \case
     (env, ctx, e1) <- destruct env e1
     e2 <- runExpr ((x, t) : env) e2
     return $ ctx (Let x t e1 e2)
+  Assert e1 e2 -> do
+    e1 <- runExpr env e1
+    (env, ctx, e1) <- destruct env e1
+    e2 <- runExpr env e2
+    return $ ctx (Assert e1 e2)
 
-runToplevelExpr :: (MonadAlpha m, MonadError Error m) => TypeEnv -> ToplevelExpr -> m ToplevelExpr
-runToplevelExpr env = \case
-  ResultExpr e -> ResultExpr <$> runExpr env e
-  ToplevelLet x t e cont -> do
-    e <- runExpr env e
-    cont <- runToplevelExpr ((x, t) : env) cont
-    return $ ToplevelLet x t e cont
-  ToplevelLetRec f args ret body cont -> do
-    let t = curryFunTy (map snd args) ret
-    body <- runExpr (reverse args ++ (f, t) : env) body
-    cont <- runToplevelExpr ((f, t) : env) cont
-    return $ ToplevelLetRec f args ret body cont
+-- | TODO: convert `ToplevelExpr` too
+runProgram :: (MonadAlpha m, MonadError Error m) => ToplevelExpr -> m ToplevelExpr
+runProgram = mapToplevelExprProgramM go
+  where
+    go env = \case
+      ResultExpr e -> ResultExpr <$> runExpr env e
+      ToplevelLet x t e cont -> ToplevelLet x t <$> runExpr env e <*> pure cont
+      ToplevelLetRec f args ret body cont -> do
+        let t = curryFunTy (map snd args) ret
+        let env' = reverse args ++ (f, t) : env
+        ToplevelLetRec f args ret <$> runExpr env' body <*> pure cont
+      ToplevelAssert e cont -> ToplevelAssert <$> runExpr env e <*> pure cont
 
 -- | `run` makes a given program A-normal form.
 -- A program is an A-normal form iff assigned exprs of all let-statements are values or function applications.
@@ -99,6 +108,6 @@ runToplevelExpr env = \case
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ANormal" $ do
   prog <- Alpha.runProgram prog
-  prog <- runToplevelExpr [] prog
+  prog <- runProgram prog
   ensureWellTyped prog
   return prog

@@ -73,6 +73,9 @@ formularizeExpr = \case
     formularizeVarName x t
     formularizeExpr' e1 t
     formularizeExpr e2
+  Assert e1 e2 -> do
+    formularizeExpr' e1 BoolTy
+    formularizeExpr e2
 
 formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> Type -> m ()
 formularizeExpr' e t = do
@@ -90,6 +93,9 @@ formularizeToplevelExpr = \case
     formularizeVarName f (curryFunTy (map snd args) ret)
     mapM_ (uncurry formularizeVarName) args
     formularizeExpr' body ret
+    formularizeToplevelExpr cont
+  ToplevelAssert e cont -> do
+    formularizeExpr' e BoolTy
     formularizeToplevelExpr cont
 
 formularizeProgram :: (MonadAlpha m, MonadError Error m) => Program -> m [Equation]

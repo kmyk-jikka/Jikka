@@ -35,12 +35,14 @@ isEliminatable x = \case
   App f e -> isEliminatable x f `plus` isEliminatable x e
   Lam y _ e -> if x == y then Nothing else isEliminatable x e $> False -- moving an expr into a lambda may increase the time complexity
   Let y _ e1 e2 -> isEliminatable x e1 `plus` (if x == y then Nothing else isEliminatable x e2)
+  Assert e1 e2 -> isEliminatable x e1 `plus` isEliminatable x e2
 
 isEliminatableToplevelExpr :: VarName -> ToplevelExpr -> Maybe Bool
 isEliminatableToplevelExpr x = \case
   ResultExpr e -> isEliminatable x e
   ToplevelLet y _ e cont -> isEliminatable x e `plus` (if x == y then Nothing else isEliminatableToplevelExpr x cont)
   ToplevelLetRec f args _ body cont -> if x == f then Nothing else isEliminatableToplevelExpr x cont `plus` (if x `elem` map fst args then Nothing else isEliminatable x body)
+  ToplevelAssert e cont -> isEliminatable x e `plus` isEliminatableToplevelExpr x cont
 
 runExpr :: M.Map VarName Expr -> Expr -> Expr
 runExpr env = \case
@@ -53,6 +55,7 @@ runExpr env = \case
      in if isEliminatable x e2 /= Just False
           then runExpr (M.insert x e1' env) e2
           else Let x t e1' (runExpr env e2)
+  Assert e1 e2 -> Assert (runExpr env e1) (runExpr env e2)
 
 runToplevelExpr :: M.Map VarName Expr -> ToplevelExpr -> ToplevelExpr
 runToplevelExpr env = \case
@@ -64,6 +67,8 @@ runToplevelExpr env = \case
           else ToplevelLet x t e' (runToplevelExpr env cont)
   ToplevelLetRec f args ret body cont ->
     ToplevelLetRec f args ret (runExpr env body) (runToplevelExpr env cont)
+  ToplevelAssert e cont ->
+    ToplevelAssert (runExpr env e) (runToplevelExpr env cont)
 
 run' :: Program -> Program
 run' = runToplevelExpr M.empty

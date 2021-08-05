@@ -128,6 +128,10 @@ toPatE = \case
     modify' (\env -> env {vars = (x, Just (VarE y)) : vars env})
     e2 <- toPatE e2
     lift [p|Let $(pure (VarP y)) $(pure t) $(pure e1) $(pure e2)|]
+  Assert e1 e2 -> do
+    e1 <- toPatE e1
+    e2 <- toPatE e2
+    lift [p|Assert $(pure e1) $(pure e2)|]
 
 toExpT :: Type -> StateT Env Q Exp
 toExpT = \case
@@ -201,6 +205,11 @@ toExpE e = do
       (stmts', e2) <- toExpE e2
       e <- lift [e|Let $(pure (VarE y)) $(pure t) $(pure e1) $(pure e2)|]
       return (stmts ++ BindS (VarP y) (VarE genVarName) : stmts', e)
+    Assert e1 e2 -> do
+      (stmts1, e1) <- toExpE e1
+      (stmts2, e2) <- toExpE e2
+      e <- lift [e|Assert $(pure e1) $(pure e2)|]
+      return (stmts1 ++ stmts2, e)
 
 ruleExp :: String -> Q Exp
 ruleExp s = do

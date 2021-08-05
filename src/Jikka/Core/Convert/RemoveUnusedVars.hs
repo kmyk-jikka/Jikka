@@ -23,32 +23,24 @@ import Jikka.Core.Language.FreeVars (isUnusedVar)
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Util
 
-runLet :: VarName -> Type -> Expr -> Expr -> Expr
-runLet x t e1 e2
-  | isUnusedVar x e2 = e2
-  | otherwise = Let x t e1 e2
+runExpr :: [(VarName, Type)] -> Expr -> Expr
+runExpr _ = mapExpr go []
+  where
+    go _ = \case
+      Let x _ _ e2 | x `isUnusedVar` e2 -> e2
+      e -> e
 
-runExpr :: Expr -> Expr
-runExpr = \case
-  Var x -> Var x
-  Lit lit -> Lit lit
-  App f e -> App (runExpr f) (runExpr e)
-  Lam x t e -> Lam x t (runExpr e)
-  Let x t e1 e2 -> runLet x t (runExpr e1) (runExpr e2)
-
-runToplevelExpr :: ToplevelExpr -> ToplevelExpr
-runToplevelExpr = \case
-  ResultExpr e -> ResultExpr $ runExpr e
-  ToplevelLet x t e cont -> ToplevelLet x t (runExpr e) (runToplevelExpr cont)
+-- | TODO: Remove `ToplevelLet` if its variable is not used.
+runToplevelExpr :: [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
+runToplevelExpr _ = \case
   ToplevelLetRec f args ret body cont ->
-    let body' = runExpr body
-        cont' = runToplevelExpr cont
-     in if isUnusedVar f body'
-          then ToplevelLet f (curryFunTy (map snd args) ret) (curryLam args body') cont'
-          else ToplevelLetRec f args ret body' cont'
+    if isUnusedVar f body
+      then ToplevelLet f (curryFunTy (map snd args) ret) (curryLam args body) cont
+      else ToplevelLetRec f args ret body cont
+  e -> e
 
 run' :: Program -> Program
-run' = runToplevelExpr
+run' = mapToplevelExprProgram runToplevelExpr . mapExprProgram runExpr
 
 -- | `run` removes unused variables in given programs.
 --

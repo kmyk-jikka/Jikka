@@ -291,7 +291,8 @@ data Literal
 --         \vert & \mathrm{literal}\ldots \\
 --         \vert & e_0(e_1, e_2, \dots, e_n) \\
 --         \vert & \lambda ~ x_0\colon \tau_0, x_1\colon \tau_1, \dots, x_{n-1}\colon \tau_{n-1}. ~ e \\
---         \vert & \mathbf{let} ~ x\colon \tau = e_1 ~ \mathbf{in} ~ e_2
+--         \vert & \mathbf{let} ~ x\colon \tau = e_1 ~ \mathbf{in} ~ e_2 \\
+--         \vert & \mathbf{assert} ~ e_1 ~ \mathbf{in} ~ e_2
 --     \end{array}
 -- \]
 data Expr
@@ -301,6 +302,7 @@ data Expr
   | Lam VarName Type Expr
   | -- | This "let" is not recursive.
     Let VarName Type Expr Expr
+  | Assert Expr Expr
   deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 pattern Fun2Ty t1 t2 ret = FunTy t1 (FunTy t2 ret)
@@ -399,13 +401,15 @@ pattern Lam3 x1 t1 x2 t2 x3 t3 e = Lam x1 t1 (Lam x2 t2 (Lam x3 t3 e))
 --     \begin{array}{rl}
 --         \mathrm{tle} ::= & e \\
 --         \vert & \mathbf{let}~ x: \tau = e ~\mathbf{in}~ \mathrm{tle} \\
---         \vert & \mathbf{let~rec}~ x(x: \tau, x: \tau, \dots, x: \tau): \tau = e ~\mathbf{in}~ \mathrm{tle}
+--         \vert & \mathbf{let~rec}~ x(x: \tau, x: \tau, \dots, x: \tau): \tau = e ~\mathbf{in}~ \mathrm{tle} \\
+--         \vert & \mathbf{assert}~ e ~\mathbf{in}~ \mathrm{tle}
 --     \end{array}
 -- \]
 data ToplevelExpr
   = ResultExpr Expr
   | ToplevelLet VarName Type Expr ToplevelExpr
   | ToplevelLetRec VarName [(VarName, Type)] Type Expr ToplevelExpr
+  | ToplevelAssert Expr ToplevelExpr
   deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 type Program = ToplevelExpr
