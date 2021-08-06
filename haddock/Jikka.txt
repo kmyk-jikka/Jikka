@@ -1961,10 +1961,13 @@ run' :: Program -> Program
 
 
 module Jikka.Core.Language.RewriteRules
-newtype RewriteRule m
-RewriteRule :: ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
-pureRewriteRule :: Monad m => ([(VarName, Type)] -> Expr -> Maybe Expr) -> RewriteRule m
-simpleRewriteRule :: Monad m => (Expr -> Maybe Expr) -> RewriteRule m
+data RewriteRule m
+makeRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
+pureRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> Maybe Expr) -> RewriteRule m
+simpleRewriteRule :: Monad m => String -> (Expr -> Maybe Expr) -> RewriteRule m
+
+-- | <a>traceRewriteRule</a> prints logs when the <a>RewriteRule</a> works.
+traceRewriteRule :: Monad m => RewriteRule m -> RewriteRule m
 
 -- | <a>applyRewriteRule</a> applies a given rule to a given expr. This
 --   rewrites on all sub-exprs of the given expr, and repeats to rewrite
@@ -1975,12 +1978,10 @@ simpleRewriteRule :: Monad m => (Expr -> Maybe Expr) -> RewriteRule m
 --   <li>This function doesn't terminate when a given rewrite rule doesn't
 --   terminate.</li>
 --   </ul>
-applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
-applyRewriteRule' :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
 applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
 applyRewriteRuleProgram :: MonadError Error m => RewriteRule m -> Program -> m (Maybe Program)
 applyRewriteRuleProgram' :: MonadError Error m => RewriteRule m -> Program -> m Program
-traceRewriteRule :: Monad m => RewriteRule m -> RewriteRule m
 instance GHC.Base.Monad m => GHC.Base.Semigroup (Jikka.Core.Language.RewriteRules.RewriteRule m)
 instance GHC.Base.Monad m => GHC.Base.Monoid (Jikka.Core.Language.RewriteRules.RewriteRule m)
 
