@@ -161,7 +161,7 @@ rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   let go1 m f (t1, e1) = Just <$> (f <$> t1 (Mod m) e1 <*> pure m)
       go2 m f (t1, e1) (t2, e2) = Just <$> (f <$> t1 (Mod m) e1 <*> t2 (Mod m) e2 <*> pure m)
-   in RewriteRule $ \env -> \case
+   in makeRewriteRule "Jikka.Core.Convert.PropagateMod" $ \env -> \case
         ModNegate' e m | not (e `isModulo` m) -> go1 m ModNegate' (putFloorModInt, e)
         ModPlus' e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m ModPlus' (putFloorModInt, e1) (putFloorModInt, e2)
         ModMinus' e1 e2 m | not (e1 `isModulo` m) || not (e2 `isModulo` m) -> go2 m ModMinus' (putFloorModInt, e1) (putFloorModInt, e2)

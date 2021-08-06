@@ -81,7 +81,7 @@ removeOneFromVector n x =
    in uncurryApp (Tuple' ts) (map (\i -> Proj' (IntTy : ts) i (Var x)) [0 .. n - 1])
 
 rule :: MonadAlpha m => RewriteRule m
-rule = RewriteRule $ \env -> \case
+rule = makeRewriteRule "Jikka.Core.Convert.MatrixExponentiation" $ \env -> \case
   Iterate' IntTy k (Lam x _ step) base -> do
     let step' = toLinearExpression x step
     return $ case step' of

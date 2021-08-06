@@ -30,7 +30,7 @@ rule =
   let go f cont = case f of
         Lam x t (Let y t' e body) | x `isUnusedVar` e -> return . Just $ Let y t' e (cont (Lam x t body))
         _ -> return Nothing
-   in RewriteRule $ \_ -> \case
+   in makeRewriteRule "Jikka.Core.Convert.BubbleLet" $ \_ -> \case
         Iterate' t k f x -> go f (\f -> Iterate' t k f x)
         Foldl' t1 t2 f init xs -> go f (\f -> Foldl' t1 t2 f init xs)
         Build' t f xs n -> go f (\f -> Build' t f xs n)

@@ -28,7 +28,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.RewriteRules
 
 rule :: Monad m => RewriteRule m
-rule = simpleRewriteRule $ \case
+rule = simpleRewriteRule "Jikka.Core.Convert.EqualitySolving" $ \case
   -- reduce identity
   Equal' _ a b | a == b -> Just LitTrue
   -- align value on the right side to 0

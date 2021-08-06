@@ -124,7 +124,7 @@ replaceWithSegtrees a segtrees = go M.empty
 
 -- | `reduceCumulativeSum` converts combinations of cumulative sums and array assignments to segment trees.
 reduceCumulativeSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
-reduceCumulativeSum = RewriteRule $ \_ -> \case
+reduceCumulativeSum = makeRewriteRule "reduceCumulativeSum" $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) e(a, i)) base incides
   Foldl' t1 t2 (Lam2 a _ i _ (SetAt' t (Var a') index e)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
     let sums = listCumulativeSum (Var a) e
@@ -148,7 +148,7 @@ reduceCumulativeSum = RewriteRule $ \_ -> \case
 --
 -- TODO: implement this
 reduceMin :: MonadAlpha m => RewriteRule m
-reduceMin = RewriteRule $ \_ -> \case
+reduceMin = makeRewriteRule "reduceMin" $ \_ -> \case
   _ -> return Nothing
 
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m

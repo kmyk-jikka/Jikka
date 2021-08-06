@@ -39,7 +39,7 @@ import Jikka.Core.Language.Util
 reduceSum :: MonadAlpha m => RewriteRule m
 reduceSum =
   let return' = return . Just
-   in RewriteRule $ \_ -> \case
+   in makeRewriteRule "reduceSum" $ \_ -> \case
         Sum' xs -> case xs of
           -- reduce list build functions
           Nil' _ -> return' Lit0
@@ -68,7 +68,7 @@ reduceSum =
 
 -- | TODO: implement this.
 reduceProduct :: Monad m => RewriteRule m
-reduceProduct = simpleRewriteRule $ \case
+reduceProduct = simpleRewriteRule "reduceProduct" $ \case
   Product' xs -> case xs of
     -- reduce list build functions
     Nil' _ -> Just Lit1
@@ -89,7 +89,7 @@ reduceProduct = simpleRewriteRule $ \case
 reduceModSum :: MonadAlpha m => RewriteRule m
 reduceModSum =
   let return' = return . Just
-   in RewriteRule $ \_ -> \case
+   in makeRewriteRule "reduceModSum" $ \_ -> \case
         ModSum' xs m -> case xs of
           -- the corner case
           _ | m == Lit1 -> return' Lit0
@@ -124,7 +124,7 @@ reduceModSum =
 
 -- | TODO: implement this.
 reduceModProduct :: Monad m => RewriteRule m
-reduceModProduct = simpleRewriteRule $ \case
+reduceModProduct = simpleRewriteRule "reduceModProduct" $ \case
   ModProduct' xs m -> case xs of
     -- the corner case
     _ | m == Lit1 -> Just Lit0

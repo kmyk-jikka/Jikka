@@ -39,7 +39,7 @@ cumulativeMax max2 t a0 a n = do
   return $ Let b (ListTy t) (Scanl' t t (Lam2 x1 t x2 t (max2 (Var x1) (Var x2))) a0' a) e
 
 rule :: MonadAlpha m => RewriteRule m
-rule = RewriteRule $ \_ -> \case
+rule = makeRewriteRule "Jikka.Core.Convert.CumulativeSum" $ \_ -> \case
   Sum' (Map' _ _ (Lam x _ (At' _ a index)) (Range1' n)) | x `isUnusedVar` a -> do
     case makeAffineFunctionFromArithmeticalExpr x (parseArithmeticalExpr index) of
       Just (coeff, shift) | isOneArithmeticalExpr coeff -> do

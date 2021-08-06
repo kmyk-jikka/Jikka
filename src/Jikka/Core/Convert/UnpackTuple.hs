@@ -30,7 +30,7 @@ import Jikka.Core.Language.Util
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   let return' = return . Just
-   in RewriteRule $ \_ -> \case
+   in makeRewriteRule "Jikka.Core.Convert.UnpackTuple" $ \_ -> \case
         App (Lam x (TupleTy ts) body) e -> case curryApp e of
           (Tuple' ts', es) -> do
             when (ts /= ts') $ do
