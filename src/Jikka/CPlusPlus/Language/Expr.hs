@@ -41,6 +41,8 @@ data Monoid'
   = MonoidIntPlus
   | MonoidIntMin
   | MonoidIntMax
+  | MonoidIntGcd
+  | MonoidIntLcm
   deriving (Eq, Ord, Show, Read)
 
 data Literal

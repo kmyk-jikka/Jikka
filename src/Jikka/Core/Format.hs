@@ -133,6 +133,8 @@ formatSemigroup = \case
   SemigroupIntPlus -> "int.plus"
   SemigroupIntMin -> "int.min"
   SemigroupIntMax -> "int.max"
+  SemigroupIntGcd -> "int.gcd"
+  SemigroupIntLcm -> "int.lcm"
 
 data Builtin'
   = Fun String
@@ -217,6 +219,8 @@ analyzeBuiltin = \case
   Max1 -> Fun "max"
   ArgMin -> Fun "argmin"
   ArgMax -> Fun "argmax"
+  Gcd1 -> Fun "gcd"
+  Lcm1 -> Fun "lcm"
   All -> Fun "all"
   Any -> Fun "any"
   Sorted -> Fun "sort"

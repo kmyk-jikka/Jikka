@@ -68,6 +68,8 @@ runSemigroup = \case
   X.SemigroupIntPlus -> Y.MonoidIntPlus
   X.SemigroupIntMin -> Y.MonoidIntMin
   X.SemigroupIntMax -> Y.MonoidIntMax
+  X.SemigroupIntGcd -> Y.MonoidIntGcd
+  X.SemigroupIntLcm -> Y.MonoidIntLcm
 
 runLiteral :: (MonadAlpha m, MonadError Error m) => Env -> X.Literal -> m Y.Expr
 runLiteral env = \case
@@ -475,6 +477,20 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       y <- Y.newFreshName Y.LocalNameKind
       return
         ( [ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+          ],
+          Y.Var y
+        )
+    X.Gcd1 -> go11' $ \t xs -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto,Y.VarName "a" ),(Y.TyAuto,Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var $ Y.VarName "a",Y.Var $ Y.VarName "b"]]])))
+          ],
+          Y.Var y
+        )
+    X.Lcm1 -> go11' $ \t xs -> do
+      y <- Y.newFreshName Y.LocalNameKind
+      return
+        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto,Y.VarName "a"),(Y.TyAuto,Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var $ Y.VarName "a",Y.Var $ Y.VarName "b"]]])))
           ],
           Y.Var y
         )

@@ -59,6 +59,14 @@ rule = RewriteRule $ \_ -> \case
     Just <$> cumulativeMax (Min2' t) t (Just a0) a n
   Min1' t (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n)) | x' == x && x `isUnusedVar` a -> do
     Just <$> cumulativeMax (Min2' t) t Nothing a n
+  Lcm1' t (Cons' _ a0 (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n))) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax Lcm' t (Just a0) a n
+  Lcm1' t (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n)) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax Lcm' t Nothing a n
+  Gcd1' t (Cons' _ a0 (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n))) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax Gcd' t (Just a0) a n
+  Gcd1' t (Map' _ _ (Lam x _ (At' _ a (Var x'))) (Range1' n)) | x' == x && x `isUnusedVar` a -> do
+    Just <$> cumulativeMax Gcd' t Nothing a n
   _ -> return Nothing
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
