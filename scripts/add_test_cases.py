@@ -49,7 +49,7 @@ def main() -> None:
     # collect files
     for i, testcase in enumerate(data['result']['tests']):
         plan[examples_dir / 'data' / '{}.sample-{}.in'.format(name, i + 1)] = testcase['input'].encode()
-        plan[examples_dir / 'data' / '{}.sample-{}.in'.format(name, i + 1)] = testcase['output'].encode()
+        plan[examples_dir / 'data' / '{}.sample-{}.out'.format(name, i + 1)] = testcase['output'].encode()
     if not args.only_sample_cases:
         plan[examples_dir / '{}.py'.format(name)] = subprocess.check_output(['oj-template', '-t', 'main.py', args.url])
         plan[examples_dir / 'data' / '{}.solver.cpp'.format(name)] = subprocess.check_output(['oj-template', '-t', 'main.cpp', args.url])
