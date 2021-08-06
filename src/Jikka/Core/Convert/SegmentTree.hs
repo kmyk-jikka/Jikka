@@ -83,8 +83,8 @@ semigroupToBuiltin = \case
   SemigroupIntPlus -> (Plus, [])
   SemigroupIntMin -> (Min2, [IntTy])
   SemigroupIntMax -> (Max2, [IntTy])
-  SemigroupIntGcd -> (Gcd,[])
-  SemigroupIntLcm -> (Lcm,[])
+  SemigroupIntGcd -> (Gcd, [])
+  SemigroupIntLcm -> (Lcm, [])
 
 unCumulativeSum :: Expr -> Expr -> Maybe (Semigroup', Expr)
 unCumulativeSum a = \case
