@@ -22,6 +22,34 @@ spec = describe "run" $ do
             [ FunDef
                 TyInt32
                 "func"
+                [(TyInt32, "a")]
+                [ Declare TyInt32 "b" (DeclareCopy (Var "a")),
+                  Assign (AssignExpr AddAssign (LeftVar "b") (Lit (LitInt32 10))),
+                  Declare TyInt32 "c" (DeclareCopy (Var "b")),
+                  Assign (AssignExpr AddAssign (LeftVar "b") (Lit (LitInt32 10))),
+                  Return (BinOp Add (Var "b") (Var "c"))
+                ]
+            ]
+    let expected =
+          Program
+            [ FunDef
+                TyInt32
+                "func"
+                [(TyInt32, "a")]
+                [ Assign (AssignExpr AddAssign (LeftVar "a") (Lit (LitInt32 10))),
+                  Declare TyInt32 "c" (DeclareCopy (Var "a")),
+                  Assign (AssignExpr AddAssign (LeftVar "a") (Lit (LitInt32 10))),
+                  Return (BinOp Add (Var "a") (Var "c"))
+                ]
+            ]
+    run' prog `shouldBe` Right expected
+
+  it "recognizes push_back" $ do
+    let prog =
+          Program
+            [ FunDef
+                TyInt32
+                "func"
                 [(TyVector TyInt32, "a")]
                 [ Declare (TyVector TyInt32) "b" (DeclareCopy (Var "a")),
                   ExprStatement (Call (Method "push_back") [Var "b", Lit (LitInt32 10)]),
@@ -42,7 +70,4 @@ spec = describe "run" $ do
                   Return (BinOp Add (Call MethodSize [Var "a"]) (Call MethodSize [Var "c"]))
                 ]
             ]
-    -- TODO: fix the bug https://github.com/kmyk/Jikka/issues/154 and enable this check
-    -- run' prog `shouldBe` Right expected
-    run' prog `shouldBe` run' prog -- supress warnings
-    expected `shouldBe` expected -- supress warnings
+    run' prog `shouldBe` Right expected

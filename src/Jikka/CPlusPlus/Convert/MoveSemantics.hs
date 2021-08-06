@@ -51,21 +51,32 @@ runAssignExpr = \case
   AssignIncr e -> AssignIncr <$> runLeftExpr e
   AssignDecr e -> AssignDecr <$> runLeftExpr e
 
-isMovableTo :: VarName -> VarName -> [[Statement]] -> Bool
-isMovableTo x y cont
-  | x `S.notMember` readList' (analyzeStatements (concat cont)) = True
+-- | @isMovableTo x y env cont@ checkes whether @x@ is movable to @y@ instead of copying, under a context @env@ and @cont@.
+-- @x@ is already replaced by the mapping of @env@, but @y@ and @cont@ are not yet.
+isMovableTo :: VarName -> VarName -> M.Map VarName VarName -> [[Statement]] -> Bool
+isMovableTo x y0 env cont
+  | x `S.notMember` readList' (analyzeStatements' (concat cont)) = True
   | otherwise =
     let go = \case
           [] -> False
           (Assign (AssignExpr SimpleAssign (LeftVar x') (Var y')) : cont')
             | x' == x && y' == y ->
-              let ReadWriteList _ ws' = analyzeStatements cont'
-                  ReadWriteList rs ws = analyzeStatements (concat (tail cont))
+              let ReadWriteList _ ws' = analyzeStatements' cont'
+                  ReadWriteList rs ws = analyzeStatements' (concat (tail cont))
                in y `S.notMember` S.unions [ws', rs, ws]
           (stmt : cont) ->
-            let ReadWriteList rs ws = analyzeStatement stmt
+            let ReadWriteList rs ws = analyzeStatement' stmt
              in x `S.notMember` S.unions [rs, ws] && go cont
      in go (head cont)
+  where
+    y :: VarName
+    y = fromMaybe y0 (M.lookup y0 env)
+    applyEnv :: ReadWriteList -> ReadWriteList
+    applyEnv (ReadWriteList rs ws) =
+      let f = S.map (\x -> fromMaybe x (M.lookup x env))
+       in ReadWriteList (f rs) (f ws)
+    analyzeStatements' = applyEnv . analyzeStatements
+    analyzeStatement' = applyEnv . analyzeStatement
 
 runStatement :: MonadState (M.Map VarName VarName) m => Statement -> [[Statement]] -> m [Statement]
 runStatement stmt cont = case stmt of
@@ -98,17 +109,18 @@ runStatement stmt cont = case stmt of
       DeclareDefault -> return DeclareDefault
       DeclareCopy e -> DeclareCopy <$> runExpr e
       DeclareInitialize es -> DeclareInitialize <$> mapM runExpr es
+    env <- get
     case init of
-      DeclareCopy (Var x) | (x `isMovableTo` y) cont -> do
+      DeclareCopy (Var x) | (x `isMovableTo` y) env cont -> do
         modify' (M.insert y x)
         return []
       DeclareCopy (Call ConvexHullTrickCtor []) -> return [Declare t y DeclareDefault]
       DeclareCopy (Call ConvexHullTrickCopyAddLine [Var x, a, b])
-        | (x `isMovableTo` y) cont -> do
+        | (x `isMovableTo` y) env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
       DeclareCopy (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
-        | (x `isMovableTo` y) cont -> do
+        | (x `isMovableTo` y) env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "set" [i, a]]
       _ -> do
@@ -118,17 +130,18 @@ runStatement stmt cont = case stmt of
     return [DeclareDestructure xs e]
   Assign e -> do
     e <- runAssignExpr e
+    env <- get
     case e of
       AssignExpr SimpleAssign (LeftVar y) (Var x) | x == y -> return []
       AssignExpr SimpleAssign (LeftVar y) (Call ConvexHullTrickCopyAddLine [Var x, a, b])
         | x == y -> return [callMethod' (Var x) "add_line" [a, b]]
-        | (x `isMovableTo` y) cont -> do
+        | (x `isMovableTo` y) env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
         | otherwise -> return [Assign e]
       AssignExpr SimpleAssign (LeftVar y) (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
         | x == y -> return [callMethod' (Var x) "set" [i, a]]
-        | (x `isMovableTo` y) cont -> do
+        | (x `isMovableTo` y) env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "set" [i, a]]
         | otherwise -> return [Assign e]
