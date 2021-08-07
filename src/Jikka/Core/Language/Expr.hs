@@ -66,6 +66,8 @@ data Semigroup'
   = SemigroupIntPlus
   | SemigroupIntMin
   | SemigroupIntMax
+  | SemigroupIntGcd
+  | SemigroupIntLcm
   deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 -- | TODO: What is the difference between `Literal` and `Builtin`?
@@ -210,6 +212,10 @@ data Builtin
     ArgMin
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     ArgMax
+  | -- | \(: \list(\int) \to \int\)
+    Gcd1
+  | -- | \(: \list(\int) \to \int\)
+    Lcm1
   | -- | \(: \list(\bool) \to \bool\)
     All
   | -- | \(: \list(\bool) \to \bool\)

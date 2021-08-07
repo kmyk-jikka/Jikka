@@ -189,6 +189,8 @@ formatType = \case
     MonoidIntPlus -> "atcoder::segtree<int64_t, jikka::plus_int64_t, jikka::const_zero>"
     MonoidIntMin -> "atcoder::segtree<int64_t, jikka::min_int64_t, jikka::const_int64_max>"
     MonoidIntMax -> "atcoder::segtree<int64_t, jikka::max_int64_t, jikka::const_int64_min>"
+    MonoidIntGcd -> "atcoder::segtree<int64_t, jikka::gcd_int64_t, jikka::const_zero>"
+    MonoidIntLcm -> "atcoder::segtree<int64_t, jikka::lcm_int64_t, jikka::const_one>"
   TyIntValue n -> show n
 
 formatLiteral :: Literal -> Code

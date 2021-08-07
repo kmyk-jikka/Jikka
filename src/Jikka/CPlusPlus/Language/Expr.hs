@@ -57,6 +57,8 @@ data Monoid'
     MonoidIntMin
   | -- | \((\mathrm{int64\_t}, \max, \mathrm{INT64\_MIN})\)
     MonoidIntMax
+  | MonoidIntGcd
+  | MonoidIntLcm
   deriving (Eq, Ord, Show, Read)
 
 data Literal

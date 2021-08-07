@@ -147,6 +147,10 @@ pattern ArgMin' t e = AppBuiltin11 ArgMin t e
 
 pattern ArgMax' t e = AppBuiltin11 ArgMax t e
 
+pattern Gcd1' t e = AppBuiltin11 Gcd1 t e
+
+pattern Lcm1' t e = AppBuiltin11 Lcm1 t e
+
 pattern All' e = AppBuiltin1 All e
 
 pattern Any' e = AppBuiltin1 Any e

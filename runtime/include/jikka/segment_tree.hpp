@@ -17,7 +17,13 @@ inline int64_t min_int64_t(int64_t a, int64_t b) { return std::min(a, b); }
 
 inline int64_t max_int64_t(int64_t a, int64_t b) { return std::max(a, b); }
 
+inline int64_t gcd_int64_t(int64_t a, int64_t b) { return std::gcd(a, b); }
+
+inline int64_t lcm_int64_t(int64_t a, int64_t b) { return std::lcm(a, b); }
+
 inline int64_t const_zero() { return 0; }
+
+inline int64_t const_one() { return 1; }
 
 inline int64_t const_int64_min() { return INT64_MIN; }
 

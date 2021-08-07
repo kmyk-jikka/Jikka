@@ -74,6 +74,8 @@ builtinToSemigroup builtin ts = case (builtin, ts) of
   (Plus, []) -> Just SemigroupIntPlus
   (Min2, [IntTy]) -> Just SemigroupIntMin
   (Max2, [IntTy]) -> Just SemigroupIntMax
+  (Gcd, []) -> Just SemigroupIntGcd
+  (Lcm, []) -> Just SemigroupIntLcm
   _ -> Nothing
 
 semigroupToBuiltin :: Semigroup' -> (Builtin, [Type])
@@ -81,6 +83,8 @@ semigroupToBuiltin = \case
   SemigroupIntPlus -> (Plus, [])
   SemigroupIntMin -> (Min2, [IntTy])
   SemigroupIntMax -> (Max2, [IntTy])
+  SemigroupIntGcd -> (Gcd, [])
+  SemigroupIntLcm -> (Lcm, [])
 
 unCumulativeSum :: Expr -> Expr -> Maybe (Semigroup', Expr)
 unCumulativeSum a = \case
