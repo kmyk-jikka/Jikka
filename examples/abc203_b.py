@@ -1,6 +1,6 @@
 # https://atcoder.jp/contests/abc203/tasks/abc203_b
 
-from typing import *
+# from typing import *
 
 def solve(n: int, k: int) -> int:
     a = []
