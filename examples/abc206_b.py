@@ -1,6 +1,6 @@
 # https://atcoder.jp/contests/abc206/tasks/abc206_b
 
-from typing import *
+# from typing import *
 
 def solve(n: int) -> int:
     c = 0
