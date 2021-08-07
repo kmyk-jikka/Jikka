@@ -1,6 +1,6 @@
 # https://atcoder.jp/contests/abc207/tasks/abc207_b
 
-from typing import *
+# from typing import *
 
 def solve(a: int, b: int, c: int, d: int) -> int:
     ans = -1
