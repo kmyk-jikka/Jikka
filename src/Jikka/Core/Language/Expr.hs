@@ -212,9 +212,9 @@ data Builtin
     ArgMin
   | -- | \(: \forall \alpha. \list(\alpha) \to \int\)
     ArgMax
-  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+  | -- | \(: \list(\int) \to \int\)
     Gcd1
-  | -- | \(: \forall \alpha. \list(\alpha) \to \alpha\)
+  | -- | \(: \list(\int) \to \int\)
     Lcm1
   | -- | \(: \list(\bool) \to \bool\)
     All
