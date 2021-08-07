@@ -98,7 +98,7 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
     return inputcases
 
 
-def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> bool:
+def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> Optional[str]:
     with tempfile.TemporaryDirectory() as tempdir_:
         tempdir = pathlib.Path(tempdir_)
 
@@ -107,13 +107,15 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
             try:
                 subprocess.check_call([str(executable), 'convert', str(script)], stdout=fh, timeout=20 * TIMEOUT_FACTOR)
             except subprocess.SubprocessError as e:
-                logger.error('%s: failed to compile from Python to C++: %s', str(script), e)
-                return False
+                msg = 'failed to compile from Python to C++: {}'.format(e)
+                logger.error('%s: %s', str(script), msg)
+                return msg
         try:
             compile_cxx(src_path=tempdir / 'main.cpp', dst_path=tempdir / 'a.exe')
         except subprocess.SubprocessError as e:
-            logger.error('%s: failed to compile from C++ to executable: %s', str(script), e)
-            return False
+            msg = 'failed to compile from C++ to executable: {}'.format(e)
+            logger.error('%s: %s', str(script), msg)
+            return msg
 
         with open(script, 'rb') as fh:
             code = fh.read()
@@ -121,8 +123,9 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
 
         inputcases = collect_input_cases(script, tempdir=tempdir)
         if not inputcases:
-            logger.error('%s: no input cases', str(script))
-            return False
+            msg = 'no input cases'
+            logger.error('%s: %s', str(script), msg)
+            return msg
         for inputcase in inputcases:
             outputcase = inputcase.with_suffix('.out')
             with open(outputcase, 'rb') as fh:
@@ -147,33 +150,37 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> b
                     try:
                         actual = subprocess.check_output(command, stdin=fh, timeout=(2 if title == 'C++' else 20) * TIMEOUT_FACTOR)
                     except subprocess.SubprocessError as e:
-                        logger.error('%s: %s: failed to run as %s: %s', str(script), str(inputcase), title, e)
-                        return False
+                        msg = '{}: failed to run as {}: {}'.format(str(inputcase), title, e)
+                        logger.error('%s: %s', str(script), msg)
+                        return msg
                     if actual.decode().split() != expected.decode().split():
-                        logger.error('%s: %s: wrong answer: %s is expected, but actually got %s', str(script), str(inputcase), expected.decode().split(), actual.decode().split())
-                        return False
+                        msg = '{}: wrong answer: {} is expected, but actually got {}'.format(str(inputcase), expected.decode().split(), actual.decode().split())
+                        logger.error('%s: %s', str(script), msg)
+                        return msg
 
     logger.info('%s: accepted', str(script))
-    return True
+    return None
 
 
-def run_integration_test_about_error(script: pathlib.Path, *, executable: pathlib.Path) -> bool:
+def run_integration_test_about_error(script: pathlib.Path, *, executable: pathlib.Path) -> Optional[str]:
     logger.info('%s: compiling...', str(script))
     proc = subprocess.run([str(executable), 'convert', str(script)], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     if proc.returncode == 0:
-        logger.info('%s: unexpectedly succeeded to compile', str(script))
-        return False
+        msg = 'unexpectedly succeeded to compile'
+        logger.error('%s: %s', str(script), msg)
+        return msg
 
     actual_lines = proc.stderr.splitlines()
     with open(pathlib.Path('examples', 'data', script.stem + '.txt'), 'rb') as fh:
         expected_lines = fh.read().splitlines()
     for line in expected_lines:
         if line not in actual_lines:
-            logger.info("%s: expectedly failed to compile, but didn't print expected error messages: expected = %s, actual = %s", str(script), expected_lines, actual_lines)
-            return False
+            msg = "expectedly failed to compile, but didn't print expected error messages: expected = {}, actual = {}".format(expected_lines, actual_lines)
+            logger.error('%s: %s', str(script), msg)
+            return msg
 
     logger.info('%s: expectedly failed to compile', str(script))
-    return True
+    return None
 
 
 def get_local_install_root() -> pathlib.Path:
@@ -225,20 +232,30 @@ def main() -> None:
     if find_unused_test_cases():
         sys.exit(1)
     subprocess.check_call(['stack', '--system-ghc', 'build'])
+
+    # run tests
     executable = get_local_install_root() / 'bin' / 'jikka'
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
-        futures = []
+        futures = {}
         for path in pathlib.Path('examples').glob('*.py'):
             if args.k and args.k not in path.name:
                 continue
-            futures.append(executor.submit(run_integration_test, path, executable=executable))
+            futures[path] = executor.submit(run_integration_test, path, executable=executable)
         for path in pathlib.Path('examples', 'errors').glob('*.py'):
             if args.k and args.k not in path.name:
                 continue
-            futures.append(executor.submit(run_integration_test_about_error, path, executable=executable))
-    cnt = [future.result() for future in futures].count(True)
-    logger.info('%d/%d tests succeeded', cnt, len(futures))
-    if cnt < len(futures):
+            futures[path] = executor.submit(run_integration_test_about_error, path, executable=executable)
+
+    # report results
+    succeeded = 0
+    for path, future in futures.items():
+        if future.result() is None:
+            succeeded += 1
+        else:
+            # This is the workflow command of GitHub Actions. See https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-error-message
+            print('::error file={},line=1,col=1::{}'.format(str(path), future.result()))
+    logger.info('%d/%d tests succeeded', succeeded, len(futures))
+    if succeeded < len(futures):
         sys.exit(1)
 
 
