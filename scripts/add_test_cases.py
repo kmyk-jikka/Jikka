@@ -52,7 +52,7 @@ def main() -> None:
         plan[examples_dir / 'data' / '{}.sample-{}.out'.format(name, i + 1)] = testcase['output'].encode()
     if not args.only_sample_cases:
         plan[examples_dir / '{}.py'.format(name)] = subprocess.check_output(['oj-template', '-t', 'main.py', args.url])
-        plan[examples_dir / 'data' / '{}.solver.cpp'.format(name)] = subprocess.check_output(['oj-template', '-t', 'main.cpp', args.url])
+        plan[examples_dir / 'data' / '{}.solver.cpp'.format(name)] = subprocess.check_output(['oj-template', '-t', 'main.cpp', args.url]).replace(b'#include <bits/stdc++.h>\n', b'#include <cstdint>\n#include <iostream>\n#include <vector>\n')  # Replace bits/stdc++.h to compile the solver on Windows.
         plan[examples_dir / 'data' / '{}.large.generator.py'.format(name)] = subprocess.check_output(['oj-template', '-t', 'generate.py', args.url])
 
     # check files

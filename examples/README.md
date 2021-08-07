@@ -31,6 +31,26 @@ Please check also the [gallery](https://kmyk.github.io/Jikka/gallery).
 - :heavy_check_mark: AC `dp_z-kubaru.py`
   - The Kubaru DP version of `dp_z-morau.py`.
   - submission at v5.1.0.0: <https://atcoder.jp/contests/dp/submissions/24701829>
+- :heavy_check_mark: AC `abc203_b.py`
+  - AtCoder Beginner Contest 203 [B - AtCoder Condominium](https://atcoder.jp/contests/abc203/tasks/abc203_b)
+  - AC with a naive solution using `sum(List[int])` / 愚直解が AC `sum(List[int])`を使用
+  - submission at d2be3858a1ec3b65a8cdb6228e81c85dd976a5bc: <https://atcoder.jp/contests/abc203/submissions/24820582>
+- :heavy_check_mark: AC `abc204_b.py`
+  - AtCoder Beginner Contest 204 [B - Nuts](https://atcoder.jp/contests/abc204/tasks/abc204_b)
+  - AC with a naive solution / 愚直解が AC
+  - submission at d2be3858a1ec3b65a8cdb6228e81c85dd976a5bc: <https://atcoder.jp/contests/abc204/submissions/24820209>
+- :heavy_check_mark: AC `abc206_b.py`
+  - AtCoder Beginner Contest 206 [B - Savings](https://atcoder.jp/contests/abc206/tasks/abc206_b)
+  - AC with a naive solution / 愚直解が AC
+  - submission at 8d1bbacd3f40a60ae8e2447c2a17a8956c7b0218: <https://atcoder.jp/contests/abc206/submissions/24817830>
+- :heavy_check_mark: AC `abc207_b.py`
+  - AtCoder Beginner Contest 207 [B - Hydrate](https://atcoder.jp/contests/abc207/tasks/abc207_b)
+  - AC with a naive solution using jikka::floordiv / 愚直解が AC jikka::floordiv を使う
+  - submission at 8d1bbacd3f40a60ae8e2447c2a17a8956c7b0218: <https://atcoder.jp/contests/abc207/submissions/24817953>
+- :heavy_check_mark: AC `abc208_b.py`
+  - AtCoder Beginner Contest 208 [B - Factorial Yen Coin](https://atcoder.jp/contests/abc208/tasks/abc208_b)
+  - AC with a naive solution using jikka::floordiv, reverse / 愚直解が AC jikka::floordiv, reverse を使う簡単な問題
+  - submission at 8d1bbacd3f40a60ae8e2447c2a17a8956c7b0218: <https://atcoder.jp/contests/abc208/submissions/24817975>
 - :hourglass: TLE `abc134_c.py`
   - AtCoder Beginner Contest 134 [C - Exception Handling](https://atcoder.jp/contests/abc134/tasks/abc134_c)
   - Cumulative sums from both sides / 両側からの累積和

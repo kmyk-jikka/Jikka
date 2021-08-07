@@ -1,6 +1,6 @@
 # https://atcoder.jp/contests/abc208/tasks/abc208_b
 
-from typing import *
+# from typing import *
 
 def solve(p: int) -> int:
     e = 1
