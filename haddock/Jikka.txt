@@ -98,6 +98,12 @@ MonoidIntMin :: Monoid'
 
 -- | &lt;math&gt;
 MonoidIntMax :: Monoid'
+
+-- | &lt;math&gt;
+MonoidIntGcd :: Monoid'
+
+-- | &lt;math&gt;
+MonoidIntLcm :: Monoid'
 data Literal
 LitInt32 :: Integer -> Literal
 LitInt64 :: Integer -> Literal
@@ -1185,6 +1191,8 @@ data Semigroup'
 SemigroupIntPlus :: Semigroup'
 SemigroupIntMin :: Semigroup'
 SemigroupIntMax :: Semigroup'
+SemigroupIntGcd :: Semigroup'
+SemigroupIntLcm :: Semigroup'
 
 -- | TODO: What is the difference between <a>Literal</a> and
 --   <a>Builtin</a>?
@@ -1379,6 +1387,12 @@ ArgMin :: Builtin
 
 -- | &lt;math&gt;
 ArgMax :: Builtin
+
+-- | &lt;math&gt;
+Gcd1 :: Builtin
+
+-- | &lt;math&gt;
+Lcm1 :: Builtin
 
 -- | &lt;math&gt;
 All :: Builtin
@@ -1646,6 +1660,8 @@ pattern Min1' :: Type -> Expr -> Expr
 pattern Max1' :: Type -> Expr -> Expr
 pattern ArgMin' :: Type -> Expr -> Expr
 pattern ArgMax' :: Type -> Expr -> Expr
+pattern Gcd1' :: Type -> Expr -> Expr
+pattern Lcm1' :: Type -> Expr -> Expr
 pattern All' :: Expr -> Expr
 pattern Any' :: Expr -> Expr
 pattern Sorted' :: Type -> Expr -> Expr
