@@ -114,6 +114,8 @@ segmentTreeGetRange semigrp segtree l r
           SemigroupIntPlus -> sum slice
           SemigroupIntMin -> minimum slice
           SemigroupIntMax -> maximum slice
+          SemigroupIntGcd -> foldl gcd 0 slice
+          SemigroupIntLcm -> foldl lcm 1 slice
 
 build :: MonadError Error m => (V.Vector Value -> m Value) -> V.Vector Value -> Integer -> m (V.Vector Value)
 build _ _ n | n < 0 = throwRuntimeError $ "negative length: " ++ show n
@@ -223,6 +225,8 @@ callBuiltin builtin ts args = wrapError' ("while calling builtin " ++ formatBuil
     Max1 -> go1 valueToList id (V.maximumBy compareValues')
     ArgMin -> go1 valueToList ValInt $ \xs -> snd (minimumBy (\(x, i) (y, j) -> compareValues' x y <> compare i j) (zip (V.toList xs) [0 ..]))
     ArgMax -> go1 valueToList ValInt $ \xs -> snd (maximumBy (\(x, i) (y, j) -> compareValues' x y <> compare i j) (zip (V.toList xs) [0 ..]))
+    Gcd1 -> go1 valueToIntList ValInt (foldl gcd 0)
+    Lcm1 -> go1 valueToIntList ValInt (foldl lcm 1)
     All -> go1 valueToBoolList ValBool and
     Any -> go1 valueToBoolList ValBool or
     Sorted -> go1 valueToList ValList sortVector

@@ -274,6 +274,8 @@ isConstantTimeBuiltin = \case
   Max1 -> False
   ArgMin -> False
   ArgMax -> False
+  Gcd1 -> False
+  Lcm1 -> False
   All -> False
   Any -> False
   Sorted -> False
