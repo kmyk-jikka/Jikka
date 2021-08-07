@@ -96,8 +96,8 @@ builtinToType builtin ts =
         Max1 -> go1 $ \t -> FunLTy t
         ArgMin -> go1 $ \t -> FunTy (ListTy t) IntTy
         ArgMax -> go1 $ \t -> FunTy (ListTy t) IntTy
-        Gcd1 -> go1 $ \t -> FunLTy t
-        Lcm1 -> go1 $ \t -> FunLTy t
+        Gcd1 -> go0 $ FunLTy IntTy
+        Lcm1 -> go0 $ FunLTy IntTy
         All -> go0 $ FunLTy BoolTy
         Any -> go0 $ FunLTy BoolTy
         Sorted -> go1 $ \t -> Fun1STy (ListTy t)
