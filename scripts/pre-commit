@@ -12,8 +12,7 @@ git diff --exit-code *.cabal \
 # C++
 which clang-format \
     || { echo HINT: Please install clang-format; false; }
-for f in $(find runtime/include examples/data -name \*.\?pp); do diff $f <(clang-format $f); done \
-    || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp);' ; false; }
+for f in $(find runtime/include examples/data -name \*.\?pp); do diff $f <(clang-format $f) || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp);' ; false; }; done
 
 # Python
 isort --version \
