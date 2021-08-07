@@ -1,5 +1,44 @@
 # Changelog for Jikka
 
+## 2021-08-07: v5.2.0.0
+
+Now we are fixing many bugs to use Jikka during contests!
+
+Features:
+
+- Use gcd/lcm semigroups on segment trees ([#163](https://github.com/kmyk/Jikka/pull/163) by [@hotman78](https://github.com/hotman78))
+- Solve simple equations ([#135](https://github.com/kmyk/Jikka/pull/135) by [@hotman78](https://github.com/hotman78))
+- Remove unnecessary parentheses from generated C++ code ([#143](https://github.com/kmyk/Jikka/pull/143) by [@uta8a](https://github.com/uta8a))
+- Use `assert` macros in generated C++ code ([#160](https://github.com/kmyk/Jikka/pull/160) by [@kmyk](https://github.com/kmyk))
+
+Bug Fix:
+
+- Fix a bug of unpacking `std::tuple` and assignments ([#165](https://github.com/kmyk/Jikka/pull/165) by [@riantkb](https://github.com/riantkb))
+- Fix calculation of arithmetic expressions ([#138](https://github.com/kmyk/Jikka/pull/138) by [@hotman78](https://github.com/hotman78))
+- Fix reductions about `all` and `any` functions ([#159](https://github.com/kmyk/Jikka/pull/159) by [@kmyk](https://github.com/kmyk))
+
+Documentation:
+
+- Add [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md) ([#122](https://github.com/kmyk/Jikka/pull/122) by [@kmyk](https://github.com/kmyk))
+- Add [a gallery page](https://kmyk.github.io/Jikka/gallery/) ([#129](https://github.com/kmyk/Jikka/pull/129) by [@kmyk](https://github.com/kmyk))
+- Fix some mistakes of documents (by [@hotman78](https://github.com/hotman78) [@rsk0315](https://github.com/rsk0315) [@zer0-star](https://github.com/zer0-star))
+
+Tests:
+
+- Add many solutions and test cases of AtCoder Beginner Contest to `examples/` directory ([#145](https://github.com/kmyk/Jikka/pull/145) [#170](https://github.com/kmyk/Jikka/pull/170) by [@uta8a](https://github.com/uta8a))
+  - Related to this, [@uta8a](https://github.com/uta8a) has the repository [uta8a/jikka-example](https://github.com/uta8a/jikka-example) which has results of analysis of many problems.
+
+Refactoring:
+
+- Add a parser of our core language and allows to write rewrite rules more intuitively ([#133](https://github.com/kmyk/Jikka/pull/133) by [@kmyk](https://github.com/kmyk))
+
+Misc:
+
+- Add `scripts/add_test_cases.py` ([#149](https://github.com/kmyk/Jikka/pull/149) by [@kmyk](https://github.com/kmyk))
+  - Fix `scripts/add_test_cases.py` ([#166](https://github.com/kmyk/Jikka/pull/166) by [@uta8a](https://github.com/uta8a))
+- Fix `scripts/pre-commit` ([#171](https://github.com/kmyk/Jikka/pull/171) by [@uta8a](https://github.com/uta8a))
+  - [@uta8a](https://github.com/uta8a) also finds a bug of the formatter
+
 ## 2021-08-01: v5.1.0.0
 
 - Now Kubaru DP is converted to Morau DP.
