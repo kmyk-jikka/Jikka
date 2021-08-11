@@ -117,6 +117,77 @@ arityOfBuiltin builtin ts = case builtin of
   X.Proj _ -> return 1
   builtin -> length . fst . X.uncurryFunTy <$> X.builtinToType builtin ts
 
+runIterate :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr
+runIterate env t n f x = do
+  t <- runType t
+  n <- runExpr env n
+  x <- runExpr env x
+  y <- Y.newFreshName Y.LocalNameKind
+  i <- Y.newFreshName Y.LoopCounterNameKind
+  (stmtsF, body, f) <- runExprFunction env f (Y.Var y)
+  useStatement $ Y.Declare t y (Y.DeclareCopy x)
+  useStatements stmtsF
+  useStatement $ Y.repStatement i (Y.cast Y.TyInt32 n) (body ++ [Y.assignSimple y f])
+  return $ Y.Var y
+
+runIf :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr
+runIf env t e1 e2 e3 = do
+  e1' <- runExpr env e1
+  (stmts2, e2') <- runStatementsT $ runExpr env e2
+  (stmts3, e3') <- runStatementsT $ runExpr env e3
+  case (stmts2, stmts3) of
+    ([], [])
+      | X.isConstantTimeExpr e2 && X.isConstantTimeExpr e3 ->
+        return $ Y.Cond e1' e2' e3'
+    _ -> do
+      t <- runType t
+      phi <- Y.newFreshName Y.LocalNameKind
+      let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
+      useStatement $ Y.Declare t phi Y.DeclareDefault
+      useStatement $ Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))
+      return $ Y.Var phi
+
+runFoldl :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Type -> X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr
+runFoldl env t1 t2 f init xs = do
+  init <- runExpr env init
+  xs <- runExpr env xs
+  t1 <- runType t1
+  t2 <- runType t2
+  y <- Y.newFreshName Y.LocalNameKind
+  x <- Y.newFreshName Y.LocalNameKind
+  (stmtsF, body, f) <- runExprFunction2 env f (Y.Var y) (Y.Var x)
+  useStatement $ Y.Declare t2 y (Y.DeclareCopy init)
+  useStatements stmtsF
+  useStatement $ Y.ForEach t1 x xs (body ++ [Y.assignSimple y f])
+  return $ Y.Var y
+
+runMap :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Type -> X.Type -> X.Expr -> X.Expr -> m Y.Expr
+runMap env _ t2 f xs = do
+  ys <- Y.newFreshName Y.LocalNameKind
+  t2 <- runType t2
+  stmts <- case (f, xs) of
+    (X.Lam _ _ (X.Lit lit), X.Range1' n) -> do
+      (stmtsN, n) <- runStatementsT $ runExpr env n
+      lit <- runLiteral env lit
+      return $
+        stmtsN
+          ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [n, lit]))]
+    _ -> do
+      (stmtsXs, xs) <- runStatementsT $ runExpr env xs
+      i <- Y.newFreshName Y.LoopCounterNameKind
+      (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
+      return $
+        stmtsXs
+          ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs]))]
+          ++ stmtsF
+          ++ [ Y.repStatement
+                 i
+                 (Y.cast Y.TyInt32 (Y.size xs))
+                 (body ++ [Y.assignAt ys (Y.Var i) f])
+             ]
+  useStatements stmts
+  return $ Y.Var ys
+
 runAppBuiltin :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Builtin -> [X.Type] -> [X.Expr] -> m Y.Expr
 runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuiltinIsolated f ts) $ do
   let go0T :: (MonadAlpha m, MonadError Error m, MonadStatements m) => m Y.Expr -> m Y.Expr
@@ -209,41 +280,13 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.Lcm -> go02 $ \e1 e2 -> Y.Call (Y.Function "std::lcm" []) [e1, e2]
     X.Min2 -> go12 $ \t e1 e2 -> Y.Call (Y.Function "std::min" [t]) [e1, e2]
     X.Max2 -> go12 $ \t e1 e2 -> Y.Call (Y.Function "std::max" [t]) [e1, e2]
-    X.Iterate -> go13'' $ \t n f x -> do
-      t <- runType t
-      n <- runExpr env n
-      x <- runExpr env x
-      y <- Y.newFreshName Y.LocalNameKind
-      i <- Y.newFreshName Y.LoopCounterNameKind
-      (stmtsF, body, f) <- runExprFunction env f (Y.Var y)
-      useStatement $ Y.Declare t y (Y.DeclareCopy x)
-      useStatements stmtsF
-      useStatement $
-        Y.repStatement
-          i
-          (Y.cast Y.TyInt32 n)
-          (body ++ [Y.assignSimple y f])
-      return $ Y.Var y
+    X.Iterate -> go13'' $ runIterate env
     -- logical functions
     X.Not -> go01 $ \e -> Y.UnOp Y.Not e
     X.And -> go02 $ \e1 e2 -> Y.BinOp Y.And e1 e2
     X.Or -> go02 $ \e1 e2 -> Y.BinOp Y.Or e1 e2
     X.Implies -> go02 $ \e1 e2 -> Y.BinOp Y.Or (Y.UnOp Y.Not e1) e2
-    X.If -> go13'' $ \t e1 e2 e3 -> do
-      e1' <- runExpr env e1
-      (stmts2, e2') <- runStatementsT $ runExpr env e2
-      (stmts3, e3') <- runStatementsT $ runExpr env e3
-      case (stmts2, stmts3) of
-        ([], [])
-          | X.isConstantTimeExpr e2 && X.isConstantTimeExpr e3 ->
-            return $ Y.Cond e1' e2' e3'
-        _ -> do
-          t <- runType t
-          phi <- Y.newFreshName Y.LocalNameKind
-          let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
-          useStatement $ Y.Declare t phi Y.DeclareDefault
-          useStatement $ Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))
-          return $ Y.Var phi
+    X.If -> go13'' $ runIf env
     -- bitwise functions
     X.BitNot -> go01 $ \e -> Y.UnOp Y.BitNot e
     X.BitAnd -> go02 $ \e1 e2 -> Y.BinOp Y.BitAnd e1 e2
@@ -283,18 +326,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
       useStatement $ Y.callMethod' (Y.Var ys) "push_back" [x]
       return $ Y.Var ys
-    X.Foldl -> go23'' $ \t1 t2 f init xs -> do
-      init <- runExpr env init
-      xs <- runExpr env xs
-      t1 <- runType t1
-      t2 <- runType t2
-      y <- Y.newFreshName Y.LocalNameKind
-      x <- Y.newFreshName Y.LocalNameKind
-      (stmtsF, body, f) <- runExprFunction2 env f (Y.Var y) (Y.Var x)
-      useStatement $ Y.Declare t2 y (Y.DeclareCopy init)
-      useStatements stmtsF
-      useStatement $ Y.ForEach t1 x xs (body ++ [Y.assignSimple y f])
-      return $ Y.Var y
+    X.Foldl -> go23'' $ runFoldl env
     X.Scanl -> go23'' $ \_ t2 f init xs -> do
       init <- runExpr env init
       xs <- runExpr env xs
@@ -319,31 +351,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       useStatement $ Y.repStatement i (Y.cast Y.TyInt32 n) (body ++ [Y.callMethod' (Y.Var ys) "push_back" [f]])
       return $ Y.Var ys
     X.Len -> go11 $ \_ e -> Y.cast Y.TyInt64 (Y.size e)
-    X.Map -> go22'' $ \_ t2 f xs -> do
-      ys <- Y.newFreshName Y.LocalNameKind
-      t2 <- runType t2
-      stmts <- case (f, xs) of
-        (X.Lam _ _ (X.Lit lit), X.Range1' n) -> do
-          (stmtsN, n) <- runStatementsT $ runExpr env n
-          lit <- runLiteral env lit
-          return $
-            stmtsN
-              ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [n, lit]))]
-        _ -> do
-          (stmtsXs, xs) <- runStatementsT $ runExpr env xs
-          i <- Y.newFreshName Y.LoopCounterNameKind
-          (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
-          return $
-            stmtsXs
-              ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs]))]
-              ++ stmtsF
-              ++ [ Y.repStatement
-                     i
-                     (Y.cast Y.TyInt32 (Y.size xs))
-                     (body ++ [Y.assignAt ys (Y.Var i) f])
-                 ]
-      useStatements stmts
-      return $ Y.Var ys
+    X.Map -> go22'' $ runMap env
     X.Filter -> go12'' $ \t f xs -> do
       xs <- runExpr env xs
       t <- runType t
