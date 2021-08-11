@@ -24,8 +24,8 @@ import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
-import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
+import qualified Jikka.Core.Language.LambdaPatterns as X
 import qualified Jikka.Core.Language.TypeCheck as X
 import qualified Jikka.Core.Language.Util as X
 
@@ -165,28 +165,22 @@ runMap :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Type
 runMap env _ t2 f xs = do
   ys <- Y.newFreshName Y.LocalNameKind
   t2 <- runType t2
-  stmts <- case (f, xs) of
-    (X.Lam _ _ (X.Lit lit), X.Range1' n) -> do
-      (stmtsN, n) <- runStatementsT $ runExpr env n
-      lit <- runLiteral env lit
-      return $
-        stmtsN
-          ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [n, lit]))]
+  case (f, xs) of
+    -- optimize @map (const e) xs@
+    (X.LamConst _ e, xs) -> do
+      xs <- runExpr env xs
+      e <- runExpr env e
+      useStatement $ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs, e]))
+      return $ Y.Var ys
+    -- other cases
     _ -> do
-      (stmtsXs, xs) <- runStatementsT $ runExpr env xs
+      xs <- runExpr env xs
       i <- Y.newFreshName Y.LoopCounterNameKind
       (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
-      return $
-        stmtsXs
-          ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs]))]
-          ++ stmtsF
-          ++ [ Y.repStatement
-                 i
-                 (Y.cast Y.TyInt32 (Y.size xs))
-                 (body ++ [Y.assignAt ys (Y.Var i) f])
-             ]
-  useStatements stmts
-  return $ Y.Var ys
+      useStatement $ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs]))
+      useStatements stmtsF
+      useStatement $ Y.repStatement i (Y.cast Y.TyInt32 (Y.size xs)) (body ++ [Y.assignAt ys (Y.Var i) f])
+      return $ Y.Var ys
 
 runAppBuiltin :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Builtin -> [X.Type] -> [X.Expr] -> m Y.Expr
 runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuiltinIsolated f ts) $ do
