@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -17,6 +18,7 @@ module Jikka.CPlusPlus.Convert.FromCore
   )
 where
 
+import Control.Monad.Writer.Strict
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
@@ -42,6 +44,20 @@ lookupVarName :: MonadError Error m => Env -> X.VarName -> m Y.VarName
 lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
   Just y -> return y
   Nothing -> throwInternalError $ "undefined variable: " ++ X.unVarName x
+
+class Monad m => MonadStatements m where
+  useStatement :: Y.Statement -> m ()
+
+instance Monad m => MonadStatements (WriterT (Dual [Y.Statement]) m) where
+  useStatement stmt = tell $ Dual [stmt]
+
+useStatements :: MonadStatements m => [Y.Statement] -> m ()
+useStatements = mapM_ useStatement
+
+runStatementsT :: Monad m => WriterT (Dual [Y.Statement]) m a -> m ([Y.Statement], a)
+runStatementsT f = do
+  (a, stmts) <- runWriterT f
+  return (reverse (getDual stmts), a)
 
 --------------------------------------------------------------------------------
 -- run
@@ -74,7 +90,7 @@ runSemigroup = \case
 runLiteral :: (MonadAlpha m, MonadError Error m) => Env -> X.Literal -> m Y.Expr
 runLiteral env = \case
   X.LitBuiltin builtin ts -> do
-    (stmts, e) <- runAppBuiltin env builtin ts []
+    (stmts, e) <- runStatementsT $ runAppBuiltin env builtin ts []
     case stmts of
       [] -> return e
       _ -> throwInternalError "now builtin values don't use statements"
@@ -101,89 +117,81 @@ arityOfBuiltin builtin ts = case builtin of
   X.Proj _ -> return 1
   builtin -> length . fst . X.uncurryFunTy <$> X.builtinToType builtin ts
 
-runAppBuiltin :: (MonadAlpha m, MonadError Error m) => Env -> X.Builtin -> [X.Type] -> [X.Expr] -> m ([Y.Statement], Y.Expr)
+runAppBuiltin :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Builtin -> [X.Type] -> [X.Expr] -> m Y.Expr
 runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuiltinIsolated f ts) $ do
-  let go0T f = case ts of
+  let go0T :: (MonadAlpha m, MonadError Error m, MonadStatements m) => m Y.Expr -> m Y.Expr
+      go0T f = case ts of
         [] -> f
         _ -> throwInternalError $ "expected 0 type arguments, got " ++ show (length ts)
-  let go1T' f = case ts of
+  let go1T' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> m Y.Expr) -> m Y.Expr
+      go1T' f = case ts of
         [t1] -> f t1
         _ -> throwInternalError $ "expected 1 type argument, got " ++ show (length ts)
-  let go1T f = go1T' $ f <=< runType
+  let go1T :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> m Y.Expr) -> m Y.Expr
+      go1T f = go1T' $ f <=< runType
   let go2T' f = case ts of
         [t1, t2] -> f t1 t2
         _ -> throwInternalError $ "expected 2 type arguments, got " ++ show (length ts)
-  let go0E f = case args of
+  let go0E :: (MonadAlpha m, MonadError Error m, MonadStatements m) => m Y.Expr -> m Y.Expr
+      go0E f = case args of
         [] -> f
         _ -> throwInternalError $ "expected 0 type arguments, got " ++ show (length args)
-  let go1E' f = case args of
+  let go1E' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Expr -> m Y.Expr) -> m Y.Expr
+      go1E' f = case args of
         [e1] -> f e1
         _ -> throwInternalError $ "expected 1 type argument, got " ++ show (length args)
-  let go1E f = go1E' $ \e1 -> do
-        (stmts1, e1) <- runExpr env e1
-        (stmts, e) <- f e1
-        return (stmts1 ++ stmts, e)
+  let go1E :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Expr -> m Y.Expr) -> m Y.Expr
+      go1E f = go1E' $ f <=< runExpr env
   let go2E' f = case args of
         [e1, e2] -> f e1 e2
         _ -> throwInternalError $ "expected 2 type arguments, got " ++ show (length args)
-  let go2E f = go2E' $ \e1 e2 -> do
-        (stmts1, e1) <- runExpr env e1
-        (stmts2, e2) <- runExpr env e2
-        (stmts, e) <- f e1 e2
-        return (stmts1 ++ stmts2 ++ stmts, e)
+  let go2E f = go2E' $ \e1 e2 -> join $ f <$> runExpr env e1 <*> runExpr env e2
   let go3E' f = case args of
         [e1, e2, e3] -> f e1 e2 e3
         _ -> throwInternalError $ "expected 2 type arguments, got " ++ show (length args)
-  let go3E f = go3E' $ \e1 e2 e3 -> do
-        (stmts1, e1) <- runExpr env e1
-        (stmts2, e2) <- runExpr env e2
-        (stmts3, e3) <- runExpr env e3
-        (stmts, e) <- f e1 e2 e3
-        return (stmts1 ++ stmts2 ++ stmts3 ++ stmts, e)
-  let goP f = return ([], f)
-  let go00 f = go0T $ go0E $ goP f
-  let go01' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go3E f = go3E' $ \e1 e2 e3 -> join $ f <$> runExpr env e1 <*> runExpr env e2 <*> runExpr env e3
+  let go00 f = go0T $ go0E $ return f
+  let go01' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Expr -> m Y.Expr) -> m Y.Expr
       go01' f = go0T $ go1E f
-  let go01 :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr) -> m ([Y.Statement], Y.Expr)
-      go01 f = go0T $ go1E $ \e1 -> goP $ f e1
-  let go11' :: (MonadAlpha m, MonadError Error m) => (Y.Type -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go01 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Expr -> Y.Expr) -> m Y.Expr
+      go01 f = go0T $ go1E $ \e1 -> return $ f e1
+  let go11' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> m Y.Expr) -> m Y.Expr
       go11' f = go1T $ \t1 -> go1E $ \e1 -> f t1 e1
-  let go11 :: (MonadAlpha m, MonadError Error m) => (Y.Type -> Y.Expr -> Y.Expr) -> m ([Y.Statement], Y.Expr)
-      go11 f = go1T $ \t1 -> go1E $ \e1 -> goP $ f t1 e1
-  let go02' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go11 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> Y.Expr) -> m Y.Expr
+      go11 f = go1T $ \t1 -> go1E $ \e1 -> return $ f t1 e1
+  let go02' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Expr -> Y.Expr -> m Y.Expr) -> m Y.Expr
       go02' f = go0T $ go2E f
-  let go02 :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> Y.Expr) -> m ([Y.Statement], Y.Expr)
-      go02 f = go0T $ go2E $ \e1 e2 -> goP $ f e1 e2
-  let go12'' :: (MonadAlpha m, MonadError Error m) => (X.Type -> X.Expr -> X.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go02 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Expr -> Y.Expr -> Y.Expr) -> m Y.Expr
+      go02 f = go0T $ go2E $ \e1 e2 -> return $ f e1 e2
+  let go12'' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> X.Expr -> X.Expr -> m Y.Expr) -> m Y.Expr
       go12'' f = go1T' $ \t1 -> go2E' $ \e1 e2 -> f t1 e1 e2
-  let go12' :: (MonadAlpha m, MonadError Error m) => (Y.Type -> Y.Expr -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go12' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> Y.Expr -> m Y.Expr) -> m Y.Expr
       go12' f = go1T $ \t1 -> go2E $ \e1 e2 -> f t1 e1 e2
-  let go12 :: (MonadAlpha m, MonadError Error m) => (Y.Type -> Y.Expr -> Y.Expr -> Y.Expr) -> m ([Y.Statement], Y.Expr)
-      go12 f = go1T $ \t1 -> go2E $ \e1 e2 -> goP $ f t1 e1 e2
-  let go22'' :: (MonadAlpha m, MonadError Error m) => (X.Type -> X.Type -> X.Expr -> X.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go12 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> Y.Expr -> Y.Expr) -> m Y.Expr
+      go12 f = go1T $ \t1 -> go2E $ \e1 e2 -> return $ f t1 e1 e2
+  let go22'' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> X.Type -> X.Expr -> X.Expr -> m Y.Expr) -> m Y.Expr
       go22'' f = go2T' $ \t1 t2 -> go2E' $ \e1 e2 -> f t1 t2 e1 e2
-  let go03' :: (MonadAlpha m, MonadError Error m) => (Y.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go03' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Expr -> Y.Expr -> Y.Expr -> m Y.Expr) -> m Y.Expr
       go03' f = go0T $ go3E f
-  let go03 f = go0T $ go3E $ \e1 e2 e3 -> goP $ f e1 e2 e3
-  let go13'' :: (MonadAlpha m, MonadError Error m) => (X.Type -> X.Expr -> X.Expr -> X.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go03 f = go0T $ go3E $ \e1 e2 e3 -> return $ f e1 e2 e3
+  let go13'' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr) -> m Y.Expr
       go13'' f = go1T' $ \t1 -> go3E' $ \e1 e2 e3 -> f t1 e1 e2 e3
-  let go13' :: (MonadAlpha m, MonadError Error m) => (Y.Type -> Y.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go13' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> Y.Expr -> Y.Expr -> m Y.Expr) -> m Y.Expr
       go13' f = go1T $ \t1 -> go3E $ \e1 e2 e3 -> f t1 e1 e2 e3
-  let go23'' :: (MonadAlpha m, MonadError Error m) => (X.Type -> X.Type -> X.Expr -> X.Expr -> X.Expr -> m ([Y.Statement], Y.Expr)) -> m ([Y.Statement], Y.Expr)
+  let go23'' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr) -> m Y.Expr
       go23'' f = go2T' $ \t1 t2 -> go3E' $ \e1 e2 e3 -> f t1 t2 e1 e2 e3
-  let goN1 :: (MonadAlpha m, MonadError Error m) => ([Y.Type] -> Y.Expr -> Y.Expr) -> m ([Y.Statement], Y.Expr)
+  let goN1 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => ([Y.Type] -> Y.Expr -> Y.Expr) -> m Y.Expr
       goN1 f = case args of
         [e1] -> do
           ts <- mapM runType ts
-          (stmts1, e1) <- runExpr env e1
-          return (stmts1, f ts e1)
+          e1 <- runExpr env e1
+          return $ f ts e1
         _ -> throwInternalError $ "expected 1 argument, got " ++ show (length args)
-  let goNN :: (MonadAlpha m, MonadError Error m) => ([Y.Type] -> [Y.Expr] -> Y.Expr) -> m ([Y.Statement], Y.Expr)
+  let goNN :: (MonadAlpha m, MonadError Error m, MonadStatements m) => ([Y.Type] -> [Y.Expr] -> Y.Expr) -> m Y.Expr
       goNN f = do
         ts <- mapM runType ts
         args <- mapM (runExpr env) args
-        let e = f ts (map snd args)
-        return (concatMap fst args, e)
+        return $ f ts args
   case f of
     -- arithmetical functions
     X.Negate -> go01 $ \e -> Y.UnOp Y.Negate e
@@ -203,40 +211,39 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.Max2 -> go12 $ \t e1 e2 -> Y.Call (Y.Function "std::max" [t]) [e1, e2]
     X.Iterate -> go13'' $ \t n f x -> do
       t <- runType t
-      (stmtsN, n) <- runExpr env n
-      (stmtsX, x) <- runExpr env x
+      n <- runExpr env n
+      x <- runExpr env x
       y <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
       (stmtsF, body, f) <- runExprFunction env f (Y.Var y)
-      return
-        ( stmtsN ++ stmtsX
-            ++ [Y.Declare t y (Y.DeclareCopy x)]
-            ++ stmtsF
-            ++ [ Y.repStatement
-                   i
-                   (Y.cast Y.TyInt32 n)
-                   (body ++ [Y.assignSimple y f])
-               ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy x)
+      useStatements stmtsF
+      useStatement $
+        Y.repStatement
+          i
+          (Y.cast Y.TyInt32 n)
+          (body ++ [Y.assignSimple y f])
+      return $ Y.Var y
     -- logical functions
     X.Not -> go01 $ \e -> Y.UnOp Y.Not e
     X.And -> go02 $ \e1 e2 -> Y.BinOp Y.And e1 e2
     X.Or -> go02 $ \e1 e2 -> Y.BinOp Y.Or e1 e2
     X.Implies -> go02 $ \e1 e2 -> Y.BinOp Y.Or (Y.UnOp Y.Not e1) e2
     X.If -> go13'' $ \t e1 e2 e3 -> do
-      (stmts1, e1') <- runExpr env e1
-      (stmts2, e2') <- runExpr env e2
-      (stmts3, e3') <- runExpr env e3
+      e1' <- runExpr env e1
+      (stmts2, e2') <- runStatementsT $ runExpr env e2
+      (stmts3, e3') <- runStatementsT $ runExpr env e3
       case (stmts2, stmts3) of
         ([], [])
           | X.isConstantTimeExpr e2 && X.isConstantTimeExpr e3 ->
-            return (stmts1, Y.Cond e1' e2' e3')
+            return $ Y.Cond e1' e2' e3'
         _ -> do
           t <- runType t
           phi <- Y.newFreshName Y.LocalNameKind
           let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
-          return ([Y.Declare t phi Y.DeclareDefault] ++ stmts1 ++ [Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))], Y.Var phi)
+          useStatement $ Y.Declare t phi Y.DeclareDefault
+          useStatement $ Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))
+          return $ Y.Var phi
     -- bitwise functions
     X.BitNot -> go01 $ \e -> Y.UnOp Y.BitNot e
     X.BitAnd -> go02 $ \e1 e2 -> Y.BinOp Y.BitAnd e1 e2
@@ -267,93 +274,63 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     -- list functions
     X.Cons -> go12' $ \t x xs -> do
       ys <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare (Y.TyVector t) ys Y.DeclareDefault,
-            Y.callMethod' (Y.Var ys) "push_back" [x],
-            Y.callMethod' (Y.Var ys) "insert" [Y.end (Y.Var ys), Y.begin xs, Y.end xs]
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys Y.DeclareDefault
+      useStatement $ Y.callMethod' (Y.Var ys) "push_back" [x]
+      useStatement $ Y.callMethod' (Y.Var ys) "insert" [Y.end (Y.Var ys), Y.begin xs, Y.end xs]
+      return $ Y.Var ys
     X.Snoc -> go12' $ \t xs x -> do
       ys <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
-            Y.callMethod' (Y.Var ys) "push_back" [x]
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
+      useStatement $ Y.callMethod' (Y.Var ys) "push_back" [x]
+      return $ Y.Var ys
     X.Foldl -> go23'' $ \t1 t2 f init xs -> do
-      (stmtsInit, init) <- runExpr env init
-      (stmtsXs, xs) <- runExpr env xs
+      init <- runExpr env init
+      xs <- runExpr env xs
       t1 <- runType t1
       t2 <- runType t2
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
       (stmtsF, body, f) <- runExprFunction2 env f (Y.Var y) (Y.Var x)
-      return
-        ( stmtsInit ++ stmtsXs
-            ++ [Y.Declare t2 y (Y.DeclareCopy init)]
-            ++ stmtsF
-            ++ [ Y.ForEach
-                   t1
-                   x
-                   xs
-                   (body ++ [Y.assignSimple y f])
-               ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t2 y (Y.DeclareCopy init)
+      useStatements stmtsF
+      useStatement $ Y.ForEach t1 x xs (body ++ [Y.assignSimple y f])
+      return $ Y.Var y
     X.Scanl -> go23'' $ \_ t2 f init xs -> do
-      (stmtsInit, init) <- runExpr env init
-      (stmtsXs, xs) <- runExpr env xs
+      init <- runExpr env init
+      xs <- runExpr env xs
       t2 <- runType t2
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
       (stmtsF, body, f) <- runExprFunction2 env f (Y.at (Y.Var ys) (Y.Var i)) (Y.at xs (Y.Var i))
-      return
-        ( stmtsInit ++ stmtsXs
-            ++ [ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.incrExpr (Y.size xs)])),
-                 Y.assignAt ys (Y.litInt32 0) init
-               ]
-            ++ stmtsF
-            ++ [ Y.repStatement
-                   i
-                   (Y.cast Y.TyInt32 (Y.size xs))
-                   (body ++ [Y.assignAt ys (Y.incrExpr (Y.Var i)) f])
-               ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.incrExpr (Y.size xs)]))
+      useStatement $ Y.assignAt ys (Y.litInt32 0) init
+      useStatements stmtsF
+      useStatement $ Y.repStatement i (Y.cast Y.TyInt32 (Y.size xs)) (body ++ [Y.assignAt ys (Y.incrExpr (Y.Var i)) f])
+      return $ Y.Var ys
     X.Build -> go13'' $ \t f xs n -> do
-      (stmtsInit, xs) <- runExpr env xs
-      (stmtsXs, n) <- runExpr env n
+      xs <- runExpr env xs
+      n <- runExpr env n
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
       (stmtsF, body, f) <- runExprFunction env f (Y.Var ys)
-      return
-        ( stmtsInit ++ stmtsXs
-            ++ [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
-               ]
-            ++ stmtsF
-            ++ [ Y.repStatement
-                   i
-                   (Y.cast Y.TyInt32 n)
-                   (body ++ [Y.callMethod' (Y.Var ys) "push_back" [f]])
-               ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
+      useStatements stmtsF
+      useStatement $ Y.repStatement i (Y.cast Y.TyInt32 n) (body ++ [Y.callMethod' (Y.Var ys) "push_back" [f]])
+      return $ Y.Var ys
     X.Len -> go11 $ \_ e -> Y.cast Y.TyInt64 (Y.size e)
     X.Map -> go22'' $ \_ t2 f xs -> do
       ys <- Y.newFreshName Y.LocalNameKind
       t2 <- runType t2
       stmts <- case (f, xs) of
         (X.Lam _ _ (X.Lit lit), X.Range1' n) -> do
-          (stmtsN, n) <- runExpr env n
+          (stmtsN, n) <- runStatementsT $ runExpr env n
           lit <- runLiteral env lit
           return $
             stmtsN
               ++ [Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [n, lit]))]
         _ -> do
-          (stmtsXs, xs) <- runExpr env xs
+          (stmtsXs, xs) <- runStatementsT $ runExpr env xs
           i <- Y.newFreshName Y.LoopCounterNameKind
           (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
           return $
@@ -365,190 +342,104 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
                      (Y.cast Y.TyInt32 (Y.size xs))
                      (body ++ [Y.assignAt ys (Y.Var i) f])
                  ]
-      return (stmts, Y.Var ys)
+      useStatements stmts
+      return $ Y.Var ys
     X.Filter -> go12'' $ \t f xs -> do
-      (stmtsXs, xs) <- runExpr env xs
+      xs <- runExpr env xs
       t <- runType t
       ys <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
       (stmtsF, body, f) <- runExprFunction env f (Y.Var x)
-      return
-        ( stmtsXs
-            ++ [Y.Declare (Y.TyVector t) ys Y.DeclareDefault]
-            ++ stmtsF
-            ++ [ Y.ForEach
-                   t
-                   x
-                   xs
-                   ( body
-                       ++ [ Y.If
-                              f
-                              [Y.callMethod' (Y.Var ys) "push_back" [Y.Var x]]
-                              Nothing
-                          ]
-                   )
-               ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys Y.DeclareDefault
+      useStatements stmtsF
+      useStatement $ Y.ForEach t x xs (body ++ [Y.If f [Y.callMethod' (Y.Var ys) "push_back" [Y.Var x]] Nothing])
+      return $ Y.Var ys
     X.At -> go12 $ \_ e1 e2 -> Y.at e1 e2
     X.SetAt -> go13' $ \t xs i x -> do
       ys <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
-            Y.assignAt ys i x
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
+      useStatement $ Y.assignAt ys i x
+      return $ Y.Var ys
     X.Elem -> go12' $ \_ xs x -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
+      return $ Y.Var y
     X.Sum -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0]))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0]))
+      return $ Y.Var y
     X.ModSum -> go02' $ \xs m -> do
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 0)),
-            Y.ForEach
-              Y.TyInt64
-              x
-              xs
-              [Y.Assign (Y.AssignExpr Y.AddAssign (Y.LeftVar y) (Y.callFunction "jikka::floormod" [] [Y.Var x, m]))]
-          ],
-          Y.callFunction "jikka::floormod" [] [Y.Var y, m]
-        )
+      useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 0))
+      useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.AddAssign (Y.LeftVar y) (Y.callFunction "jikka::floormod" [] [Y.Var x, m]))]
+      return $ Y.callFunction "jikka::floormod" [] [Y.Var y, m]
     X.Product -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1)),
-            Y.ForEach
-              Y.TyInt64
-              x
-              xs
-              [Y.Assign (Y.AssignExpr Y.MulAssign (Y.LeftVar y) (Y.Var x))]
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1))
+      useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.MulAssign (Y.LeftVar y) (Y.Var x))]
+      return $ Y.Var y
     X.ModProduct -> go02' $ \xs m -> do
       y <- Y.newFreshName Y.LocalNameKind
       x <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1)),
-            Y.ForEach
-              Y.TyInt64
-              x
-              xs
-              [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::mod::mult" [] [Y.Var y, Y.Var x, m]))]
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1))
+      useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::mod::mult" [] [Y.Var y, Y.Var x, m]))]
+      return $ Y.Var y
     X.Min1 -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs])))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs])))
+      return $ Y.Var y
     X.Max1 -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs])))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs])))
+      return $ Y.Var y
     X.ArgMin -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+      return $ Y.Var y
     X.ArgMax -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
+      return $ Y.Var y
     X.Gcd1 -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto, Y.VarName "a"), (Y.TyAuto, Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var $ Y.VarName "a", Y.Var $ Y.VarName "b"]]])))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto, Y.VarName "a"), (Y.TyAuto, Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var $ Y.VarName "a", Y.Var $ Y.VarName "b"]]])))
+      return $ Y.Var y
     X.Lcm1 -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto, Y.VarName "a"), (Y.TyAuto, Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var $ Y.VarName "a", Y.Var $ Y.VarName "b"]]])))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto, Y.VarName "a"), (Y.TyAuto, Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var $ Y.VarName "a", Y.Var $ Y.VarName "b"]]])))
+      return $ Y.Var y
     X.All -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
+      return $ Y.Var y
     X.Any -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
-          ],
-          Y.Var y
-        )
+      useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
+      return $ Y.Var y
     X.Sorted -> go11' $ \t xs -> do
       ys <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
-            Y.callFunction' "std::sort" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
+      useStatement $ Y.callFunction' "std::sort" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
+      return $ Y.Var ys
     X.Reversed -> go11' $ \t xs -> do
       ys <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs),
-            Y.callFunction' "std::reverse" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
+      useStatement $ Y.callFunction' "std::reverse" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
+      return $ Y.Var ys
     X.Range1 -> go01 $ \n -> Y.Call Y.Range [n]
     X.Range2 -> go02' $ \from to -> do
       ys <- Y.newFreshName Y.LocalNameKind
-      return
-        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys (Y.DeclareCopy (Y.vecCtor Y.TyInt64 [Y.BinOp Y.Sub to from])),
-            Y.callFunction' "std::iota" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys), from]
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector Y.TyInt64) ys (Y.DeclareCopy (Y.vecCtor Y.TyInt64 [Y.BinOp Y.Sub to from]))
+      useStatement $ Y.callFunction' "std::iota" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys), from]
+      return $ Y.Var ys
     X.Range3 -> go03' $ \from to step -> do
       ys <- Y.newFreshName Y.LocalNameKind
       i <- Y.newFreshName Y.LoopCounterNameKind
-      return
-        ( [ Y.Declare (Y.TyVector Y.TyInt64) ys Y.DeclareDefault,
-            Y.For
-              Y.TyInt32
-              i
-              from
-              (Y.BinOp Y.LessThan (Y.Var i) to)
-              (Y.AssignExpr Y.AddAssign (Y.LeftVar i) step)
-              [ Y.callMethod' (Y.Var ys) "push_back" [Y.Var i]
-              ]
-          ],
-          Y.Var ys
-        )
+      useStatement $ Y.Declare (Y.TyVector Y.TyInt64) ys Y.DeclareDefault
+      useStatement $ Y.For Y.TyInt32 i from (Y.BinOp Y.LessThan (Y.Var i) to) (Y.AssignExpr Y.AddAssign (Y.LeftVar i) step) [Y.callMethod' (Y.Var ys) "push_back" [Y.Var i]]
+      return $ Y.Var ys
     -- tuple functions
     X.Tuple -> goNN $ \ts es ->
       if Y.shouldBeArray ts
@@ -582,12 +473,12 @@ runExprFunction :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr
 runExprFunction env f e = case f of
   X.Lam x t body -> do
     y <- renameVarName' Y.LocalArgumentNameKind x
-    (stmts, body) <- runExpr ((x, t, y) : env) body
+    (stmts, body) <- runStatementsT $ runExpr ((x, t, y) : env) body
     let stmts' = map (Y.replaceStatement y e) stmts
     let body' = Y.replaceExpr y e body
     return ([], stmts', body')
   f -> do
-    (stmts, f) <- runExpr env f
+    (stmts, f) <- runStatementsT $ runExpr env f
     return (stmts, [], Y.CallExpr f [e])
 
 runExprFunction2 :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
@@ -595,22 +486,21 @@ runExprFunction2 env f e1 e2 = case f of
   X.Lam2 x1 t1 x2 t2 body -> do
     y1 <- renameVarName' Y.LocalArgumentNameKind x1
     y2 <- renameVarName' Y.LocalArgumentNameKind x2
-    (stmts, body) <- runExpr ((x2, t2, y2) : (x1, t1, y1) : env) body
+    (stmts, body) <- runStatementsT $ runExpr ((x2, t2, y2) : (x1, t1, y1) : env) body
     let stmts' = map (Y.replaceStatement y2 e2 . Y.replaceStatement y1 e1) stmts
     let body' = Y.replaceExpr y2 e2 $ Y.replaceExpr y1 e1 body
     return ([], stmts', body')
   f -> do
-    (stmts, f) <- runExpr env f
+    (stmts, f) <- runStatementsT $ runExpr env f
     return (stmts, [], Y.CallExpr (Y.CallExpr f [e1]) [e2])
 
-runExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m ([Y.Statement], Y.Expr)
+runExpr :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
   X.Var x -> do
     y <- lookupVarName env x
-    return ([], Y.Var y)
+    return $ Y.Var y
   X.Lit lit -> do
-    lit <- runLiteral env lit
-    return ([], lit)
+    runLiteral env lit
   e@(X.App _ _) -> do
     let (f, args) = X.curryApp e
     case f of
@@ -623,40 +513,40 @@ runExpr env = \case
             ret <- runType ret
             xs <- replicateM (arity - length args) X.genVarName'
             ys <- mapM (renameVarName' Y.LocalArgumentNameKind) xs
-            (stmts, e) <- runAppBuiltin env builtin bts (args ++ map X.Var xs)
+            e <- runAppBuiltin env builtin bts (args ++ map X.Var xs)
             let (_, e') = foldr (\(t, y) (ret, e) -> (Y.TyFunction ret [t], Y.Lam [(t, y)] ret [Y.Return e])) (ret, e) (zip (drop (length args) ts) ys)
-            return (stmts, e')
+            return e'
           else
             if length args == arity
               then do
                 runAppBuiltin env builtin bts args
               else do
-                (stmts, e) <- runAppBuiltin env builtin bts (take arity args)
-                args <- mapM (runExpr env) (drop arity args)
-                return (concatMap fst args ++ stmts, Y.CallExpr e (map snd args))
+                args' <- mapM (runExpr env) (drop arity args)
+                e <- runAppBuiltin env builtin bts (take arity args)
+                return $ Y.CallExpr e args'
       _ -> do
+        f <- runExpr env f
         args <- mapM (runExpr env) args
-        (stmts, f) <- runExpr env f
-        return (stmts ++ concatMap fst args, Y.CallExpr f (map snd args))
+        return $ Y.CallExpr f args
   e@(X.Lam _ _ _) -> do
     let (args, body) = X.uncurryLam e
     ys <- mapM (renameVarName' Y.LocalArgumentNameKind . fst) args
     let env' = reverse (zipWith (\(x, t) y -> (x, t, y)) args ys) ++ env
     ret <- runType =<< typecheckExpr env' body
-    (stmts, body) <- runExpr env' body
+    (stmts, body) <- runStatementsT $ runExpr env' body
     ts <- mapM (runType . snd) args
     let (_, [Y.Return e]) = foldr (\(t, y) (ret, body) -> (Y.TyFunction ret [t], [Y.Return (Y.Lam [(t, y)] ret body)])) (ret, stmts ++ [Y.Return body]) (zip ts ys)
-    return ([], e)
+    return e
   X.Let x t e1 e2 -> do
     y <- renameVarName' Y.LocalNameKind x
     t' <- runType t
-    (stmts1, e1) <- runExpr env e1
-    (stmts2, e2) <- runExpr ((x, t, y) : env) e2
-    return (stmts1 ++ Y.Declare t' y (Y.DeclareCopy e1) : stmts2, e2)
+    e1 <- runExpr env e1
+    useStatement $ Y.Declare t' y (Y.DeclareCopy e1)
+    runExpr ((x, t, y) : env) e2
   X.Assert e1 e2 -> do
-    (stmts1, e1) <- runExpr env e1
-    (stmts2, e2) <- runExpr env e2
-    return (stmts1 ++ Y.Assert e1 : stmts2, e2)
+    e1 <- runExpr env e1
+    useStatement $ Y.Assert e1
+    runExpr env e2
 
 runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelFunDef env f args ret body = do
@@ -664,7 +554,7 @@ runToplevelFunDef env f args ret body = do
   args <- forM args $ \(x, t) -> do
     y <- renameVarName' Y.ArgumentNameKind x
     return (x, t, y)
-  (stmts, result) <- runExpr (reverse args ++ env) body
+  (stmts, result) <- runStatementsT $ runExpr (reverse args ++ env) body
   args <- forM args $ \(_, t, y) -> do
     t <- runType t
     return (t, y)
@@ -673,7 +563,7 @@ runToplevelFunDef env f args ret body = do
 runToplevelVarDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelVarDef env x t e = do
   t <- runType t
-  (stmts, e) <- runExpr env e
+  (stmts, e) <- runStatementsT $ runExpr env e
   case stmts of
     [] -> return [Y.VarDef t x e]
     _ -> return [Y.VarDef t x (Y.CallExpr (Y.Lam [] t (stmts ++ [Y.Return e])) [])]
@@ -691,7 +581,7 @@ runToplevelExpr env = \case
             args <- forM args $ \(x, t) -> do
               y <- renameVarName' Y.ArgumentNameKind x
               return (x, t, y)
-            (stmts, e) <- runExpr (reverse args ++ env) body
+            (stmts, e) <- runStatementsT $ runExpr (reverse args ++ env) body
             let body = stmts ++ [Y.Return e]
             args' <- forM args $ \(_, t, y) -> do
               t <- runType t
@@ -702,7 +592,7 @@ runToplevelExpr env = \case
               t <- runType t
               y <- Y.newFreshName Y.ArgumentNameKind
               return (t, y)
-            (stmts, e) <- runExpr env e
+            (stmts, e) <- runStatementsT $ runExpr env e
             let body = stmts ++ [Y.Return (Y.CallExpr e (map (Y.Var . snd) args))]
             return (args, body)
         ret <- runType ret
@@ -734,7 +624,7 @@ runToplevelExpr env = \case
     cont <- runToplevelExpr ((f, t, g) : env) cont
     return $ stmt ++ cont
   X.ToplevelAssert e cont -> do
-    (stmts, e) <- runExpr env e
+    (stmts, e) <- runStatementsT $ runExpr env e
     let stmt = Y.StaticAssert (Y.CallExpr (Y.Lam [] Y.TyBool (stmts ++ [Y.Return e])) []) ""
     cont <- runToplevelExpr env cont
     return $ stmt : cont
