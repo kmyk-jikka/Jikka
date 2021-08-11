@@ -24,6 +24,7 @@ import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
+import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Expr as X
 import qualified Jikka.Core.Language.LambdaPatterns as X
 import qualified Jikka.Core.Language.TypeCheck as X
@@ -496,6 +497,21 @@ runExprFunction2 env f e1 e2 = case f of
     (stmts, f) <- runStatementsT $ runExpr env f
     return (stmts, [], Y.CallExpr (Y.CallExpr f [e1]) [e2])
 
+runAssert :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m ()
+runAssert env = \case
+  -- optimize @assert all(...)@
+  X.All' (X.Map' t _ f xs) -> do
+    t <- runType t
+    y <- Y.newFreshName Y.LocalNameKind
+    xs <- runExpr env xs
+    (stmtsF, body, e) <- runExprFunction env f (Y.Var y)
+    useStatements stmtsF
+    useStatement $ Y.ForEach t y xs (body ++ [Y.Assert e])
+  -- other cases
+  e -> do
+    e <- runExpr env e
+    useStatement $ Y.Assert e
+
 runExpr :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
   X.Var x -> do
@@ -546,8 +562,7 @@ runExpr env = \case
     useStatement $ Y.Declare t' y (Y.DeclareCopy e1)
     runExpr ((x, t, y) : env) e2
   X.Assert e1 e2 -> do
-    e1 <- runExpr env e1
-    useStatement $ Y.Assert e1
+    runAssert env e1
     runExpr env e2
 
 runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
