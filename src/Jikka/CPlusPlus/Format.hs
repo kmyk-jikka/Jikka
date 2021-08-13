@@ -239,6 +239,7 @@ formatExpr = \case
                   e2' = formatExpr' ParenPrec e2
                in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
             _ -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: wrong number of arguments for subscription: " ++ show (length args)
+          SetAt t -> call $ "jikka::set_at<" ++ formatType t ++ ">"
           Cast t -> call $ formatType t
           StdTuple ts -> call $ "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
           StdGet n -> call $ "std::get<" ++ show n ++ ">"

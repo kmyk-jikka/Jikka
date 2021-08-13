@@ -7,6 +7,7 @@ where
 
 import qualified Jikka.CPlusPlus.Convert.AddMain as AddMain
 import qualified Jikka.CPlusPlus.Convert.FromCore as FromCore
+import qualified Jikka.CPlusPlus.Convert.InlineSetAt as InlineSetAt
 import qualified Jikka.CPlusPlus.Convert.MoveSemantics as MoveSemantics
 import qualified Jikka.CPlusPlus.Convert.OptimizeRange as OptimizeRange
 import qualified Jikka.CPlusPlus.Convert.UnpackTuples as UnpackTuples
@@ -26,6 +27,7 @@ run prog format = do
         OptimizeRange.run prog
   prog <- go prog
   prog <- go prog
+  prog <- InlineSetAt.run prog
   prog <- go prog
   prog <- maybe (return prog) (AddMain.run prog) format
   UseInitialization.run prog

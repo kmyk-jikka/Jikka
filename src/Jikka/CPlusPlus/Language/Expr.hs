@@ -78,6 +78,8 @@ data Function
     Method FunName
   | -- | subscription @e1[e2]@
     At
+  | -- | updated array @auto tmp = e1; tmp[e2] = e3; return tmp;@
+    SetAt Type
   | -- | cast @(T)e@
     Cast Type
   | -- | functio @std::tuple\<T1, T2, ...\>(e1, e2, ...)@

@@ -119,7 +119,7 @@ spec = describe "run" $ do
             ]
     run' prog `shouldBe` Right expected
 
-  it "TODO: distinguish indices" $ do
+  it "recognizes set_at" $ do
     let prog =
           Program
             [ FunDef
@@ -142,9 +142,7 @@ spec = describe "run" $ do
                   Return (Var "a")
                 ]
             ]
-    -- TODO: fix this
-    -- run' prog `shouldBe` Right expected
-    run' prog `shouldNotBe` Right expected
+    run' prog `shouldBe` Right expected
 
   it "TODO: allows to write back and reads after it" $ do
     let prog =

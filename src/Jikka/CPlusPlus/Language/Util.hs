@@ -148,7 +148,7 @@ begin e = Call (Method "begin") [e]
 end :: Expr -> Expr
 end e = Call (Method "end") [e]
 
-mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
+mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Expr -> m Expr
 mapExprStatementExprM f g = go
   where
     go = \case
@@ -157,33 +157,34 @@ mapExprStatementExprM f g = go
       UnOp op e -> f . UnOp op =<< go e
       BinOp op e1 e2 -> f =<< (BinOp op <$> go e1 <*> go e2)
       Cond e1 e2 e3 -> f =<< (Cond <$> go e1 <*> go e2 <*> go e3)
-      Lam args ret body -> f . Lam args ret =<< mapM (mapExprStatementStatementM f g) body
+      Lam args ret body -> f . Lam args ret . concat =<< mapM (mapExprStatementStatementM f g) body
       Call g args -> f . Call g =<< mapM go args
       CallExpr g args -> f =<< (CallExpr <$> go g <*> mapM go args)
 
-mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
+mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> LeftExpr -> m LeftExpr
 mapExprStatementLeftExprM f g = \case
   LeftVar x -> return $ LeftVar x
   LeftAt e1 e2 -> LeftAt <$> mapExprStatementLeftExprM f g e1 <*> mapExprStatementExprM f g e2
   LeftGet n e -> LeftGet n <$> mapExprStatementLeftExprM f g e
 
-mapExprStatementAssignExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> AssignExpr -> m AssignExpr
+mapExprStatementAssignExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> AssignExpr -> m AssignExpr
 mapExprStatementAssignExprM f g = \case
   AssignExpr op e1 e2 -> AssignExpr op <$> mapExprStatementLeftExprM f g e1 <*> mapExprStatementExprM f g e2
   AssignIncr e -> AssignIncr <$> mapExprStatementLeftExprM f g e
   AssignDecr e -> AssignDecr <$> mapExprStatementLeftExprM f g e
 
-mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Statement -> m Statement
+mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Statement -> m [Statement]
 mapExprStatementStatementM f g = go
   where
-    go' = mapExprStatementExprM f g
+    go' e = mapExprStatementExprM f g e
+    go'' body = concat <$> mapM go body
     go = \case
       ExprStatement e -> g . ExprStatement =<< go' e
-      Block stmts -> g . Block =<< mapM go stmts
-      If e body1 body2 -> g =<< (If <$> go' e <*> mapM go body1 <*> traverse (mapM go) body2)
-      For t x init pred incr body -> g =<< (For t x <$> go' init <*> go' pred <*> mapExprStatementAssignExprM f g incr <*> mapM go body)
-      ForEach t x e body -> g =<< (ForEach t x <$> go' e <*> mapM go body)
-      While e body -> g =<< (While <$> go' e <*> mapM go body)
+      Block stmts -> g . Block =<< go'' stmts
+      If e body1 body2 -> g =<< (If <$> go' e <*> go'' body1 <*> traverse go'' body2)
+      For t x init pred incr body -> g =<< (For t x <$> go' init <*> go' pred <*> mapExprStatementAssignExprM f g incr <*> go'' body)
+      ForEach t x e body -> g =<< (ForEach t x <$> go' e <*> go'' body)
+      While e body -> g =<< (While <$> go' e <*> go'' body)
       Declare t x init -> do
         init <- case init of
           DeclareDefault -> return DeclareDefault
@@ -195,27 +196,61 @@ mapExprStatementStatementM f g = go
       Assert e -> g . Assert =<< go' e
       Return e -> g . Return =<< go' e
 
-mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> ToplevelStatement -> m ToplevelStatement
+mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> ToplevelStatement -> m ToplevelStatement
 mapExprStatementToplevelStatementM f g = \case
   VarDef t x e -> VarDef t x <$> mapExprStatementExprM f g e
-  FunDef ret h args body -> FunDef ret h args <$> mapM (mapExprStatementStatementM f g) body
+  FunDef ret h args body -> FunDef ret h args <$> (concat <$> mapM (mapExprStatementStatementM f g) body)
   StaticAssert e msg -> StaticAssert <$> mapExprStatementExprM f g e <*> pure msg
 
-mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
+mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Program -> m Program
 mapExprStatementProgramM f g (Program decls) = Program <$> mapM (mapExprStatementToplevelStatementM f g) decls
 
-mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> Statement) -> Program -> Program
+mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> [Statement]) -> Program -> Program
 mapExprStatementProgram f g = runIdentity . mapExprStatementProgramM (return . f) (return . g)
 
+mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
+mapSubExprM f e = mapExprStatementExprM f (return . (: [])) e
+
+-- | `mapDirectExprStatementM` replaces exprs which are direct children of a given statement.
+mapDirectExprStatementM :: Monad m => (Expr -> m Expr) -> Statement -> m Statement
+mapDirectExprStatementM f = \case
+  ExprStatement e -> ExprStatement <$> f e
+  Block stmts -> return $ Block stmts
+  If e body1 body2 -> If <$> f e <*> pure body1 <*> pure body2
+  For t x init pred incr body -> For t x <$> f init <*> f pred <*> mapDirectExprAssignExprM f incr <*> pure body
+  ForEach t x e body -> ForEach t x <$> f e <*> pure body
+  While e body -> While <$> f e <*> pure body
+  Declare t x init ->
+    Declare t x <$> case init of
+      DeclareDefault -> return DeclareDefault
+      DeclareCopy e -> DeclareCopy <$> f e
+      DeclareInitialize es -> DeclareInitialize <$> mapM f es
+  DeclareDestructure xs e -> DeclareDestructure xs <$> f e
+  Assign e -> Assign <$> mapDirectExprAssignExprM f e
+  Assert e -> Assert <$> f e
+  Return e -> Return <$> f e
+
+mapDirectExprAssignExprM :: Monad m => (Expr -> m Expr) -> AssignExpr -> m AssignExpr
+mapDirectExprAssignExprM f = \case
+  AssignExpr op e1 e2 -> AssignExpr op <$> mapDirectExprLeftExprM f e1 <*> f e2
+  AssignIncr e -> AssignIncr <$> mapDirectExprLeftExprM f e
+  AssignDecr e -> AssignDecr <$> mapDirectExprLeftExprM f e
+
+mapDirectExprLeftExprM :: Monad m => (Expr -> m Expr) -> LeftExpr -> m LeftExpr
+mapDirectExprLeftExprM f = \case
+  LeftVar x -> pure $ LeftVar x
+  LeftAt e1 e2 -> LeftAt <$> mapDirectExprLeftExprM f e1 <*> f e2
+  LeftGet i e -> LeftGet i <$> mapDirectExprLeftExprM f e
+
 replaceExpr :: VarName -> Expr -> Expr -> Expr
-replaceExpr x e = runIdentity . mapExprStatementExprM go return
+replaceExpr x e = runIdentity . mapExprStatementExprM go (return . (: []))
   where
     go = \case
       Var y | y == x -> return e
       e' -> return e'
 
 replaceStatement :: VarName -> Expr -> Statement -> Statement
-replaceStatement x e = runIdentity . mapExprStatementStatementM go return
+replaceStatement x e = head . runIdentity . mapExprStatementStatementM go (return . (: []))
   where
     go = \case
       Var y | y == x -> return e

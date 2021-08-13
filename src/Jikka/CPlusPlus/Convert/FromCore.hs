@@ -242,8 +242,8 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
   let go03 f = go0T $ go3E $ \e1 e2 e3 -> return $ f e1 e2 e3
   let go13'' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr) -> m Y.Expr
       go13'' f = go1T' $ \t1 -> go3E' $ \e1 e2 e3 -> f t1 e1 e2 e3
-  let go13' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> Y.Expr -> Y.Expr -> m Y.Expr) -> m Y.Expr
-      go13' f = go1T $ \t1 -> go3E $ \e1 e2 e3 -> f t1 e1 e2 e3
+  let go13 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (Y.Type -> Y.Expr -> Y.Expr -> Y.Expr -> Y.Expr) -> m Y.Expr
+      go13 f = go1T $ \t1 -> go3E $ \e1 e2 e3 -> return $ f t1 e1 e2 e3
   let go23'' :: (MonadAlpha m, MonadError Error m, MonadStatements m) => (X.Type -> X.Type -> X.Expr -> X.Expr -> X.Expr -> m Y.Expr) -> m Y.Expr
       go23'' f = go2T' $ \t1 t2 -> go3E' $ \e1 e2 e3 -> f t1 t2 e1 e2 e3
   let goN1 :: (MonadAlpha m, MonadError Error m, MonadStatements m) => ([Y.Type] -> Y.Expr -> Y.Expr) -> m Y.Expr
@@ -358,11 +358,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       useStatement $ Y.ForEach t x xs (body ++ [Y.If f [Y.callMethod' (Y.Var ys) "push_back" [Y.Var x]] Nothing])
       return $ Y.Var ys
     X.At -> go12 $ \_ e1 e2 -> Y.at e1 e2
-    X.SetAt -> go13' $ \t xs i x -> do
-      ys <- Y.newFreshName Y.LocalNameKind
-      useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
-      useStatement $ Y.assignAt ys i x
-      return $ Y.Var ys
+    X.SetAt -> go13 $ \t xs i x -> Y.Call (Y.SetAt t) [xs, i, x]
     X.Elem -> go12' $ \_ xs x -> do
       y <- Y.newFreshName Y.LocalNameKind
       useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))

@@ -30,7 +30,7 @@ runStatement = \case
   stmt -> return stmt
 
 runProgram :: Monad m => Program -> m Program
-runProgram = mapExprStatementProgramM runExpr runStatement
+runProgram = mapExprStatementProgramM runExpr (((: []) <$>) . runStatement)
 
 -- | `run` replaces superfluous copying.
 --
