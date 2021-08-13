@@ -1,160 +1,343 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
-</span><span id="line-2"></span><span>
-</span><span id="line-3"></span><span class="hs-comment">-- |</span><span>
-</span><span id="line-4"></span><span class="hs-comment">-- Module      : Jikka.Subcommand.Convert</span><span>
-</span><span id="line-5"></span><span class="hs-comment">-- Description : is the entry point of @convert@ subcommand. / @convert@ &#12469;&#12502;&#12467;&#12510;&#12531;&#12489;&#12398;&#12456;&#12531;&#12488;&#12522;&#12509;&#12452;&#12531;&#12488;&#12391;&#12377;&#12290;</span><span>
-</span><span id="line-6"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2021</span><span>
-</span><span id="line-7"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
-</span><span id="line-8"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
-</span><span id="line-9"></span><span class="hs-comment">-- Stability   : experimental</span><span>
-</span><span id="line-10"></span><span class="hs-comment">-- Portability : portable</span><span>
-</span><span id="line-11"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Main.Subcommand.Convert</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-12"></span><span>
-</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">pack</span></span><span class="hs-special">)</span><span>
-</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Convert.html"><span class="hs-identifier">Jikka.CPlusPlus.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FromCore</span></span><span>
-</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Format.html"><span class="hs-identifier">Jikka.CPlusPlus.Format</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FormatCPlusPlus</span></span><span>
-</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html"><span class="hs-identifier">Jikka.Common.Alpha</span></a></span><span>
-</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
-</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Core.Convert.html"><span class="hs-identifier">Jikka.Core.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Convert</span></span><span>
-</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Core.Format.html"><span class="hs-identifier">Jikka.Core.Format</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FormatCore</span></span><span>
-</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html"><span class="hs-identifier">Jikka.Main.Target</span></a></span><span>
-</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Python.Convert.ToRestrictedPython.html"><span class="hs-identifier">Jikka.Python.Convert.ToRestrictedPython</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ToRestrictedPython</span></span><span>
-</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Python.Parse.html"><span class="hs-identifier">Jikka.Python.Parse</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ParsePython</span></span><span>
-</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.html"><span class="hs-identifier">Jikka.RestrictedPython.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ToCore</span></span><span>
-</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Format.html"><span class="hs-identifier">Jikka.RestrictedPython.Format</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FormatRestrictedPython</span></span><span>
-</span><span id="line-25"></span><span>
-</span><span id="line-26"></span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#runPython"><span class="hs-identifier hs-type">runPython</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-27"></span><span id="runPython"><span class="annot"><span class="annottext">runPython :: FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runPython"><span class="hs-identifier hs-var hs-var">runPython</span></a></span></span><span> </span><span id="local-6989586621679788059"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788059"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span id="local-6989586621679788058"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788058"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text)
--&gt; Int -&gt; AlphaT (Either Error) Text -&gt; Either Error Text
-forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
-</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text
-forall (m :: * -&gt; *) a. Functor m =&gt; AlphaT m a -&gt; Int -&gt; m a
-</span><a href="Jikka.Common.Alpha.html#evalAlphaT"><span class="hs-identifier hs-var">evalAlphaT</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Either Error Text)
--&gt; AlphaT (Either Error) Text -&gt; Either Error Text
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-28"></span><span>  </span><span id="local-6989586621679788055"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788055"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; AlphaT (Either Error) Program
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span id="%24con2tag_88OIHvEqD2KLmXhcOUQ4uF"></span><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : Jikka.Subcommand.Convert</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : is the entry point of @convert@ subcommand. / @convert@ &#12469;&#12502;&#12467;&#12510;&#12531;&#12489;&#12398;&#12456;&#12531;&#12488;&#12522;&#12509;&#12452;&#12531;&#12488;&#12391;&#12377;&#12290;</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2021</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Main.Subcommand.Convert</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">pack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Convert.html"><span class="hs-identifier">Jikka.CPlusPlus.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FromCore</span></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Format.html"><span class="hs-identifier">Jikka.CPlusPlus.Format</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FormatCPlusPlus</span></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html"><span class="hs-identifier">Jikka.CPlusPlus.Language.Expr</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">CPlusPlus</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html"><span class="hs-identifier">Jikka.Common.Alpha</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Core.Convert.html"><span class="hs-identifier">Jikka.Core.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Convert</span></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Core.Format.html"><span class="hs-identifier">Jikka.Core.Format</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FormatCore</span></span><span>
+</span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Core</span></span><span>
+</span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Core.Parse.html"><span class="hs-identifier">Jikka.Core.Parse</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ParseCore</span></span><span>
+</span><span id="line-24"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html"><span class="hs-identifier">Jikka.Main.Target</span></a></span><span>
+</span><span id="line-25"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Python.Convert.ToRestrictedPython.html"><span class="hs-identifier">Jikka.Python.Convert.ToRestrictedPython</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ToRestrictedPython</span></span><span>
+</span><span id="line-26"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Python.Language.Expr.html"><span class="hs-identifier">Jikka.Python.Language.Expr</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Python</span></span><span>
+</span><span id="line-27"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.Python.Parse.html"><span class="hs-identifier">Jikka.Python.Parse</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ParsePython</span></span><span>
+</span><span id="line-28"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Convert.html"><span class="hs-identifier">Jikka.RestrictedPython.Convert</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">ToCore</span></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Format.html"><span class="hs-identifier">Jikka.RestrictedPython.Format</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">FormatRestrictedPython</span></span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html"><span class="hs-identifier">Jikka.RestrictedPython.Language.Expr</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">RestrictedPython</span></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="hs-keyword">data</span><span> </span><span id="Program"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#Program"><span class="hs-identifier hs-var">Program</span></a></span></span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="PythonProgram"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#PythonProgram"><span class="hs-identifier hs-var">PythonProgram</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Python.Language.Expr.html#Program"><span class="hs-identifier hs-type">Python.Program</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="RestrictedPythonProgram"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-var">RestrictedPythonProgram</span></a></span></span><span> </span><span class="annot"><a href="Jikka.RestrictedPython.Language.Expr.html#Program"><span class="hs-identifier hs-type">RestrictedPython.Program</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CoreProgram"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-var">CoreProgram</span></a></span></span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Core.Program</span></a></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="CPlusPlusProgram"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CPlusPlusProgram"><span class="hs-identifier hs-var">CPlusPlusProgram</span></a></span></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Program"><span class="hs-identifier hs-type">CPlusPlus.Program</span></a></span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679791012"><span id="local-6989586621679791014"><span class="annot"><span class="annottext">Program -&gt; Program -&gt; Bool
+(Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool) -&gt; Eq Program
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: Program -&gt; Program -&gt; Bool
+$c/= :: Program -&gt; Program -&gt; Bool
+== :: Program -&gt; Program -&gt; Bool
+$c== :: Program -&gt; Program -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679790996"><span id="local-6989586621679790998"><span id="local-6989586621679791000"><span id="local-6989586621679791002"><span id="local-6989586621679791004"><span id="local-6989586621679791006"><span id="local-6989586621679791008"><span class="annot"><span class="annottext">Eq Program
+Eq Program
+-&gt; (Program -&gt; Program -&gt; Ordering)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Bool)
+-&gt; (Program -&gt; Program -&gt; Program)
+-&gt; (Program -&gt; Program -&gt; Program)
+-&gt; Ord Program
+Program -&gt; Program -&gt; Bool
+Program -&gt; Program -&gt; Ordering
+Program -&gt; Program -&gt; Program
+forall a.
+Eq a
+-&gt; (a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+min :: Program -&gt; Program -&gt; Program
+$cmin :: Program -&gt; Program -&gt; Program
+max :: Program -&gt; Program -&gt; Program
+$cmax :: Program -&gt; Program -&gt; Program
+&gt;= :: Program -&gt; Program -&gt; Bool
+$c&gt;= :: Program -&gt; Program -&gt; Bool
+&gt; :: Program -&gt; Program -&gt; Bool
+$c&gt; :: Program -&gt; Program -&gt; Bool
+&lt;= :: Program -&gt; Program -&gt; Bool
+$c&lt;= :: Program -&gt; Program -&gt; Bool
+&lt; :: Program -&gt; Program -&gt; Bool
+$c&lt; :: Program -&gt; Program -&gt; Bool
+compare :: Program -&gt; Program -&gt; Ordering
+$ccompare :: Program -&gt; Program -&gt; Ordering
+$cp1Ord :: Eq Program
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679790987"><span id="local-6989586621679790989"><span id="local-6989586621679790991"><span id="local-6989586621679790993"><span class="annot"><span class="annottext">ReadPrec [Program]
+ReadPrec Program
+Int -&gt; ReadS Program
+ReadS [Program]
+(Int -&gt; ReadS Program)
+-&gt; ReadS [Program]
+-&gt; ReadPrec Program
+-&gt; ReadPrec [Program]
+-&gt; Read Program
+forall a.
+(Int -&gt; ReadS a)
+-&gt; ReadS [a] -&gt; ReadPrec a -&gt; ReadPrec [a] -&gt; Read a
+readListPrec :: ReadPrec [Program]
+$creadListPrec :: ReadPrec [Program]
+readPrec :: ReadPrec Program
+$creadPrec :: ReadPrec Program
+readList :: ReadS [Program]
+$creadList :: ReadS [Program]
+readsPrec :: Int -&gt; ReadS Program
+$creadsPrec :: Int -&gt; ReadS Program
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Read</span></span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679790980"><span id="local-6989586621679790982"><span id="local-6989586621679790984"><span class="annot"><span class="annottext">Int -&gt; Program -&gt; ShowS
+[Program] -&gt; ShowS
+Program -&gt; String
+(Int -&gt; Program -&gt; ShowS)
+-&gt; (Program -&gt; String) -&gt; ([Program] -&gt; ShowS) -&gt; Show Program
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [Program] -&gt; ShowS
+$cshowList :: [Program] -&gt; ShowS
+show :: Program -&gt; String
+$cshow :: Program -&gt; String
+showsPrec :: Int -&gt; Program -&gt; ShowS
+$cshowsPrec :: Int -&gt; Program -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span id="local-6989586621679791024"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#parseProgram"><span class="hs-identifier hs-type">parseProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679791024"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679791024"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html#Target"><span class="hs-identifier hs-type">Target</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679791024"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-40"></span><span id="parseProgram"><span class="annot"><span class="annottext">parseProgram :: Target -&gt; String -&gt; Text -&gt; m Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#parseProgram"><span class="hs-identifier hs-var hs-var">parseProgram</span></a></span></span><span> </span><span id="local-6989586621679790976"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790976"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span id="local-6989586621679790975"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679790975"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span id="local-6989586621679790974"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679790974"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790976"><span class="hs-identifier hs-var">source</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-41"></span><span>  </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#PythonTarget"><span class="hs-identifier hs-var">PythonTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#PythonProgram"><span class="hs-identifier hs-var">PythonProgram</span></a></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Program) -&gt; m Program -&gt; m Program
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text -&gt; m Program
 forall (m :: * -&gt; *).
 MonadError Error m =&gt;
-FilePath -&gt; Text -&gt; m Program
-</span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">ParsePython.run</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788059"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788058"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-29"></span><span>  </span><span class="annot"><span class="annottext">Text -&gt; AlphaT (Either Error) Text
+String -&gt; Text -&gt; m Program
+</span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">ParsePython.run</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679790975"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679790974"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-42"></span><span>  </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#RestrictedPythonTarget"><span class="hs-identifier hs-var">RestrictedPythonTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwCommandLineError"><span class="hs-identifier hs-var">throwCommandLineError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;cannot convert from restricted Python&quot;</span></span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CoreTarget"><span class="hs-identifier hs-var">CoreTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-var">CoreProgram</span></a></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Program) -&gt; m Program -&gt; m Program
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+String -&gt; Text -&gt; m Program
+</span><a href="Jikka.Core.Parse.html#run"><span class="hs-identifier hs-var">ParseCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679790975"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679790974"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-44"></span><span>  </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CPlusPlusTarget"><span class="hs-identifier hs-var">CPlusPlusTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwCommandLineError"><span class="hs-identifier hs-var">throwCommandLineError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;cannot convert from C++&quot;</span></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span id="local-6989586621679791046"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#convertProgram"><span class="hs-identifier hs-type">convertProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679791046"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679791046"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html#Target"><span class="hs-identifier hs-type">Target</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679791046"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-47"></span><span id="convertProgram"><span class="annot"><span class="annottext">convertProgram :: Program -&gt; Target -&gt; m Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#convertProgram"><span class="hs-identifier hs-var hs-var">convertProgram</span></a></span></span><span> </span><span id="local-6989586621679790964"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790964"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span id="local-6989586621679790963"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790963"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790964"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790963"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#PythonProgram"><span class="hs-identifier hs-type">PythonProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#PythonTarget"><span class="hs-identifier hs-var">PythonTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
-</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; AlphaT (Either Error) Text)
--&gt; (FilePath -&gt; Text) -&gt; FilePath -&gt; AlphaT (Either Error) Text
-forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
-</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text
-</span><span class="hs-identifier hs-var">pack</span></span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; AlphaT (Either Error) Text)
--&gt; FilePath -&gt; AlphaT (Either Error) Text
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; FilePath
-forall a. Show a =&gt; a -&gt; FilePath
-</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788055"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="hs-comment">-- TODO</span><span>
-</span><span id="line-30"></span><span>
-</span><span id="line-31"></span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#runRestrictedPython"><span class="hs-identifier hs-type">runRestrictedPython</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-32"></span><span id="runRestrictedPython"><span class="annot"><span class="annottext">runRestrictedPython :: FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runRestrictedPython"><span class="hs-identifier hs-var hs-var">runRestrictedPython</span></a></span></span><span> </span><span id="local-6989586621679788050"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788050"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span id="local-6989586621679788049"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788049"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text)
--&gt; Int -&gt; AlphaT (Either Error) Text -&gt; Either Error Text
-forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
-</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text
-forall (m :: * -&gt; *) a. Functor m =&gt; AlphaT m a -&gt; Int -&gt; m a
-</span><a href="Jikka.Common.Alpha.html#evalAlphaT"><span class="hs-identifier hs-var">evalAlphaT</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Either Error Text)
--&gt; AlphaT (Either Error) Text -&gt; Either Error Text
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-33"></span><span>  </span><span id="local-6989586621679788048"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788048"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; AlphaT (Either Error) Program
-forall (m :: * -&gt; *).
-MonadError Error m =&gt;
-FilePath -&gt; Text -&gt; m Program
-</span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">ParsePython.run</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788050"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788049"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-34"></span><span>  </span><span id="local-6989586621679788047"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788047"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Program
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790964"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-type">RestrictedPythonProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#RestrictedPythonTarget"><span class="hs-identifier hs-var">RestrictedPythonTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790964"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-type">CoreProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CoreTarget"><span class="hs-identifier hs-var">CoreTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790964"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CPlusPlusProgram"><span class="hs-identifier hs-type">CPlusPlusProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CPlusPlusTarget"><span class="hs-identifier hs-var">CPlusPlusTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790964"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-type">RestrictedPythonProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#PythonTarget"><span class="hs-identifier hs-var">PythonTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwCommandLineError"><span class="hs-identifier hs-var">throwCommandLineError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;cannot convert from restricted Python to Python&quot;</span></span><span>
+</span><span id="line-53"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-type">CoreProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#PythonTarget"><span class="hs-identifier hs-var">PythonTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwCommandLineError"><span class="hs-identifier hs-var">throwCommandLineError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;cannot convert from core to Python&quot;</span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-type">CoreProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#RestrictedPythonTarget"><span class="hs-identifier hs-var">RestrictedPythonTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwCommandLineError"><span class="hs-identifier hs-var">throwCommandLineError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;cannot convert from core to restricted Python&quot;</span></span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#PythonProgram"><span class="hs-identifier hs-type">PythonProgram</span></a></span><span> </span><span id="local-6989586621679790962"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790962"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-56"></span><span>    </span><span id="local-6989586621679790961"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790961"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m Program
 </span><a href="Jikka.Python.Convert.ToRestrictedPython.html#run"><span class="hs-identifier hs-var">ToRestrictedPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788048"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-35"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679788045"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788045"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">IOFormat
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) (Program, IOFormat)
+</span><a href="#local-6989586621679790962"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; Target -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; Target -&gt; m Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#convertProgram"><span class="hs-identifier hs-var">convertProgram</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-var">RestrictedPythonProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790961"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790963"><span class="hs-identifier hs-var">target</span></a></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-type">RestrictedPythonProgram</span></a></span><span> </span><span id="local-6989586621679790959"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790959"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CoreTarget"><span class="hs-identifier hs-var">CoreTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679790958"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790958"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">IOFormat
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m (Program, IOFormat)
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
 Program -&gt; m (Program, IOFormat)
-</span><a href="Jikka.RestrictedPython.Convert.html#run%27"><span class="hs-identifier hs-var">ToCore.run'</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788047"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-36"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Text
+</span><a href="Jikka.RestrictedPython.Convert.html#run"><span class="hs-identifier hs-var">ToCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790959"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-var">CoreProgram</span></a></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Program) -&gt; m Program -&gt; m Program
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.html#run"><span class="hs-identifier hs-var">Convert.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790958"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-type">RestrictedPythonProgram</span></a></span><span> </span><span id="local-6989586621679790955"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790955"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CPlusPlusTarget"><span class="hs-identifier hs-var">CPlusPlusTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-62"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679790954"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790954"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679790953"><span class="annot"><span class="annottext">IOFormat
+</span><a href="#local-6989586621679790953"><span class="hs-identifier hs-var">format</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m (Program, IOFormat)
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m (Program, IOFormat)
+</span><a href="Jikka.RestrictedPython.Convert.html#run"><span class="hs-identifier hs-var">ToCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790955"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679790952"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790952"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.html#run"><span class="hs-identifier hs-var">Convert.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790954"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#CPlusPlusProgram"><span class="hs-identifier hs-var">CPlusPlusProgram</span></a></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Program) -&gt; m Program -&gt; m Program
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Maybe IOFormat -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; Maybe IOFormat -&gt; m Program
+</span><a href="Jikka.CPlusPlus.Convert.html#run"><span class="hs-identifier hs-var">FromCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790952"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">IOFormat -&gt; Maybe IOFormat
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">IOFormat
+</span><a href="#local-6989586621679790953"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-65"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-type">CoreProgram</span></a></span><span> </span><span id="local-6989586621679790950"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790950"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="Jikka.Main.Target.html#CPlusPlusTarget"><span class="hs-identifier hs-var">CPlusPlusTarget</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-66"></span><span>    </span><span id="local-6989586621679790949"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790949"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; m Program
+</span><a href="Jikka.Core.Convert.html#run"><span class="hs-identifier hs-var">Convert.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790950"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">Program -&gt; Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#CPlusPlusProgram"><span class="hs-identifier hs-var">CPlusPlusProgram</span></a></span><span> </span><span class="annot"><span class="annottext">(Program -&gt; Program) -&gt; m Program -&gt; m Program
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; Maybe IOFormat -&gt; m Program
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadError Error m) =&gt;
+Program -&gt; Maybe IOFormat -&gt; m Program
+</span><a href="Jikka.CPlusPlus.Convert.html#run"><span class="hs-identifier hs-var">FromCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790949"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe IOFormat
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-68"></span><span>  </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CPlusPlusProgram"><span class="hs-identifier hs-type">CPlusPlusProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Target
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
+</span><a href="Jikka.Common.Error.html#throwCommandLineError"><span class="hs-identifier hs-var">throwCommandLineError</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;cannot convert from C++&quot;</span></span><span>
+</span><span id="line-69"></span><span>
+</span><span id="line-70"></span><span id="local-6989586621679791023"><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#formatProgram"><span class="hs-identifier hs-type">formatProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679791023"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679791023"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679791023"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span></span><span>
+</span><span id="line-71"></span><span id="formatProgram"><span class="annot"><span class="annottext">formatProgram :: Program -&gt; m Text
+</span><a href="Jikka.Main.Subcommand.Convert.html#formatProgram"><span class="hs-identifier hs-var hs-var">formatProgram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-72"></span><span>  </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#PythonProgram"><span class="hs-identifier hs-type">PythonProgram</span></a></span><span> </span><span id="local-6989586621679790947"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790947"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; m Text
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; m Text) -&gt; (String -&gt; Text) -&gt; String -&gt; m Text
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">pack</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m Text) -&gt; String -&gt; m Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Program -&gt; String
+forall a. Show a =&gt; a -&gt; String
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790947"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="hs-comment">-- TODO</span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#RestrictedPythonProgram"><span class="hs-identifier hs-type">RestrictedPythonProgram</span></a></span><span> </span><span id="local-6989586621679790944"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790944"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Text
 forall (m :: * -&gt; *). Applicative m =&gt; Program -&gt; m Text
 </span><a href="Jikka.RestrictedPython.Format.html#run"><span class="hs-identifier hs-var">FormatRestrictedPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788045"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-37"></span><span>
-</span><span id="line-38"></span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#runCore"><span class="hs-identifier hs-type">runCore</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-39"></span><span id="runCore"><span class="annot"><span class="annottext">runCore :: FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runCore"><span class="hs-identifier hs-var hs-var">runCore</span></a></span></span><span> </span><span id="local-6989586621679788041"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788041"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span id="local-6989586621679788040"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788040"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text)
--&gt; Int -&gt; AlphaT (Either Error) Text -&gt; Either Error Text
-forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
-</span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text
-forall (m :: * -&gt; *) a. Functor m =&gt; AlphaT m a -&gt; Int -&gt; m a
-</span><a href="Jikka.Common.Alpha.html#evalAlphaT"><span class="hs-identifier hs-var">evalAlphaT</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Either Error Text)
--&gt; AlphaT (Either Error) Text -&gt; Either Error Text
-forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-40"></span><span>  </span><span id="local-6989586621679788039"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788039"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; AlphaT (Either Error) Program
-forall (m :: * -&gt; *).
-MonadError Error m =&gt;
-FilePath -&gt; Text -&gt; m Program
-</span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">ParsePython.run</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788041"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788040"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-41"></span><span>  </span><span id="local-6989586621679788038"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788038"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Program
-forall (m :: * -&gt; *).
-(MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; m Program
-</span><a href="Jikka.Python.Convert.ToRestrictedPython.html#run"><span class="hs-identifier hs-var">ToRestrictedPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788039"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-42"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679788037"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788037"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">IOFormat
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) (Program, IOFormat)
-forall (m :: * -&gt; *).
-(MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; m (Program, IOFormat)
-</span><a href="Jikka.RestrictedPython.Convert.html#run"><span class="hs-identifier hs-var">ToCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788038"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-43"></span><span>  </span><span id="local-6989586621679788035"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788035"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Program
-forall (m :: * -&gt; *).
-(MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; m Program
-</span><a href="Jikka.Core.Convert.html#run"><span class="hs-identifier hs-var">Convert.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788037"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-44"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Text
+</span><a href="#local-6989586621679790944"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CoreProgram"><span class="hs-identifier hs-type">CoreProgram</span></a></span><span> </span><span id="local-6989586621679790942"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790942"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Text
 forall (m :: * -&gt; *). Applicative m =&gt; Program -&gt; m Text
 </span><a href="Jikka.Core.Format.html#run"><span class="hs-identifier hs-var">FormatCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788035"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-45"></span><span>
-</span><span id="line-46"></span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#runCPlusPlus"><span class="hs-identifier hs-type">runCPlusPlus</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-47"></span><span id="runCPlusPlus"><span class="annot"><span class="annottext">runCPlusPlus :: FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runCPlusPlus"><span class="hs-identifier hs-var hs-var">runCPlusPlus</span></a></span></span><span> </span><span id="local-6989586621679788031"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788031"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span id="local-6989586621679788030"><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788030"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text)
+</span><a href="#local-6989586621679790942"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-75"></span><span>  </span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#CPlusPlusProgram"><span class="hs-identifier hs-type">CPlusPlusProgram</span></a></span><span> </span><span id="local-6989586621679790940"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790940"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Program -&gt; m Text
+forall (m :: * -&gt; *). Applicative m =&gt; Program -&gt; m Text
+</span><a href="Jikka.CPlusPlus.Format.html#run"><span class="hs-identifier hs-var">FormatCPlusPlus.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790940"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-76"></span><span>
+</span><span id="line-77"></span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html#Target"><span class="hs-identifier hs-type">Target</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html#Target"><span class="hs-identifier hs-type">Target</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-78"></span><span id="run"><span class="annot"><span class="annottext">run :: Target -&gt; Target -&gt; String -&gt; Text -&gt; Either Error Text
+</span><a href="Jikka.Main.Subcommand.Convert.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679790938"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790938"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span id="local-6989586621679790937"><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790937"><span class="hs-identifier hs-var">target</span></a></span></span><span> </span><span id="local-6989586621679790936"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679790936"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span id="local-6989586621679790935"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679790935"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text)
 -&gt; Int -&gt; AlphaT (Either Error) Text -&gt; Either Error Text
 forall a b c. (a -&gt; b -&gt; c) -&gt; b -&gt; a -&gt; c
 </span><span class="hs-identifier hs-var">flip</span></span><span> </span><span class="annot"><span class="annottext">AlphaT (Either Error) Text -&gt; Int -&gt; Either Error Text
@@ -164,66 +347,27 @@ forall (m :: * -&gt; *) a. Functor m =&gt; AlphaT m a -&gt; Int -&gt; m a
 -&gt; AlphaT (Either Error) Text -&gt; Either Error Text
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-48"></span><span>  </span><span id="local-6989586621679788029"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788029"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; AlphaT (Either Error) Program
-forall (m :: * -&gt; *).
-MonadError Error m =&gt;
-FilePath -&gt; Text -&gt; m Program
-</span><a href="Jikka.Python.Parse.html#run"><span class="hs-identifier hs-var">ParsePython.run</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679788031"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
-</span><a href="#local-6989586621679788030"><span class="hs-identifier hs-var">input</span></a></span><span>
-</span><span id="line-49"></span><span>  </span><span id="local-6989586621679788028"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788028"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Program
+</span><span id="line-79"></span><span>  </span><span id="local-6989586621679790932"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790932"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Target -&gt; String -&gt; Text -&gt; AlphaT (Either Error) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; m Program
-</span><a href="Jikka.Python.Convert.ToRestrictedPython.html#run"><span class="hs-identifier hs-var">ToRestrictedPython.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788029"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-50"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679788027"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788027"><span class="hs-identifier hs-var">prog</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679788026"><span class="annot"><span class="annottext">IOFormat
-</span><a href="#local-6989586621679788026"><span class="hs-identifier hs-var">format</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) (Program, IOFormat)
+Target -&gt; String -&gt; Text -&gt; m Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#parseProgram"><span class="hs-identifier hs-var">parseProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790938"><span class="hs-identifier hs-var">source</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679790936"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679790935"><span class="hs-identifier hs-var">input</span></a></span><span>
+</span><span id="line-80"></span><span>  </span><span id="local-6989586621679790931"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790931"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; Target -&gt; AlphaT (Either Error) Program
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; m (Program, IOFormat)
-</span><a href="Jikka.RestrictedPython.Convert.html#run"><span class="hs-identifier hs-var">ToCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788028"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-51"></span><span>  </span><span id="local-6989586621679788025"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788025"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Program
+Program -&gt; Target -&gt; m Program
+</span><a href="Jikka.Main.Subcommand.Convert.html#convertProgram"><span class="hs-identifier hs-var">convertProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790932"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="annot"><span class="annottext">Target
+</span><a href="#local-6989586621679790937"><span class="hs-identifier hs-var">target</span></a></span><span>
+</span><span id="line-81"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Text
 forall (m :: * -&gt; *).
 (MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; m Program
-</span><a href="Jikka.Core.Convert.html#run"><span class="hs-identifier hs-var">Convert.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788027"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-52"></span><span>  </span><span class="annot"><span class="annottext">Int -&gt; AlphaT (Either Error) ()
-forall (m :: * -&gt; *). Monad m =&gt; Int -&gt; AlphaT m ()
-</span><a href="Jikka.Common.Alpha.html#resetAlphaT"><span class="hs-identifier hs-var">resetAlphaT</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><span class="hs-number">0</span></span><span> </span><span class="hs-comment">-- to make generated C++ code cleaner</span><span>
-</span><span id="line-53"></span><span>  </span><span id="local-6989586621679788023"><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788023"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Program -&gt; IOFormat -&gt; AlphaT (Either Error) Program
-forall (m :: * -&gt; *).
-(MonadAlpha m, MonadError Error m) =&gt;
-Program -&gt; IOFormat -&gt; m Program
-</span><a href="Jikka.CPlusPlus.Convert.html#run"><span class="hs-identifier hs-var">FromCore.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788025"><span class="hs-identifier hs-var">prog</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
-</span><a href="#local-6989586621679788026"><span class="hs-identifier hs-var">format</span></a></span><span>
-</span><span id="line-54"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; AlphaT (Either Error) Text
-forall (m :: * -&gt; *). Applicative m =&gt; Program -&gt; m Text
-</span><a href="Jikka.CPlusPlus.Format.html#run"><span class="hs-identifier hs-var">FormatCPlusPlus.run</span></a></span><span> </span><span class="annot"><span class="annottext">Program
-</span><a href="#local-6989586621679788023"><span class="hs-identifier hs-var">prog</span></a></span><span>
-</span><span id="line-55"></span><span>
-</span><span id="line-56"></span><span class="annot"><a href="Jikka.Main.Subcommand.Convert.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Main.Target.html#Target"><span class="hs-identifier hs-type">Target</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-57"></span><span id="run"><span class="annot"><span class="annottext">run :: Target -&gt; FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-58"></span><span>  </span><span class="annot"><span class="annottext">Target
-</span><a href="Jikka.Main.Target.html#PythonTarget"><span class="hs-identifier hs-var">PythonTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runPython"><span class="hs-identifier hs-var">runPython</span></a></span><span>
-</span><span id="line-59"></span><span>  </span><span class="annot"><span class="annottext">Target
-</span><a href="Jikka.Main.Target.html#RestrictedPythonTarget"><span class="hs-identifier hs-var">RestrictedPythonTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runRestrictedPython"><span class="hs-identifier hs-var">runRestrictedPython</span></a></span><span>
-</span><span id="line-60"></span><span>  </span><span class="annot"><span class="annottext">Target
-</span><a href="Jikka.Main.Target.html#CoreTarget"><span class="hs-identifier hs-var">CoreTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runCore"><span class="hs-identifier hs-var">runCore</span></a></span><span>
-</span><span id="line-61"></span><span>  </span><span class="annot"><span class="annottext">Target
-</span><a href="Jikka.Main.Target.html#CPlusPlusTarget"><span class="hs-identifier hs-var">CPlusPlusTarget</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Text -&gt; Either Error Text
-</span><a href="Jikka.Main.Subcommand.Convert.html#runCPlusPlus"><span class="hs-identifier hs-var">runCPlusPlus</span></a></span><span>
-</span><span id="line-62"></span></pre></body></html>
+Program -&gt; m Text
+</span><a href="Jikka.Main.Subcommand.Convert.html#formatProgram"><span class="hs-identifier hs-var">formatProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679790931"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-82"></span></pre></body></html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE LambdaCase #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Module      : Jikka.CPlusPlus.Convert.InlineSetAt</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Description : does inline expansion of @set_at@ function. / @set_at@ &#38306;&#25968;&#12434; inline &#23637;&#38283;&#12375;&#12414;&#12377;&#12290;</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- Copyright   : (c) Kimiyuki Onaka, 2020</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- License     : Apache License 2.0</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Maintainer  : kimiyuki95@gmail.com</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Stability   : experimental</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Portability : portable</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.CPlusPlus.Convert.InlineSetAt</span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#run"><span class="hs-identifier">run</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-16"></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Writer.Strict</span></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html"><span class="hs-identifier">Jikka.CPlusPlus.Language.Expr</span></a></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Util.html"><span class="hs-identifier">Jikka.CPlusPlus.Language.Util</span></a></span><span>
+</span><span id="line-20"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html"><span class="hs-identifier">Jikka.Common.Alpha</span></a></span><span>
+</span><span id="line-21"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Common.Error.html"><span class="hs-identifier">Jikka.Common.Error</span></a></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span id="local-6989586621679728558"><span class="annot"><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runExpr"><span class="hs-identifier hs-type">runExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679728558"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadWriter</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679728558"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679728558"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span></span><span>
+</span><span id="line-24"></span><span id="runExpr"><span class="annot"><span class="annottext">runExpr :: Expr -&gt; m Expr
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runExpr"><span class="hs-identifier hs-var hs-var">runExpr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
+</span><span id="line-25"></span><span>  </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Call"><span class="hs-identifier hs-type">Call</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#SetAt"><span class="hs-identifier hs-type">SetAt</span></a></span><span> </span><span id="local-6989586621679728539"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679728539"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679728538"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728538"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679728537"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728537"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679728536"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728536"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-26"></span><span>    </span><span id="local-6989586621679728535"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679728535"><span class="hs-identifier hs-var">y</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728538"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-27"></span><span>      </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span id="local-6989586621679728532"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679728532"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">NameKind -&gt; String -&gt; m VarName
+forall (m :: * -&gt; *).
+MonadAlpha m =&gt;
+NameKind -&gt; String -&gt; m VarName
+</span><a href="Jikka.CPlusPlus.Language.Util.html#renameVarName"><span class="hs-identifier hs-var">renameVarName</span></a></span><span> </span><span class="annot"><span class="annottext">NameKind
+</span><a href="Jikka.CPlusPlus.Language.Util.html#LocalNameKind"><span class="hs-identifier hs-var">LocalNameKind</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679728532"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><span id="line-28"></span><span>      </span><span class="annot"><span class="annottext">Expr
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">NameKind -&gt; m VarName
+forall (m :: * -&gt; *). MonadAlpha m =&gt; NameKind -&gt; m VarName
+</span><a href="Jikka.CPlusPlus.Language.Util.html#newFreshName"><span class="hs-identifier hs-var">newFreshName</span></a></span><span> </span><span class="annot"><span class="annottext">NameKind
+</span><a href="Jikka.CPlusPlus.Language.Util.html#LocalNameKind"><span class="hs-identifier hs-var">LocalNameKind</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="annottext">[Statement] -&gt; m ()
+forall w (m :: * -&gt; *). MonadWriter w m =&gt; w -&gt; m ()
+</span><span class="hs-identifier hs-var">tell</span></span><span>
+</span><span id="line-30"></span><span>      </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">Type -&gt; VarName -&gt; DeclareRight -&gt; Statement
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#Declare"><span class="hs-identifier hs-var">Declare</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Type -&gt; Type
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#TyVector"><span class="hs-identifier hs-var">TyVector</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621679728539"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679728535"><span class="hs-identifier hs-var">y</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expr -&gt; DeclareRight
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#DeclareCopy"><span class="hs-identifier hs-var">DeclareCopy</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728538"><span class="hs-identifier hs-var">xs</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>        </span><span class="annot"><span class="annottext">AssignExpr -&gt; Statement
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#Assign"><span class="hs-identifier hs-var">Assign</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">AssignOp -&gt; LeftExpr -&gt; Expr -&gt; AssignExpr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#AssignExpr"><span class="hs-identifier hs-var">AssignExpr</span></a></span><span> </span><span class="annot"><span class="annottext">AssignOp
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#SimpleAssign"><span class="hs-identifier hs-var">SimpleAssign</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LeftExpr -&gt; Expr -&gt; LeftExpr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#LeftAt"><span class="hs-identifier hs-var">LeftAt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; LeftExpr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#LeftVar"><span class="hs-identifier hs-var">LeftVar</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679728535"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728537"><span class="hs-identifier hs-var">i</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728536"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>      </span><span class="hs-special">]</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName -&gt; Expr
+</span><a href="Jikka.CPlusPlus.Language.Expr.html#Var"><span class="hs-identifier hs-var">Var</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621679728535"><span class="hs-identifier hs-var">y</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>  </span><span id="local-6989586621679728519"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728519"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621679728519"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span id="local-6989586621679728550"><span class="annot"><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runStatement"><span class="hs-identifier hs-type">runStatement</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679728550"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679728550"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Statement"><span class="hs-identifier hs-type">Statement</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-37"></span><span id="runStatement"><span class="annot"><span class="annottext">runStatement :: Statement -&gt; m [Statement]
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runStatement"><span class="hs-identifier hs-var hs-var">runStatement</span></a></span></span><span> </span><span id="local-6989586621679728517"><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679728517"><span class="hs-identifier hs-var">stmt</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-38"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679728516"><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679728516"><span class="hs-identifier hs-var">stmt</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679728515"><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679728515"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">WriterT [Statement] m Statement -&gt; m (Statement, [Statement])
+forall w (m :: * -&gt; *) a. WriterT w m a -&gt; m (a, w)
+</span><span class="hs-identifier hs-var hs-var">runWriterT</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; WriterT [Statement] m Expr)
+-&gt; Statement -&gt; WriterT [Statement] m Statement
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Expr -&gt; m Expr) -&gt; Statement -&gt; m Statement
+</span><a href="Jikka.CPlusPlus.Language.Util.html#mapDirectExprStatementM"><span class="hs-identifier hs-var">mapDirectExprStatementM</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Expr -&gt; WriterT [Statement] m Expr)
+-&gt; Expr -&gt; WriterT [Statement] m Expr
+forall (m :: * -&gt; *). Monad m =&gt; (Expr -&gt; m Expr) -&gt; Expr -&gt; m Expr
+</span><a href="Jikka.CPlusPlus.Language.Util.html#mapSubExprM"><span class="hs-identifier hs-var">mapSubExprM</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; WriterT [Statement] m Expr
+forall (m :: * -&gt; *).
+(MonadAlpha m, MonadWriter [Statement] m) =&gt;
+Expr -&gt; m Expr
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runExpr"><span class="hs-identifier hs-var">runExpr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679728517"><span class="hs-identifier hs-var">stmt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-39"></span><span>  </span><span class="annot"><span class="annottext">[Statement] -&gt; m [Statement]
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">([Statement] -&gt; m [Statement]) -&gt; [Statement] -&gt; m [Statement]
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[Statement]
+</span><a href="#local-6989586621679728515"><span class="hs-identifier hs-var">decls</span></a></span><span> </span><span class="annot"><span class="annottext">[Statement] -&gt; [Statement] -&gt; [Statement]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Statement
+</span><a href="#local-6989586621679728516"><span class="hs-identifier hs-var">stmt</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-40"></span><span>
+</span><span id="line-41"></span><span id="local-6989586621679728544"><span class="annot"><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runProgram"><span class="hs-identifier hs-type">runProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679728544"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679728544"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-42"></span><span id="runProgram"><span class="annot"><span class="annottext">runProgram :: Program -&gt; m Program
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runProgram"><span class="hs-identifier hs-var hs-var">runProgram</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expr -&gt; m Expr)
+-&gt; (Statement -&gt; m [Statement]) -&gt; Program -&gt; m Program
+forall (m :: * -&gt; *).
+Monad m =&gt;
+(Expr -&gt; m Expr)
+-&gt; (Statement -&gt; m [Statement]) -&gt; Program -&gt; m Program
+</span><a href="Jikka.CPlusPlus.Language.Util.html#mapExprStatementProgramM"><span class="hs-identifier hs-var">mapExprStatementProgramM</span></a></span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m Expr
+forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
+</span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">Statement -&gt; m [Statement]
+forall (m :: * -&gt; *). MonadAlpha m =&gt; Statement -&gt; m [Statement]
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runStatement"><span class="hs-identifier hs-var">runStatement</span></a></span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- | `run` does inline expansion of @jikka::set_at&lt;T&gt;(...)@ function.</span><span>
+</span><span id="line-45"></span><span class="hs-comment">--</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- == Examples</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--</span><span>
+</span><span id="line-48"></span><span class="hs-comment">-- Before:</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--</span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- &gt; func(jikka::set_at&lt;T&gt;(xs, i, x));</span><span>
+</span><span id="line-51"></span><span class="hs-comment">--</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- After:</span><span>
+</span><span id="line-53"></span><span class="hs-comment">--</span><span>
+</span><span id="line-54"></span><span class="hs-comment">-- &gt; vector&lt;int&gt; ys = xs;</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- &gt; ys[i] = x;</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- &gt; func(ys);</span><span>
+</span><span id="line-57"></span><span id="local-6989586621679728509"><span class="annot"><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#run"><span class="hs-identifier hs-type">run</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Common.Alpha.html#MonadAlpha"><span class="hs-identifier hs-type">MonadAlpha</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679728509"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679728509"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679728509"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="Jikka.CPlusPlus.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span></span><span>
+</span><span id="line-58"></span><span id="run"><span class="annot"><span class="annottext">run :: Program -&gt; m Program
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#run"><span class="hs-identifier hs-var hs-var">run</span></a></span></span><span> </span><span id="local-6989586621679728508"><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679728508"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m Program -&gt; m Program
+forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
+</span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Jikka.CPlusPlus.Convert.InlineSetAt&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m Program -&gt; m Program) -&gt; m Program -&gt; m Program
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-59"></span><span>  </span><span class="annot"><span class="annottext">Program -&gt; m Program
+forall (m :: * -&gt; *). MonadAlpha m =&gt; Program -&gt; m Program
+</span><a href="Jikka.CPlusPlus.Convert.InlineSetAt.html#runProgram"><span class="hs-identifier hs-var">runProgram</span></a></span><span> </span><span class="annot"><span class="annottext">Program
+</span><a href="#local-6989586621679728508"><span class="hs-identifier hs-var">prog</span></a></span><span>
+</span><span id="line-60"></span></pre></body></html>

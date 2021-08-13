@@ -121,6 +121,9 @@ Method :: FunName -> Function
 -- | subscription <tt>e1[e2]</tt>
 At :: Function
 
+-- | updated array <tt>auto tmp = e1; tmp[e2] = e3; return tmp;</tt>
+SetAt :: Type -> Function
+
 -- | cast <tt>(T)e</tt>
 Cast :: Type -> Function
 
@@ -622,13 +625,20 @@ callMethod' :: Expr -> FunName -> [Expr] -> Statement
 vecCtor :: Type -> [Expr] -> Expr
 begin :: Expr -> Expr
 end :: Expr -> Expr
-mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Expr -> m Expr
-mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> LeftExpr -> m LeftExpr
-mapExprStatementAssignExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> AssignExpr -> m AssignExpr
-mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Statement -> m Statement
-mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> ToplevelStatement -> m ToplevelStatement
-mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m Statement) -> Program -> m Program
-mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> Statement) -> Program -> Program
+mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Expr -> m Expr
+mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> LeftExpr -> m LeftExpr
+mapExprStatementAssignExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> AssignExpr -> m AssignExpr
+mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Statement -> m [Statement]
+mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> ToplevelStatement -> m ToplevelStatement
+mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Program -> m Program
+mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> [Statement]) -> Program -> Program
+mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
+
+-- | <a>mapDirectExprStatementM</a> replaces exprs which are direct
+--   children of a given statement.
+mapDirectExprStatementM :: Monad m => (Expr -> m Expr) -> Statement -> m Statement
+mapDirectExprAssignExprM :: Monad m => (Expr -> m Expr) -> AssignExpr -> m AssignExpr
+mapDirectExprLeftExprM :: Monad m => (Expr -> m Expr) -> LeftExpr -> m LeftExpr
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceStatement :: VarName -> Expr -> Statement -> Statement
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Util.NameKind
@@ -1062,6 +1072,35 @@ module Jikka.CPlusPlus.Convert.MoveSemantics
 --   }
 --   </pre>
 run :: MonadError Error m => Program -> m Program
+instance GHC.Enum.Bounded Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+instance GHC.Enum.Enum Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+instance GHC.Read.Read Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+instance GHC.Show.Show Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+instance GHC.Classes.Ord Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+
+
+module Jikka.CPlusPlus.Convert.InlineSetAt
+
+-- | <a>run</a> does inline expansion of
+--   <tt>jikka::set_at<a>T</a>(...)</tt> function.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   func(jikka::set_at&lt;T&gt;(xs, i, x));
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   vector&lt;int&gt; ys = xs;
+--   ys[i] = x;
+--   func(ys);
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 module Jikka.CPlusPlus.Convert.AddMain
@@ -1834,20 +1873,24 @@ mapTypeToplevelExprM :: Monad m => (Type -> m Type) -> ToplevelExpr -> m Topleve
 mapTypeProgramM :: Monad m => (Type -> m Type) -> Program -> m Program
 mapTypeProgram :: (Type -> Type) -> Program -> Program
 
--- | <a>mapExprM</a>` substitutes exprs using given two functions, which
+-- | <a>mapSubExprM</a>` substitutes exprs using given two functions, which
 --   are called in pre-order and post-order.
-mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapSubExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
 mapToplevelExprM' :: Monad m => ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> ([(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-
--- | <a>mapExprM</a> is a wrapper of <a>mapExprM</a>`. This function works
---   in post-order.
-mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
 mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
 mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
+
+-- | <a>mapSubExprM</a> is a wrapper of <a>mapSubExprM</a>`. This function
+--   works in post-order.
+mapSubExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapSubExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
 mapExprToplevelExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
+
+-- | <tt>mapExprProgram f prog</tt> applies <tt>f</tt> to each root exprs
+--   in <tt>prog</tt>. This doesn't run into sub-exprs. For example,
+--   <tt>toplevel-let x = (e1 + e2) in ...</tt> becomes <tt>toplevel-let x
+--   = (f (e1 + e2)) in ...</tt>, instead of <tt>toplevel-let x = (f (f e1
+--   + f e2)) in ...</tt>
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 
 -- | <a>mapToplevelExprM</a> is a wrapper of <a>mapToplevelExprM</a>`. This
@@ -2774,9 +2817,10 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 -- | <a>FromCore</a> converts exprs of our core language to exprs of C++.
 module Jikka.CPlusPlus.Convert.FromCore
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+instance GHC.Base.Monad m => Jikka.CPlusPlus.Convert.FromCore.MonadStatements (Control.Monad.Trans.Writer.Strict.WriterT (Data.Semigroup.Internal.Dual [Jikka.CPlusPlus.Language.Expr.Statement]) m)
 
 module Jikka.CPlusPlus.Convert
-run :: (MonadAlpha m, MonadError Error m) => Program -> IOFormat -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> Maybe IOFormat -> m Program
 
 module Jikka.Core.Language.Value
 data Value
@@ -4764,7 +4808,11 @@ run :: FilePath -> ExceptT Error IO ()
 
 
 module Jikka.Main.Subcommand.Convert
-run :: Target -> FilePath -> Text -> Either Error Text
+run :: Target -> Target -> FilePath -> Text -> Either Error Text
+instance GHC.Show.Show Jikka.Main.Subcommand.Convert.Program
+instance GHC.Read.Read Jikka.Main.Subcommand.Convert.Program
+instance GHC.Classes.Ord Jikka.Main.Subcommand.Convert.Program
+instance GHC.Classes.Eq Jikka.Main.Subcommand.Convert.Program
 
 module Jikka.RestrictedPython.Language.WithoutLoc
 constIntExp :: Integer -> Expr'
@@ -4802,12 +4850,14 @@ data Flag
 Help :: Flag
 Verbose :: Flag
 Version :: Flag
+Source :: String -> Flag
 Target :: String -> Flag
 BundleRuntimeHeaders :: Bool -> Flag
 EmbedOriginalCode :: Bool -> Flag
 data Options
-Options :: Bool -> Maybe Target -> Bool -> Bool -> Options
+Options :: Bool -> Target -> Maybe Target -> Bool -> Bool -> Options
 [verbose] :: Options -> Bool
+[source] :: Options -> Target
 [target] :: Options -> Maybe Target
 [bundleRuntimeHeaders] :: Options -> Bool
 [embedOriginalCode] :: Options -> Bool
