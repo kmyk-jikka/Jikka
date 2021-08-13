@@ -166,10 +166,10 @@ analyzeBuiltin = \case
   Min2 -> Fun "min"
   Max2 -> Fun "max"
   -- logical functions
-  Not -> PrefixOp "not"
-  And -> InfixOp "and" andPrec RightToLeft
-  Or -> InfixOp "or" orPrec RightToLeft
-  Implies -> InfixOp "implies" impliesPrec RightToLeft
+  Not -> Fun "not"
+  And -> InfixOp "&&" andPrec RightToLeft
+  Or -> InfixOp "||" orPrec RightToLeft
+  Implies -> Fun "implies"
   If -> If'
   -- bitwise functions
   BitNot -> PrefixOp "~"

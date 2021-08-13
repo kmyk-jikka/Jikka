@@ -93,10 +93,8 @@ tokens :-
     "**"            { tok (Operator Pow) }
 
     -- boolean operators
-    "and"           { tok (Operator And) }
-    "or"            { tok (Operator Or) }
-    "not"           { tok (Operator Not) }
-    "implies"       { tok (Operator Implies) }
+    "&&"            { tok (Operator And) }
+    "||"            { tok (Operator Or) }
 
     -- bit operators
     "~"             { tok (Operator BitNot) }

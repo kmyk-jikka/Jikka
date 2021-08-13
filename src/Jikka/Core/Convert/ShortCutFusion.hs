@@ -85,7 +85,7 @@ reduceMapMap =
   mconcat
     [ [r| "map/map" forall f g xs. map g (map f xs) = map (fun x -> g (f x)) xs |],
       [r| "map/reversed" forall f xs. map f (reversed xs) = reversed (map f xs) |],
-      [r| "filter/filter" forall f g xs. filter g (filter f xs) = filter (fun x -> f x and g x) xs |],
+      [r| "filter/filter" forall f g xs. filter g (filter f xs) = filter (fun x -> f x && g x) xs |],
       [r| "filter/sorted" forall f xs. filter f (sorted xs) = sorted (filter f xs) |],
       [r| "filter/reversed" forall f xs. filter f (reversed xs) = reversed (filter f xs) |],
       [r| "reversed/reversed" forall xs. reversed (reversed xs) = xs |],
@@ -136,8 +136,8 @@ reduceFoldBuild =
       [r| "at/range" forall n i. (range n)[i] = i |],
       -- reduce `Elem`
       [r| "elem/nil" forall y. elem y nil = false |],
-      [r| "elem/cons" forall y x xs. elem y (cons x xs) = y == x or elem y xs |],
-      [r| "elem/range" forall i n. elem i (range n) = 0 <= i and i < n |],
+      [r| "elem/cons" forall y x xs. elem y (cons x xs) = y == x || elem y xs |],
+      [r| "elem/range" forall i n. elem i (range n) = 0 <= i && i < n |],
       -- others
       [r| "len/build" forall f base n. len (build f base n) = len base + n |]
     ]

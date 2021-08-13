@@ -21,10 +21,8 @@ data Operator
   | CeilMod
   | Pow
   | -- boolean operators
-    Not
-  | And
+    And
   | Or
-  | Implies
   | -- bit operators
     BitNot
   | BitAnd

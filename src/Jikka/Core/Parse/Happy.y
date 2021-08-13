@@ -92,6 +92,8 @@ import qualified Jikka.Core.Parse.Token as L
     "lcm"           { WithLoc _ (L.Ident "lcm") }
     "max"           { WithLoc _ (L.Ident "max") }
     "min"           { WithLoc _ (L.Ident "min") }
+    "not"           { WithLoc _ (L.Ident "not") }
+    "implies"       { WithLoc _ (L.Ident "implies") }
     "iterate"       { WithLoc _ (L.Ident "iterate") }
     "matap"         { WithLoc _ (L.Ident "matap") }
     "matzero"       { WithLoc _ (L.Ident "matzero") }
@@ -162,10 +164,8 @@ import qualified Jikka.Core.Parse.Token as L
     "**"            { WithLoc _ (L.Operator L.Pow) }
 
     -- boolean operators
-    "and"           { WithLoc _ (L.Operator L.And) }
-    "or"            { WithLoc _ (L.Operator L.Or) }
-    "not"           { WithLoc _ (L.Operator L.Not) }
-    "implies"       { WithLoc _ (L.Operator L.Implies) }
+    "&&"             { WithLoc _ (L.Operator L.And) }
+    "||"             { WithLoc _ (L.Operator L.Or) }
 
     -- bit operators
     "~"             { WithLoc _ (L.Operator L.BitNot) }
@@ -293,6 +293,8 @@ builtin :: { (Builtin, [Type]) }
     | "lcm"                            { (Lcm, []) }
     | "min"                            { (Min2, []) }
     | "max"                            { (Max2, []) }
+    | "not"                            { (Not, []) }
+    | "implies"                        { (Implies, []) }
     | "iterate"                        { (Iterate, [underscoreTy]) }
     | "iterate" "@" atom_type          { (Iterate, [$3]) }
     | "matap" integer integer          { (MatAp $2 $3, []) }
@@ -440,20 +442,12 @@ comp_operator :: { Type -> Expr -> Expr -> Expr }
     | ">="                                                  { GreaterEqual' }
 
 -- Boolean operations
-not_test :: { Expr }
-    : comparison                                            { $1 }
-    | "not" not_test                                        { Not' $2 }
 and_test :: { Expr }
-    : not_test                                              { $1 }
-    | and_test "and" not_test                               { And' $1 $3 }
+    : comparison                                            { $1 }
+    | and_test "&&" comparison                              { And' $1 $3 }
 or_test :: { Expr }
     : and_test                                              { $1 }
-    | or_test "or" and_test                                 { Or' $1 $3 }
-
--- Implication operation
-implies_test :: { Expr }
-    : or_test                                               { $1 }
-    | or_test "implies" implies_test                        { Implies' $1 $3 }
+    | or_test "||" and_test                                 { Or' $1 $3 }
 
 -- Conditional expressions
 conditional_expression :: { Expr }
@@ -473,7 +467,7 @@ assert_expr :: { Expr }
     : "assert" expression "->" expression                       { Assert $2 $4 }
 
 expression_nolet :: { Expr }
-    : implies_test                                          { $1 }
+    : or_test                                               { $1 }
     | conditional_expression                                { $1 }
     | lambda_expr                                           { $1 }
     | assert_expr                                           { $1 }
