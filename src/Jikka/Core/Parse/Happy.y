@@ -299,7 +299,7 @@ builtin :: { (Builtin, [Type]) }
     | "iterate"                        { (Iterate, [underscoreTy]) }
     | "iterate" "@" atom_type          { (Iterate, [$3]) }
     | "matap" "@" integer "@" integer  { (MatAp $3 $5, []) }
-    | "matzero" "@" integer            { (MatZero $3, []) }
+    | "matzero" "@" integer "@" integer    { (MatZero $3 $5, []) }
     | "matone" "@" integer             { (MatOne $3, []) }
     | "matadd" "@" integer "@" integer { (MatAdd $3 $5, []) }
     | "matmul" "@" integer "@" integer "@" integer { (MatMul $3 $5 $7, []) }

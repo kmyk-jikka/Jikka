@@ -58,7 +58,7 @@ builtinToType builtin ts =
         BitRightShift -> go0 $ Fun2STy IntTy
         -- matrix functions
         MatAp h w -> go0 $ Fun2Ty (matrixTy h w) (vectorTy w) (vectorTy h)
-        MatZero n -> go0 $ matrixTy n n
+        MatZero h w -> go0 $ matrixTy h w
         MatOne n -> go0 $ matrixTy n n
         MatAdd h w -> go0 $ Fun2Ty (matrixTy h w) (matrixTy h w) (matrixTy h w)
         MatMul h n w -> go0 $ Fun2Ty (matrixTy h n) (matrixTy n w) (matrixTy h w)

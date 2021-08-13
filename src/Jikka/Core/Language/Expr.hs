@@ -136,8 +136,8 @@ data Builtin
 
     -- | matrix application \(: \int^{H \times W} \to \int^W \to \int^H\)
     MatAp Integer Integer
-  | -- | zero matrix \(: \to \int^{n \times n}\)
-    MatZero Integer
+  | -- | zero matrix \(: \to \int^{h \times w}\)
+    MatZero Integer Integer
   | -- | unit matrix \(: \to \int^{n \times n}\)
     MatOne Integer
   | -- | matrix addition \(: \int^{H \times W} \to \int^{H \times W} \to \int^{H \times W}\)

@@ -58,8 +58,8 @@ makeMatrix' a = case makeMatrix a of
   Nothing -> error "Jikka.Common.Matrix.makeMatrix': the input is not a matrix"
   Just a -> a
 
-matzero :: Num a => Int -> Matrix a
-matzero n = Matrix $ V.replicate n (V.replicate n 0)
+matzero :: Num a => Int -> Int -> Matrix a
+matzero h w = Matrix $ V.replicate h (V.replicate w 0)
 
 matone :: Num a => Int -> Matrix a
 matone n = Matrix $ V.generate n (\y -> V.generate n (\x -> if y == x then 1 else 0))

@@ -187,7 +187,7 @@ callBuiltin builtin ts args = wrapError' ("while calling builtin " ++ formatBuil
     BitRightShift -> go2 valueToInt valueToInt ValInt $ \a b -> a `shift` fromInteger (- b)
     -- matrix functions
     MatAp _ _ -> go2' valueToMatrix valueToVector valueFromVector matap'
-    MatZero n -> go0 valueFromMatrix (matzero (fromInteger n))
+    MatZero h w -> go0 valueFromMatrix (matzero (fromInteger h) (fromInteger w))
     MatOne n -> go0 valueFromMatrix (matone (fromInteger n))
     MatAdd _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matadd'
     MatMul _ _ _ -> go2' valueToMatrix valueToMatrix valueFromMatrix matmul'

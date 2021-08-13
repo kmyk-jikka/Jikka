@@ -183,7 +183,7 @@ analyzeBuiltin = \case
   BitRightShift -> InfixOp ">>" powerPrec LeftToRight
   -- matrix functions
   MatAp h w -> funMat "matap" [h, w]
-  MatZero n -> funMat "matzero" [n]
+  MatZero h w -> funMat "matzero" [h, w]
   MatOne n -> funMat "matone" [n]
   MatAdd h w -> funMat "matadd" [h, w]
   MatMul h n w -> funMat "matmul" [h, n, w]

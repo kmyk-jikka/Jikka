@@ -291,7 +291,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.BitRightShift -> go02 $ \e1 e2 -> Y.BinOp Y.BitRightShift e1 e2
     -- matrix functions
     X.MatAp h w -> go02 $ \f x -> Y.Call (Y.Function "jikka::mat::ap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x]
-    X.MatZero n -> go00 $ Y.Call (Y.Function "jikka::mat::zero" [Y.TyIntValue (fromIntegral n)]) []
+    X.MatZero h w -> go00 $ Y.Call (Y.Function "jikka::mat::zero" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) []
     X.MatOne n -> go00 $ Y.Call (Y.Function "jikka::mat::one" [Y.TyIntValue (fromIntegral n)]) []
     X.MatAdd h w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::add" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g]
     X.MatMul h n w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::mul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g]
