@@ -255,9 +255,7 @@ analyzeBuiltin = \case
   SegmentTreeSetPoint _ -> Fun "segtree_setpoint"
 
 formatTemplate :: [Type] -> String
-formatTemplate = \case
-  [] -> ""
-  ts -> "<" ++ intercalate ", " (map formatType ts) ++ ">"
+formatTemplate ts = concatMap (('@' :) . formatType) ts
 
 formatFunCall :: (String, Prec) -> [Expr] -> (String, Prec)
 formatFunCall f [] = f
@@ -302,8 +300,8 @@ formatLiteral = \case
   LitBuiltin builtin ts -> formatBuiltinIsolated builtin ts
   LitInt n -> show n
   LitBool p -> map toLower $ show p
-  LitNil t -> "nil" ++ formatTemplate [t]
-  LitBottom t _ -> "bottom" ++ formatTemplate [t]
+  LitNil _ -> "nil"
+  LitBottom _ msg -> "bottom<" ++ show msg ++ ">"
 
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args
