@@ -21,6 +21,7 @@ module Jikka.Core.Convert.TypeInfer
     mergeAssertions,
     Subst (..),
     subst,
+    substDefault,
     solveEquations,
     substProgram,
   )
@@ -34,6 +35,7 @@ import Data.Monoid (Dual (..))
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Format (formatType)
+import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
@@ -59,7 +61,9 @@ formularizeExpr = \case
     t <- genType
     formularizeVarName x t
     return t
-  Lit lit -> literalToType lit
+  Lit lit -> case lit of
+    LitBuiltin (Proj _) [] -> genType -- Proj may have a empty list.
+    _ -> literalToType lit
   App f e -> do
     ret <- genType
     t <- formularizeExpr e
@@ -166,25 +170,35 @@ solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
 solveEquations eqns = wrapError' "failed to solve type equations" $ do
   execStateT (mapM_ (uncurry unifyType) eqns) (Subst M.empty)
 
--- | `substUnit` replaces all undetermined type variables with the unit type.
-substUnit :: Type -> Type
-substUnit = \case
+-- | `substDefault` replaces all undetermined type variables with the given default type.
+substDefault :: Type -> Type -> Type
+substDefault t0 = \case
   VarTy _ -> TupleTy []
   IntTy -> IntTy
   BoolTy -> BoolTy
-  ListTy t -> ListTy (substUnit t)
-  TupleTy ts -> TupleTy (map substUnit ts)
-  FunTy t ret -> FunTy (substUnit t) (substUnit ret)
+  ListTy t -> ListTy (substDefault t0 t)
+  TupleTy ts -> TupleTy (map (substDefault t0) ts)
+  FunTy t ret -> FunTy (substDefault t0 t) (substDefault t0 ret)
   DataStructureTy ds -> DataStructureTy ds
 
-subst' :: Subst -> Type -> Type
-subst' sigma = substUnit . subst sigma
+subst' :: Maybe Type -> Subst -> Type -> Type
+subst' t0 sigma = maybe id substDefault t0 . subst sigma
 
-substProgram :: Subst -> Program -> Program
-substProgram sigma = mapTypeProgram (subst' sigma)
+fixProj :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
+fixProj env = \case
+  Proj' [] i e -> do
+    -- fix Proj with a empty list
+    t <- typecheckExpr env e
+    case t of
+      TupleTy ts -> return $ Proj' ts i e
+      _ -> throwInternalError $ "type of argument of proj must be a tuple: " ++ formatType t
+  e -> return e
 
-substExpr :: Subst -> Expr -> Expr
-substExpr sigma = mapTypeExpr (subst' sigma)
+substProgram :: MonadError Error m => Maybe Type -> Subst -> Program -> m Program
+substProgram t0 sigma = mapExprProgramM (mapSubExprM fixProj) . mapTypeProgram (subst' t0 sigma)
+
+substExpr :: MonadError Error m => Maybe Type -> Subst -> [(VarName, Type)] -> Expr -> m Expr
+substExpr t0 sigma env = mapSubExprM fixProj env . mapTypeExpr (subst' t0 sigma)
 
 -- | `run` does type inference.
 --
@@ -207,7 +221,8 @@ run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   let (eqns', assertions) = sortEquations eqns
   let eqns'' = mergeAssertions assertions
   sigma <- solveEquations (eqns' ++ eqns'')
-  prog <- return $ substProgram sigma prog
+  let t0 = Just UnitTy
+  prog <- substProgram t0 sigma prog
   postcondition $ do
     typecheckProgram prog
   return prog
@@ -218,8 +233,9 @@ runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   let (eqns', assertions) = sortEquations eqns
   let eqns'' = mergeAssertions assertions
   sigma <- solveEquations (eqns' ++ eqns'')
-  env <- return $ map (second (subst' sigma)) env
-  e <- return $ substExpr sigma e
+  let t0 = Nothing -- don't use substDefault
+  env <- return $ map (second (subst' t0 sigma)) env
+  e <- substExpr t0 sigma env e
   postcondition $ do
     typecheckExpr env e
   return e
@@ -232,7 +248,7 @@ runRule args e1 e2 = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   let (eqns', assertions) = sortEquations eqns
   let eqns'' = mergeAssertions assertions
   sigma <- solveEquations (eqns' ++ eqns'')
-  args <- return $ map (second (subst sigma)) args -- don't use substUnit
-  e1 <- return $ mapTypeExpr (subst sigma) e1 -- don't use substUnit
-  e2 <- return $ mapTypeExpr (subst sigma) e2 -- don't use substUnit
+  args <- return $ map (second (subst sigma)) args -- don't use substDefault
+  e1 <- return $ mapTypeExpr (subst sigma) e1 -- don't use substDefault
+  e2 <- return $ mapTypeExpr (subst sigma) e2 -- don't use substDefault
   return (args, e1, e2)

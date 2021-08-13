@@ -107,7 +107,10 @@ builtinToType builtin ts =
         Range3 -> go0 $ Fun3Ty IntTy IntTy IntTy (ListTy IntTy)
         -- tuple functions
         Tuple -> return $ curryFunTy ts (TupleTy ts)
-        Proj n -> return $ FunTy (TupleTy ts) (ts !! fromInteger n)
+        Proj n ->
+          if 0 <= n && n < toInteger (length ts)
+            then return $ FunTy (TupleTy ts) (ts !! fromInteger n)
+            else throwTypeError $ "projection index is out of range: type = " ++ formatType (TupleTy ts) ++ ", index = " ++ show n
         -- comparison
         LessThan -> go1 $ \t -> Fun2Ty t t BoolTy
         LessEqual -> go1 $ \t -> Fun2Ty t t BoolTy

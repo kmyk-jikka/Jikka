@@ -494,7 +494,7 @@ makeTuple es t = case t of
 
 makeProj :: MonadError Error m => Expr -> Integer -> Type -> m Expr
 makeProj e n t = case t of
-    t | t == underscoreTy -> return $ Proj' [underscoreTy] n e -- This is fixed latter.
+    t | t == underscoreTy -> return $ Proj' [] n e -- A projection from the empty tuple is fixed in Jikka.Core.Convert.TypeInfer.
     TupleTy ts -> return $ Proj' ts n e
     _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for a tuple projection"
 
@@ -508,11 +508,9 @@ replaceUnderscoresE :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -
 replaceUnderscoresE env = mapSubExprM go env where
   go _ = \case
     Var (VarName "_") -> Var <$> genVarName'
-    Proj' [t] i e | t == underscoreTy -> do
-      t <- typecheckExpr env e
-      case t of
-        TupleTy ts -> return $ Proj' ts i e
-        _ -> throwSyntaxError "Jikka.Core.Parse.Happy.replaceUnderscoresE: failed to reconstruct type of a tuple projection"
+    e@(Proj' [] i (Var x)) -> case lookup x env of
+      Just (TupleTy ts) -> return $ Proj' ts i (Var x) -- Fix types of projections if it's easily possible.
+      _ -> return e -- Some cases are impossible. You need to use Jikka.Core.Convert.TypeInfer.
     e -> return e
 
 happyErrorExpList :: MonadError Error m => ([WithLoc L.Token], [String]) -> m a
