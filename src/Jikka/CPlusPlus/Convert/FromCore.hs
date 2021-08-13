@@ -290,14 +290,14 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.BitLeftShift -> go02 $ \e1 e2 -> Y.BinOp Y.BitLeftShift e1 e2
     X.BitRightShift -> go02 $ \e1 e2 -> Y.BinOp Y.BitRightShift e1 e2
     -- matrix functions
-    X.MatAp h w -> go02 $ \f x -> Y.Call (Y.Function "jikka::mat::ap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x]
-    X.MatZero h w -> go00 $ Y.Call (Y.Function "jikka::mat::zero" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) []
-    X.MatOne n -> go00 $ Y.Call (Y.Function "jikka::mat::one" [Y.TyIntValue (fromIntegral n)]) []
-    X.MatAdd h w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::add" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g]
-    X.MatMul h n w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::mul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g]
-    X.MatPow n -> go02 $ \f k -> Y.Call (Y.Function "jikka::mat::pow" [Y.TyIntValue (fromIntegral n)]) [f, k]
-    X.VecFloorMod n -> go02 $ \x m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue (fromIntegral n)]) [x, m]
-    X.MatFloorMod h w -> go02 $ \f m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, m]
+    X.MatAp h w -> go02 $ \f x -> Y.Call (Y.Function "jikka::mat::ap" [Y.TyIntValue h, Y.TyIntValue w]) [f, x]
+    X.MatZero h w -> go00 $ Y.Call (Y.Function "jikka::mat::zero" [Y.TyIntValue h, Y.TyIntValue w]) []
+    X.MatOne n -> go00 $ Y.Call (Y.Function "jikka::mat::one" [Y.TyIntValue n]) []
+    X.MatAdd h w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::add" [Y.TyIntValue h, Y.TyIntValue w]) [f, g]
+    X.MatMul h n w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::mul" [Y.TyIntValue h, Y.TyIntValue n, Y.TyIntValue w]) [f, g]
+    X.MatPow n -> go02 $ \f k -> Y.Call (Y.Function "jikka::mat::pow" [Y.TyIntValue n]) [f, k]
+    X.VecFloorMod n -> go02 $ \x m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue n]) [x, m]
+    X.MatFloorMod h w -> go02 $ \f m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue h, Y.TyIntValue w]) [f, m]
     -- modular functions
     X.ModNegate -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::mod::negate" []) [e1, e2]
     X.ModPlus -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::plus" []) [e1, e2, e3]
@@ -305,10 +305,10 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.ModMult -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::mult" []) [e1, e2, e3]
     X.ModInv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::mod::inv" []) [e1, e2]
     X.ModPow -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::pow" []) [e1, e2, e3]
-    X.ModMatAp h w -> go03 $ \f x m -> Y.Call (Y.Function "jikka::modmat::ap" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, x, m]
-    X.ModMatAdd h w -> go03 $ \f g m -> Y.Call (Y.Function "jikka::modmat::add" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral w)]) [f, g, m]
-    X.ModMatMul h n w -> go03 $ \f g m -> Y.Call (Y.Function "jikka::modmat::mul" [Y.TyIntValue (fromIntegral h), Y.TyIntValue (fromIntegral n), Y.TyIntValue (fromIntegral w)]) [f, g, m]
-    X.ModMatPow n -> go03 $ \f k m -> Y.Call (Y.Function "jikka::modmat::pow" [Y.TyIntValue (fromIntegral n)]) [f, k, m]
+    X.ModMatAp h w -> go03 $ \f x m -> Y.Call (Y.Function "jikka::modmat::ap" [Y.TyIntValue h, Y.TyIntValue w]) [f, x, m]
+    X.ModMatAdd h w -> go03 $ \f g m -> Y.Call (Y.Function "jikka::modmat::add" [Y.TyIntValue h, Y.TyIntValue w]) [f, g, m]
+    X.ModMatMul h n w -> go03 $ \f g m -> Y.Call (Y.Function "jikka::modmat::mul" [Y.TyIntValue h, Y.TyIntValue n, Y.TyIntValue w]) [f, g, m]
+    X.ModMatPow n -> go03 $ \f k m -> Y.Call (Y.Function "jikka::modmat::pow" [Y.TyIntValue n]) [f, k, m]
     -- list functions
     X.Cons -> go12' $ \t x xs -> do
       ys <- Y.newFreshName Y.LocalNameKind
@@ -446,7 +446,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
         else Y.Call (Y.StdTuple ts) es
     X.Proj n -> goN1 $ \ts e ->
       if Y.shouldBeArray ts
-        then Y.at e (Y.Lit (Y.LitInt32 (fromIntegral n)))
+        then Y.at e (Y.Lit (Y.LitInt32 n))
         else Y.Call (Y.StdGet (toInteger n)) [e]
     -- comparison
     X.LessThan -> go12 $ \_ e1 e2 -> Y.BinOp Y.LessThan e1 e2
