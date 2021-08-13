@@ -73,6 +73,9 @@ For developpers:
   - 実装方針について
 - [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md) (Japanese)
   - 具体的な処理の流れについて
+- [docs/core.md](https://github.com/kmyk/Jikka/blob/master/docs/core.md)
+  - [docs/core.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/core.ja.md) (Japanese)
+  - core 言語の説明
 - [Haddock](https://hackage.haskell.org/package/Jikka)
   - [Haddock (master)](https://kmyk.github.io/Jikka/haddock)
 
