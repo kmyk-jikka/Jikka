@@ -115,6 +115,7 @@ tokens :-
     -- identifier
     $alpha ($alnum | "_") *                 { tok' Ident }
     $alpha ($alnum | "_") * "$" $digit +    { tok' Ident }
+    "$" $digit +                            { tok' Ident }
 
     -- catch error
     .               { skip' }
