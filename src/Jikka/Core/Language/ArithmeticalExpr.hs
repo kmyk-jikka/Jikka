@@ -74,12 +74,17 @@ multProductExpr e1 e2 =
       productExprList = productExprList e1 ++ productExprList e2
     }
 
+iterateN :: Integer -> (a -> a) -> a -> a
+iterateN n _ _ | n < 0 = error $ "iterateN: negative number: " ++ show n
+iterateN 0 _ x = x
+iterateN n f x = iterateN (n - 1) f (f x)
+
 parseProductExpr :: Expr -> ProductExpr
 parseProductExpr = \case
   LitInt' n -> ProductExpr {productExprConst = n, productExprList = []}
   Negate' e -> negateProductExpr (parseProductExpr e)
   Mult' e1 e2 -> multProductExpr (parseProductExpr e1) (parseProductExpr e2)
-  Pow' e1 (LitInt' k) | 0 <= k && k < 10 -> iterate (multProductExpr (parseProductExpr e1)) (integerProductExpr 1) !! fromInteger k
+  Pow' e1 (LitInt' k) | 0 <= k && k < 10 -> iterateN k (multProductExpr (parseProductExpr e1)) (integerProductExpr 1)
   e -> ProductExpr {productExprConst = 1, productExprList = [e]}
 
 sumExprFromProductExpr :: ProductExpr -> SumExpr
