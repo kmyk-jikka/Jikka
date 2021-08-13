@@ -17,6 +17,8 @@ Stack は Ubuntu なら `$ sudo apt install haskell-stack` でインストール
 - `$ stack run execute XXX.py < YYY.in` は core 言語の構文木を直接実行する
 - `$ stack run execute --target rpython XXX.py < YYY.in` は制限された Python の構文木を直接実行する
 - `$ python3 XXX.py < YYY.in'` あるいは `$ python3 -c 'import XXX; print(XXX.main(1, 2, [3, 4, 5]))'` のようにすると通常の Python として実行できる
+- `$ stack run convert --source core --target core XXX.jikka` は core 言語の式を最適化して出力する
+- `$ stack run convert --source core XXX.jikka` は core 言語の式を C++ に変換する
 
 ### Tests
 

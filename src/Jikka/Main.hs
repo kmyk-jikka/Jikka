@@ -30,6 +30,7 @@ data Flag
   = Help
   | Verbose
   | Version
+  | Source String
   | Target String
   | BundleRuntimeHeaders Bool
   | EmbedOriginalCode Bool
@@ -37,6 +38,7 @@ data Flag
 
 data Options = Options
   { verbose :: Bool,
+    source :: Target,
     target :: Maybe Target,
     bundleRuntimeHeaders :: Bool,
     embedOriginalCode :: Bool
@@ -47,6 +49,7 @@ defaultOptions :: Options
 defaultOptions =
   Options
     { verbose = False,
+      source = PythonTarget,
       target = Nothing,
       bundleRuntimeHeaders = True,
       embedOriginalCode = True
@@ -60,6 +63,7 @@ options =
   [ Option ['h', '?'] ["help"] (NoArg Help) "",
     Option ['v'] ["verbose"] (NoArg Verbose) "",
     Option [] ["version"] (NoArg Version) "",
+    Option [] ["source"] (ReqArg Source "SOURCE") "\"python\" or \"core\"",
     Option [] ["target"] (ReqArg Target "TARGET") "\"python\", \"rpython\", \"core\" or \"cxx\"",
     Option [] ["bundle-runtime-headers"] (NoArg (BundleRuntimeHeaders True)) "bundles C++ runtime headers",
     Option [] ["no-bundle-runtime-headers"] (NoArg (BundleRuntimeHeaders False)) "",
@@ -108,6 +112,9 @@ parseFlags _ = go defaultOptions
       Help -> throwCommandLineError "parseFlags is not called when --help is specified"
       Version -> throwCommandLineError "parseFlags is not called when --version is specified"
       Verbose -> go (opts {verbose = True}) flags
+      Source source -> do
+        source <- parseTarget source
+        go (opts {source = source}) flags
       Target target -> do
         target <- parseTarget target
         go (opts {target = Just target}) flags
@@ -119,7 +126,7 @@ runSubcommand subcmd opts path = case subcmd of
   "convert" -> do
     input <- liftIO $ T.readFile path
     let target' = fromMaybe CPlusPlusTarget (target opts)
-    output <- liftEither $ Convert.run target' path input
+    output <- liftEither $ Convert.run (source opts) target' path input
     output <-
       if target' == CPlusPlusTarget && bundleRuntimeHeaders opts
         then BundleRuntime.run output
@@ -132,6 +139,6 @@ runSubcommand subcmd opts path = case subcmd of
              in T.unlines (headers ++ map ("//     " <>) (T.lines input)) <> output
           else output
     liftIO $ T.putStr output
-  "debug" -> Debug.run path
-  "execute" -> Execute.run (fromMaybe CoreTarget (target opts)) path
+  "debug" -> Debug.run path -- TODO: make this subcommand convenient
+  "execute" -> Execute.run (fromMaybe CoreTarget (target opts)) path -- TODO: use source
   _ -> throwCommandLineError $ "undefined subcommand: " ++ show subcmd

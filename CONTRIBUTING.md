@@ -17,6 +17,8 @@ To run Jikka after you modified the source code, use the following commands:
 - `$ stack run execute XXX.py < YYY.in` executes AST of our core language directly
 - `$ stack run -- execute -- --target rpython XXX.py < YYY.in` executes AST of our restricted Python directly
 - `$ python3 XXX.py < YYY.in'` or `$ python3 -c 'import XXX; print(XXX.main(1, 2, [3, 4, 5]))'` runs as the standard Python
+- `$ stack run convert --source core --target core XXX.jikka` optimizes exprs of our core language
+- `$ stack run convert --source core XXX.jikka` converts exprs of our core language to C++
 
 ### Tests
 

@@ -17,7 +17,7 @@ import Jikka.Common.Error
 import Jikka.Common.IOFormat
 import qualified Jikka.Core.Language.Expr as X
 
-run :: (MonadAlpha m, MonadError Error m) => X.Program -> IOFormat -> m Y.Program
+run :: (MonadAlpha m, MonadError Error m) => X.Program -> Maybe IOFormat -> m Y.Program
 run prog format = do
   prog <- FromCore.run prog
   let go prog = do
@@ -27,5 +27,5 @@ run prog format = do
   prog <- go prog
   prog <- go prog
   prog <- go prog
-  prog <- AddMain.run prog format
+  prog <- maybe (return prog) (AddMain.run prog) format
   UseInitialization.run prog
