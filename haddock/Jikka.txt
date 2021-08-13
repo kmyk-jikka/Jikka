@@ -833,6 +833,7 @@ wrapAt :: MonadError Error m => Loc -> m a -> m a
 wrapAt' :: MonadError Error m => Maybe Loc -> m a -> m a
 maybeToError :: MonadError a m => a -> Maybe b -> m b
 eitherToError :: MonadError a m => Either a b -> m b
+fromSuccess :: Either Error a -> a
 
 -- | <a>catchError</a>` is the inverse of <tt>liftError</tt>.
 catchError' :: MonadError e m => m a -> m (Either e a)
@@ -1125,7 +1126,7 @@ matsize' :: Vector (Vector a) -> (Int, Int)
 -- | <a>matcheck</a> checks a given vector of vectors is a matrix. That is,
 --   this returns <a>False</a> for jagged arrays.
 matcheck :: Vector (Vector a) -> Bool
-matzero :: Num a => Int -> Matrix a
+matzero :: Num a => Int -> Int -> Matrix a
 matone :: Num a => Int -> Matrix a
 
 -- | <a>matadd</a> calculates the addition &lt;math&gt; of two matrices
@@ -1319,7 +1320,7 @@ BitRightShift :: Builtin
 MatAp :: Integer -> Integer -> Builtin
 
 -- | zero matrix &lt;math&gt;
-MatZero :: Integer -> Builtin
+MatZero :: Integer -> Integer -> Builtin
 
 -- | unit matrix &lt;math&gt;
 MatOne :: Integer -> Builtin
@@ -1458,6 +1459,9 @@ Range3 :: Builtin
 Tuple :: Builtin
 
 -- | &lt;math&gt;
+--   
+--   <a>Parse</a> may make broken <a>Proj</a> with its list of type
+--   arguments is empty. This is fixed by <a>TypeInfer</a> module.
 Proj :: Integer -> Builtin
 
 -- | &lt;math&gt;
@@ -1793,57 +1797,57 @@ freeTyVars :: Type -> [TypeName]
 findUnusedVarName :: VarName -> Expr -> VarName
 findUnusedVarName' :: Expr -> VarName
 
-module Jikka.Core.Language.ArithmeticalExpr
-data ArithmeticalExpr
+module Jikka.Core.Language.ArithmeticExpr
+data ArithmeticExpr
 
--- | <a>parseArithmeticalExpr</a> converts a given expr to a normal form
+-- | <a>parseArithmeticExpr</a> converts a given expr to a normal form
 --   &lt;math&gt;. This assumes given exprs have the type &lt;math&gt;.
-parseArithmeticalExpr :: Expr -> ArithmeticalExpr
-formatArithmeticalExpr :: ArithmeticalExpr -> Expr
-integerArithmeticalExpr :: Integer -> ArithmeticalExpr
-negateArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr
-plusArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
-minusArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
-multArithmeticalExpr :: ArithmeticalExpr -> ArithmeticalExpr -> ArithmeticalExpr
-isZeroArithmeticalExpr :: ArithmeticalExpr -> Bool
-isOneArithmeticalExpr :: ArithmeticalExpr -> Bool
+parseArithmeticExpr :: Expr -> ArithmeticExpr
+formatArithmeticExpr :: ArithmeticExpr -> Expr
+integerArithmeticExpr :: Integer -> ArithmeticExpr
+negateArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr
+plusArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
+minusArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
+multArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
+isZeroArithmeticExpr :: ArithmeticExpr -> Bool
+isOneArithmeticExpr :: ArithmeticExpr -> Bool
 
 -- | <a>unNPlusKPattern</a> recognizes a pattern of &lt;math&gt; for a
 --   variable &lt;math&gt; and an integer constant &lt;math&gt;.
-unNPlusKPattern :: ArithmeticalExpr -> Maybe (VarName, Integer)
+unNPlusKPattern :: ArithmeticExpr -> Maybe (VarName, Integer)
 
--- | <a>makeVectorFromArithmeticalExpr</a> makes a vector &lt;math&gt; and
---   a expr &lt;math&gt; from a given vector of variables &lt;math&gt; and
---   a given expr &lt;math&gt; s.t. &lt;math&gt; and &lt;math&gt; don't
---   have &lt;math&gt; as free variables and &lt;math&gt; holds. This
---   assumes given variables and exprs have the type &lt;math&gt;.
+-- | <a>makeVectorFromArithmeticExpr</a> makes a vector &lt;math&gt; and a
+--   expr &lt;math&gt; from a given vector of variables &lt;math&gt; and a
+--   given expr &lt;math&gt; s.t. &lt;math&gt; and &lt;math&gt; don't have
+--   &lt;math&gt; as free variables and &lt;math&gt; holds. This assumes
+--   given variables and exprs have the type &lt;math&gt;.
 --   
 --   <ul>
 --   <li>The returned exprs are normalized with
---   <a>normalizeArithmeticalExpr</a>.</li>
+--   <a>normalizeArithmeticExpr</a>.</li>
 --   </ul>
-makeVectorFromArithmeticalExpr :: Vector VarName -> ArithmeticalExpr -> Maybe (Vector ArithmeticalExpr, ArithmeticalExpr)
+makeVectorFromArithmeticExpr :: Vector VarName -> ArithmeticExpr -> Maybe (Vector ArithmeticExpr, ArithmeticExpr)
 
--- | <a>makeAffineFunctionFromArithmeticalExpr</a> is a specialized version
---   of <a>makeVectorFromArithmeticalExpr</a>. This function returns
+-- | <a>makeAffineFunctionFromArithmeticExpr</a> is a specialized version
+--   of <a>makeVectorFromArithmeticExpr</a>. This function returns
 --   &lt;math&gt; for a given variable &lt;math&gt; and a given expr
 --   &lt;math&gt; where &lt;math&gt; which doesn't use &lt;math&gt; free.
-makeAffineFunctionFromArithmeticalExpr :: VarName -> ArithmeticalExpr -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
+makeAffineFunctionFromArithmeticExpr :: VarName -> ArithmeticExpr -> Maybe (ArithmeticExpr, ArithmeticExpr)
 
--- | <a>splitConstantFactorArithmeticalExpr</a> finds &lt;math&gt; and
+-- | <a>splitConstantFactorArithmeticExpr</a> finds &lt;math&gt; and
 --   &lt;math&gt; for given &lt;math&gt; s.t. &lt;math&gt;.
-splitConstantFactorArithmeticalExpr :: ArithmeticalExpr -> (Integer, ArithmeticalExpr)
-instance GHC.Read.Read Jikka.Core.Language.ArithmeticalExpr.ProductExpr
-instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.ProductExpr
-instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.ProductExpr
-instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticalExpr.ProductExpr
-instance GHC.Read.Read Jikka.Core.Language.ArithmeticalExpr.SumExpr
-instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.SumExpr
-instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.SumExpr
-instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticalExpr.SumExpr
-instance GHC.Show.Show Jikka.Core.Language.ArithmeticalExpr.ArithmeticalExpr
-instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticalExpr.ArithmeticalExpr
-instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticalExpr.ArithmeticalExpr
+splitConstantFactorArithmeticExpr :: ArithmeticExpr -> (Integer, ArithmeticExpr)
+instance GHC.Read.Read Jikka.Core.Language.ArithmeticExpr.ProductExpr
+instance GHC.Show.Show Jikka.Core.Language.ArithmeticExpr.ProductExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticExpr.ProductExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticExpr.ProductExpr
+instance GHC.Read.Read Jikka.Core.Language.ArithmeticExpr.SumExpr
+instance GHC.Show.Show Jikka.Core.Language.ArithmeticExpr.SumExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticExpr.SumExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticExpr.SumExpr
+instance GHC.Show.Show Jikka.Core.Language.ArithmeticExpr.ArithmeticExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticExpr.ArithmeticExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticExpr.ArithmeticExpr
 
 module Jikka.Core.Language.LambdaPatterns
 pattern LamId :: Type -> Expr
@@ -2141,7 +2145,7 @@ rule :: MonadError Error m => RewriteRule m
 --   <li><a>Gcd</a> &lt;math&gt;</li>
 --   <li><a>Lcm</a> &lt;math&gt;</li>
 --   </ul>
-reduceConstArithmeticalExpr :: Monad m => RewriteRule m
+reduceConstArithmeticExpr :: Monad m => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -2375,8 +2379,12 @@ newtype Subst
 Subst :: Map TypeName Type -> Subst
 [unSubst] :: Subst -> Map TypeName Type
 subst :: Subst -> Type -> Type
+
+-- | <a>substDefault</a> replaces all undetermined type variables with the
+--   given default type.
+substDefault :: Type -> Type -> Type
 solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
-substProgram :: Subst -> Program -> Program
+substProgram :: MonadError Error m => Maybe Type -> Subst -> Program -> m Program
 instance GHC.Read.Read Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Show.Show Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Classes.Ord Jikka.Core.Convert.TypeInfer.Equation
@@ -2773,7 +2781,7 @@ reduceModSum :: MonadAlpha m => RewriteRule m
 reduceModProduct :: Monad m => RewriteRule m
 
 
-module Jikka.Core.Convert.ArithmeticalExpr
+module Jikka.Core.Convert.ArithmeticExpr
 
 -- | <a>run</a> sorts arithmetical exprs.
 --   
