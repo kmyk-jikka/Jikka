@@ -175,7 +175,8 @@ rule = makeRewriteRule "Jikka.Core.Convert.ConvexHullTrick" $ \_ -> \case
       (Just e, 0) -> do
         e0 <- lift $ substitute i (LitInt' 0) e
         d0 <- lift $ substitute i (LitInt' 0) d
-        let base' = Let f (ListTy IntTy) base $ Snoc' IntTy base (Plus' (Mult' sign e0) d0)
+        let e0' = Let f (ListTy IntTy) base e0
+        let base' = Snoc' IntTy base (Plus' (Mult' sign e0') d0)
         c <- lift $ substitute i (Plus' (Var i) (LitInt' 1)) c
         d <- lift $ substitute i (Plus' (Var i) (LitInt' 1)) d
         e <- lift $ substitute i (Plus' (Var i) (LitInt' 1)) e
