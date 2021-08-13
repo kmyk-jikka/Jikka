@@ -4,7 +4,7 @@
 module Jikka.CPlusPlus.Language.Util where
 
 import Control.Monad.Identity
-import Data.Char (isAlphaNum)
+import Data.Char (isAlphaNum, isNumber)
 import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.Common.Alpha
@@ -39,7 +39,8 @@ newFreshName kind = renameVarName kind ""
 renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
 renameVarName kind hint = do
   i <- nextCounter
-  let prefix = case takeWhile (\c -> isAlphaNum c || c == '_') hint of
+  let f = reverse . dropWhile (\c -> isNumber c || c == '_') . reverse . takeWhile (\c -> isAlphaNum c || c == '_')
+  let prefix = case f hint of
         "" -> fromNameKind kind
         hint' -> hint' ++ "_"
   return (VarName (prefix ++ show i))
