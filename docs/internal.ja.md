@@ -20,6 +20,7 @@ Jikka の内部のおおまかな構成は以下を順に実行するものに�
 「(標準の) Python」「制限された Python」「core 言語」「C++」をこの順に変換しています。
 ただし、制限された Python は [docs/language.js.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) で解説されているものです。
 また core 言語はほとんど Haskell と言ってよいもので、これは Haskell のコンパイラである GHC の中間言語 [GHC Core](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/core-syn-type) に類似した中間言語になっています。
+core 言語の詳細は [docs/core.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) で解説されています。
 
 - modules の一覧 [Jikka](https://kmyk.github.io/Jikka/)
 - ファイル: [src/Jikka/Main/Subcommand/Convert.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Main/Subcommand/Convert.hs) ([Jikka.Main.Subcommand.Convert](https://kmyk.github.io/Jikka/haddock/Jikka-Main-Subcommand-Convert.html))
@@ -249,6 +250,30 @@ reduceFoldBuild =
 ```
 
 たとえば `Len' _ (Nil' _) -> return' Lit0` という行は `length []` という部分式を `0` という式で置き換えるという rewrite rule を、`Len' t (Cons' _ _ xs) -> return' $ Plus' Lit1 (Len' t xs)` という行は `length (cons x xs)` という部分式を `1 + length xs` という式で置き換えるという rewrite rule を表現しています。
+
+なお、この `reduceFoldBuild` rule は [`v5.2.0.0` の時点](https://github.com/kmyk/Jikka/blob/4c0d00ae0cf8e0a0ab17b82bd0a3e31ceca11ace/src/Jikka/Core/Convert/ShortCutFusion.hs#L96-L114)では、[Template Haskell](https://wiki.haskell.org/Template_Haskell) という Haskell (GHC) のマクロ機能を用いて、内容は同じまま次のように書き直されています。
+
+```haskell
+reduceFoldMap :: MonadAlpha m => RewriteRule m
+reduceFoldMap =
+  mconcat
+    [ -- reduce `Reversed`
+      [r| "len/reversed" forall xs. len (reversed xs) = len xs |],
+      [r| "elem/reversed" forall x xs. elem x (reversed xs) = elem x xs |],
+      [r| "at/reversed" forall xs i. (reversed xs)[i] = xs[len(xs) - i - 1] |],
+      -- reduce `Sorted`
+      [r| "len/sorted" forall xs. len (sorted xs) = len xs |],
+      [r| "elem/sorted" forall x xs. elem x (sorted xs) = elem x xs |],
+      -- reduce `Map`
+      [r| "len/map" forall f xs. len (map f xs) = len xs |],
+      [r| "at/map" forall f xs i. (map f xs)[i] = f xs[i] |],
+      [r| "foldl/map" forall g init f xs. foldl g init (map f xs) = foldl (fun y x -> g y (f x)) init xs|],
+      -- others
+      [r| "len/setat" forall xs i x. len xs[i <- x] = len xs |],
+      [r| "len/scanl" forall f init xs. len (scanl f init xs) = len xs + 1 |],
+      [r| "at/setat" forall xs i x j. xs[i <- x][j] = if i == j then x else xs[j] |]
+    ]
+```
 
 - ファイル: [src/Jikka/Core/Convert/ShortCutFusion.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/Core/Convert/ShortCutFusion.hs) ([Jikka.Core.Convert.ShortCutFusion](https://kmyk.github.io/Jikka/haddock/Jikka-Core-Convert-ShortCutFusion.html))
 
