@@ -21,7 +21,7 @@ where
 import Control.Monad.Trans.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Language.ArithmeticalExpr
+import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -40,8 +40,8 @@ runFunctionBody c i j step y x k = do
           | otherwise -> return $ Var x
         Lit lit -> return $ Lit lit
         At' _ (Var c') index | c' == c -> case () of
-          () | parseArithmeticalExpr index == parseArithmeticalExpr (Var i) -> return $ Var x
-          () | parseArithmeticalExpr index == parseArithmeticalExpr (Var k) -> return $ Var y
+          () | parseArithmeticExpr index == parseArithmeticExpr (Var i) -> return $ Var x
+          () | parseArithmeticExpr index == parseArithmeticExpr (Var k) -> return $ Var y
           () | otherwise -> hoistMaybe Nothing
         App e1 e2 -> App <$> go e1 <*> go e2
         Let x t e1 e2
@@ -60,9 +60,9 @@ rule = makeRewriteRule "Jikka.Core.Convert.KubaruToMorau" $ \_ -> \case
   Foldl' IntTy (ListTy t2) (Lam2 b _ i _ (Foldl' IntTy (ListTy t2') (Lam2 c _ j _ (SetAt' _ (Var c') index step)) (Var b') (Range1' m))) a (Range1' n)
     | t2' == t2 && b' == b && c == c' && b `isUnusedVar` m && b `isUnusedVar` index && b `isUnusedVar` step && c `isUnusedVar` index -> runMaybeT $ do
       -- m(i) = n - i - 1
-      guard $ parseArithmeticalExpr m == parseArithmeticalExpr (Minus' (Minus' n (Var i)) (LitInt' 1))
+      guard $ parseArithmeticExpr m == parseArithmeticExpr (Minus' (Minus' n (Var i)) (LitInt' 1))
       -- index(i, j) = i + j + 1
-      guard $ parseArithmeticalExpr index == parseArithmeticalExpr (Plus' (Var i) (Plus' (Var j) (LitInt' 1)))
+      guard $ parseArithmeticExpr index == parseArithmeticExpr (Plus' (Var i) (Plus' (Var j) (LitInt' 1)))
       x <- lift genVarName'
       y <- lift genVarName'
       k <- lift genVarName'

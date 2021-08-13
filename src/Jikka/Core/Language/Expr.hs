@@ -136,8 +136,8 @@ data Builtin
 
     -- | matrix application \(: \int^{H \times W} \to \int^W \to \int^H\)
     MatAp Integer Integer
-  | -- | zero matrix \(: \to \int^{n \times n}\)
-    MatZero Integer
+  | -- | zero matrix \(: \to \int^{h \times w}\)
+    MatZero Integer Integer
   | -- | unit matrix \(: \to \int^{n \times n}\)
     MatOne Integer
   | -- | matrix addition \(: \int^{H \times W} \to \int^{H \times W} \to \int^{H \times W}\)
@@ -235,6 +235,8 @@ data Builtin
     -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \to \dots \to \alpha _ {n - 1} \to \alpha_0 \times \dots \times \alpha _ {n - 1}\)
     Tuple
   | -- | \(: \forall \alpha_0 \alpha_1 \dots \alpha _ {n - 1}. \alpha_0 \times \dots \times \alpha _ {n - 1} \to \alpha_i\)
+    --
+    -- `Jikka.Core.Parse` may make broken `Proj` with its list of type arguments is empty. This is fixed by `Jikka.Core.Convert.TypeInfer` module.
     Proj Integer
   | -- comparison
 

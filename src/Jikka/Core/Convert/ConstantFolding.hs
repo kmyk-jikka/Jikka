@@ -20,7 +20,7 @@ module Jikka.Core.Convert.ConstantFolding
 
     -- * internal rules
     rule,
-    reduceConstArithmeticalExpr,
+    reduceConstArithmeticExpr,
     reduceConstMaxExpr,
     reduceConstBooleanExpr,
     reduceConstBitExpr,
@@ -57,10 +57,10 @@ import Jikka.Core.Language.Runtime
 -- * `Abs` \(: \int \to \int\)
 -- * `Gcd` \(: \int \to \int \to \int\)
 -- * `Lcm` \(: \int \to \int \to \int\)
-reduceConstArithmeticalExpr :: Monad m => RewriteRule m
-reduceConstArithmeticalExpr =
+reduceConstArithmeticExpr :: Monad m => RewriteRule m
+reduceConstArithmeticExpr =
   let return' = Just . LitInt'
-   in simpleRewriteRule "reduceConstArithmeticalExpr" $ \case
+   in simpleRewriteRule "reduceConstArithmeticExpr" $ \case
         Negate' (LitInt' a) -> return' $ - a
         Plus' a (LitInt' 0) -> Just a
         Plus' (LitInt' 0) b -> Just b
@@ -209,7 +209,7 @@ reduceConstComparison =
 rule :: MonadError Error m => RewriteRule m
 rule =
   mconcat
-    [ reduceConstArithmeticalExpr,
+    [ reduceConstArithmeticExpr,
       reduceConstMaxExpr,
       reduceConstBooleanExpr,
       reduceConstBitExpr,

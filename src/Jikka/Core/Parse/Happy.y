@@ -28,6 +28,7 @@ import Jikka.Common.Error
 import Jikka.Common.Location
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 import qualified Jikka.Core.Parse.Token as L
 }
@@ -79,6 +80,7 @@ import qualified Jikka.Core.Parse.Token as L
     "bool"          { WithLoc _ (L.Ident "bool") }
     "list"          { WithLoc _ (L.Ident "list") }
     "unit"          { WithLoc _ (L.Ident "unit") }
+    "one_tuple"     { WithLoc _ (L.Ident "one_tuple") }
     "convex_hull_trick" { WithLoc _ (L.Ident "convex_hull_trick") }
     "segment_tree"  { WithLoc _ (L.Ident "segment_tree") }
     "int_plus"      { WithLoc _ (L.Ident "int_plus") }
@@ -232,6 +234,7 @@ atom_type :: { Type }
     | "bool"                           { BoolTy }
     | atom_type "list"                 { ListTy $1 }
     | "unit"                           { TupleTy [] }
+    | atom_type "one_tuple"            { TupleTy [$1] }
     | datastructure                    { DataStructureTy $1 }
     | "(" type ")"                     { $2 }
 
@@ -291,30 +294,32 @@ builtin :: { (Builtin, [Type]) }
     : "abs"                            { (Abs, []) }
     | "gcd"                            { (Gcd, []) }
     | "lcm"                            { (Lcm, []) }
-    | "min"                            { (Min2, []) }
-    | "max"                            { (Max2, []) }
+    | "min"                            { (Min2, [underscoreTy]) }
+    | "min" "@" atom_type              { (Min2, [$3]) }
+    | "max"                            { (Max2, [underscoreTy]) }
+    | "max" "@" atom_type              { (Max2, [$3]) }
     | "not"                            { (Not, []) }
     | "implies"                        { (Implies, []) }
     | "iterate"                        { (Iterate, [underscoreTy]) }
     | "iterate" "@" atom_type          { (Iterate, [$3]) }
-    | "matap" integer integer          { (MatAp $2 $3, []) }
-    | "matzero" integer                { (MatZero $2, []) }
-    | "matone" integer                 { (MatOne $2, []) }
-    | "matadd" integer integer         { (MatAdd $2 $3, []) }
-    | "matmul" integer integer integer { (MatMul $2 $3 $4, []) }
-    | "matpow" integer                 { (MatPow $2, []) }
-    | "vecfloormod" integer            { (VecFloorMod $2, []) }
-    | "matfloormod" integer integer    { (MatFloorMod $2 $3, []) }
+    | "matap" "@" integer "@" integer  { (MatAp $3 $5, []) }
+    | "matzero" "@" integer "@" integer    { (MatZero $3 $5, []) }
+    | "matone" "@" integer             { (MatOne $3, []) }
+    | "matadd" "@" integer "@" integer { (MatAdd $3 $5, []) }
+    | "matmul" "@" integer "@" integer "@" integer { (MatMul $3 $5 $7, []) }
+    | "matpow" "@" integer             { (MatPow $3, []) }
+    | "vecfloormod" "@" integer        { (VecFloorMod $3, []) }
+    | "matfloormod" "@" integer "@" integer    { (MatFloorMod $3 $5, []) }
     | "modnegate"                      { (ModNegate, []) }
     | "modplus"                        { (ModPlus, []) }
     | "modminus"                       { (ModMinus, []) }
     | "modmult"                        { (ModMult, []) }
     | "modinv"                         { (ModInv, []) }
     | "modpow"                         { (ModPow, []) }
-    | "modmatap" integer integer       { (ModMatAp $2 $3, []) }
-    | "modmatadd" integer integer      { (ModMatAdd $2 $3, []) }
-    | "modmatmul" integer integer integer    { (ModMatMul $2 $3 $4, []) }
-    | "modmatpow" integer              { (ModMatPow $2, []) }
+    | "modmatap" "@" integer "@" integer    { (ModMatAp $3 $5, []) }
+    | "modmatadd" "@" integer "@" integer    { (ModMatAdd $3 $5, []) }
+    | "modmatmul" "@" integer "@" integer "@" integer    { (ModMatMul $3 $5 $7, []) }
+    | "modmatpow" "@" integer          { (ModMatPow $3, []) }
     | "cons"                           { (Cons, [underscoreTy]) }
     | "cons" "@" atom_type             { (Cons, [$3]) }
     | "snoc"                           { (Snoc, [underscoreTy]) }
@@ -378,7 +383,7 @@ subscription :: { Expr }
     | primary "[" expression "]" "@" atom_type              { At' $6 $1 $3 }
     | primary "[" expression "<-" expression "]"            { SetAt' underscoreTy $1 $3 $5 }
     | primary "[" expression "<-" expression "]" "@" atom_type    { SetAt' $8 $1 $3 $5 }
-    -- | primary "." integer                                   {% makeProj $1 $3 underscoreTy }
+    | primary "." integer                                   {% makeProj $1 $3 underscoreTy }
     | primary "." integer "@" atom_type                     {% makeProj $1 $3 $5 }
 
 -- Function applications
@@ -493,8 +498,9 @@ makeTuple es t = case t of
 
 makeProj :: MonadError Error m => Expr -> Integer -> Type -> m Expr
 makeProj e n t = case t of
+    t | t == underscoreTy -> return $ Proj' [] n e -- A projection from the empty tuple is fixed in Jikka.Core.Convert.TypeInfer.
     TupleTy ts -> return $ Proj' ts n e
-    _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for proj"
+    _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for a tuple projection"
 
 replaceUnderscoresT :: MonadAlpha m => Type -> m Type
 replaceUnderscoresT = mapSubTypesM go where
@@ -502,10 +508,13 @@ replaceUnderscoresT = mapSubTypesM go where
     VarTy (TypeName "_") -> genType
     t -> return t
 
-replaceUnderscoresE :: MonadAlpha m => [(VarName, Type)] -> Expr -> m Expr
+replaceUnderscoresE :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 replaceUnderscoresE env = mapSubExprM go env where
   go _ = \case
     Var (VarName "_") -> Var <$> genVarName'
+    e@(Proj' [] i (Var x)) -> case lookup x env of
+      Just (TupleTy ts) -> return $ Proj' ts i (Var x) -- Fix types of projections if it's easily possible.
+      _ -> return e -- Some cases are impossible. You need to use Jikka.Core.Convert.TypeInfer.
     e -> return e
 
 happyErrorExpList :: MonadError Error m => ([WithLoc L.Token], [String]) -> m a

@@ -21,7 +21,7 @@ import qualified Data.Vector as V
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Matrix
-import Jikka.Core.Language.ArithmeticalExpr
+import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -31,29 +31,29 @@ import Jikka.Core.Language.Util
 
 toLinearExpression :: VarName -> Expr -> Maybe (Maybe Expr, Maybe Expr)
 toLinearExpression x e = do
-  (a, b) <- makeVectorFromArithmeticalExpr (V.singleton x) (parseArithmeticalExpr e)
+  (a, b) <- makeVectorFromArithmeticExpr (V.singleton x) (parseArithmeticExpr e)
   case V.toList a of
     [a] ->
-      let a' = if isOneArithmeticalExpr a then Nothing else Just (formatArithmeticalExpr a)
-          b' = if isZeroArithmeticalExpr b then Nothing else Just (formatArithmeticalExpr b)
+      let a' = if isOneArithmeticExpr a then Nothing else Just (formatArithmeticExpr a)
+          b' = if isZeroArithmeticExpr b then Nothing else Just (formatArithmeticExpr b)
        in Just (a', b')
     _ -> error $ "Jikka.Core.Convert.MatrixExponentiation.toLinearExpression: size mismtach: " ++ show (V.length a)
 
-fromMatrix :: Matrix ArithmeticalExpr -> Expr
+fromMatrix :: Matrix ArithmeticExpr -> Expr
 fromMatrix f =
   let (h, w) = matsize f
-      go row = uncurryApp (Tuple' (replicate w IntTy)) (map formatArithmeticalExpr (V.toList row))
+      go row = uncurryApp (Tuple' (replicate w IntTy)) (map formatArithmeticExpr (V.toList row))
    in uncurryApp (Tuple' (replicate h (TupleTy (replicate w IntTy)))) (map go (V.toList (unMatrix f)))
 
-fromAffineMatrix :: Matrix ArithmeticalExpr -> V.Vector ArithmeticalExpr -> Expr
+fromAffineMatrix :: Matrix ArithmeticExpr -> V.Vector ArithmeticExpr -> Expr
 fromAffineMatrix a b | fst (matsize a) /= V.length b = error $ "Jikka.Core.Convert.MatrixExponentiation.fromAffineMatrix: size mismtach: " ++ show (matsize a) ++ " and " ++ show (V.length b)
 fromAffineMatrix a b =
   let (h, w) = matsize a
-      go row c = uncurryApp (Tuple' (replicate (w + 1) IntTy)) (map formatArithmeticalExpr (V.toList row ++ [c]))
+      go row c = uncurryApp (Tuple' (replicate (w + 1) IntTy)) (map formatArithmeticExpr (V.toList row ++ [c]))
       bottom = uncurryApp (Tuple' (replicate (w + 1) IntTy)) (replicate w (LitInt' 0) ++ [LitInt' 1])
    in uncurryApp (Tuple' (replicate (h + 1) (TupleTy (replicate (w + 1) IntTy)))) (V.toList (V.zipWith go (unMatrix a) b) ++ [bottom])
 
-toMatrix :: MonadAlpha m => [(VarName, Type)] -> VarName -> Integer -> Expr -> m (Maybe (Matrix ArithmeticalExpr, Maybe (V.Vector ArithmeticalExpr)))
+toMatrix :: MonadAlpha m => [(VarName, Type)] -> VarName -> Integer -> Expr -> m (Maybe (Matrix ArithmeticExpr, Maybe (V.Vector ArithmeticExpr)))
 toMatrix env x n step =
   case curryApp step of
     (Tuple' _, es) -> runMaybeT $ do
@@ -64,9 +64,9 @@ toMatrix env x n step =
       rows <- MaybeT . return . forM es $ \e -> do
         let e' = mapSubExpr unpackTuple env e
         guard $ x `isUnusedVar` e'
-        makeVectorFromArithmeticalExpr xs (parseArithmeticalExpr e')
+        makeVectorFromArithmeticExpr xs (parseArithmeticExpr e')
       a <- MaybeT . return $ makeMatrix (V.fromList (map fst rows))
-      let b = if all (isZeroArithmeticalExpr . snd) rows then Nothing else Just (V.fromList (map snd rows))
+      let b = if all (isZeroArithmeticExpr . snd) rows then Nothing else Just (V.fromList (map snd rows))
       return (a, b)
     _ -> return Nothing
 

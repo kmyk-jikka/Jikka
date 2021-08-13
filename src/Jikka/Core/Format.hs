@@ -114,7 +114,7 @@ formatType' = \case
   ListTy t -> (resolvePrec funCallPrec (formatType' t) ++ " list", funCallPrec)
   TupleTy ts -> case ts of
     [] -> ("unit", identPrec)
-    [t] -> (resolvePrec (pred multPrec) (formatType' t) ++ ",", multPrec)
+    [t] -> (resolvePrec funCallPrec (formatType' t) ++ " one_tuple", funCallPrec)
     _ -> (intercalate " * " (map (resolvePrec (pred multPrec) . formatType') ts), multPrec)
   FunTy t1 t2 ->
     (resolvePrecLeft impliesPrec RightToLeft (formatType' t1) ++ " -> " ++ resolvePrecRight impliesPrec RightToLeft (formatType' t2), impliesPrec)
@@ -125,16 +125,16 @@ formatType = resolvePrec parenPrec . formatType'
 
 formatDataStructure :: DataStructure -> String
 formatDataStructure = \case
-  ConvexHullTrick -> "convex-hull-trick"
-  SegmentTree semigrp -> "segment-tree<" ++ formatSemigroup semigrp ++ ">"
+  ConvexHullTrick -> "convex_hull_trick"
+  SegmentTree semigrp -> "segment_tree<" ++ formatSemigroup semigrp ++ ">"
 
 formatSemigroup :: Semigroup' -> String
 formatSemigroup = \case
-  SemigroupIntPlus -> "int.plus"
-  SemigroupIntMin -> "int.min"
-  SemigroupIntMax -> "int.max"
-  SemigroupIntGcd -> "int.gcd"
-  SemigroupIntLcm -> "int.lcm"
+  SemigroupIntPlus -> "int_plus"
+  SemigroupIntMin -> "int_min"
+  SemigroupIntMax -> "int_max"
+  SemigroupIntGcd -> "int_gcd"
+  SemigroupIntLcm -> "int_lcm"
 
 data Builtin'
   = Fun String
@@ -146,6 +146,9 @@ data Builtin'
   | Proj' Integer
   | If'
   deriving (Eq, Ord, Show, Read)
+
+funMat :: String -> [Integer] -> Builtin'
+funMat f args = Fun $ intercalate "@" (f : map show args)
 
 analyzeBuiltin :: Builtin -> Builtin'
 analyzeBuiltin = \case
@@ -179,14 +182,14 @@ analyzeBuiltin = \case
   BitLeftShift -> InfixOp "<<" powerPrec LeftToRight
   BitRightShift -> InfixOp ">>" powerPrec LeftToRight
   -- matrix functions
-  MatAp _ _ -> Fun "matap"
-  MatZero _ -> Fun "matzero"
-  MatOne _ -> Fun "matone"
-  MatAdd _ _ -> Fun "matadd"
-  MatMul _ _ _ -> Fun "matmul"
-  MatPow _ -> Fun "matpow"
-  VecFloorMod _ -> Fun "vecfloormod"
-  MatFloorMod _ _ -> Fun "matfloormod"
+  MatAp h w -> funMat "matap" [h, w]
+  MatZero h w -> funMat "matzero" [h, w]
+  MatOne n -> funMat "matone" [n]
+  MatAdd h w -> funMat "matadd" [h, w]
+  MatMul h n w -> funMat "matmul" [h, n, w]
+  MatPow n -> funMat "matpow" [n]
+  VecFloorMod n -> funMat "vecfloormod" [n]
+  MatFloorMod h w -> funMat "matfloormod" [h, w]
   -- modular functions
   ModNegate -> Fun "modnegate"
   ModPlus -> Fun "modplus"
@@ -194,10 +197,10 @@ analyzeBuiltin = \case
   ModMult -> Fun "modmult"
   ModInv -> Fun "modinv"
   ModPow -> Fun "modpow"
-  ModMatAp _ _ -> Fun "modmatap"
-  ModMatAdd _ _ -> Fun "modmatadd"
-  ModMatMul _ _ _ -> Fun "modmatmul"
-  ModMatPow _ -> Fun "modmatpow"
+  ModMatAp h w -> funMat "modmatap" [h, w]
+  ModMatAdd h w -> funMat "modmatadd" [h, w]
+  ModMatMul h n w -> funMat "modmatmul" [h, n, w]
+  ModMatPow n -> funMat "modmatpow" [n]
   -- list functions
   Cons -> Fun "cons"
   Snoc -> Fun "snoc"
@@ -244,22 +247,22 @@ analyzeBuiltin = \case
   Permute -> Fun "permute"
   MultiChoose -> Fun "multichoose"
   -- data structures
-  ConvexHullTrickInit -> Fun "cht.init"
-  ConvexHullTrickGetMin -> Fun "cht.getmin"
-  ConvexHullTrickInsert -> Fun "cht.insert"
-  SegmentTreeInitList _ -> Fun "segtree.initlist"
-  SegmentTreeGetRange _ -> Fun "segtree.getrange"
-  SegmentTreeSetPoint _ -> Fun "segtree.setpoint"
+  ConvexHullTrickInit -> Fun "cht_init"
+  ConvexHullTrickGetMin -> Fun "cht_getmin"
+  ConvexHullTrickInsert -> Fun "cht_insert"
+  SegmentTreeInitList _ -> Fun "segtree_initlist"
+  SegmentTreeGetRange _ -> Fun "segtree_getrange"
+  SegmentTreeSetPoint _ -> Fun "segtree_setpoint"
 
 formatTemplate :: [Type] -> String
-formatTemplate = \case
-  [] -> ""
-  ts -> "<" ++ intercalate ", " (map formatType ts) ++ ">"
+formatTemplate ts = concatMap (('@' :) . formatType) ts
 
 formatFunCall :: (String, Prec) -> [Expr] -> (String, Prec)
-formatFunCall f = \case
-  [] -> f
-  args -> (resolvePrec funCallPrec f ++ "(" ++ intercalate ", " (map (resolvePrec commaPrec . formatExpr') args) ++ ")", funCallPrec)
+formatFunCall f [] = f
+formatFunCall f args =
+  let f' = resolvePrecLeft funCallPrec LeftToRight f
+      args' = map (resolvePrecRight funCallPrec LeftToRight . formatExpr') args
+   in (unwords (f' : args'), funCallPrec)
 
 formatBuiltinIsolated' :: Builtin' -> [Type] -> String
 formatBuiltinIsolated' builtin ts = case builtin of
@@ -275,8 +278,8 @@ formatBuiltinIsolated' builtin ts = case builtin of
 formatBuiltinIsolated :: Builtin -> [Type] -> String
 formatBuiltinIsolated builtin ts = formatBuiltinIsolated' (analyzeBuiltin builtin) ts
 
-formatBuiltin' :: Builtin' -> [Type] -> [Expr] -> (String, Prec)
-formatBuiltin' builtin ts args = case (builtin, ts, args) of
+formatBuiltin' :: Builtin -> [Type] -> [Expr] -> (String, Prec)
+formatBuiltin' builtin ts args = case (analyzeBuiltin builtin, ts, args) of
   (Fun "map", _, [Lam x IntTy e, Range1' n]) | x `isUnusedVar` e -> formatFunCall ("replicate", identPrec) [n, e]
   (Fun name, _, _) -> formatFunCall (name, identPrec) args
   (PrefixOp op, _, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
@@ -287,18 +290,18 @@ formatBuiltin' builtin ts args = case (builtin, ts, args) of
   (Tuple', _, args) | length args >= length ts -> formatFunCall (paren (intercalate ", " (map (resolvePrec commaPrec . formatExpr') (take (length ts) args))), identPrec) (drop (length ts) args)
   (Proj' n, _, e : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e) ++ "." ++ show n, identPrec) args
   (If', _, e1 : e2 : e3 : args) -> formatFunCall ("if" ++ " " ++ resolvePrec parenPrec (formatExpr' e1) ++ " then " ++ resolvePrec parenPrec (formatExpr' e2) ++ " else " ++ resolvePrec lambdaPrec (formatExpr' e3), lambdaPrec) args
-  _ -> formatFunCall (formatBuiltinIsolated' builtin ts, identPrec) args
+  _ -> formatFunCall (formatBuiltinIsolated' (analyzeBuiltin builtin) ts, identPrec) args
 
 formatBuiltin :: Builtin -> [Type] -> [Expr] -> String
-formatBuiltin f ts args = resolvePrec parenPrec (formatBuiltin' (analyzeBuiltin f) ts args)
+formatBuiltin f ts args = resolvePrec parenPrec (formatBuiltin' f ts args)
 
 formatLiteral :: Literal -> String
 formatLiteral = \case
   LitBuiltin builtin ts -> formatBuiltinIsolated builtin ts
   LitInt n -> show n
   LitBool p -> map toLower $ show p
-  LitNil t -> "nil" ++ formatTemplate [t]
-  LitBottom t _ -> "bottom" ++ formatTemplate [t]
+  LitNil _ -> "nil"
+  LitBottom _ msg -> "bottom<" ++ show msg ++ ">"
 
 formatFormalArgs :: [(VarName, Type)] -> String
 formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args
@@ -311,15 +314,15 @@ formatExpr' = \case
     let (f, args) = curryApp e
      in case f of
           Var x -> formatFunCall (unVarName x, identPrec) args
-          Lit (LitBuiltin builtin ts) -> (formatBuiltin builtin ts args, identPrec)
+          Lit (LitBuiltin builtin ts) -> formatBuiltin' builtin ts args
           _ -> formatFunCall (formatExpr' f) args
   LamId _ -> ("id", identPrec)
   LamConst _ e -> formatFunCall ("const", identPrec) [e]
   e@(Lam _ _ _) ->
     let (args, body) = uncurryLam e
      in ("fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' body) ++ "\n" ++ dedent ++ "\n", lambdaPrec)
-  Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' e1) ++ "\n" ++ dedent ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
-  Assert e1 e2 -> ("assert " ++ resolvePrec parenPrec (formatExpr' e1) ++ " in " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
+  Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " = " ++ resolvePrec parenPrec (formatExpr' e1) ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
+  Assert e1 e2 -> ("assert " ++ resolvePrec parenPrec (formatExpr' e1) ++ " in\n" ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
 
 formatExpr :: Expr -> String
 formatExpr = unlines . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec . formatExpr'

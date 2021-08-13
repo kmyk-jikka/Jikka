@@ -37,11 +37,10 @@ spec = describe "formatExpr" $ do
     let expected =
           unlines
             [ "let rec solve$0 (n$1: int): int =",
-              "    let xs$2: int list =",
-              "        map((fun (i$3: int) ->",
-              "            i$3 * i$3",
-              "        ), range(n$1))",
-              "    in sum(xs$2)",
+              "    let xs$2: int list = map (fun (i$3: int) ->",
+              "        i$3 * i$3",
+              "    ) (range n$1)",
+              "    in sum xs$2",
               "in",
               "solve$0"
             ]

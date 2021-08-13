@@ -21,7 +21,7 @@ import Data.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
-import Jikka.Core.Language.ArithmeticalExpr
+import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -41,13 +41,13 @@ cumulativeMax max2 t a0 a n = do
 rule :: MonadAlpha m => RewriteRule m
 rule = makeRewriteRule "Jikka.Core.Convert.CumulativeSum" $ \_ -> \case
   Sum' (Map' _ _ (Lam x _ (At' _ a index)) (Range1' n)) | x `isUnusedVar` a -> do
-    case makeAffineFunctionFromArithmeticalExpr x (parseArithmeticalExpr index) of
-      Just (coeff, shift) | isOneArithmeticalExpr coeff -> do
+    case makeAffineFunctionFromArithmeticExpr x (parseArithmeticExpr index) of
+      Just (coeff, shift) | isOneArithmeticExpr coeff -> do
         b <- genVarName'
         let e =
-              if isZeroArithmeticalExpr shift
+              if isZeroArithmeticExpr shift
                 then At' IntTy (Var b) n
-                else Minus' (At' IntTy (Var b) (Plus' n (formatArithmeticalExpr shift))) (At' IntTy (Var b) (formatArithmeticalExpr shift))
+                else Minus' (At' IntTy (Var b) (Plus' n (formatArithmeticExpr shift))) (At' IntTy (Var b) (formatArithmeticExpr shift))
         return . Just $
           Let b (ListTy IntTy) (Scanl' IntTy IntTy (Builtin Plus) Lit0 a) e
       _ -> return Nothing

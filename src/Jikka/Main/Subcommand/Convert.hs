@@ -47,7 +47,7 @@ convertProgram :: (MonadAlpha m, MonadError Error m) => Program -> Target -> m P
 convertProgram prog target = case (prog, target) of
   (PythonProgram _, PythonTarget) -> return prog
   (RestrictedPythonProgram _, RestrictedPythonTarget) -> return prog
-  (CoreProgram _, CoreTarget) -> return prog
+  (CoreProgram prog, CoreTarget) -> CoreProgram <$> Convert.run prog -- optimize
   (CPlusPlusProgram _, CPlusPlusTarget) -> return prog
   (RestrictedPythonProgram _, PythonTarget) -> throwCommandLineError "cannot convert from restricted Python to Python"
   (CoreProgram _, PythonTarget) -> throwCommandLineError "cannot convert from core to Python"

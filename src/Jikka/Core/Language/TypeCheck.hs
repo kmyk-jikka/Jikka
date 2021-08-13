@@ -58,7 +58,7 @@ builtinToType builtin ts =
         BitRightShift -> go0 $ Fun2STy IntTy
         -- matrix functions
         MatAp h w -> go0 $ Fun2Ty (matrixTy h w) (vectorTy w) (vectorTy h)
-        MatZero n -> go0 $ matrixTy n n
+        MatZero h w -> go0 $ matrixTy h w
         MatOne n -> go0 $ matrixTy n n
         MatAdd h w -> go0 $ Fun2Ty (matrixTy h w) (matrixTy h w) (matrixTy h w)
         MatMul h n w -> go0 $ Fun2Ty (matrixTy h n) (matrixTy n w) (matrixTy h w)
@@ -107,7 +107,10 @@ builtinToType builtin ts =
         Range3 -> go0 $ Fun3Ty IntTy IntTy IntTy (ListTy IntTy)
         -- tuple functions
         Tuple -> return $ curryFunTy ts (TupleTy ts)
-        Proj n -> return $ FunTy (TupleTy ts) (ts !! fromInteger n)
+        Proj n ->
+          if 0 <= n && n < toInteger (length ts)
+            then return $ FunTy (TupleTy ts) (ts !! fromInteger n)
+            else throwTypeError $ "projection index is out of range: type = " ++ formatType (TupleTy ts) ++ ", index = " ++ show n
         -- comparison
         LessThan -> go1 $ \t -> Fun2Ty t t BoolTy
         LessEqual -> go1 $ \t -> Fun2Ty t t BoolTy

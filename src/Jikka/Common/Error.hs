@@ -23,6 +23,7 @@ module Jikka.Common.Error
     wrapAt',
     maybeToError,
     eitherToError,
+    fromSuccess,
 
     -- * utilities to report multiple errors
     catchError',
@@ -149,6 +150,11 @@ maybeToError _ (Just b) = return b
 
 eitherToError :: MonadError a m => Either a b -> m b
 eitherToError = liftEither
+
+fromSuccess :: Either Error a -> a
+fromSuccess f = case f of
+  Left err -> error $ "Jikka.Common.Error.fromSuccess: unexpected failure: " ++ show err
+  Right y -> y
 
 -- | `catchError'` is the inverse of `liftError`.
 catchError' :: MonadError e m => m a -> m (Either e a)

@@ -8,77 +8,45 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Convert.MatrixExponentiation (run)
-import Jikka.Core.Language.BuiltinPatterns
+import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
+import Jikka.Core.Format (formatProgram)
 import Jikka.Core.Language.Expr
-import Jikka.Core.Language.Util
+import Jikka.Core.Parse (parseProgram)
 import Test.Hspec
 
 run' :: Program -> Either Error Program
 run' = flip evalAlphaT 0 . run
 
+parseProgram' :: [String] -> Program
+parseProgram' = fromSuccess . flip evalAlphaT 100 . (TypeInfer.run <=< parseProgram . unlines)
+
 spec :: Spec
 spec = describe "run" $ do
   it "works about matrices" $ do
-    let ts2 = [IntTy, IntTy]
-    let ts22 = [TupleTy ts2, TupleTy ts2]
-    let proj i = Proj' ts2 i (Var "xs")
-    let mkTuple ts = uncurryApp (Tuple' ts)
-    let letConst = Let "c" IntTy (LitInt' 10)
-    let k = LitInt' 100
-    let base = mkTuple ts2 [LitInt' 12, LitInt' 34]
     let prog =
-          ResultExpr
-            ( letConst
-                ( Iterate'
-                    (TupleTy ts2)
-                    k
-                    ( Lam
-                        "xs"
-                        (TupleTy ts2)
-                        (mkTuple ts2 [Plus' (proj 0) (Mult' (Var "c") (proj 1)), proj 0])
-                    )
-                    base
-                )
-            )
+          parseProgram'
+            [ "let c: int = 10",
+              "in let k: int = 1000",
+              "in iterate k (fun x -> (x.0 + c * x.1, x.0)) (12, 34)"
+            ]
     let expected =
-          ResultExpr
-            ( letConst
-                ( MatAp'
-                    2
-                    2
-                    ( MatPow'
-                        2
-                        (mkTuple ts22 [mkTuple ts2 [Lit1, Var "c"], mkTuple ts2 [Lit1, Lit0]])
-                        k
-                    )
-                    base
-                )
-            )
-    run' prog `shouldBe` Right expected
+          parseProgram'
+            [ "let c: int = 10",
+              "in let k: int = 1000",
+              "in matap@2@2 (matpow@2 ((1, c), (1, 0)) k) (12, 34)"
+            ]
+    (formatProgram <$> run' prog) `shouldBe` Right (formatProgram expected)
   it "works about integers" $ do
-    let letConst = Let "c" IntTy (LitInt' 10)
-    let k = LitInt' 100
-    let base = LitInt' 1234
     let prog =
-          ResultExpr
-            ( letConst
-                ( Iterate'
-                    IntTy
-                    k
-                    ( Lam
-                        "x"
-                        IntTy
-                        (Plus' (Mult' (Var "c") (Var "x")) (LitInt' 2))
-                    )
-                    base
-                )
-            )
+          parseProgram'
+            [ "let c: int = 10",
+              "in let k: int = 1000",
+              "in iterate k (fun x -> c * x + 2) 1234"
+            ]
     let expected =
-          ResultExpr
-            ( letConst
-                ( Plus'
-                    (Mult' (Pow' (Var "c") k) base)
-                    (Mult' (FloorDiv' (Minus' (Pow' (Var "c") k) (LitInt' 1)) (Minus' (Var "c") (LitInt' 1))) (LitInt' 2))
-                )
-            )
-    run' prog `shouldBe` Right expected
+          parseProgram'
+            [ "let c: int = 10",
+              "in let k: int = 1000",
+              "in c ** k * 1234 + (c ** k - 1) / (c - 1) * 2"
+            ]
+    (formatProgram <$> run' prog) `shouldBe` Right (formatProgram expected)

@@ -133,7 +133,7 @@ runSubcommand subcmd opts path = case subcmd of
         else return output
     output <-
       return $
-        if embedOriginalCode opts
+        if target' == CPlusPlusTarget && embedOriginalCode opts
           then
             let headers = ["// This C++ code is transpiled using Jikka transpiler v" <> T.pack (showVersion version) <> " https://github.com/kmyk/Jikka", "// The original Python code:"]
              in T.unlines (headers ++ map ("//     " <>) (T.lines input)) <> output

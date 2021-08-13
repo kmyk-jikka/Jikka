@@ -231,7 +231,7 @@ isConstantTimeBuiltin = \case
   BitRightShift -> True
   -- matrix functions
   MatAp _ _ -> True
-  MatZero _ -> True
+  MatZero _ _ -> True
   MatOne _ -> True
   MatAdd _ _ -> True
   MatMul _ _ _ -> True
