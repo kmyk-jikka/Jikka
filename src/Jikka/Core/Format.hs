@@ -163,13 +163,13 @@ analyzeBuiltin = \case
   Abs -> Fun "abs"
   Gcd -> Fun "gcd"
   Lcm -> Fun "lcm"
-  Min2 -> InfixOp "<?" appendPrec LeftToRight
-  Max2 -> InfixOp ">?" appendPrec LeftToRight
+  Min2 -> Fun "min"
+  Max2 -> Fun "max"
   -- logical functions
-  Not -> PrefixOp "not"
-  And -> InfixOp "and" andPrec RightToLeft
-  Or -> InfixOp "or" orPrec RightToLeft
-  Implies -> InfixOp "implies" impliesPrec RightToLeft
+  Not -> Fun "not"
+  And -> InfixOp "&&" andPrec RightToLeft
+  Or -> InfixOp "||" orPrec RightToLeft
+  Implies -> Fun "implies"
   If -> If'
   -- bitwise functions
   BitNot -> PrefixOp "~"
@@ -215,12 +215,12 @@ analyzeBuiltin = \case
   Product -> Fun "product"
   ModSum -> Fun "modsum"
   ModProduct -> Fun "modproduct"
-  Min1 -> Fun "min"
-  Max1 -> Fun "max"
+  Min1 -> Fun "minimum"
+  Max1 -> Fun "maximum"
   ArgMin -> Fun "argmin"
   ArgMax -> Fun "argmax"
-  Gcd1 -> Fun "gcd"
-  Lcm1 -> Fun "lcm"
+  Gcd1 -> Fun "gcds"
+  Lcm1 -> Fun "lcms"
   All -> Fun "all"
   Any -> Fun "any"
   Sorted -> Fun "sort"

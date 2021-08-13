@@ -34,13 +34,13 @@ reduceAll =
   mconcat
     [ -- list build functions
       [r| "all/nil" all nil = true |],
-      [r| "all/cons" forall x xs. all (cons x xs) = x and all xs |],
+      [r| "all/cons" forall x xs. all (cons x xs) = x && all xs |],
       -- list map functions
       [r| "all/reversed" forall xs. all (reversed xs) = all xs |],
       [r| "all/sorted" forall xs. all (sorted xs) = all xs |],
-      [r| "all/filter" forall f xs. all (filter f xs) = all (map (fun x -> f x implies x) xs) |],
+      [r| "all/filter" forall f xs. all (filter f xs) = all (map (fun x -> implies (f x) x) xs) |],
       [r| "all/map/not" forall e xs. all (map (fun x -> not e) xs) = not (any (map (fun x -> e) xs)) |],
-      [r| "all/map/and" forall e1 e2 xs. all (map (fun x -> e1 and e2) xs) = all (map (fun x -> e1) xs) and all (map (fun x -> e2) xs) |]
+      [r| "all/map/and" forall e1 e2 xs. all (map (fun x -> e1 && e2) xs) = all (map (fun x -> e1) xs) && all (map (fun x -> e2) xs) |]
     ]
 
 reduceAny :: MonadAlpha m => RewriteRule m
@@ -48,14 +48,14 @@ reduceAny =
   mconcat
     [ -- list build functions
       [r| "any/nil" any nil = false |],
-      [r| "any/cons" forall x xs. any (cons x xs) = x or any xs |],
+      [r| "any/cons" forall x xs. any (cons x xs) = x || any xs |],
       -- list map functions
       [r| "any/reversed" forall xs. any (reversed xs) = any xs |],
       [r| "any/sorted" forall xs. any (sorted xs) = any xs |],
-      [r| "any/filter" forall f xs. any (filter f xs) = any (map (fun x -> f x and x) xs) |],
+      [r| "any/filter" forall f xs. any (filter f xs) = any (map (fun x -> f x && x) xs) |],
       [r| "any/map/not" forall e xs. any (map (fun x -> not e) xs) = not (all (map (fun x -> e) xs)) |],
-      [r| "any/map/or" forall e1 e2 xs. any (map (fun x -> e1 or e2) xs) = any (map (fun x -> e1) xs) or any (map (fun x -> e2) xs) |],
-      [r| "any/map/implies" forall e1 e2 xs. any (map (fun x -> e1 implies e2) xs) = any (map (fun x -> not e1) xs) or any (map (fun x -> e2) xs) |]
+      [r| "any/map/or" forall e1 e2 xs. any (map (fun x -> e1 || e2) xs) = any (map (fun x -> e1) xs) || any (map (fun x -> e2) xs) |],
+      [r| "any/map/implies" forall e1 e2 xs. any (map (fun x -> implies e1 e2) xs) = any (map (fun x -> not e1) xs) || any (map (fun x -> e2) xs) |]
     ]
 
 rule :: MonadAlpha m => RewriteRule m

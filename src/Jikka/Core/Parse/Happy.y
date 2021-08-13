@@ -90,6 +90,10 @@ import qualified Jikka.Core.Parse.Token as L
     "abs"           { WithLoc _ (L.Ident "abs") }
     "gcd"           { WithLoc _ (L.Ident "gcd") }
     "lcm"           { WithLoc _ (L.Ident "lcm") }
+    "max"           { WithLoc _ (L.Ident "max") }
+    "min"           { WithLoc _ (L.Ident "min") }
+    "not"           { WithLoc _ (L.Ident "not") }
+    "implies"       { WithLoc _ (L.Ident "implies") }
     "iterate"       { WithLoc _ (L.Ident "iterate") }
     "matap"         { WithLoc _ (L.Ident "matap") }
     "matzero"       { WithLoc _ (L.Ident "matzero") }
@@ -122,10 +126,12 @@ import qualified Jikka.Core.Parse.Token as L
     "product"       { WithLoc _ (L.Ident "product") }
     "modsum"        { WithLoc _ (L.Ident "modsum") }
     "modproduct"    { WithLoc _ (L.Ident "modproduct") }
-    "min"           { WithLoc _ (L.Ident "min") }
-    "max"           { WithLoc _ (L.Ident "max") }
+    "minimum"       { WithLoc _ (L.Ident "minimum") }
+    "maximum"       { WithLoc _ (L.Ident "maximum") }
     "argmin"        { WithLoc _ (L.Ident "argmin") }
     "argmax"        { WithLoc _ (L.Ident "argmax") }
+    "gcds"          { WithLoc _ (L.Ident "gcds") }
+    "lcms"          { WithLoc _ (L.Ident "lcms") }
     "all"           { WithLoc _ (L.Ident "all") }
     "any"           { WithLoc _ (L.Ident "any") }
     "sorted"        { WithLoc _ (L.Ident "sorted") }
@@ -158,10 +164,8 @@ import qualified Jikka.Core.Parse.Token as L
     "**"            { WithLoc _ (L.Operator L.Pow) }
 
     -- boolean operators
-    "and"           { WithLoc _ (L.Operator L.And) }
-    "or"            { WithLoc _ (L.Operator L.Or) }
-    "not"           { WithLoc _ (L.Operator L.Not) }
-    "implies"       { WithLoc _ (L.Operator L.Implies) }
+    "&&"             { WithLoc _ (L.Operator L.And) }
+    "||"             { WithLoc _ (L.Operator L.Or) }
 
     -- bit operators
     "~"             { WithLoc _ (L.Operator L.BitNot) }
@@ -170,10 +174,6 @@ import qualified Jikka.Core.Parse.Token as L
     "^"             { WithLoc _ (L.Operator L.BitXor) }
     "<<"            { WithLoc _ (L.Operator L.BitLShift) }
     ">>"            { WithLoc _ (L.Operator L.BitRShift) }
-
-    -- min max operators
-    "<?"            { WithLoc _ (L.Operator L.Min) }
-    ">?"            { WithLoc _ (L.Operator L.Max) }
 
     -- comparators
     ">"             { WithLoc _ (L.Operator L.GreaterThan) }
@@ -291,6 +291,10 @@ builtin :: { (Builtin, [Type]) }
     : "abs"                            { (Abs, []) }
     | "gcd"                            { (Gcd, []) }
     | "lcm"                            { (Lcm, []) }
+    | "min"                            { (Min2, []) }
+    | "max"                            { (Max2, []) }
+    | "not"                            { (Not, []) }
+    | "implies"                        { (Implies, []) }
     | "iterate"                        { (Iterate, [underscoreTy]) }
     | "iterate" "@" atom_type          { (Iterate, [$3]) }
     | "matap" integer integer          { (MatAp $2 $3, []) }
@@ -333,14 +337,16 @@ builtin :: { (Builtin, [Type]) }
     | "product"                        { (Product, []) }
     | "modsum"                         { (ModSum, []) }
     | "modproduct"                     { (ModProduct, []) }
-    | "min"                            { (Min1, [underscoreTy]) }
-    | "min" "@" atom_type              { (Min1, [$3]) }
-    | "max"                            { (Max1, [underscoreTy]) }
-    | "max" "@" atom_type              { (Max1, [$3]) }
+    | "minimum"                        { (Min1, [underscoreTy]) }
+    | "minimum" "@" atom_type          { (Min1, [$3]) }
+    | "maximum"                        { (Max1, [underscoreTy]) }
+    | "maximum" "@" atom_type          { (Max1, [$3]) }
     | "argmin"                         { (ArgMin, [underscoreTy]) }
     | "argmin" "@" atom_type           { (ArgMin, [$3]) }
     | "argmax"                         { (ArgMax, [underscoreTy]) }
     | "argmax" "@" atom_type           { (ArgMax, [$3]) }
+    | "gcds"                           { (Gcd1, []) }
+    | "lcms"                           { (Lcm1, []) }
     | "all"                            { (All, []) }
     | "any"                            { (Any, []) }
     | "sorted"                         { (Sorted, [underscoreTy]) }
@@ -422,19 +428,11 @@ or_expr :: { Expr }
     : xor_expr                                              { $1 }
     | or_expr "|" xor_expr                                  { BitOr' $1 $3 }
 
--- Min and max operations
-min_expr :: { Expr }
-    : or_expr                                               { $1 }
-    | min_expr "<?" or_expr                                 { Min2' underscoreTy $1 $3 }
-    | min_expr "<?" "@" atom_type or_expr                   { Min2' $4 $1 $5 }
-    | min_expr ">?" or_expr                                 { Max2' underscoreTy $1 $3 }
-    | min_expr ">?" "@" atom_type or_expr                   { Max2' $4 $1 $5 }
-
 -- Comparisons
 comparison :: { Expr }
-    : min_expr                                              { $1 }
-    | comparison comp_operator min_expr                     { $2 underscoreTy $1 $3 }
-    | comparison comp_operator "@" atom_type min_expr       { $2 $4 $1 $5 }
+    : or_expr                                               { $1 }
+    | comparison comp_operator or_expr                      { $2 underscoreTy $1 $3 }
+    | comparison comp_operator "@" atom_type or_expr        { $2 $4 $1 $5 }
 comp_operator :: { Type -> Expr -> Expr -> Expr }
     : "=="                                                  { Equal' }
     | "/="                                                  { NotEqual' }
@@ -444,20 +442,12 @@ comp_operator :: { Type -> Expr -> Expr -> Expr }
     | ">="                                                  { GreaterEqual' }
 
 -- Boolean operations
-not_test :: { Expr }
-    : comparison                                            { $1 }
-    | "not" not_test                                        { Not' $2 }
 and_test :: { Expr }
-    : not_test                                              { $1 }
-    | and_test "and" not_test                               { And' $1 $3 }
+    : comparison                                            { $1 }
+    | and_test "&&" comparison                              { And' $1 $3 }
 or_test :: { Expr }
     : and_test                                              { $1 }
-    | or_test "or" and_test                                 { Or' $1 $3 }
-
--- Implication operation
-implies_test :: { Expr }
-    : or_test                                               { $1 }
-    | or_test "implies" implies_test                        { Implies' $1 $3 }
+    | or_test "||" and_test                                 { Or' $1 $3 }
 
 -- Conditional expressions
 conditional_expression :: { Expr }
@@ -477,7 +467,7 @@ assert_expr :: { Expr }
     : "assert" expression "->" expression                       { Assert $2 $4 }
 
 expression_nolet :: { Expr }
-    : implies_test                                          { $1 }
+    : or_test                                               { $1 }
     | conditional_expression                                { $1 }
     | lambda_expr                                           { $1 }
     | assert_expr                                           { $1 }
