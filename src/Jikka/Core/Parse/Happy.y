@@ -126,6 +126,8 @@ import qualified Jikka.Core.Parse.Token as L
     "max"           { WithLoc _ (L.Ident "max") }
     "argmin"        { WithLoc _ (L.Ident "argmin") }
     "argmax"        { WithLoc _ (L.Ident "argmax") }
+    "gcds"          { WithLoc _ (L.Ident "gcds") }
+    "lcms"          { WithLoc _ (L.Ident "lcms") }
     "all"           { WithLoc _ (L.Ident "all") }
     "any"           { WithLoc _ (L.Ident "any") }
     "sorted"        { WithLoc _ (L.Ident "sorted") }
@@ -341,6 +343,8 @@ builtin :: { (Builtin, [Type]) }
     | "argmin" "@" atom_type           { (ArgMin, [$3]) }
     | "argmax"                         { (ArgMax, [underscoreTy]) }
     | "argmax" "@" atom_type           { (ArgMax, [$3]) }
+    | "gcds"                           { (Gcd1, []) }
+    | "lcms"                           { (Lcm1, []) }
     | "all"                            { (All, []) }
     | "any"                            { (Any, []) }
     | "sorted"                         { (Sorted, [underscoreTy]) }
