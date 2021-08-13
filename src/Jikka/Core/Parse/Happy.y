@@ -292,8 +292,10 @@ builtin :: { (Builtin, [Type]) }
     : "abs"                            { (Abs, []) }
     | "gcd"                            { (Gcd, []) }
     | "lcm"                            { (Lcm, []) }
-    | "min"                            { (Min2, []) }
-    | "max"                            { (Max2, []) }
+    | "min"                            { (Min2, [underscoreTy]) }
+    | "min" "@" atom_type              { (Min2, [$3]) }
+    | "max"                            { (Max2, [underscoreTy]) }
+    | "max" "@" atom_type              { (Max2, [$3]) }
     | "not"                            { (Not, []) }
     | "implies"                        { (Implies, []) }
     | "iterate"                        { (Iterate, [underscoreTy]) }
