@@ -163,8 +163,8 @@ analyzeBuiltin = \case
   Abs -> Fun "abs"
   Gcd -> Fun "gcd"
   Lcm -> Fun "lcm"
-  Min2 -> InfixOp "<?" appendPrec LeftToRight
-  Max2 -> InfixOp ">?" appendPrec LeftToRight
+  Min2 -> Fun "min"
+  Max2 -> Fun "max"
   -- logical functions
   Not -> PrefixOp "not"
   And -> InfixOp "and" andPrec RightToLeft
@@ -215,8 +215,8 @@ analyzeBuiltin = \case
   Product -> Fun "product"
   ModSum -> Fun "modsum"
   ModProduct -> Fun "modproduct"
-  Min1 -> Fun "min"
-  Max1 -> Fun "max"
+  Min1 -> Fun "minimum"
+  Max1 -> Fun "maximum"
   ArgMin -> Fun "argmin"
   ArgMax -> Fun "argmax"
   Gcd1 -> Fun "gcds"

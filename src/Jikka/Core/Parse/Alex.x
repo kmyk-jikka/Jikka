@@ -106,10 +106,6 @@ tokens :-
     "<<"            { tok (Operator BitLShift) }
     ">>"            { tok (Operator BitRShift) }
 
-    -- min max operators
-    "<?"            { tok (Operator Min) }
-    ">?"            { tok (Operator Max) }
-
     -- comparators
     ">"             { tok (Operator GreaterThan) }
     "<"             { tok (Operator LessThan) }

@@ -32,9 +32,6 @@ data Operator
   | BitXor
   | BitLShift
   | BitRShift
-  | -- min max operators
-    Min
-  | Max
   | -- comparators
     DoubleEqual
   | NotEqual
