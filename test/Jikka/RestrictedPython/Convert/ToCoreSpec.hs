@@ -7,6 +7,7 @@ import Jikka.Common.Error
 import qualified Jikka.Core.Format as Y (formatProgram)
 import qualified Jikka.Core.Language.BuiltinPatterns as Y
 import qualified Jikka.Core.Language.Expr as Y
+import qualified Jikka.Core.Parse as Y (parseProgram)
 import Jikka.RestrictedPython.Convert.ToCore (run)
 import qualified Jikka.RestrictedPython.Language.Expr as X
 import qualified Jikka.RestrictedPython.Language.WithoutLoc as X
@@ -14,6 +15,9 @@ import Test.Hspec
 
 run' :: X.Program -> Either Error Y.Program
 run' = flip evalAlphaT 0 . run
+
+parseProgram :: [String] -> Y.Program
+parseProgram = fromSuccess . flip evalAlphaT 0 . Y.parseProgram . unlines
 
 spec :: Spec
 spec = describe "run" $ do
@@ -66,37 +70,27 @@ spec = describe "run" $ do
               ]
           ]
     let expected =
-          unlines
+          parseProgram
             [ "let rec solve (n: int): int =",
-              "    let a: $0 =",
-              "        0",
-              "    in let b: $1 =",
-              "        1",
+              "    let a: $0 = 0",
+              "    in let b: $1 = 1",
               "    in let $4: $5 * $6 =",
               "        foldl (fun ($4: $5 * $6) ($3: $2) ->",
-              "            let b: $5 =",
-              "                $4.0",
-              "            in let a: $6 =",
-              "                $4.1",
-              "            in let i: $7 =",
-              "                $3",
-              "            in let c: $8 =",
-              "                a + b",
-              "            in let a: $9 =",
-              "                b",
-              "            in let b: $10 =",
-              "                c",
+              "            let b: $5 = $4.0",
+              "            in let a: $6 = $4.1",
+              "            in let i: $7 = $3",
+              "            in let c: $8 = a + b",
+              "            in let a: $9 = b",
+              "            in let b: $10 = c",
               "            in (b, a)",
               "        ) (b, a) (range n)",
-              "    in let b: $5 =",
-              "        $4.0",
-              "    in let a: $6 =",
-              "        $4.1",
+              "    in let b: $5 = $4.0",
+              "    in let a: $6 = $4.1",
               "    in a",
               "in",
               "solve"
             ]
-    (Y.formatProgram <$> run' prog) `shouldBe` Right expected
+    (Y.formatProgram <$> run' prog) `shouldBe` Right (Y.formatProgram expected)
   it "converts if-statements correctly" $ do
     let prog =
           [ X.ToplevelFunctionDef
@@ -113,18 +107,14 @@ spec = describe "run" $ do
               ]
           ]
     let expected =
-          unlines
+          parseProgram
             [ "let rec solve : int =",
-              "    let $2: $1, =",
-              "        if true then let x: $3 =",
-              "            1",
-              "        in (x,) else let x: $5 =",
-              "            0",
-              "        in (x,)",
-              "    in let x: $1 =",
-              "        $2.0",
+              "    let $2: $1 one_tuple = if true",
+              "        then let x: $3 = 1 in (x,)",
+              "        else let x: $5 = 0 in (x,)",
+              "    in let x: $1 = $2.0",
               "    in x",
               "in",
               "solve"
             ]
-    (Y.formatProgram <$> run' prog) `shouldBe` Right expected
+    (Y.formatProgram <$> run' prog) `shouldBe` Right (Y.formatProgram expected)

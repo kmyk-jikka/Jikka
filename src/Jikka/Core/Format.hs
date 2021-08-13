@@ -321,8 +321,8 @@ formatExpr' = \case
   e@(Lam _ _ _) ->
     let (args, body) = uncurryLam e
      in ("fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' body) ++ "\n" ++ dedent ++ "\n", lambdaPrec)
-  Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " =\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' e1) ++ "\n" ++ dedent ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
-  Assert e1 e2 -> ("assert " ++ resolvePrec parenPrec (formatExpr' e1) ++ " in " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
+  Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " = " ++ resolvePrec parenPrec (formatExpr' e1) ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
+  Assert e1 e2 -> ("assert " ++ resolvePrec parenPrec (formatExpr' e1) ++ " in\n" ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
 
 formatExpr :: Expr -> String
 formatExpr = unlines . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec . formatExpr'
