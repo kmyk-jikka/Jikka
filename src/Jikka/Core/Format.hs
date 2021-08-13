@@ -257,9 +257,11 @@ formatTemplate = \case
   ts -> "<" ++ intercalate ", " (map formatType ts) ++ ">"
 
 formatFunCall :: (String, Prec) -> [Expr] -> (String, Prec)
-formatFunCall f = \case
-  [] -> f
-  args -> (resolvePrec funCallPrec f ++ "(" ++ intercalate ", " (map (resolvePrec commaPrec . formatExpr') args) ++ ")", funCallPrec)
+formatFunCall f [] = f
+formatFunCall f args =
+  let f' = resolvePrecLeft funCallPrec LeftToRight f
+      args' = map (resolvePrecRight funCallPrec LeftToRight . formatExpr') args
+   in (unwords (f' : args'), funCallPrec)
 
 formatBuiltinIsolated' :: Builtin' -> [Type] -> String
 formatBuiltinIsolated' builtin ts = case builtin of
@@ -275,8 +277,8 @@ formatBuiltinIsolated' builtin ts = case builtin of
 formatBuiltinIsolated :: Builtin -> [Type] -> String
 formatBuiltinIsolated builtin ts = formatBuiltinIsolated' (analyzeBuiltin builtin) ts
 
-formatBuiltin' :: Builtin' -> [Type] -> [Expr] -> (String, Prec)
-formatBuiltin' builtin ts args = case (builtin, ts, args) of
+formatBuiltin' :: Builtin -> [Type] -> [Expr] -> (String, Prec)
+formatBuiltin' builtin ts args = case (analyzeBuiltin builtin, ts, args) of
   (Fun "map", _, [Lam x IntTy e, Range1' n]) | x `isUnusedVar` e -> formatFunCall ("replicate", identPrec) [n, e]
   (Fun name, _, _) -> formatFunCall (name, identPrec) args
   (PrefixOp op, _, e1 : args) -> formatFunCall (op ++ " " ++ resolvePrec unaryPrec (formatExpr' e1), unaryPrec) args
@@ -287,10 +289,10 @@ formatBuiltin' builtin ts args = case (builtin, ts, args) of
   (Tuple', _, args) | length args >= length ts -> formatFunCall (paren (intercalate ", " (map (resolvePrec commaPrec . formatExpr') (take (length ts) args))), identPrec) (drop (length ts) args)
   (Proj' n, _, e : args) -> formatFunCall (resolvePrec identPrec (formatExpr' e) ++ "." ++ show n, identPrec) args
   (If', _, e1 : e2 : e3 : args) -> formatFunCall ("if" ++ " " ++ resolvePrec parenPrec (formatExpr' e1) ++ " then " ++ resolvePrec parenPrec (formatExpr' e2) ++ " else " ++ resolvePrec lambdaPrec (formatExpr' e3), lambdaPrec) args
-  _ -> formatFunCall (formatBuiltinIsolated' builtin ts, identPrec) args
+  _ -> formatFunCall (formatBuiltinIsolated' (analyzeBuiltin builtin) ts, identPrec) args
 
 formatBuiltin :: Builtin -> [Type] -> [Expr] -> String
-formatBuiltin f ts args = resolvePrec parenPrec (formatBuiltin' (analyzeBuiltin f) ts args)
+formatBuiltin f ts args = resolvePrec parenPrec (formatBuiltin' f ts args)
 
 formatLiteral :: Literal -> String
 formatLiteral = \case
@@ -311,7 +313,7 @@ formatExpr' = \case
     let (f, args) = curryApp e
      in case f of
           Var x -> formatFunCall (unVarName x, identPrec) args
-          Lit (LitBuiltin builtin ts) -> (formatBuiltin builtin ts args, identPrec)
+          Lit (LitBuiltin builtin ts) -> formatBuiltin' builtin ts args
           _ -> formatFunCall (formatExpr' f) args
   LamId _ -> ("id", identPrec)
   LamConst _ e -> formatFunCall ("const", identPrec) [e]
