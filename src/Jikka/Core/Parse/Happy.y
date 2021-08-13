@@ -28,6 +28,7 @@ import Jikka.Common.Error
 import Jikka.Common.Location
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 import qualified Jikka.Core.Parse.Token as L
 }
@@ -378,7 +379,7 @@ subscription :: { Expr }
     | primary "[" expression "]" "@" atom_type              { At' $6 $1 $3 }
     | primary "[" expression "<-" expression "]"            { SetAt' underscoreTy $1 $3 $5 }
     | primary "[" expression "<-" expression "]" "@" atom_type    { SetAt' $8 $1 $3 $5 }
-    -- | primary "." integer                                   {% makeProj $1 $3 underscoreTy }
+    | primary "." integer                                   {% makeProj $1 $3 underscoreTy }
     | primary "." integer "@" atom_type                     {% makeProj $1 $3 $5 }
 
 -- Function applications
@@ -493,8 +494,9 @@ makeTuple es t = case t of
 
 makeProj :: MonadError Error m => Expr -> Integer -> Type -> m Expr
 makeProj e n t = case t of
+    t | t == underscoreTy -> return $ Proj' [underscoreTy] n e -- This is fixed latter.
     TupleTy ts -> return $ Proj' ts n e
-    _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for proj"
+    _ -> throwSyntaxError "Jikka.Core.Parse.Happy.makeTuple: wrong type annotation for a tuple projection"
 
 replaceUnderscoresT :: MonadAlpha m => Type -> m Type
 replaceUnderscoresT = mapSubTypesM go where
@@ -502,10 +504,15 @@ replaceUnderscoresT = mapSubTypesM go where
     VarTy (TypeName "_") -> genType
     t -> return t
 
-replaceUnderscoresE :: MonadAlpha m => [(VarName, Type)] -> Expr -> m Expr
+replaceUnderscoresE :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 replaceUnderscoresE env = mapSubExprM go env where
   go _ = \case
     Var (VarName "_") -> Var <$> genVarName'
+    Proj' [t] i e | t == underscoreTy -> do
+      t <- typecheckExpr env e
+      case t of
+        TupleTy ts -> return $ Proj' ts i e
+        _ -> throwSyntaxError "Jikka.Core.Parse.Happy.replaceUnderscoresE: failed to reconstruct type of a tuple projection"
     e -> return e
 
 happyErrorExpList :: MonadError Error m => ([WithLoc L.Token], [String]) -> m a
