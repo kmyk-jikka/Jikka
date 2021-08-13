@@ -18,7 +18,7 @@ run' :: Program -> Either Error Program
 run' = flip evalAlphaT 0 . run
 
 parseProgram' :: [String] -> Program
-parseProgram' = fromSuccess . flip evalAlphaT 0 . (TypeInfer.run <=< parseProgram . unlines)
+parseProgram' = fromSuccess . flip evalAlphaT 100 . (TypeInfer.run <=< parseProgram . unlines)
 
 spec :: Spec
 spec = describe "run" $ do

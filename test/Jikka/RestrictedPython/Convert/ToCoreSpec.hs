@@ -17,7 +17,7 @@ run' :: X.Program -> Either Error Y.Program
 run' = flip evalAlphaT 0 . run
 
 parseProgram :: [String] -> Y.Program
-parseProgram = fromSuccess . flip evalAlphaT 0 . Y.parseProgram . unlines
+parseProgram = fromSuccess . flip evalAlphaT 100 . Y.parseProgram . unlines
 
 spec :: Spec
 spec = describe "run" $ do
