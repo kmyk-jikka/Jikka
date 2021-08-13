@@ -28,7 +28,7 @@ where
 import Control.Monad.Trans.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Language.ArithmeticalExpr
+import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -38,22 +38,22 @@ import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
 -- | This is something commutative because only one kind of @c@ is allowed.
-plusPair :: (ArithmeticalExpr, ArithmeticalExpr) -> (ArithmeticalExpr, ArithmeticalExpr) -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
-plusPair (a1, c1) (a2, _) | isZeroArithmeticalExpr a2 = Just (a1, c1)
-plusPair (a1, c1) (_, c2) | isZeroArithmeticalExpr c2 = Just (a1, c1)
-plusPair (a1, _) (a2, c2) | isZeroArithmeticalExpr a1 = Just (a2, c2)
-plusPair (_, c1) (a2, c2) | isZeroArithmeticalExpr c1 = Just (a2, c2)
+plusPair :: (ArithmeticExpr, ArithmeticExpr) -> (ArithmeticExpr, ArithmeticExpr) -> Maybe (ArithmeticExpr, ArithmeticExpr)
+plusPair (a1, c1) (a2, _) | isZeroArithmeticExpr a2 = Just (a1, c1)
+plusPair (a1, c1) (_, c2) | isZeroArithmeticExpr c2 = Just (a1, c1)
+plusPair (a1, _) (a2, c2) | isZeroArithmeticExpr a1 = Just (a2, c2)
+plusPair (_, c1) (a2, c2) | isZeroArithmeticExpr c1 = Just (a2, c2)
 plusPair (a1, c1) (a2, c2) =
-  let (k1, c1') = splitConstantFactorArithmeticalExpr c1
-      (k2, c2') = splitConstantFactorArithmeticalExpr c2
-      a1' = multArithmeticalExpr (integerArithmeticalExpr k1) a1
-      a2' = multArithmeticalExpr (integerArithmeticalExpr k2) a2
+  let (k1, c1') = splitConstantFactorArithmeticExpr c1
+      (k2, c2') = splitConstantFactorArithmeticExpr c2
+      a1' = multArithmeticExpr (integerArithmeticExpr k1) a1
+      a2' = multArithmeticExpr (integerArithmeticExpr k2) a2
    in if c1' == c2'
-        then Just (plusArithmeticalExpr a1' a2', c1')
+        then Just (plusArithmeticExpr a1' a2', c1')
         else Nothing
 
-sumPairs :: [(ArithmeticalExpr, ArithmeticalExpr)] -> Maybe (ArithmeticalExpr, ArithmeticalExpr)
-sumPairs = foldr (\e1 e2 -> plusPair e1 =<< e2) (Just (integerArithmeticalExpr 1, integerArithmeticalExpr 0))
+sumPairs :: [(ArithmeticExpr, ArithmeticExpr)] -> Maybe (ArithmeticExpr, ArithmeticExpr)
+sumPairs = foldr (\e1 e2 -> plusPair e1 =<< e2) (Just (integerArithmeticExpr 1, integerArithmeticExpr 0))
 
 -- | `parseLinearFunctionBody'` parses the body of a linear function which can be decomposed to convex hull trick.
 -- @parseLinearFunctionBody' f i j e@ finds a 4-tuple @a, b, c, d@ where @e = a(f[j], j) c(f[< i], i) + b(f[j], j) + d(f[< i], i)@.
@@ -63,56 +63,56 @@ parseLinearFunctionBody' :: VarName -> VarName -> VarName -> Expr -> Maybe (Expr
 parseLinearFunctionBody' f i j e = result <$> go e
   where
     result (a, c, b, d) =
-      let (k, a') = splitConstantFactorArithmeticalExpr a
-          c' = multArithmeticalExpr (integerArithmeticalExpr k) c
-       in (formatArithmeticalExpr a', formatArithmeticalExpr c', formatArithmeticalExpr b, formatArithmeticalExpr d)
+      let (k, a') = splitConstantFactorArithmeticExpr a
+          c' = multArithmeticExpr (integerArithmeticExpr k) c
+       in (formatArithmeticExpr a', formatArithmeticExpr c', formatArithmeticExpr b, formatArithmeticExpr d)
     go = \case
       Negate' e -> do
         (a, c, b, d) <- go e
-        return (a, negateArithmeticalExpr c, negateArithmeticalExpr b, negateArithmeticalExpr d)
+        return (a, negateArithmeticExpr c, negateArithmeticExpr b, negateArithmeticExpr d)
       Plus' e1 e2 -> do
         (a1, c1, b1, d1) <- go e1
         (a2, c2, b2, d2) <- go e2
         (a, c) <- plusPair (a1, c1) (a2, c2)
-        return (a, c, plusArithmeticalExpr b1 b2, plusArithmeticalExpr d1 d2)
+        return (a, c, plusArithmeticExpr b1 b2, plusArithmeticExpr d1 d2)
       Minus' e1 e2 -> do
         (a1, c1, b1, d1) <- go e1
         (a2, c2, b2, d2) <- go e2
-        (a, c) <- plusPair (a1, c1) (negateArithmeticalExpr a2, c2)
-        return (a, c, minusArithmeticalExpr b1 b2, minusArithmeticalExpr d1 d2)
+        (a, c) <- plusPair (a1, c1) (negateArithmeticExpr a2, c2)
+        return (a, c, minusArithmeticExpr b1 b2, minusArithmeticExpr d1 d2)
       Mult' e1 e2 -> do
         (a1, c1, b1, d1) <- go e1
         (a2, c2, b2, d2) <- go e2
         (a, c) <-
           sumPairs
-            [ (multArithmeticalExpr a1 a2, multArithmeticalExpr c1 c2),
-              (multArithmeticalExpr b2 a1, c1),
-              (multArithmeticalExpr b1 a2, c2),
-              (a1, multArithmeticalExpr c1 d2),
-              (a2, multArithmeticalExpr c2 d1),
+            [ (multArithmeticExpr a1 a2, multArithmeticExpr c1 c2),
+              (multArithmeticExpr b2 a1, c1),
+              (multArithmeticExpr b1 a2, c2),
+              (a1, multArithmeticExpr c1 d2),
+              (a2, multArithmeticExpr c2 d1),
               (b2, d1),
               (b1, d2)
             ]
-        return (a, c, multArithmeticalExpr b1 b2, multArithmeticalExpr d1 d2)
+        return (a, c, multArithmeticExpr b1 b2, multArithmeticExpr d1 d2)
       e
         | f `isUnusedVar` e && j `isUnusedVar` e ->
           -- NOTE: Put constants to @d@ and simplify @a, b@
-          return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, integerArithmeticalExpr 0, parseArithmeticalExpr e)
+          return (integerArithmeticExpr 1, integerArithmeticExpr 0, integerArithmeticExpr 0, parseArithmeticExpr e)
       e
         | f `isUnusedVar` e && i `isUnusedVar` e ->
-          return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, parseArithmeticalExpr e, integerArithmeticalExpr 0)
-      e@(At' _ (Var f') index) | f' == f -> case unNPlusKPattern (parseArithmeticalExpr index) of
+          return (integerArithmeticExpr 1, integerArithmeticExpr 0, parseArithmeticExpr e, integerArithmeticExpr 0)
+      e@(At' _ (Var f') index) | f' == f -> case unNPlusKPattern (parseArithmeticExpr index) of
         Just (i', k) | i' == i && k < 0 -> do
-          return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, integerArithmeticalExpr 0, parseArithmeticalExpr e)
+          return (integerArithmeticExpr 1, integerArithmeticExpr 0, integerArithmeticExpr 0, parseArithmeticExpr e)
         Just (j', 0) | j' == j -> do
-          return (integerArithmeticalExpr 1, integerArithmeticalExpr 0, parseArithmeticalExpr e, integerArithmeticalExpr 0)
+          return (integerArithmeticExpr 1, integerArithmeticExpr 0, parseArithmeticExpr e, integerArithmeticExpr 0)
         _ -> Nothing
       _ -> Nothing
 
 parseLinearFunctionBody :: MonadAlpha m => VarName -> VarName -> Integer -> Expr -> m (Maybe (Expr, Expr, Expr, Expr, Expr, Maybe Expr))
 parseLinearFunctionBody f i k = runMaybeT . go
   where
-    goMin e j step size = case unNPlusKPattern (parseArithmeticalExpr size) of
+    goMin e j step size = case unNPlusKPattern (parseArithmeticExpr size) of
       Just (i', k') | i' == i && k' == k -> do
         (a, b, c, d) <- hoistMaybe $ parseLinearFunctionBody' f i j step
         -- raname @j@ to @i@

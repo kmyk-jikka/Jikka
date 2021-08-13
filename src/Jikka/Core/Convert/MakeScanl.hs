@@ -35,7 +35,7 @@ import Data.List
 import qualified Data.Map as M
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Language.ArithmeticalExpr
+import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -66,7 +66,7 @@ getRecurrenceFormulaStep1 shift t a i body = do
           else Nothing
   let go :: Expr -> Maybe Expr
       go = \case
-        At' _ (Var a') i' | a' == a -> case unNPlusKPattern (parseArithmeticalExpr i') of
+        At' _ (Var a') i' | a' == a -> case unNPlusKPattern (parseArithmeticExpr i') of
           Just (i', k) | i' == i -> proj k
           _ -> Nothing
         Var x -> if x == a then Nothing else Just (Var x)
@@ -90,7 +90,7 @@ getRecurrenceFormulaStep shift size t a i body = do
           else Nothing
   let go :: Expr -> Maybe Expr
       go = \case
-        At' _ (Var a') i' | a' == a -> case unNPlusKPattern (parseArithmeticalExpr i') of
+        At' _ (Var a') i' | a' == a -> case unNPlusKPattern (parseArithmeticExpr i') of
           Just (i', k) | i' == i -> proj k
           _ -> Nothing
         Var x -> if x == a then Nothing else Just (Var x)
@@ -112,7 +112,7 @@ reduceFoldlSetAtRecurrence = makeRewriteRule "reduceFoldlSetAtRecurrence" $ \_ -
   -- foldl (fun a i -> setat a index(i) step(a, i)) base indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
     -- index(i) = i + k
-    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
+    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticExpr index) of
       Just (i', k) | i' == i -> Just k
       _ -> Nothing
     -- indices = range n
@@ -184,12 +184,12 @@ checkGenericRecurrenceFormulaStep a = \i k -> go (M.fromList [(i, k - 1)])
     -- (i, k) in env menas a[i + k] is accessible but a[i + k + 1] is not.
     go :: M.Map VarName Integer -> Expr -> Bool
     go env = \case
-      At' _ (Var a') i | a' == a -> case unNPlusKPattern (parseArithmeticalExpr i) of
+      At' _ (Var a') i | a' == a -> case unNPlusKPattern (parseArithmeticExpr i) of
         Just (i, k) -> case M.lookup i env of
           Just limit -> k <= limit
           Nothing -> False
         _ -> False
-      Map' _ _ (Lam j _ body) (Range1' n) | j /= a -> case unNPlusKPattern (parseArithmeticalExpr n) of
+      Map' _ _ (Lam j _ body) (Range1' n) | j /= a -> case unNPlusKPattern (parseArithmeticExpr n) of
         Just (i, k) -> case M.lookup i env of
           Just limit -> go (M.insert j (limit - k + 1) env) body
           Nothing -> go env body && go env n
@@ -206,7 +206,7 @@ reduceFoldlSetAtGeneric = makeRewriteRule "reduceFoldlSetAtGeneric" $ \_ -> \cas
   -- foldl (fun a i -> setat a index(i) step(a, i)) base indices
   Foldl' _ (ListTy t2) (Lam2 a _ i _ (SetAt' _ (Var a') index step)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
     -- index(i) = i + k
-    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticalExpr index) of
+    k <- hoistMaybe $ case unNPlusKPattern (parseArithmeticExpr index) of
       Just (i', k) | i' == i -> Just k
       _ -> Nothing
     -- indices = range n

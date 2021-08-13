@@ -18,7 +18,7 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
-import qualified Jikka.Core.Convert.ArithmeticalExpr as ArithmeticalExpr
+import qualified Jikka.Core.Convert.ArithmeticExpr as ArithmeticExpr
 import qualified Jikka.Core.Convert.Beta as Beta
 import qualified Jikka.Core.Convert.BubbleLet as BubbleLet
 import qualified Jikka.Core.Convert.CloseAll as CloseAll
@@ -63,7 +63,7 @@ run'' prog = do
   prog <- CumulativeSum.run prog
   prog <- SegmentTree.run prog
   prog <- BubbleLet.run prog
-  prog <- ArithmeticalExpr.run prog
+  prog <- ArithmeticExpr.run prog
   prog <- ConvexHullTrick.run prog
   prog <- StrengthReduction.run prog
   Eta.run prog
