@@ -30,7 +30,7 @@ runStatement = \case
   stmt -> stmt
 
 runProgram :: Program -> Program
-runProgram = mapExprStatementProgram id runStatement
+runProgram = mapExprStatementProgram id ((: []) . runStatement)
 
 -- | `run` unpack tuples.
 --

@@ -62,7 +62,7 @@ toMatrix env x n step =
             Proj' _ i (Var x') | x' == x -> Var (xs V.! fromInteger i)
             _ -> e
       rows <- MaybeT . return . forM es $ \e -> do
-        let e' = mapExpr unpackTuple env e
+        let e' = mapSubExpr unpackTuple env e
         guard $ x `isUnusedVar` e'
         makeVectorFromArithmeticalExpr xs (parseArithmeticalExpr e')
       a <- MaybeT . return $ makeMatrix (V.fromList (map fst rows))

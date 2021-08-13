@@ -28,7 +28,7 @@ runExpr env e = do
     else return e
 
 runProgram :: MonadError Error m => Program -> m Program
-runProgram = mapExprProgramM runExpr -- Doesn't use RewriteRules because the rewriting may not terminate.
+runProgram = mapExprProgramM (mapSubExprM runExpr) -- Doesn't use RewriteRules because the rewriting may not terminate.
 
 -- | `run` sorts arithmetical exprs.
 --

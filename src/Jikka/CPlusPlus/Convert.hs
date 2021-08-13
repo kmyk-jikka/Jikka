@@ -7,6 +7,7 @@ where
 
 import qualified Jikka.CPlusPlus.Convert.AddMain as AddMain
 import qualified Jikka.CPlusPlus.Convert.FromCore as FromCore
+import qualified Jikka.CPlusPlus.Convert.InlineSetAt as InlineSetAt
 import qualified Jikka.CPlusPlus.Convert.MoveSemantics as MoveSemantics
 import qualified Jikka.CPlusPlus.Convert.OptimizeRange as OptimizeRange
 import qualified Jikka.CPlusPlus.Convert.UnpackTuples as UnpackTuples
@@ -17,7 +18,7 @@ import Jikka.Common.Error
 import Jikka.Common.IOFormat
 import qualified Jikka.Core.Language.Expr as X
 
-run :: (MonadAlpha m, MonadError Error m) => X.Program -> IOFormat -> m Y.Program
+run :: (MonadAlpha m, MonadError Error m) => X.Program -> Maybe IOFormat -> m Y.Program
 run prog format = do
   prog <- FromCore.run prog
   let go prog = do
@@ -26,6 +27,7 @@ run prog format = do
         OptimizeRange.run prog
   prog <- go prog
   prog <- go prog
+  prog <- InlineSetAt.run prog
   prog <- go prog
-  prog <- AddMain.run prog format
+  prog <- maybe (return prog) (AddMain.run prog) format
   UseInitialization.run prog

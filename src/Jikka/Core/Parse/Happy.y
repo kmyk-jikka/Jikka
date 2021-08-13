@@ -513,7 +513,7 @@ replaceUnderscoresT = mapSubTypesM go where
     t -> return t
 
 replaceUnderscoresE :: MonadAlpha m => [(VarName, Type)] -> Expr -> m Expr
-replaceUnderscoresE env = mapExprM go env where
+replaceUnderscoresE env = mapSubExprM go env where
   go _ = \case
     Var (VarName "_") -> Var <$> genVarName'
     e -> return e
@@ -555,11 +555,11 @@ runExpr :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Expr
 runExpr tokens = wrapError' "Jikka.Core.Parse.Happy.runExpr" $ do
     e <- liftEither $ runExpr_ tokens
     mapTypeExprM replaceUnderscoresT e
-    mapExprM replaceUnderscoresE [] e
+    mapSubExprM replaceUnderscoresE [] e
 
 runProgram :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Program
 runProgram tokens = wrapError' "Jikka.Core.Parse.Happy.runProgram" $ do
     prog <- liftEither $ runProgram_ tokens
     prog <- mapTypeProgramM replaceUnderscoresT prog
-    mapExprProgramM replaceUnderscoresE prog
+    mapExprProgramM (mapSubExprM replaceUnderscoresE) prog
 }

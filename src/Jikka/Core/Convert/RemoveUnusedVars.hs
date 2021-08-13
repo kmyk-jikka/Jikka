@@ -24,7 +24,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.Util
 
 runExpr :: [(VarName, Type)] -> Expr -> Expr
-runExpr _ = mapExpr go []
+runExpr _ = mapSubExpr go []
   where
     go _ = \case
       Let x _ _ e2 | x `isUnusedVar` e2 -> e2
@@ -40,7 +40,7 @@ runToplevelExpr _ = \case
   e -> e
 
 run' :: Program -> Program
-run' = mapToplevelExprProgram runToplevelExpr . mapExprProgram runExpr
+run' = mapToplevelExprProgram runToplevelExpr . mapExprProgram (mapSubExpr runExpr)
 
 -- | `run` removes unused variables in given programs.
 --

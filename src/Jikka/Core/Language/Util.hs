@@ -77,11 +77,11 @@ mapTypeProgramM = mapTypeToplevelExprM
 mapTypeProgram :: (Type -> Type) -> Program -> Program
 mapTypeProgram f prog = runIdentity (mapTypeProgramM (return . f) prog)
 
--- | `mapExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
-mapExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
-mapExprM' pre post env e = do
+-- | `mapSubExprM'` substitutes exprs using given two functions, which are called in pre-order and post-order.
+mapSubExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapSubExprM' pre post env e = do
   e <- pre env e
-  let go = mapExprM' pre post
+  let go = mapSubExprM' pre post
   e <- case e of
     Var y -> return $ Var y
     Lit lit -> return $ Lit lit
@@ -105,37 +105,32 @@ mapToplevelExprM' pre post env e = do
       ToplevelAssert e <$> mapToplevelExprM' pre post env cont
   post env e
 
-mapExprToplevelExprM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprToplevelExprM' pre post env = mapToplevelExprM' pre' (\_ e -> return e) env
+mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+mapExprToplevelExprM f env = mapToplevelExprM' pre' (\_ e -> return e) env
   where
-    go = mapExprM' pre post
     pre' env = \case
-      ResultExpr e -> ResultExpr <$> go env e
-      ToplevelLet y t e cont -> ToplevelLet y t <$> go env e <*> pure cont
+      ResultExpr e -> ResultExpr <$> f env e
+      ToplevelLet y t e cont -> ToplevelLet y t <$> f env e <*> pure cont
       ToplevelLetRec g args ret body cont ->
         let env' = (g, foldr (FunTy . snd) ret args) : env
-         in ToplevelLetRec g args ret <$> go (reverse args ++ env') body <*> pure cont
-      ToplevelAssert e cont -> ToplevelAssert <$> go env e <*> pure cont
-
-mapExprProgramM' :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-mapExprProgramM' pre post = mapExprToplevelExprM' pre post []
-
--- | `mapExprM` is a wrapper of `mapExprM'`. This function works in post-order.
-mapExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
-mapExprM f = mapExprM' (\_ e -> return e) f
-
-mapExprToplevelExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-mapExprToplevelExprM f = mapExprToplevelExprM' (\_ e -> return e) f
+         in ToplevelLetRec g args ret <$> f (reverse args ++ env') body <*> pure cont
+      ToplevelAssert e cont -> ToplevelAssert <$> f env e <*> pure cont
 
 mapExprProgramM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> Program -> m Program
-mapExprProgramM f = mapExprProgramM' (\_ e -> return e) f
+mapExprProgramM f = mapExprToplevelExprM f []
 
-mapExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
-mapExpr f env e = runIdentity $ mapExprM (\env e -> return $ f env e) env e
+-- | `mapSubExprM` is a wrapper of `mapSubExprM'`. This function works in post-order.
+mapSubExprM :: Monad m => ([(VarName, Type)] -> Expr -> m Expr) -> [(VarName, Type)] -> Expr -> m Expr
+mapSubExprM f = mapSubExprM' (\_ e -> return e) f
+
+mapSubExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> Expr -> Expr
+mapSubExpr f env e = runIdentity $ mapSubExprM (\env e -> return $ f env e) env e
 
 mapExprToplevelExpr :: ([(VarName, Type)] -> Expr -> Expr) -> [(VarName, Type)] -> ToplevelExpr -> ToplevelExpr
 mapExprToplevelExpr f env e = runIdentity $ mapExprToplevelExprM (\env e -> return $ f env e) env e
 
+-- | @mapExprProgram f prog@ applies @f@ to each root exprs in @prog@.
+-- This doesn't run into sub-exprs. For example, @toplevel-let x = (e1 + e2) in ...@ becomes @toplevel-let x = (f (e1 + e2)) in ...@, instead of @toplevel-let x = (f (f e1 + f e2)) in ...@
 mapExprProgram :: ([(VarName, Type)] -> Expr -> Expr) -> Program -> Program
 mapExprProgram f prog = runIdentity $ mapExprProgramM (\env e -> return $ f env e) prog
 
@@ -150,7 +145,7 @@ mapToplevelExprProgram :: ([(VarName, Type)] -> Program -> Program) -> Program -
 mapToplevelExprProgram f prog = runIdentity $ mapToplevelExprProgramM (\env e -> return $ f env e) prog
 
 listSubExprs :: Expr -> [Expr]
-listSubExprs e = getDual . execWriter $ mapExprM go [] e
+listSubExprs e = getDual . execWriter $ mapSubExprM go [] e
   where
     go _ e = do
       tell $ Dual [e]
