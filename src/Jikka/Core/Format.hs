@@ -114,7 +114,7 @@ formatType' = \case
   ListTy t -> (resolvePrec funCallPrec (formatType' t) ++ " list", funCallPrec)
   TupleTy ts -> case ts of
     [] -> ("unit", identPrec)
-    [t] -> (resolvePrec (pred multPrec) (formatType' t) ++ ",", multPrec)
+    [t] -> (resolvePrec funCallPrec (formatType' t) ++ " one_tuple", funCallPrec)
     _ -> (intercalate " * " (map (resolvePrec (pred multPrec) . formatType') ts), multPrec)
   FunTy t1 t2 ->
     (resolvePrecLeft impliesPrec RightToLeft (formatType' t1) ++ " -> " ++ resolvePrecRight impliesPrec RightToLeft (formatType' t2), impliesPrec)

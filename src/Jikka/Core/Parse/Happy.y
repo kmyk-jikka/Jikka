@@ -80,6 +80,7 @@ import qualified Jikka.Core.Parse.Token as L
     "bool"          { WithLoc _ (L.Ident "bool") }
     "list"          { WithLoc _ (L.Ident "list") }
     "unit"          { WithLoc _ (L.Ident "unit") }
+    "one_tuple"     { WithLoc _ (L.Ident "one_tuple") }
     "convex_hull_trick" { WithLoc _ (L.Ident "convex_hull_trick") }
     "segment_tree"  { WithLoc _ (L.Ident "segment_tree") }
     "int_plus"      { WithLoc _ (L.Ident "int_plus") }
@@ -233,6 +234,7 @@ atom_type :: { Type }
     | "bool"                           { BoolTy }
     | atom_type "list"                 { ListTy $1 }
     | "unit"                           { TupleTy [] }
+    | atom_type "one_tuple"            { TupleTy [$1] }
     | datastructure                    { DataStructureTy $1 }
     | "(" type ")"                     { $2 }
 
