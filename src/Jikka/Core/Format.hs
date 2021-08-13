@@ -147,6 +147,9 @@ data Builtin'
   | If'
   deriving (Eq, Ord, Show, Read)
 
+funMat :: String -> [Integer] -> Builtin'
+funMat f args = Fun $ intercalate "@" (f : map show args)
+
 analyzeBuiltin :: Builtin -> Builtin'
 analyzeBuiltin = \case
   -- arithmetical functions
@@ -179,14 +182,14 @@ analyzeBuiltin = \case
   BitLeftShift -> InfixOp "<<" powerPrec LeftToRight
   BitRightShift -> InfixOp ">>" powerPrec LeftToRight
   -- matrix functions
-  MatAp _ _ -> Fun "matap"
-  MatZero _ -> Fun "matzero"
-  MatOne _ -> Fun "matone"
-  MatAdd _ _ -> Fun "matadd"
-  MatMul _ _ _ -> Fun "matmul"
-  MatPow _ -> Fun "matpow"
-  VecFloorMod _ -> Fun "vecfloormod"
-  MatFloorMod _ _ -> Fun "matfloormod"
+  MatAp h w -> funMat "matap" [h, w]
+  MatZero n -> funMat "matzero" [n]
+  MatOne n -> funMat "matone" [n]
+  MatAdd h w -> funMat "matadd" [h, w]
+  MatMul h n w -> funMat "matmul" [h, n, w]
+  MatPow n -> funMat "matpow" [n]
+  VecFloorMod n -> funMat "vecfloormod" [n]
+  MatFloorMod h w -> funMat "matfloormod" [h, w]
   -- modular functions
   ModNegate -> Fun "modnegate"
   ModPlus -> Fun "modplus"
@@ -194,10 +197,10 @@ analyzeBuiltin = \case
   ModMult -> Fun "modmult"
   ModInv -> Fun "modinv"
   ModPow -> Fun "modpow"
-  ModMatAp _ _ -> Fun "modmatap"
-  ModMatAdd _ _ -> Fun "modmatadd"
-  ModMatMul _ _ _ -> Fun "modmatmul"
-  ModMatPow _ -> Fun "modmatpow"
+  ModMatAp h w -> funMat "modmatap" [h, w]
+  ModMatAdd h w -> funMat "modmatadd" [h, w]
+  ModMatMul h n w -> funMat "modmatmul" [h, n, w]
+  ModMatPow n -> funMat "modmatpow" [n]
   -- list functions
   Cons -> Fun "cons"
   Snoc -> Fun "snoc"

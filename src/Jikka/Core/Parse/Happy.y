@@ -298,24 +298,24 @@ builtin :: { (Builtin, [Type]) }
     | "implies"                        { (Implies, []) }
     | "iterate"                        { (Iterate, [underscoreTy]) }
     | "iterate" "@" atom_type          { (Iterate, [$3]) }
-    | "matap" integer integer          { (MatAp $2 $3, []) }
-    | "matzero" integer                { (MatZero $2, []) }
-    | "matone" integer                 { (MatOne $2, []) }
-    | "matadd" integer integer         { (MatAdd $2 $3, []) }
-    | "matmul" integer integer integer { (MatMul $2 $3 $4, []) }
-    | "matpow" integer                 { (MatPow $2, []) }
-    | "vecfloormod" integer            { (VecFloorMod $2, []) }
-    | "matfloormod" integer integer    { (MatFloorMod $2 $3, []) }
+    | "matap" "@" integer "@" integer  { (MatAp $3 $5, []) }
+    | "matzero" "@" integer            { (MatZero $3, []) }
+    | "matone" "@" integer             { (MatOne $3, []) }
+    | "matadd" "@" integer "@" integer { (MatAdd $3 $5, []) }
+    | "matmul" "@" integer "@" integer "@" integer { (MatMul $3 $5 $7, []) }
+    | "matpow" "@" integer             { (MatPow $3, []) }
+    | "vecfloormod" "@" integer        { (VecFloorMod $3, []) }
+    | "matfloormod" "@" integer "@" integer    { (MatFloorMod $3 $5, []) }
     | "modnegate"                      { (ModNegate, []) }
     | "modplus"                        { (ModPlus, []) }
     | "modminus"                       { (ModMinus, []) }
     | "modmult"                        { (ModMult, []) }
     | "modinv"                         { (ModInv, []) }
     | "modpow"                         { (ModPow, []) }
-    | "modmatap" integer integer       { (ModMatAp $2 $3, []) }
-    | "modmatadd" integer integer      { (ModMatAdd $2 $3, []) }
-    | "modmatmul" integer integer integer    { (ModMatMul $2 $3 $4, []) }
-    | "modmatpow" integer              { (ModMatPow $2, []) }
+    | "modmatap" "@" integer "@" integer    { (ModMatAp $3 $5, []) }
+    | "modmatadd" "@" integer "@" integer    { (ModMatAdd $3 $5, []) }
+    | "modmatmul" "@" integer "@" integer "@" integer    { (ModMatMul $3 $5 $7, []) }
+    | "modmatpow" "@" integer          { (ModMatPow $3, []) }
     | "cons"                           { (Cons, [underscoreTy]) }
     | "cons" "@" atom_type             { (Cons, [$3]) }
     | "snoc"                           { (Snoc, [underscoreTy]) }
