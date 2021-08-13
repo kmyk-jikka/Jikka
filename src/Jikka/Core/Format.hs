@@ -125,16 +125,16 @@ formatType = resolvePrec parenPrec . formatType'
 
 formatDataStructure :: DataStructure -> String
 formatDataStructure = \case
-  ConvexHullTrick -> "convex-hull-trick"
-  SegmentTree semigrp -> "segment-tree<" ++ formatSemigroup semigrp ++ ">"
+  ConvexHullTrick -> "convex_hull_trick"
+  SegmentTree semigrp -> "segment_tree<" ++ formatSemigroup semigrp ++ ">"
 
 formatSemigroup :: Semigroup' -> String
 formatSemigroup = \case
-  SemigroupIntPlus -> "int.plus"
-  SemigroupIntMin -> "int.min"
-  SemigroupIntMax -> "int.max"
-  SemigroupIntGcd -> "int.gcd"
-  SemigroupIntLcm -> "int.lcm"
+  SemigroupIntPlus -> "int_plus"
+  SemigroupIntMin -> "int_min"
+  SemigroupIntMax -> "int_max"
+  SemigroupIntGcd -> "int_gcd"
+  SemigroupIntLcm -> "int_lcm"
 
 data Builtin'
   = Fun String
@@ -247,12 +247,12 @@ analyzeBuiltin = \case
   Permute -> Fun "permute"
   MultiChoose -> Fun "multichoose"
   -- data structures
-  ConvexHullTrickInit -> Fun "cht.init"
-  ConvexHullTrickGetMin -> Fun "cht.getmin"
-  ConvexHullTrickInsert -> Fun "cht.insert"
-  SegmentTreeInitList _ -> Fun "segtree.initlist"
-  SegmentTreeGetRange _ -> Fun "segtree.getrange"
-  SegmentTreeSetPoint _ -> Fun "segtree.setpoint"
+  ConvexHullTrickInit -> Fun "cht_init"
+  ConvexHullTrickGetMin -> Fun "cht_getmin"
+  ConvexHullTrickInsert -> Fun "cht_insert"
+  SegmentTreeInitList _ -> Fun "segtree_initlist"
+  SegmentTreeGetRange _ -> Fun "segtree_getrange"
+  SegmentTreeSetPoint _ -> Fun "segtree_setpoint"
 
 formatTemplate :: [Type] -> String
 formatTemplate = \case
