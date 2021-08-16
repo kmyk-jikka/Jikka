@@ -1,5 +1,9 @@
 # Changelog for Jikka
 
+## 2021-08-16: v5.3.0.0
+
+Many bugs are removed.
+
 ## 2021-08-07: v5.2.0.0
 
 Now we are fixing many bugs to use Jikka during contests!
