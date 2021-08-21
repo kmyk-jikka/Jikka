@@ -26,7 +26,7 @@ def main() -> None:
     elif 'atcoder.jp' in args.url:
         name = args.url.split('/')[-1]
     elif 'yukicoder.me' in args.url:
-        name = 'yukicoder-' + args.url.split('/')[-1]
+        name = 'yukicoder_' + args.url.split('/')[-1]
     else:
         logger.error('--name=STEM is required')
         sys.exit(1)
