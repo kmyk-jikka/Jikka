@@ -89,6 +89,7 @@ import qualified Jikka.Core.Parse.Token as L
 
     -- builtins
     "nil"           { WithLoc _ (L.Ident "nil") }
+    "bottom"        { WithLoc _ (L.Ident "bottom") }
     "abs"           { WithLoc _ (L.Ident "abs") }
     "gcd"           { WithLoc _ (L.Ident "gcd") }
     "lcm"           { WithLoc _ (L.Ident "lcm") }
@@ -285,6 +286,8 @@ literal :: { Literal }
     | BOOLEAN                          { let (L.Bool p) = value $1 in LitBool p }
     | "nil"                            { LitNil underscoreTy }
     | "nil" "@" atom_type              { LitNil $3 }
+    | "bottom" "<" STRING ">"                  { let L.String msg = value $3 in LitBottom underscoreTy msg }
+    | "bottom" "<" STRING ">" "@" atom_type    { let L.String msg = value $3 in LitBottom $6 msg }
 
 parenth_form :: { Expr }
     : "(" ")"                                               {% makeTuple [] UnitTy }
