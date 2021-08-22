@@ -32,7 +32,6 @@ import Control.Monad.Trans.Maybe
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe
-import Debug.Trace
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
@@ -132,7 +131,6 @@ reduceCumulativeSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceCumulativeSum = makeRewriteRule "reduceCumulativeSum" $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) e(a, i)) base incides
   Foldl' t1 (ListTy t2) (Lam2 a _ i _ (SetAt' t (Var a') index e)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
-    () <- traceShow "hello" return ()
     -- list cumulative sums
     let sums = listCumulativeSum (Var a) e
     guard $ not (null sums)
@@ -142,7 +140,6 @@ reduceCumulativeSum = makeRewriteRule "reduceCumulativeSum" $ \_ -> \case
     c <- lift $ genVarName a
     let proj i = Proj' ts i (Var c)
     let e' = replaceWithSegtrees a (zip semigrps (map proj [1 ..])) e
-    () <- traceShow "wow" return ()
     guard $ e' /= e
     -- e'(c0, i) = e(c0, i)
     e' <- lift $ substitute a (proj 0) e'
