@@ -373,9 +373,9 @@ builtin :: { (Builtin, [Type]) }
     | "cht_init"                       { (ConvexHullTrickInit, []) }
     | "cht_getmin"                     { (ConvexHullTrickGetMin, []) }
     | "cht_insert"                     { (ConvexHullTrickInsert, []) }
-    | "segtree_init" semigroup         { (SegmentTreeInitList $2, []) }
-    | "segtree_getrange" semigroup     { (SegmentTreeGetRange $2, []) }
-    | "segtree_setpoint" semigroup     { (SegmentTreeSetPoint $2, []) }
+    | "segtree_init" "<" semigroup ">"     { (SegmentTreeInitList $3, []) }
+    | "segtree_getrange" "<" semigroup ">" { (SegmentTreeGetRange $3, []) }
+    | "segtree_setpoint" "<" semigroup ">" { (SegmentTreeSetPoint $3, []) }
     | "(" "+"  ")"                     { (Plus, []) }
     | "(" "-"  ")"                     { (Minus, []) }
     | "(" "*"  ")"                     { (Mult, []) }
