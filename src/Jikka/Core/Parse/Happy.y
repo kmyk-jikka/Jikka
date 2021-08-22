@@ -376,6 +376,34 @@ builtin :: { (Builtin, [Type]) }
     | "segtree_init" semigroup         { (SegmentTreeInitList $2, []) }
     | "segtree_getrange" semigroup     { (SegmentTreeGetRange $2, []) }
     | "segtree_setpoint" semigroup     { (SegmentTreeSetPoint $2, []) }
+    | "(" "+"  ")"                     { (Plus, []) }
+    | "(" "-"  ")"                     { (Minus, []) }
+    | "(" "*"  ")"                     { (Mult, []) }
+    | "(" "/"  ")"                     { (FloorDiv, []) }
+    | "(" "%"  ")"                     { (FloorMod, []) }
+    | "(" "/^" ")"                     { (CeilDiv, []) }
+    | "(" "%^" ")"                     { (CeilMod, []) }
+    | "(" "**" ")"                     { (Pow, []) }
+    | "(" "&&" ")"                     { (And, []) }
+    | "(" "||" ")"                     { (Or, []) }
+    | "(" "~"  ")"                     { (BitNot, []) }
+    | "(" "&"  ")"                     { (BitAnd, []) }
+    | "(" "|"  ")"                     { (BitOr, []) }
+    | "(" "^"  ")"                     { (BitXor, []) }
+    | "(" "<<" ")"                     { (BitLeftShift, []) }
+    | "(" ">>" ")"                     { (BitRightShift, []) }
+    | "(" ">"  ")"                     { (GreaterThan, [underscoreTy]) }
+    | "(" ">"  ")" "@" atom_type       { (GreaterThan, [$5]) }
+    | "(" "<"  ")"                     { (LessThan, [underscoreTy]) }
+    | "(" "<"  ")" "@" atom_type       { (LessThan, [$5]) }
+    | "(" "<=" ")"                     { (LessEqual, [underscoreTy]) }
+    | "(" "<=" ")" "@" atom_type       { (LessEqual, [$5]) }
+    | "(" ">=" ")"                     { (GreaterEqual, [underscoreTy]) }
+    | "(" ">=" ")" "@" atom_type       { (GreaterEqual, [$5]) }
+    | "(" "==" ")"                     { (Equal, [underscoreTy]) }
+    | "(" "==" ")" "@" atom_type       { (Equal, [$5]) }
+    | "(" "/=" ")"                     { (NotEqual, [underscoreTy]) }
+    | "(" "/=" ")" "@" atom_type       { (NotEqual, [$5]) }
 
 -- Primaries
 primary :: { Expr }
