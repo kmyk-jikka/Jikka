@@ -27,13 +27,6 @@ liftError f = do
     Left err -> fail $ "Jikka.Core.Language.QuasiRules.liftError: " ++ unlines (prettyError' err)
     Right y -> return y
 
-lookupValueName :: (MonadTrans t, Monad (t Q), MonadFail (t Q)) => String -> t Q TH.Name
-lookupValueName x = do
-  y <- lift $ TH.lookupValueName x
-  case y of
-    Nothing -> fail $ "Jikka.Core.Language.QuasiRules.lookupValueName: undefined symbol: " ++ x
-    Just y -> return y
-
 fromVarName :: VarName -> Q TH.Name
 fromVarName (VarName x) = do
   let base = takeWhile (/= '$') x
@@ -173,8 +166,8 @@ toExpL = \case
 
 toExpE :: Expr -> StateT Env Q ([Stmt], Exp)
 toExpE e = do
-  var <- lookupValueName "Var"
-  genVarName <- lookupValueName "Jikka.Core.Language.Util.genVarName'"
+  var <- lift [e|Var|]
+  genVarName <- lift [e|genVarName'|]
   case e of
     Var x -> do
       env <- gets vars
@@ -193,18 +186,18 @@ toExpE e = do
     Lam x t e -> do
       t <- toExpT t
       y <- lift $ fromVarName x
-      modify' (\env -> env {vars = (x, Just (AppE (ConE var) (VarE y))) : vars env})
+      modify' (\env -> env {vars = (x, Just (AppE var (VarE y))) : vars env})
       (stmts, e) <- toExpE e
       e <- lift [e|Lam $(pure (VarE y)) $(pure t) $(pure e)|]
-      return (BindS (VarP y) (VarE genVarName) : stmts, e)
+      return (BindS (VarP y) genVarName : stmts, e)
     Let x t e1 e2 -> do
       t <- toExpT t
       (stmts, e1) <- toExpE e1
       y <- lift $ fromVarName x
-      modify' (\env -> env {vars = (x, Just (AppE (ConE var) (VarE y))) : vars env})
+      modify' (\env -> env {vars = (x, Just (AppE var (VarE y))) : vars env})
       (stmts', e2) <- toExpE e2
       e <- lift [e|Let $(pure (VarE y)) $(pure t) $(pure e1) $(pure e2)|]
-      return (stmts ++ BindS (VarP y) (VarE genVarName) : stmts', e)
+      return (stmts ++ BindS (VarP y) genVarName : stmts', e)
     Assert e1 e2 -> do
       (stmts1, e1) <- toExpE e1
       (stmts2, e2) <- toExpE e2
