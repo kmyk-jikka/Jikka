@@ -8,6 +8,8 @@ stack exec hlint -- src app test
 stack build --only-configure
 git diff --exit-code *.cabal \
     || { echo HINT: Please run '$ git add *.cabal'; false; }
+grep '\<Debug.Trace\>' $(find src test -name \*.hs | grep -v 'RewriteRules\.hs') \
+    && { echo HINT: Please remove Debug.Trace from $(grep '\<Debug.Trace\>' -r src test | cut -d: -f1); false; }
 
 # C++
 which clang-format \
