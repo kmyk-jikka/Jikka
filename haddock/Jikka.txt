@@ -1956,6 +1956,7 @@ formatBuiltinIsolated :: Builtin -> [Type] -> String
 formatBuiltin :: Builtin -> [Type] -> [Expr] -> String
 formatType :: Type -> String
 formatExpr :: Expr -> String
+formatToplevelExpr :: ToplevelExpr -> String
 formatProgram :: Program -> String
 instance GHC.Read.Read Jikka.Core.Format.Prec
 instance GHC.Show.Show Jikka.Core.Format.Prec
@@ -2367,11 +2368,11 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 runRule :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m ([(VarName, Type)], Expr, Expr)
 data Equation
-TypeEquation :: Type -> Type -> Equation
+TypeEquation :: Type -> Type -> [Hint] -> Equation
 TypeAssertion :: VarName -> Type -> Equation
 formularizeProgram :: (MonadAlpha m, MonadError Error m) => Program -> m [Equation]
-sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
-mergeAssertions :: [(VarName, Type)] -> [(Type, Type)]
+sortEquations :: [Equation] -> ([(Type, Type, [Hint])], [(VarName, Type)])
+mergeAssertions :: [(VarName, Type)] -> [(Type, Type, [Hint])]
 
 -- | <a>Subst</a> is type substituion. It's a mapping from type variables
 --   to their actual types.
@@ -2383,8 +2384,12 @@ subst :: Subst -> Type -> Type
 -- | <a>substDefault</a> replaces all undetermined type variables with the
 --   given default type.
 substDefault :: Type -> Type -> Type
-solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
+solveEquations :: MonadError Error m => [(Type, Type, [Hint])] -> m Subst
 substProgram :: MonadError Error m => Maybe Type -> Subst -> Program -> m Program
+instance GHC.Read.Read Jikka.Core.Convert.TypeInfer.Hint
+instance GHC.Show.Show Jikka.Core.Convert.TypeInfer.Hint
+instance GHC.Classes.Ord Jikka.Core.Convert.TypeInfer.Hint
+instance GHC.Classes.Eq Jikka.Core.Convert.TypeInfer.Hint
 instance GHC.Read.Read Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Show.Show Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Classes.Ord Jikka.Core.Convert.TypeInfer.Equation
@@ -2638,7 +2643,7 @@ module Jikka.Core.Convert.CumulativeSum
 --   Before:
 --   
 --   <pre>
---   sum (fun i -&gt; a[i]) (range n)
+--   sum (map (fun i -&gt; a[i]) (range n))
 --   </pre>
 --   
 --   After:
