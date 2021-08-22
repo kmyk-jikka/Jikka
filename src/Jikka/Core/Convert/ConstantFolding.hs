@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- Module      : Jikka.Core.Convert.ConstantFolding
@@ -22,9 +24,13 @@ module Jikka.Core.Convert.ConstantFolding
     rule,
     reduceConstArithmeticExpr,
     reduceConstMaxExpr,
+    reduceIdempotentBooleanExpr,
+    reduceUnitBooleanExpr,
     reduceConstBooleanExpr,
+    reduceUnitBitExpr,
     reduceConstBitExpr,
-    reduceConstComparison,
+    reduceConstIntComparison,
+    reduceUnitBooleanComparison,
   )
 where
 
@@ -34,6 +40,7 @@ import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Runtime
 
@@ -117,28 +124,90 @@ reduceConstMaxExpr = simpleRewriteRule "reduceConstMaxExpr" $ \case
 --
 -- === Boolean functions
 --
+-- * `And` \(: \bool \to \bool \to \bool\)
+-- * `Or` \(: \bool \to \bool \to \bool\)
+-- * `Implies` \(: \bool \to \bool \to \bool\)
+reduceIdempotentBooleanExpr :: Monad m => RewriteRule m
+reduceIdempotentBooleanExpr =
+  mconcat
+    [ [r| "join/and" forall x. x && x = x|],
+      [r| "join/or" forall x. x || x = x|],
+      [r| "join/implies" forall x. implies (not x) x = x|],
+      [r| "join/implies'" forall x. implies x (not x) = not x|]
+    ]
+
+-- |
+-- == List of functions which are reduced
+--
+-- === Boolean functions
+--
 -- * `Not` \(: \bool \to \bool\)
 -- * `And` \(: \bool \to \bool \to \bool\)
 -- * `Or` \(: \bool \to \bool \to \bool\)
 -- * `Implies` \(: \bool \to \bool \to \bool\)
+reduceUnitBooleanExpr :: Monad m => RewriteRule m
+reduceUnitBooleanExpr =
+  mconcat
+    [ [r| "not/true" not true = false|],
+      [r| "not/false" not false = false|],
+      [r| "and/false" forall x. false && x = false|],
+      [r| "and/false'" forall x. x && false = false|],
+      [r| "and/true" forall x. true && x = x|],
+      [r| "and/true'" forall x. x && true = x|],
+      [r| "or/false" forall x. false || x = x|],
+      [r| "or/false'" forall x. x || false = x|],
+      [r| "or/true" forall x. true || x = true|],
+      [r| "or/true'" forall x. x || true = true|],
+      [r| "implies/false" forall x. implies false x = true|],
+      [r| "implies/false'" forall x. implies x false = not x|],
+      [r| "implies/true" forall x. implies true x = x|],
+      [r| "implies/true'" forall x. implies x true = true|]
+    ]
+
+-- |
+-- == List of functions which are reduced
+--
+-- === Boolean functions
+--
 -- * `If` \(: \forall \alpha. \bool \to \alpha \to \alpha \to \alpha\)
 reduceConstBooleanExpr :: Monad m => RewriteRule m
-reduceConstBooleanExpr = simpleRewriteRule "reduceConstBooleanExpr" $ \case
-  Not' (LitBool' a) -> Just $ LitBool' (not a)
-  And' _ LitFalse -> Just LitFalse
-  And' a LitTrue -> Just a
-  And' LitFalse _ -> Just LitFalse
-  And' LitTrue b -> Just b
-  Or' a LitFalse -> Just a
-  Or' _ LitTrue -> Just LitTrue
-  Or' LitFalse b -> Just b
-  Or' LitTrue _ -> Just LitTrue
-  Implies' a LitFalse -> Just $ Not' a
-  Implies' _ LitTrue -> Just LitTrue
-  Implies' LitFalse _ -> Just LitTrue
-  Implies' LitTrue a -> Just a
-  If' _ (LitBool' a) e1 e2 -> Just $ if a then e1 else e2
-  _ -> Nothing
+reduceConstBooleanExpr =
+  mconcat
+    [ [r| "if/true" forall e1 e2. if true then e1 else e2 = e1|],
+      [r| "if/false" forall e1 e2. if false then e1 else e2 = e2|]
+    ]
+
+-- |
+-- == List of functions which are reduced
+--
+-- === Bitwise boolean functions
+--
+-- * `BitNot` \(: \int \to \int\)
+-- * `BitAnd` \(: \int \to \int \to \int\)
+-- * `BitOr` \(: \int \to \int \to \int\)
+-- * `BitXor` \(: \int \to \int \to \int\)
+-- * `BitLeftShift` \(: \int \to \int \to \int\)
+-- * `BitRightShift` \(: \int \to \int \to \int\)
+reduceUnitBitExpr :: Monad m => RewriteRule m
+reduceUnitBitExpr =
+  mconcat
+    [ [r| "bitand/0" forall x. 0 & x = 0 |],
+      [r| "bitand/0'" forall x. x & 0 = 0 |],
+      [r| "bitand/-1" forall x. (-1) & x = x |],
+      [r| "bitand/-1'" forall x. x & (-1) = x |],
+      [r| "bitor/0" forall x. 0 | x = x |],
+      [r| "bitor/0'" forall x. x | 0 = x |],
+      [r| "bitor/-1" forall x. (-1) | x = -1 |],
+      [r| "bitor/-1'" forall x. x | (-1) = -1 |],
+      [r| "bitxor/0" forall x. 0 ^ x = x |],
+      [r| "bitxor/0'" forall x. x ^ 0 = x |],
+      [r| "bitxor/-1" forall x. (-1) ^ x = ~ x |],
+      [r| "bitxor/-1'" forall x. x ^ (-1) = ~ x |],
+      [r| "bitleftshift/0" forall x. 0 << x = 0 |],
+      [r| "bitleftshift/0'" forall x. x << 0 = x |],
+      [r| "bitrightshift/0" forall x. 0 >> x = 0 |],
+      [r| "bitrightshift/0'" forall x. x >> 0 = x |]
+    ]
 
 -- |
 -- == List of functions which are reduced
@@ -156,26 +225,10 @@ reduceConstBitExpr =
   let return' = Just . LitInt'
    in simpleRewriteRule "reduceConstBitExpr" $ \case
         BitNot' (LitInt' a) -> return' $ complement a
-        BitAnd' _ (LitInt' 0) -> return' 0
-        BitAnd' a (LitInt' (-1)) -> Just a
-        BitAnd' (LitInt' 0) _ -> return' 0
-        BitAnd' (LitInt' (-1)) b -> Just b
         BitAnd' (LitInt' a) (LitInt' b) -> return' $ a .&. b
-        BitOr' a (LitInt' 0) -> Just a
-        BitOr' _ (LitInt' (-1)) -> return' $ -1
-        BitOr' (LitInt' 0) b -> Just b
-        BitOr' (LitInt' (-1)) _ -> return' $ -1
         BitOr' (LitInt' a) (LitInt' b) -> return' $ a .|. b
-        BitXor' a (LitInt' 0) -> Just a
-        BitXor' a (LitInt' (-1)) -> Just $ BitNot' a
-        BitXor' (LitInt' 0) b -> Just b
-        BitXor' (LitInt' (-1)) b -> Just $ BitNot' b
         BitXor' (LitInt' a) (LitInt' b) -> return' $ a `xor` b
-        BitLeftShift' a (LitInt' 0) -> Just a
-        BitLeftShift' (LitInt' 0) _ -> return' 0
         BitLeftShift' (LitInt' a) (LitInt' b) | - 100 < b && b < 100 -> return' $ a `shift` fromInteger b
-        BitRightShift' a (LitInt' 0) -> Just a
-        BitRightShift' (LitInt' 0) _ -> return' 0
         BitRightShift' (LitInt' a) (LitInt' b) | - 100 < b && b < 100 -> return' $ a `shift` fromInteger (- b)
         _ -> Nothing
 
@@ -190,30 +243,55 @@ reduceConstBitExpr =
 -- * `GreaterEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 -- * `Equal` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 -- * `NotEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
-reduceConstComparison :: Monad m => RewriteRule m
-reduceConstComparison =
-  simpleRewriteRule "reduceConstComparison" $
+reduceConstIntComparison :: Monad m => RewriteRule m
+reduceConstIntComparison =
+  simpleRewriteRule "comparison/const/int" $
     (LitBool' <$>) . \case
       LessThan' _ (LitInt' a) (LitInt' b) -> Just $ a < b
-      LessEqual' _ (LitBool' a) (LitBool' b) -> Just $ a <= b
       LessEqual' _ (LitInt' a) (LitInt' b) -> Just $ a <= b
-      GreaterThan' _ (LitBool' a) (LitBool' b) -> Just $ a > b
       GreaterThan' _ (LitInt' a) (LitInt' b) -> Just $ a > b
-      GreaterEqual' _ (LitBool' a) (LitBool' b) -> Just $ a >= b
+      GreaterEqual' _ (LitInt' a) (LitInt' b) -> Just $ a >= b
       Equal' _ (LitInt' a) (LitInt' b) -> Just $ a == b
-      Equal' _ (LitBool' a) (LitBool' b) -> Just $ a == b
       NotEqual' _ (LitInt' a) (LitInt' b) -> Just $ a /= b
-      NotEqual' _ (LitBool' a) (LitBool' b) -> Just $ a /= b
       _ -> Nothing
+
+-- |
+-- == List of functions which are reduced
+--
+-- === Comparison functions
+--
+-- * `LessThan` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
+-- * `LessEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
+-- * `GreaterThan` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
+-- * `GreaterEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
+-- * `Equal` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
+-- * `NotEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
+reduceUnitBooleanComparison :: Monad m => RewriteRule m
+reduceUnitBooleanComparison =
+  mconcat
+    [ -- TODO: lessthan, lessequal, greaterthan, and greaterequal
+      [r| "equal/true" forall x. true == x = x |],
+      [r| "equal/true'" forall x. x == true = x |],
+      [r| "equal/false" forall x. false == x = not x |],
+      [r| "equal/false'" forall x. x == false = not x |],
+      [r| "notequal/true" forall x. true /= x = not x |],
+      [r| "notequal/true'" forall x. x /= true = not x |],
+      [r| "notequal/false" forall x. false /= x = x |],
+      [r| "notequal/false'" forall x. x /= false = x |]
+    ]
 
 rule :: MonadError Error m => RewriteRule m
 rule =
   mconcat
     [ reduceConstArithmeticExpr,
       reduceConstMaxExpr,
+      reduceIdempotentBooleanExpr,
+      reduceUnitBooleanExpr,
       reduceConstBooleanExpr,
+      reduceUnitBitExpr,
       reduceConstBitExpr,
-      reduceConstComparison
+      reduceConstIntComparison,
+      reduceUnitBooleanComparison
     ]
 
 runProgram :: MonadError Error m => Program -> m Program
