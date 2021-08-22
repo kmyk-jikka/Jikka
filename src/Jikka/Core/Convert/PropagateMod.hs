@@ -92,6 +92,11 @@ putFloorMod (Mod m) =
           case f of
             Nothing -> return Nothing
             Just f -> return' $ Map' t1 t2 f xs
+        Foldl' t1 t2 f init xs -> do
+          f <- putFloorMod (Mod m) f
+          case f of
+            Nothing -> return Nothing
+            Just f -> return' $ Foldl' t1 t2 f init xs
         Lam x t body -> do
           -- TODO: rename only if required
           y <- genVarName x
