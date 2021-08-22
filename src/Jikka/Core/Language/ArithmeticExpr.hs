@@ -225,10 +225,13 @@ makeVectorFromArithmeticExpr xs es = runST $ do
       let indices = V.imap (\i x -> map (i,) (findIndices (x `isFreeVar`) (productExprList e))) xs
       case concat (V.toList indices) of
         [] -> lift $ modifySTRef c (plusArithmeticExpr (arithmeticalExprFromProductExpr e))
-        [(i, j)] -> do
-          let e' = e {productExprList = take j (productExprList e) ++ drop (j + 1) (productExprList e)}
-          lift $ MV.modify f (plusArithmeticExpr (arithmeticalExprFromProductExpr e')) i
-        _ -> MaybeT $ return Nothing
+        [(i, j)] ->
+          if productExprList e !! j == Var (xs V.! i)
+            then do
+              let e' = e {productExprList = take j (productExprList e) ++ drop (j + 1) (productExprList e)}
+              lift $ MV.modify f (plusArithmeticExpr (arithmeticalExprFromProductExpr e')) i -- k x_i
+            else MaybeT $ return Nothing -- e.g. f(x_i)
+        _ -> MaybeT $ return Nothing -- e.g. x_1 x_2
     f <- V.freeze f
     c <- lift $ readSTRef c
     return (V.map normalizeArithmeticExpr f, normalizeArithmeticExpr c)

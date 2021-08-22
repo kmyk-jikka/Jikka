@@ -31,6 +31,10 @@ Please check also the [gallery](https://kmyk.github.io/Jikka/gallery).
 - :heavy_check_mark: AC `dp_z-kubaru.py`
   - The Kubaru DP version of `dp_z-morau.py`.
   - submission at v5.1.0.0: <https://atcoder.jp/contests/dp/submissions/24701829>
+- :heavy_check_mark: AC `abc200_b.py`
+  - AtCoder Beginner Contest 200 [B - 200th ABC-200](https://atcoder.jp/contests/abc200/tasks/abc200_b)
+  - AC with a naive solution / 愚直解が AC
+  - submission at 76461f7b62c615281d2821ea0445e5bd6e316de8: <https://atcoder.jp/contests/abc200/submissions/25282153>
 - :heavy_check_mark: AC `abc203_b.py`
   - AtCoder Beginner Contest 203 [B - AtCoder Condominium](https://atcoder.jp/contests/abc203/tasks/abc203_b)
   - AC with a naive solution using `sum(List[int])` / 愚直解が AC `sum(List[int])`を使用

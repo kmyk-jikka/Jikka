@@ -22,6 +22,11 @@ spec = do
       let f = V.fromList [parseArithmeticExpr (LitInt' 2), parseArithmeticExpr (LitInt' 3)]
       let c = parseArithmeticExpr (LitInt' (-10))
       makeVectorFromArithmeticExpr xs e `shouldBe` Just (f, c)
+    it "fails with modulo" $ do
+      -- See https://github.com/kmyk/Jikka/issues/173
+      let xs = V.singleton "x"
+      let e = parseArithmeticExpr (FloorMod' (Var "x") (LitInt' 3))
+      makeVectorFromArithmeticExpr xs e `shouldBe` Nothing
   describe "normalizeArithmeticExpr" $ do
     it "works" $ do
       let e = Plus' (LitInt' 2) (Plus' (Var "a") (LitInt' (-2)))
