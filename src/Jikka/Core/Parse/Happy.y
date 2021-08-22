@@ -224,8 +224,8 @@ topdecls :: { ToplevelExpr }
     | topdecl topdecls                 { $1 $2 }
 
 topdecl :: { ToplevelExpr -> ToplevelExpr }
-    : "let" identifier ":" type "=" expression "in"                    { ToplevelLet $2 $4 $6 }
-    | "let" "rec" identifier list(arg) ":" type "=" expression "in"    { ToplevelLetRec $3 $4 $6 $8 }
+    : "let" identifier opt_colon_type "=" expression "in"                    { ToplevelLet $2 $3 $5 }
+    | "let" "rec" identifier list(arg) opt_colon_type "=" expression "in"    { ToplevelLetRec $3 $4 $5 $7 }
 
 -- Types
 atom_type :: { Type }
@@ -245,6 +245,10 @@ tuple_type :: { Type }
 type :: { Type }
     : tuple_type                       { $1 }
     | tuple_type "->" type             { FunTy $1 $3 }
+
+opt_colon_type :: { Type }
+    : {- empty -}                      { underscoreTy }
+    | ":" type                         { $2 }
 
 -- Data Structures
 datastructure :: { DataStructure }
@@ -465,7 +469,7 @@ lambda_expr :: { Expr }
 
 -- Let
 let_expr :: { Expr }
-    : "let" identifier ":" type "=" expression "in" expression    { Let $2 $4 $6 $8 }
+    : "let" identifier opt_colon_type "=" expression "in" expression    { Let $2 $3 $5 $7 }
 
 -- Assertion
 assert_expr :: { Expr }
