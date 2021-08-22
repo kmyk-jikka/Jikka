@@ -208,6 +208,7 @@ isConstantTimeBuiltin = \case
   FloorMod -> True
   CeilDiv -> True
   CeilMod -> True
+  JustDiv -> True
   Pow -> True
   -- advanced arithmetical functions
   Abs -> True

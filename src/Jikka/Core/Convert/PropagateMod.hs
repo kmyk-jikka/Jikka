@@ -72,6 +72,7 @@ putFloorMod (Mod m) =
         Plus' e1 e2 -> return' $ ModPlus' e1 e2 m
         Minus' e1 e2 -> return' $ ModMinus' e1 e2 m
         Mult' e1 e2 -> return' $ ModMult' e1 e2 m
+        JustDiv' e1 e2 -> return' $ ModMult' e1 (ModInv' e2 m) m
         Pow' e1 e2 -> return' $ ModPow' e1 e2 m
         MatAp' h w e1 e2 -> return' $ ModMatAp' h w e1 e2 m
         MatAdd' h w e1 e2 -> return' $ ModMatAdd' h w e1 e2 m

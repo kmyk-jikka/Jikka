@@ -164,6 +164,7 @@ import qualified Jikka.Core.Parse.Token as L
     "%"             { WithLoc _ (L.Operator L.FloorMod) }
     "/^"            { WithLoc _ (L.Operator L.CeilDiv) }
     "%^"            { WithLoc _ (L.Operator L.CeilMod) }
+    "/!"            { WithLoc _ (L.Operator L.JustDiv) }
     "**"            { WithLoc _ (L.Operator L.Pow) }
 
     -- boolean operators
@@ -386,6 +387,7 @@ builtin :: { (Builtin, [Type]) }
     | "(" "%"  ")"                     { (FloorMod, []) }
     | "(" "/^" ")"                     { (CeilDiv, []) }
     | "(" "%^" ")"                     { (CeilMod, []) }
+    | "(" "/!" ")"                     { (JustDiv, []) }
     | "(" "**" ")"                     { (Pow, []) }
     | "(" "&&" ")"                     { (And, []) }
     | "(" "||" ")"                     { (Or, []) }
@@ -447,6 +449,7 @@ m_expr :: { Expr }
     | m_expr "%" u_expr                                     { FloorMod' $1 $3 }
     | m_expr "/^" u_expr                                    { CeilDiv' $1 $3 }
     | m_expr "%^" u_expr                                    { CeilMod' $1 $3 }
+    | m_expr "/!" u_expr                                    { JustDiv' $1 $3 }
 a_expr :: { Expr }
     : m_expr                                                { $1 }
     | a_expr "+" m_expr                                     { Plus' $1 $3 }

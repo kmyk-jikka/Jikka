@@ -268,6 +268,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.FloorMod -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::floormod" []) [e1, e2]
     X.CeilDiv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceildiv" []) [e1, e2]
     X.CeilMod -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceilmod" []) [e1, e2]
+    X.JustDiv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::justdiv" []) [e1, e2]
     X.Pow -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::pow" []) [e1, e2]
     -- advanced arithmetical functions
     X.Abs -> go01 $ \e -> Y.Call (Y.Function "std::abs" []) [e]

@@ -162,6 +162,7 @@ analyzeBuiltin = \case
   FloorMod -> InfixOp "%" multPrec LeftToRight
   CeilDiv -> InfixOp "/^" multPrec LeftToRight
   CeilMod -> InfixOp "%^" multPrec LeftToRight
+  JustDiv -> InfixOp "/!" multPrec LeftToRight
   Pow -> InfixOp "**" powerPrec RightToLeft
   -- advanced arithmetical functions
   Abs -> Fun "abs"

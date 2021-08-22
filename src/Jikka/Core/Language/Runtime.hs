@@ -20,6 +20,11 @@ ceilMod :: MonadError Error m => Integer -> Integer -> m Integer
 ceilMod _ 0 = throwRuntimeError "zero div"
 ceilMod a b = return (a - ((a + b - 1) `div` b) * b)
 
+justDiv :: MonadError Error m => Integer -> Integer -> m Integer
+justDiv _ 0 = throwRuntimeError "zero div"
+justDiv a b | a `mod` b /= 0 = throwRuntimeError "not a just div"
+justDiv a b = return (a `div` b)
+
 modinv :: MonadError Error m => Integer -> Integer -> m Integer
 modinv a m | m <= 0 || a `mod` m == 0 = throwRuntimeError $ "invalid argument for inv: " ++ show (a, m)
 modinv a m = go a m 0 1 1 0

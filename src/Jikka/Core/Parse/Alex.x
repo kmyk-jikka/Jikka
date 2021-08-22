@@ -90,6 +90,7 @@ tokens :-
     "%"             { tok (Operator FloorMod) }
     "/^"            { tok (Operator CeilDiv) }
     "%^"            { tok (Operator CeilMod) }
+    "/!"            { tok (Operator JustDiv) }
     "**"            { tok (Operator Pow) }
 
     -- boolean operators
