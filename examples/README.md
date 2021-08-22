@@ -63,10 +63,9 @@ Please check also the [gallery](https://kmyk.github.io/Jikka/gallery).
 - :hourglass: TLE `yukicoder_1618.py`
   - yukicoder [No.1618 Convolution?](https://yukicoder.me/problems/no/1618)
   - imos 法
-- :warning: WA `wip/yukicoder_1649.py`
+- :hourglass: TLE `yukicoder_1649.py`
   - yukicoder [No.1649 Manhattan Square](https://yukicoder.me/problems/no/1649)
   - segment trees with coordinate compression / 座標圧縮してセグメント木
-  - 現状: mod の伝播の不足による WA + TLE
 - :hourglass: TLE `wip/point_add_range_sum.py`
   - Library Checker [Point Add Range Sum](https://judge.yosupo.jp/problem/point_add_range_sum)
   - A normal segment tree / 通常のセグメント木
