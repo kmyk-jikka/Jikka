@@ -73,7 +73,7 @@ applyRewriteRuleToRootExpr f env e = go "(anonymous)" False f
         case e' of
           Just e' -> return $ Just e'
           Nothing -> go ruleName dumpTrace g
-      TraceRule f -> go ruleName False f
+      TraceRule f -> go ruleName True f
 
 makeRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
 makeRewriteRule name f = NamedRule name (RewriteRule f)
