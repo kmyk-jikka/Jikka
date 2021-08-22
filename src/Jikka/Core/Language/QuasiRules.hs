@@ -49,8 +49,29 @@ fromTypeName (TypeName x) = do
 liftDataP :: Data a => a -> Q Pat
 liftDataP = TH.dataToPatQ (const Nothing)
 
+-- | `Exp` with type `Expr`.
+type ExprExp = Exp
+
+data RenamedVarName
+  = DeclaredAtForall
+  | RenamedVar ExprExp
+  | RenamedPatLam TH.Name ExprExp
+  | RenamedExpLam ExprExp
+  | RenamedPatLet TH.Name ExprExp
+  | RenamedExpLet ExprExp
+  deriving (Eq, Ord, Show)
+
+expFromRenamedVarName :: RenamedVarName -> Maybe ExprExp
+expFromRenamedVarName = \case
+  DeclaredAtForall -> Nothing
+  RenamedVar e -> Just e
+  RenamedPatLam _ e -> Just e
+  RenamedExpLam e -> Just e
+  RenamedPatLet _ e -> Just e
+  RenamedExpLet e -> Just e
+
 data Env = Env
-  { vars :: [(VarName, Maybe Exp)],
+  { vars :: [(VarName, RenamedVarName)],
     typeVars :: [(TypeName, TH.Name)]
   }
 
@@ -101,14 +122,14 @@ toPatE = \case
       then return WildP
       else do
         env <- gets vars
-        case lookup x env of
+        case expFromRenamedVarName <$> lookup x env of
           Just (Just y) -> do
             lift [p|((== $(pure y)) -> True)|]
           Just Nothing -> do
             y <- lift $ fromVarName x
-            modify' (\env -> env {vars = (x, Just (VarE y)) : vars env})
+            modify' (\env -> env {vars = (x, RenamedVar (VarE y)) : vars env})
             return $ VarP y
-          Nothing -> fail $ "Jikka.Core.Language.QuasiRules.toPatE: undefined variable: " ++ unVarName x
+          Nothing -> fail $ "Jikka.Core.Language.QuasiRules.toPatE: undefined variable (forall is required): " ++ unVarName x
   Lit lit -> do
     lit <- toPatL lit
     lift [p|Lit $(pure lit)|]
@@ -120,14 +141,15 @@ toPatE = \case
     t <- toPatT t
     y <- lift $ fromVarName x
     y' <- lift [e|Var $(pure (VarE y))|]
-    modify' (\env -> env {vars = (x, Just y') : vars env})
+    modify' (\env -> env {vars = (x, RenamedPatLam y y') : vars env})
     e <- toPatE e
     lift [p|Lam $(pure (VarP y)) $(pure t) $(pure e)|]
   Let x t e1 e2 -> do
     t <- toPatT t
     e1 <- toPatE e1
     y <- lift $ fromVarName x
-    modify' (\env -> env {vars = (x, Just (VarE y)) : vars env})
+    y' <- lift [e|Var $(pure (VarE y))|]
+    modify' (\env -> env {vars = (x, RenamedPatLet y y') : vars env})
     e2 <- toPatE e2
     lift [p|Let $(pure (VarP y)) $(pure t) $(pure e1) $(pure e2)|]
   Assert e1 e2 -> do
@@ -180,7 +202,7 @@ toExpE e = do
   case e of
     Var x -> do
       env <- gets vars
-      case lookup x env of
+      case expFromRenamedVarName <$> lookup x env of
         Just (Just y) -> return ([], y)
         _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: undefined variable: " ++ unVarName x
     Lit lit -> do
@@ -194,19 +216,39 @@ toExpE e = do
       return (stmts ++ stmts', e)
     Lam x t e -> do
       t <- toExpT t
-      y <- lift $ fromVarName x
-      modify' (\env -> env {vars = (x, Just (AppE var (VarE y))) : vars env})
-      (stmts, e) <- toExpE e
-      e <- lift [e|Lam $(pure (VarE y)) $(pure t) $(pure e)|]
-      return (BindS (VarP y) genVarName : stmts, e)
+      y <- gets (lookup x . vars)
+      case y of
+        Just (RenamedPatLam y _) -> do
+          -- Use the same variable name
+          (stmts, e) <- toExpE e
+          e <- lift [e|Lam $(pure (VarE y)) $(pure t) $(pure e)|]
+          return (stmts, e)
+        Nothing -> do
+          -- Introduce a new name
+          y <- lift $ fromVarName x
+          modify' (\env -> env {vars = (x, RenamedExpLam (AppE var (VarE y))) : vars env})
+          (stmts, e) <- toExpE e
+          e <- lift [e|Lam $(pure (VarE y)) $(pure t) $(pure e)|]
+          return (BindS (VarP y) genVarName : stmts, e)
+        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: variable conflicts: " ++ unVarName x
     Let x t e1 e2 -> do
       t <- toExpT t
       (stmts, e1) <- toExpE e1
-      y <- lift $ fromVarName x
-      modify' (\env -> env {vars = (x, Just (AppE var (VarE y))) : vars env})
-      (stmts', e2) <- toExpE e2
-      e <- lift [e|Let $(pure (VarE y)) $(pure t) $(pure e1) $(pure e2)|]
-      return (stmts ++ BindS (VarP y) genVarName : stmts', e)
+      y <- gets (lookup x . vars)
+      case y of
+        Just (RenamedPatLet y _) -> do
+          -- Use the same variable name
+          (stmts', e2) <- toExpE e2
+          e <- lift [e|Let $(pure (VarE y)) $(pure t) $(pure e1) $(pure e2)|]
+          return (stmts ++ stmts', e)
+        Nothing -> do
+          -- Introduce a new name
+          y <- lift $ fromVarName x
+          modify' (\env -> env {vars = (x, RenamedExpLet (AppE var (VarE y))) : vars env})
+          (stmts', e2) <- toExpE e2
+          e <- lift [e|Let $(pure (VarE y)) $(pure t) $(pure e1) $(pure e2)|]
+          return (stmts ++ BindS (VarP y) genVarName : stmts', e)
+        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: variable conflicts: " ++ unVarName x
     Assert e1 e2 -> do
       (stmts1, e1) <- toExpE e1
       (stmts2, e2) <- toExpE e2
@@ -220,12 +262,12 @@ ruleExp s = do
   env <-
     return $
       Env
-        { vars = map (second (const Nothing)) args,
+        { vars = map (second (const DeclaredAtForall)) args,
           typeVars = []
         }
   (pat, env) <- runStateT (toPatE e1) env
   supressUnusedMatchesWarnings <- (concat <$>) . forM (vars env) $ \case
-    (_, Just e) -> do
+    (_, expFromRenamedVarName -> Just e) -> do
       e <- [e|return $(pure e)|]
       return [NoBindS e]
     _ -> return []
