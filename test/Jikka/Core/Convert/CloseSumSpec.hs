@@ -39,7 +39,7 @@ spec = describe "run" $ do
                 IntTy
                 ( Mult'
                     (Lit (LitInt 100))
-                    ( FloorDiv'
+                    ( JustDiv'
                         ( Mult'
                             (Var "n")
                             (Minus' (Var "n") Lit1)

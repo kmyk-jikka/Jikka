@@ -37,7 +37,7 @@ $octdigit = [0-7]
 $hexdigit = [0-9a-fA-F]
 
 $shortstringchar_single = [^ \\ \r \n ']
-$shortstringchar_double = [^ \\ \r \n ']
+$shortstringchar_double = [^ \\ \r \n "]
 @stringescapeseq = $backslash .
 
 tokens :-
@@ -90,6 +90,7 @@ tokens :-
     "%"             { tok (Operator FloorMod) }
     "/^"            { tok (Operator CeilDiv) }
     "%^"            { tok (Operator CeilMod) }
+    "/!"            { tok (Operator JustDiv) }
     "**"            { tok (Operator Pow) }
 
     -- boolean operators

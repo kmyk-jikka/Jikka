@@ -164,6 +164,7 @@ callBuiltin builtin ts args = wrapError' ("while calling builtin " ++ formatBuil
     FloorMod -> go2' valueToInt valueToInt ValInt floorMod
     CeilDiv -> go2' valueToInt valueToInt ValInt ceilDiv
     CeilMod -> go2' valueToInt valueToInt ValInt ceilMod
+    JustDiv -> go2' valueToInt valueToInt ValInt justDiv
     Pow -> go2 valueToInt valueToInt ValInt (^)
     -- advanced arithmetical functions
     Abs -> go1 valueToInt ValInt abs

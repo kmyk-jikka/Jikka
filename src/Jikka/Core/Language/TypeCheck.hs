@@ -35,6 +35,7 @@ builtinToType builtin ts =
         FloorMod -> go0 $ Fun2STy IntTy
         CeilDiv -> go0 $ Fun2STy IntTy
         CeilMod -> go0 $ Fun2STy IntTy
+        JustDiv -> go0 $ Fun2STy IntTy
         Pow -> go0 $ Fun2STy IntTy
         -- advanced arithmetical functions
         Abs -> go0 $ Fun1STy IntTy

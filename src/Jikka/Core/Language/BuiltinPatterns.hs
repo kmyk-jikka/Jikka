@@ -32,6 +32,8 @@ pattern CeilDiv' e1 e2 = AppBuiltin2 CeilDiv e1 e2
 
 pattern CeilMod' e1 e2 = AppBuiltin2 CeilMod e1 e2
 
+pattern JustDiv' e1 e2 = AppBuiltin2 JustDiv e1 e2
+
 pattern Pow' e1 e2 = AppBuiltin2 Pow e1 e2
 
 -- advanced arithmetical functions

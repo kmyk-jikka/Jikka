@@ -27,7 +27,6 @@ import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
-import Jikka.Core.Language.Util
 
 reduceAll :: MonadAlpha m => RewriteRule m
 reduceAll =

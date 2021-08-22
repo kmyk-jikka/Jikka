@@ -90,6 +90,8 @@ data Builtin
     CeilDiv
   | -- | \(: \int \to \int \to \int\)
     CeilMod
+  | -- | divison which has no remainder \(: \int \to \int \to \int\)
+    JustDiv
   | -- | \(: \int \to \int \to \int\)
     Pow
   | -- advanced arithmetical functions

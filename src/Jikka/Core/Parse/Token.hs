@@ -19,6 +19,7 @@ data Operator
   | FloorMod
   | CeilDiv
   | CeilMod
+  | JustDiv
   | Pow
   | -- boolean operators
     And

@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- Module      : Jikka.Core.Convert.CloseMin
@@ -27,62 +29,106 @@ import qualified Jikka.Core.Convert.Alpha as Alpha
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
+import Jikka.Core.Language.LambdaPatterns
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 
-reduceMin :: Monad m => RewriteRule m
-reduceMin = simpleRewriteRule "reduceMin" $ \case
-  -- list build functions
-  Min1' t (Nil' _) -> Just $ Bottom' t "no minimum in empty list"
-  Min1' _ (Cons' _ e (Nil' _)) -> Just e
-  Min1' t (Cons' _ e (Cons' _ e' es)) -> Just $ Min2' t e (Min1' t (Cons' t e' es))
-  -- list map functions
-  Min1' t (Reversed' _ es) -> Just $ Min1' t es
-  Min1' t (Cons' _ e (Reversed' _ es)) -> Just $ Min1' t (Cons' t e es)
-  Min1' t (Sorted' _ es) -> Just $ Min1' t es
-  Min1' t (Cons' _ e (Sorted' _ es)) -> Just $ Min1' t (Cons' t e es)
-  Min1' t (Map' t1 t2 f es) -> case f of
-    Lam x _ e | x `isUnusedVar` e -> Just e
-    Lam x _ (Min2' _ e1 e2) -> Just $ Min2' t (Min1' t (Map' t1 t2 (Lam x t e1) es)) (Min1' t (Map' t1 t2 (Lam x t e2) es))
-    Lam x _ (Negate' e) -> Just $ Negate' (Max1' t (Map' t1 t2 (Lam x IntTy e) es))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e1 -> Just $ Plus' e1 (Min1' t (Map' t1 t2 (Lam x IntTy e2) es))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e2 -> Just $ Plus' (Min1' t (Map' t1 t2 (Lam x IntTy e1) es)) e2
-    _ -> Nothing
-  Min1' t (Cons' _ e0 (Map' t1 t2 f xs)) -> case f of
-    Lam x _ e | x `isUnusedVar` e -> Just $ If' t (Equal' IntTy (Len' t xs) Lit0) e0 (Min2' t e0 e)
-    Lam x _ (Min2' _ e1 e2) -> Just $ Min2' t (Min1' t (Cons' t e0 (Map' t1 t2 (Lam x t e1) xs))) (Min1' t (Cons' t e0 (Map' t1 t2 (Lam x t e2) xs)))
-    Lam x _ (Negate' e) -> Just $ Negate' (Max1' t (Cons' t (Negate' e0) (Map' t1 t2 (Lam x IntTy e) xs)))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e1 -> Just $ Plus' e1 (Min1' t (Cons' t (Minus' e0 e1) (Map' t1 t2 (Lam x IntTy e2) xs)))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e2 -> Just $ Plus' (Min1' t (Cons' t (Minus' e0 e2) (Map' t1 t2 (Lam x IntTy e1) xs))) e2
-    _ -> Nothing
-  _ -> Nothing
+reduceMin :: MonadAlpha m => RewriteRule m
+reduceMin =
+  mconcat
+    [ -- list build functions
+      [r| "minimum/nil" minimum nil = bottom<"no minimum in empty list"> |],
+      [r| "minimum/cons/cons" forall x y zs. minimum (cons x (cons y zs)) = min x (minimum (cons y zs)) |],
+      [r| "minimum/range" forall n. minimum (range n) = 0 |],
+      -- list map functions
+      [r| "minimum/reversed" forall xs. minimum (reversed xs) = minimum xs |],
+      [r| "minimum/cons/reversed" forall x xs. minimum (cons x (reversed xs)) = minimum (cons x xs) |],
+      [r| "minimum/sorted" forall xs. minimum (sorted xs) = minimum xs |],
+      [r| "minimum/cons/sorted" forall x xs. minimum (cons x (sorted xs)) = minimum (cons x xs) |],
+      makeRewriteRule "minimum/map/const" $ \_ -> \case
+        Min1' _ (Map' _ _ (LamConst _ e) _) -> return $ Just e
+        _ -> return Nothing,
+      [r| "minimum/map/min" forall e1 e2 xs. minimum (map (fun x -> min e1 e2) xs) = min (minimum (map (fun x -> e1) xs)) (minimum (map (fun x -> e2) xs)) |],
+      [r| "minimum/map/negate" forall e xs. minimum (map (fun x -> - e) xs) = - (maximum (map (fun x -> e) xs)) |],
+      makeRewriteRule "minimum/map/plus" $ \_ -> \case
+        Min1' _ (Map' t1 _ (Lam x _ (Plus' k e)) xs) | x `isUnusedVar` k -> return . Just $ Plus' k (Min1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/map/plus'" $ \_ -> \case
+        Min1' _ (Map' t1 _ (Lam x _ (Plus' e k)) xs) | x `isUnusedVar` k -> return . Just $ Plus' k (Min1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/map/minus" $ \_ -> \case
+        Min1' _ (Map' t1 _ (Lam x _ (Minus' k e)) xs) | x `isUnusedVar` k -> return . Just $ Minus' k (Max1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/map/minus'" $ \_ -> \case
+        Min1' _ (Map' t1 _ (Lam x _ (Minus' e k)) xs) | x `isUnusedVar` k -> return . Just $ Minus' k (Min1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/cons/map/const" $ \_ -> \case
+        Min1' t (Cons' _ x (Map' _ _ (LamConst _ e) _)) -> return . Just $ Min2' t x e
+        _ -> return Nothing,
+      [r| "minimum/cons/map/min" forall e0 e1 e2 xs. minimum (cons e0 (map (fun x -> min e1 e2) xs)) = min (minimum (cons e0 (map (fun x -> e1) xs))) (minimum (cons x (map (fun x -> e2) xs))) |],
+      [r| "minimum/cons/map/negate" forall e0 e xs. minimum (cons e0 (map (fun x -> - e) xs)) = - (maximum (cons (- e0) (map (fun x -> e) xs))) |],
+      makeRewriteRule "minimum/cons/map/plus" $ \_ -> \case
+        Min1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Plus' k e)) xs)) | x `isUnusedVar` k -> return . Just $ Plus' k (Min1' IntTy (Cons' IntTy (Minus' e0 k) (Map' t1 IntTy (Lam x t1 e) xs)))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/cons/map/plus'" $ \_ -> \case
+        Min1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Plus' e k)) xs)) | x `isUnusedVar` k -> return . Just $ Plus' k (Min1' IntTy (Cons' IntTy (Minus' e0 k) (Map' t1 IntTy (Lam x t1 e) xs)))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/cons/map/minus" $ \_ -> \case
+        Min1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Minus' k e)) xs)) | x `isUnusedVar` k -> return . Just $ Minus' k (Max1' IntTy (Cons' IntTy (Minus' k e0) (Map' t1 IntTy (Lam x t1 e) xs)))
+        _ -> return Nothing,
+      makeRewriteRule "minimum/cons/map/minus'" $ \_ -> \case
+        Min1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Minus' e k)) xs)) | x `isUnusedVar` k -> return . Just $ Minus' (Min1' IntTy (Cons' IntTy (Plus' e0 k) (Map' t1 IntTy (Lam x t1 e) xs))) k
+        _ -> return Nothing
+    ]
 
-reduceMax :: Monad m => RewriteRule m
-reduceMax = simpleRewriteRule "reduceMax" $ \case
-  -- list build functions
-  Max1' t (Nil' _) -> Just $ Bottom' t "no maximum in empty list"
-  Max1' _ (Cons' _ e (Nil' _)) -> Just e
-  Max1' t (Cons' _ e (Cons' _ e' es)) -> Just $ Max2' t e (Max1' t (Cons' t e' es))
-  -- list map functions
-  Max1' t (Reversed' _ es) -> Just $ Max1' t es
-  Max1' t (Cons' _ e (Reversed' _ es)) -> Just $ Max1' t (Cons' t e es)
-  Max1' t (Sorted' _ es) -> Just $ Max1' t es
-  Max1' t (Cons' _ e (Sorted' _ es)) -> Just $ Max1' t (Cons' t e es)
-  Max1' t (Map' t1 t2 f es) -> case f of
-    Lam x _ e | x `isUnusedVar` e -> Just e
-    Lam x _ (Max2' _ e1 e2) -> Just $ Max2' t (Map' t1 t2 (Lam x t e1) es) (Map' t1 t2 (Lam x t e2) es)
-    Lam x _ (Negate' e) -> Just $ Negate' (Min1' t2 (Map' t1 t2 (Lam x IntTy e) es))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e1 -> Just $ Plus' e1 (Max1' t2 (Map' t1 t2 (Lam x IntTy e2) es))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e2 -> Just $ Plus' (Max1' t2 (Map' t1 t2 (Lam x IntTy e1) es)) e2
-    _ -> Nothing
-  Max1' t (Cons' _ e0 (Map' t1 t2 f xs)) -> case f of
-    Lam x _ e | x `isUnusedVar` e -> Just $ If' t (Equal' IntTy (Len' t xs) Lit0) e0 (Max2' t e0 e)
-    Lam x _ (Max2' _ e1 e2) -> Just $ Max2' t (Max1' t (Cons' t e0 (Map' t1 t2 (Lam x t e1) xs))) (Max1' t (Cons' t e0 (Map' t1 t2 (Lam x t e2) xs)))
-    Lam x _ (Negate' e) -> Just $ Negate' (Min1' t (Cons' t (Negate' e0) (Map' t1 t2 (Lam x IntTy e) xs)))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e1 -> Just $ Plus' e1 (Max1' t (Cons' t (Minus' e0 e1) (Map' t1 t2 (Lam x IntTy e2) xs)))
-    Lam x _ (Plus' e1 e2) | x `isUnusedVar` e2 -> Just $ Plus' (Max1' t (Cons' t (Minus' e0 e2) (Map' t1 t2 (Lam x IntTy e1) xs))) e2
-    _ -> Nothing
-  _ -> Nothing
+reduceMax :: MonadAlpha m => RewriteRule m
+reduceMax =
+  mconcat
+    [ -- list build functions
+      [r| "maximum/nil" maximum nil = bottom<"no maximum in empty list"> |],
+      [r| "maximum/cons/cons" forall x y zs. maximum (cons x (cons y zs)) = max x (maximum (cons y zs)) |],
+      [r| "maximum/range" forall n. maximum (range n) = n - 1 |],
+      -- list map functions
+      [r| "maximum/reversed" forall xs. maximum (reversed xs) = maximum xs |],
+      [r| "maximum/cons/reversed" forall x xs. maximum (cons x (reversed xs)) = maximum (cons x xs) |],
+      [r| "maximum/sorted" forall xs. maximum (sorted xs) = maximum xs |],
+      [r| "maximum/cons/sorted" forall x xs. maximum (cons x (sorted xs)) = maximum (cons x xs) |],
+      makeRewriteRule "maximum/map/const" $ \_ -> \case
+        Max1' _ (Map' _ _ (LamConst _ e) _) -> return $ Just e
+        _ -> return Nothing,
+      [r| "maximum/map/max" forall e1 e2 xs. maximum (map (fun x -> max e1 e2) xs) = max (maximum (map (fun x -> e1) xs)) (maximum (map (fun x -> e2) xs)) |],
+      [r| "maximum/map/negate" forall e xs. maximum (map (fun x -> - e) xs) = - (maximum (map (fun x -> e) xs)) |],
+      makeRewriteRule "maximum/map/plus" $ \_ -> \case
+        Max1' _ (Map' t1 _ (Lam x _ (Plus' k e)) xs) | x `isUnusedVar` k -> return . Just $ Plus' k (Max1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/map/plus'" $ \_ -> \case
+        Max1' _ (Map' t1 _ (Lam x _ (Plus' e k)) xs) | x `isUnusedVar` k -> return . Just $ Plus' k (Max1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/map/minus" $ \_ -> \case
+        Max1' _ (Map' t1 _ (Lam x _ (Minus' k e)) xs) | x `isUnusedVar` k -> return . Just $ Minus' k (Min1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/map/minus'" $ \_ -> \case
+        Max1' _ (Map' t1 _ (Lam x _ (Minus' e k)) xs) | x `isUnusedVar` k -> return . Just $ Minus' k (Max1' IntTy (Map' t1 IntTy (Lam x t1 e) xs))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/cons/map/const" $ \_ -> \case
+        Max1' t (Cons' _ x (Map' _ _ (LamConst _ e) _)) -> return . Just $ Max2' t x e
+        _ -> return Nothing,
+      [r| "maximum/cons/map/max" forall e0 e1 e2 xs. maximum (cons e0 (map (fun x -> max e1 e2) xs)) = max (maximum (cons e0 (map (fun x -> e1) xs))) (maximum (cons e0 (map (fun x -> e2) xs))) |],
+      [r| "maximum/cons/map/negate" forall e0 e xs. maximum (cons e0 (map (fun x -> - e) xs)) = - (minimum (cons e0 (map (fun x -> e) xs))) |],
+      makeRewriteRule "maximum/cons/map/plus" $ \_ -> \case
+        Max1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Plus' k e)) xs)) | x `isUnusedVar` k -> return . Just $ Plus' k (Max1' IntTy (Cons' IntTy (Minus' e0 k) (Map' t1 IntTy (Lam x t1 e) xs)))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/cons/map/plus'" $ \_ -> \case
+        Max1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Plus' e k)) xs)) | x `isUnusedVar` k -> return . Just $ Plus' k (Max1' IntTy (Cons' IntTy (Minus' e0 k) (Map' t1 IntTy (Lam x t1 e) xs)))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/cons/map/minus" $ \_ -> \case
+        Max1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Minus' k e)) xs)) | x `isUnusedVar` k -> return . Just $ Minus' k (Min1' IntTy (Cons' IntTy (Minus' k e0) (Map' t1 IntTy (Lam x t1 e) xs)))
+        _ -> return Nothing,
+      makeRewriteRule "maximum/cons/map/minus'" $ \_ -> \case
+        Max1' _ (Cons' _ e0 (Map' t1 _ (Lam x _ (Minus' e k)) xs)) | x `isUnusedVar` k -> return . Just $ Minus' (Max1' IntTy (Cons' IntTy (Plus' e0 k) (Map' t1 IntTy (Lam x t1 e) xs))) k
+        _ -> return Nothing
+    ]
 
 -- | TODO: implement this
 reduceArgMin :: Monad m => RewriteRule m
@@ -104,7 +150,7 @@ reduceArgMax = simpleRewriteRule "reduceArgMax" $ \case
   ArgMax' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ ArgMax' t2 (Map' t1 t2 (Lam x t e1) xs)
   _ -> Nothing
 
-rule :: Monad m => RewriteRule m
+rule :: MonadAlpha m => RewriteRule m
 rule =
   mconcat
     [ reduceMin,

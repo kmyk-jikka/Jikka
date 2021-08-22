@@ -38,7 +38,6 @@ import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.SegmentTree as SegmentTree
 import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
 import qualified Jikka.Core.Convert.SpecializeFoldl as SpecializeFoldl
-import qualified Jikka.Core.Convert.StrengthReduction as StrengthReduction
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import qualified Jikka.Core.Convert.UnpackTuple as UnpackTuple
@@ -65,7 +64,6 @@ run'' prog = do
   prog <- BubbleLet.run prog
   prog <- ArithmeticExpr.run prog
   prog <- ConvexHullTrick.run prog
-  prog <- StrengthReduction.run prog
   Eta.run prog
 
 run' :: (MonadAlpha m, MonadError Error m) => Program -> m Program

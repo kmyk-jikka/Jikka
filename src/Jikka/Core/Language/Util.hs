@@ -208,6 +208,7 @@ isConstantTimeBuiltin = \case
   FloorMod -> True
   CeilDiv -> True
   CeilMod -> True
+  JustDiv -> True
   Pow -> True
   -- advanced arithmetical functions
   Abs -> True
@@ -300,6 +301,11 @@ isConstantTimeBuiltin = \case
   SegmentTreeInitList _ -> False
   SegmentTreeGetRange _ -> False
   SegmentTreeSetPoint _ -> False
+
+isLiteral :: Expr -> Bool
+isLiteral = \case
+  Lit _ -> True
+  _ -> False
 
 -- | `isConstantTimeExpr` checks whether given exprs are suitable to propagate.
 isConstantTimeExpr :: Expr -> Bool
