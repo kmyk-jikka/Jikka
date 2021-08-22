@@ -302,6 +302,11 @@ isConstantTimeBuiltin = \case
   SegmentTreeGetRange _ -> False
   SegmentTreeSetPoint _ -> False
 
+isLiteral :: Expr -> Bool
+isLiteral = \case
+  Lit _ -> True
+  _ -> False
+
 -- | `isConstantTimeExpr` checks whether given exprs are suitable to propagate.
 isConstantTimeExpr :: Expr -> Bool
 isConstantTimeExpr = \case

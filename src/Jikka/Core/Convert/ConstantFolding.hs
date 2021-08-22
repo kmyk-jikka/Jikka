@@ -269,7 +269,8 @@ reduceConstIntComparison =
 reduceUnitBooleanComparison :: Monad m => RewriteRule m
 reduceUnitBooleanComparison =
   mconcat
-    [ -- TODO: lessthan, lessequal, greaterthan, and greaterequal
+    [ -- TODO: implement lessthan and lessequal
+      -- NOTE: We can ignore greaterthan and greaterequal because EqualitySolving swaps inequalities.
       [r| "equal/true" forall x. true == x = x |],
       [r| "equal/true'" forall x. x == true = x |],
       [r| "equal/false" forall x. false == x = not x |],
