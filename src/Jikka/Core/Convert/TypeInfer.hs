@@ -29,12 +29,12 @@ where
 
 import Control.Arrow (second)
 import Control.Monad.State.Strict
-import Control.Monad.Writer.Strict (MonadWriter, execWriterT, tell)
+import Control.Monad.Writer.Strict (MonadWriter, censor, execWriterT, tell)
 import qualified Data.Map.Strict as M
 import Data.Monoid (Dual (..))
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import Jikka.Core.Format (formatType)
+import Jikka.Core.Format (formatExpr, formatToplevelExpr, formatType)
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -42,21 +42,48 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck (literalToType, typecheckExpr, typecheckProgram)
 import Jikka.Core.Language.Util
 
+data Hint
+  = VarHint VarName
+  | ExprHint Expr
+  | ToplevelExprHint ToplevelExpr
+  deriving (Eq, Ord, Show, Read)
+
 data Equation
-  = TypeEquation Type Type
+  = TypeEquation Type Type [Hint]
   | TypeAssertion VarName Type
   deriving (Eq, Ord, Show, Read)
 
 type Eqns = Dual [Equation]
 
+consHint :: Hint -> Equation -> Equation
+consHint hint = \case
+  TypeEquation t1 t2 hints -> TypeEquation t1 t2 (hint : hints)
+  TypeAssertion x t -> TypeAssertion x t
+
+wrapHint :: MonadWriter Eqns m => Hint -> m a -> m a
+wrapHint hint = censor (fmap (map (consHint hint)))
+
+wrapErrorFromHint :: MonadError Error m => Hint -> m a -> m a
+wrapErrorFromHint = \case
+  VarHint x -> wrapError' $ "around variable " ++ unVarName x
+  ExprHint e -> wrapError' $ "around expr " ++ summarize (formatExpr e)
+  ToplevelExprHint e -> wrapError' $ "around toplevel expr " ++ summarize (formatToplevelExpr e)
+  where
+    summarize s = case lines s of
+      (s : _ : _) -> s ++ " ..."
+      _ -> s
+
+wrapErrorFromHints :: MonadError Error m => [Hint] -> m a -> m a
+wrapErrorFromHints hints = foldr (\hint f -> wrapErrorFromHint hint . f) id hints
+
 formularizeType :: MonadWriter Eqns m => Type -> Type -> m ()
-formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2]
+formularizeType t1 t2 = tell $ Dual [TypeEquation t1 t2 []]
 
 formularizeVarName :: MonadWriter Eqns m => VarName -> Type -> m ()
 formularizeVarName x t = tell $ Dual [TypeAssertion x t]
 
 formularizeExpr :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> m Type
-formularizeExpr = \case
+formularizeExpr e = wrapHint (ExprHint e) $ case e of
   Var x -> do
     t <- genType
     formularizeVarName x t
@@ -84,10 +111,11 @@ formularizeExpr = \case
 formularizeExpr' :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => Expr -> Type -> m ()
 formularizeExpr' e t = do
   t' <- formularizeExpr e
-  formularizeType t t'
+  wrapHint (ExprHint e) $ do
+    formularizeType t t'
 
 formularizeToplevelExpr :: (MonadWriter Eqns m, MonadAlpha m, MonadError Error m) => ToplevelExpr -> m Type
-formularizeToplevelExpr = \case
+formularizeToplevelExpr e = wrapHint (ToplevelExprHint e) $ case e of
   ResultExpr e -> formularizeExpr e
   ToplevelLet x t e cont -> do
     formularizeVarName x t
@@ -105,21 +133,21 @@ formularizeToplevelExpr = \case
 formularizeProgram :: (MonadAlpha m, MonadError Error m) => Program -> m [Equation]
 formularizeProgram prog = getDual <$> execWriterT (formularizeToplevelExpr prog)
 
-sortEquations :: [Equation] -> ([(Type, Type)], [(VarName, Type)])
+sortEquations :: [Equation] -> ([(Type, Type, [Hint])], [(VarName, Type)])
 sortEquations = go [] []
   where
     go eqns' assertions [] = (eqns', assertions)
     go eqns' assertions (eqn : eqns) = case eqn of
-      TypeEquation t1 t2 -> go ((t1, t2) : eqns') assertions eqns
+      TypeEquation t1 t2 hints -> go ((t1, t2, hints) : eqns') assertions eqns
       TypeAssertion x t -> go eqns' ((x, t) : assertions) eqns
 
-mergeAssertions :: [(VarName, Type)] -> [(Type, Type)]
+mergeAssertions :: [(VarName, Type)] -> [(Type, Type, [Hint])]
 mergeAssertions = go M.empty []
   where
     go _ eqns [] = eqns
     go gamma eqns ((x, t) : assertions) = case M.lookup x gamma of
       Nothing -> go (M.insert x t gamma) eqns assertions
-      Just t' -> go gamma ((t, t') : eqns) assertions
+      Just t' -> go gamma ((t, t', [VarHint x]) : eqns) assertions
 
 -- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
 newtype Subst = Subst {unSubst :: M.Map TypeName Type}
@@ -166,9 +194,12 @@ unifyType t1 t2 = wrapError' ("failed to unify " ++ formatType t1 ++ " and " ++ 
       unifyType ret1 ret2
     _ -> throwInternalError $ "different type ctors " ++ formatType t1 ++ " and " ++ formatType t2
 
-solveEquations :: MonadError Error m => [(Type, Type)] -> m Subst
+solveEquations :: MonadError Error m => [(Type, Type, [Hint])] -> m Subst
 solveEquations eqns = wrapError' "failed to solve type equations" $ do
-  execStateT (mapM_ (uncurry unifyType) eqns) (Subst M.empty)
+  (`execStateT` Subst M.empty) $ do
+    forM_ eqns $ \(t1, t2, hints) -> do
+      wrapErrorFromHints hints $ do
+        unifyType t1 t2
 
 -- | `substDefault` replaces all undetermined type variables with the given default type.
 substDefault :: Type -> Type -> Type
