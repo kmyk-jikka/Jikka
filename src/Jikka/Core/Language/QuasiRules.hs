@@ -4,7 +4,15 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Jikka.Core.Language.QuasiRules where
+module Jikka.Core.Language.QuasiRules
+  ( r,
+
+    -- * Things which `r` uses.
+    module Jikka.Core.Language.Expr,
+    makeRewriteRule,
+    genVarName',
+  )
+where
 
 import Control.Arrow
 import Control.Monad.State.Strict
@@ -14,6 +22,7 @@ import Jikka.Common.Format.Error
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.RewriteRules
+import Jikka.Core.Language.Util
 import Jikka.Core.Parse (parseRule)
 import Language.Haskell.TH (Exp (..), Lit (..), Pat (..), Q, Stmt (..))
 import qualified Language.Haskell.TH as TH

@@ -41,7 +41,6 @@ import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
-import Jikka.Core.Language.Util
 
 -- |
 -- * `Range1` remains.
