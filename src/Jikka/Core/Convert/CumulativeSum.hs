@@ -78,7 +78,7 @@ runProgram = applyRewriteRuleProgram' rule
 --
 -- Before:
 --
--- > sum (fun i -> a[i]) (range n)
+-- > sum (map (fun i -> a[i]) (range n))
 --
 -- After:
 --

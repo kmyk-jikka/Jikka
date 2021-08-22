@@ -32,6 +32,7 @@ import Control.Monad.Trans.Maybe
 import Data.List
 import qualified Data.Map as M
 import Data.Maybe
+import Debug.Trace
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
@@ -130,22 +131,33 @@ replaceWithSegtrees a segtrees = go M.empty
 reduceCumulativeSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceCumulativeSum = makeRewriteRule "reduceCumulativeSum" $ \_ -> \case
   -- foldl (fun a i -> setat a index(i) e(a, i)) base incides
-  Foldl' t1 t2 (Lam2 a _ i _ (SetAt' t (Var a') index e)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+  Foldl' t1 (ListTy t2) (Lam2 a _ i _ (SetAt' t (Var a') index e)) base indices | a' == a && a `isUnusedVar` index -> runMaybeT $ do
+    () <- traceShow "hello" return ()
+    -- list cumulative sums
     let sums = listCumulativeSum (Var a) e
     guard $ not (null sums)
     let semigrps = nub (sort (map fst sums))
-    let ts = t2 : map SegmentTreeTy semigrps
+    -- list segment trees
+    let ts = ListTy t2 : map SegmentTreeTy semigrps
     c <- lift $ genVarName a
     let proj i = Proj' ts i (Var c)
     let e' = replaceWithSegtrees a (zip semigrps (map proj [1 ..])) e
+    () <- traceShow "wow" return ()
     guard $ e' /= e
+    -- e'(c0, i) = e(c0, i)
     e' <- lift $ substitute a (proj 0) e'
-    b' <- lift $ genVarName a
-    let updateSegtrees i semigrp = SegmentTreeSetPoint' semigrp (proj i) index (At' t (Var b') index)
-    let step = Lam2 c (TupleTy ts) i t1 (Let b' t2 (SetAt' t (proj 0) index e') (uncurryApp (Tuple' ts) (Var b' : zipWith updateSegtrees [1 ..] semigrps)))
+    e'' <- lift genVarName'
+    let updateSegtrees i semigrp = SegmentTreeSetPoint' semigrp (proj i) index (Var e'')
+    -- step = fun (c0, c1, ..., ck) i -> let e'' = e'(c0, i) in (setAt c0 index(i) e'', update c1 index(i) e'', ..., update ck index(i) e'')
+    let step =
+          Lam2 c (TupleTy ts) i t1 $
+            Let e'' t2 e' $
+              uncurryApp (Tuple' ts) (SetAt' t (proj 0) index (Var e'') : zipWith updateSegtrees [1 ..] semigrps)
     b <- lift $ genVarName a
+    -- base' = (b, init b, ..., init b)
     let base' = Var b : map (\semigrp -> SegmentTreeInitList' semigrp (Var b)) semigrps
-    return $ Let b t2 base (Proj' ts 0 (Foldl' t1 (TupleTy ts) step (uncurryApp (Tuple' ts) base') indices))
+    -- let b = base in (foldl step base' indices).0
+    return $ Let b (ListTy t2) base (Proj' ts 0 (Foldl' t1 (TupleTy ts) step (uncurryApp (Tuple' ts) base') indices))
   _ -> return Nothing
 
 -- | `reduceFromMin` uses segment trees from accumulation of min/max which are not reducible to cumulative sums.

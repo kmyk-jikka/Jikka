@@ -224,8 +224,9 @@ topdecls :: { ToplevelExpr }
     | topdecl topdecls                 { $1 $2 }
 
 topdecl :: { ToplevelExpr -> ToplevelExpr }
-    : "let" identifier ":" type "=" expression "in"                    { ToplevelLet $2 $4 $6 }
-    | "let" "rec" identifier list(arg) ":" type "=" expression "in"    { ToplevelLetRec $3 $4 $6 $8 }
+    : "let" identifier opt_colon_type "=" expression "in"                    { ToplevelLet $2 $3 $5 }
+    | "let" "rec" identifier list(arg) opt_colon_type "=" expression "in"    { ToplevelLetRec $3 $4 $5 $7 }
+    | "assert" expression "in"                                               { ToplevelAssert $2 }
 
 -- Types
 atom_type :: { Type }
@@ -245,6 +246,10 @@ tuple_type :: { Type }
 type :: { Type }
     : tuple_type                       { $1 }
     | tuple_type "->" type             { FunTy $1 $3 }
+
+opt_colon_type :: { Type }
+    : {- empty -}                      { underscoreTy }
+    | ":" type                         { $2 }
 
 -- Data Structures
 datastructure :: { DataStructure }
@@ -368,9 +373,37 @@ builtin :: { (Builtin, [Type]) }
     | "cht_init"                       { (ConvexHullTrickInit, []) }
     | "cht_getmin"                     { (ConvexHullTrickGetMin, []) }
     | "cht_insert"                     { (ConvexHullTrickInsert, []) }
-    | "segtree_init" semigroup         { (SegmentTreeInitList $2, []) }
-    | "segtree_getrange" semigroup     { (SegmentTreeGetRange $2, []) }
-    | "segtree_setpoint" semigroup     { (SegmentTreeSetPoint $2, []) }
+    | "segtree_init" "<" semigroup ">"     { (SegmentTreeInitList $3, []) }
+    | "segtree_getrange" "<" semigroup ">" { (SegmentTreeGetRange $3, []) }
+    | "segtree_setpoint" "<" semigroup ">" { (SegmentTreeSetPoint $3, []) }
+    | "(" "+"  ")"                     { (Plus, []) }
+    | "(" "-"  ")"                     { (Minus, []) }
+    | "(" "*"  ")"                     { (Mult, []) }
+    | "(" "/"  ")"                     { (FloorDiv, []) }
+    | "(" "%"  ")"                     { (FloorMod, []) }
+    | "(" "/^" ")"                     { (CeilDiv, []) }
+    | "(" "%^" ")"                     { (CeilMod, []) }
+    | "(" "**" ")"                     { (Pow, []) }
+    | "(" "&&" ")"                     { (And, []) }
+    | "(" "||" ")"                     { (Or, []) }
+    | "(" "~"  ")"                     { (BitNot, []) }
+    | "(" "&"  ")"                     { (BitAnd, []) }
+    | "(" "|"  ")"                     { (BitOr, []) }
+    | "(" "^"  ")"                     { (BitXor, []) }
+    | "(" "<<" ")"                     { (BitLeftShift, []) }
+    | "(" ">>" ")"                     { (BitRightShift, []) }
+    | "(" ">"  ")"                     { (GreaterThan, [underscoreTy]) }
+    | "(" ">"  ")" "@" atom_type       { (GreaterThan, [$5]) }
+    | "(" "<"  ")"                     { (LessThan, [underscoreTy]) }
+    | "(" "<"  ")" "@" atom_type       { (LessThan, [$5]) }
+    | "(" "<=" ")"                     { (LessEqual, [underscoreTy]) }
+    | "(" "<=" ")" "@" atom_type       { (LessEqual, [$5]) }
+    | "(" ">=" ")"                     { (GreaterEqual, [underscoreTy]) }
+    | "(" ">=" ")" "@" atom_type       { (GreaterEqual, [$5]) }
+    | "(" "==" ")"                     { (Equal, [underscoreTy]) }
+    | "(" "==" ")" "@" atom_type       { (Equal, [$5]) }
+    | "(" "/=" ")"                     { (NotEqual, [underscoreTy]) }
+    | "(" "/=" ")" "@" atom_type       { (NotEqual, [$5]) }
 
 -- Primaries
 primary :: { Expr }
@@ -465,20 +498,20 @@ lambda_expr :: { Expr }
 
 -- Let
 let_expr :: { Expr }
-    : "let" identifier ":" type "=" expression "in" expression    { Let $2 $4 $6 $8 }
+    : "let" identifier opt_colon_type "=" expression "in" expression    { Let $2 $3 $5 $7 }
 
 -- Assertion
 assert_expr :: { Expr }
-    : "assert" expression "->" expression                       { Assert $2 $4 }
+    : "assert" expression "in" expression                   { Assert $2 $4 }
 
 expression_nolet :: { Expr }
     : or_test                                               { $1 }
     | conditional_expression                                { $1 }
     | lambda_expr                                           { $1 }
-    | assert_expr                                           { $1 }
 expression :: { Expr }
     : expression_nolet                                      { $1 }
     | let_expr                                              { $1 }
+    | assert_expr                                           { $1 }
 
 -- Expression lists
 expression_list :: { [Expr] }

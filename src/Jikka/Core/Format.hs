@@ -17,6 +17,7 @@ module Jikka.Core.Format
     formatBuiltin,
     formatType,
     formatExpr,
+    formatToplevelExpr,
     formatProgram,
   )
 where
@@ -327,21 +328,24 @@ formatExpr' = \case
 formatExpr :: Expr -> String
 formatExpr = unlines . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec . formatExpr'
 
-formatToplevelExpr :: ToplevelExpr -> [String]
-formatToplevelExpr = \case
+formatToplevelExpr' :: ToplevelExpr -> [String]
+formatToplevelExpr' = \case
   ResultExpr e -> lines (resolvePrec lambdaPrec (formatExpr' e))
   ToplevelLet x t e cont -> let' (unVarName x) t e cont
   ToplevelLetRec f args ret e cont -> let' ("rec " ++ unVarName f ++ " " ++ formatFormalArgs args) ret e cont
-  ToplevelAssert e cont -> ["assert " ++ resolvePrec parenPrec (formatExpr' e), "in"] ++ formatToplevelExpr cont
+  ToplevelAssert e cont -> ["assert " ++ resolvePrec parenPrec (formatExpr' e), "in"] ++ formatToplevelExpr' cont
   where
     let' s t e cont =
       ["let " ++ s ++ ": " ++ formatType t ++ " =", indent]
         ++ lines (resolvePrec parenPrec (formatExpr' e))
         ++ [dedent, "in"]
-        ++ formatToplevelExpr cont
+        ++ formatToplevelExpr' cont
+
+formatToplevelExpr :: ToplevelExpr -> String
+formatToplevelExpr = unlines . makeIndentFromMarkers 4 . formatToplevelExpr'
 
 formatProgram :: Program -> String
-formatProgram = unlines . makeIndentFromMarkers 4 . formatToplevelExpr
+formatProgram = formatToplevelExpr
 
 run :: Applicative m => Program -> m Text
 run = pure . pack . formatProgram
