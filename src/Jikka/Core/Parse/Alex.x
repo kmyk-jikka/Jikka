@@ -37,7 +37,7 @@ $octdigit = [0-7]
 $hexdigit = [0-9a-fA-F]
 
 $shortstringchar_single = [^ \\ \r \n ']
-$shortstringchar_double = [^ \\ \r \n ']
+$shortstringchar_double = [^ \\ \r \n "]
 @stringescapeseq = $backslash .
 
 tokens :-
