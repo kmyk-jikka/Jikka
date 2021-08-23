@@ -2056,49 +2056,6 @@ instance GHC.Base.Monad m => GHC.Base.Semigroup (Jikka.Core.Language.RewriteRule
 instance GHC.Base.Monad m => GHC.Base.Monoid (Jikka.Core.Language.RewriteRules.RewriteRule m)
 
 
--- | &lt;math&gt;
-module Jikka.Core.Convert.SpecializeFoldl
-
--- | <a>run</a> reduces summations and products.
---   
---   <h2>Example</h2>
---   
---   Before:
---   
---   <pre>
---   foldl (fun x y -&gt; x + y) 0 xs
---   </pre>
---   
---   After:
---   
---   <pre>
---   sum xs
---   </pre>
---   
---   <h2>List of builtin functions which are reduced</h2>
---   
---   <h3>Source functions</h3>
---   
---   <ul>
---   <li><a>Foldl</a> &lt;math&gt;</li>
---   </ul>
---   
---   <h3>Destination functions</h3>
---   
---   <ul>
---   <li><a>Sum</a> &lt;math&gt;</li>
---   <li><a>Product</a> &lt;math&gt;</li>
---   <li><a>ModSum</a> &lt;math&gt;</li>
---   <li><a>ModProduct</a> &lt;math&gt;</li>
---   <li><a>All</a> &lt;math&gt;</li>
---   <li><a>Any</a> &lt;math&gt;</li>
---   <li><a>Max1</a> &lt;math&gt;</li>
---   <li><a>Min1</a> &lt;math&gt;</li>
---   <li><a>Iterate</a> &lt;math&gt;</li>
---   </ul>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
 module Jikka.Core.Convert.BubbleLet
 
 -- | <a>run</a> moves let-exprs in lambdas passed to higher-order functions
@@ -2140,6 +2097,96 @@ module Jikka.Core.Convert.Beta
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: MonadAlpha m => RewriteRule m
+
+module Jikka.Core.Language.ModuloExpr
+data ModuloExpr
+
+-- | <a>parseModuloExpr</a> converts a given expr to a normal form
+--   &lt;math&gt;. This assumes given exprs have the type &lt;math&gt;.
+parseModuloExpr :: Expr -> Maybe ModuloExpr
+
+-- | <a>formatTopModuloExpr</a> convert <a>ModuloExpr</a> to <a>Expr</a>
+--   with adding <a>FloorMod</a> at only the root.
+formatTopModuloExpr :: ModuloExpr -> Expr
+
+-- | <a>formatBottomModuloExpr</a> convert <a>ModuloExpr</a> to <a>Expr</a>
+--   with adding <a>FloorMod</a> at every nodes.
+formatBottomModuloExpr :: ModuloExpr -> Expr
+integerModuloExpr :: Modulo -> Integer -> ModuloExpr
+negateModuloExpr :: ModuloExpr -> ModuloExpr
+plusModuloExpr :: ModuloExpr -> ModuloExpr -> Maybe ModuloExpr
+minusModuloExpr :: ModuloExpr -> ModuloExpr -> Maybe ModuloExpr
+multModuloExpr :: ModuloExpr -> ModuloExpr -> Maybe ModuloExpr
+isZeroModuloExpr :: ModuloExpr -> Bool
+isOneModuloExpr :: ModuloExpr -> Bool
+moduloOfModuloExpr :: ModuloExpr -> Expr
+arithmeticExprFromModuloExpr :: ModuloExpr -> ArithmeticExpr
+
+-- | <a>Modulo</a> is just a newtype to avoid mistakes that swapping left
+--   and right of mod-op.
+newtype Modulo
+Modulo :: Expr -> Modulo
+[unModulo] :: Modulo -> Expr
+formatModulo :: Modulo -> String
+isModulo :: Expr -> Modulo -> Bool
+instance GHC.Read.Read Jikka.Core.Language.ModuloExpr.Modulo
+instance GHC.Show.Show Jikka.Core.Language.ModuloExpr.Modulo
+instance GHC.Classes.Ord Jikka.Core.Language.ModuloExpr.Modulo
+instance GHC.Classes.Eq Jikka.Core.Language.ModuloExpr.Modulo
+instance GHC.Read.Read Jikka.Core.Language.ModuloExpr.ProductExpr
+instance GHC.Show.Show Jikka.Core.Language.ModuloExpr.ProductExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ModuloExpr.ProductExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ModuloExpr.ProductExpr
+instance GHC.Read.Read Jikka.Core.Language.ModuloExpr.SumExpr
+instance GHC.Show.Show Jikka.Core.Language.ModuloExpr.SumExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ModuloExpr.SumExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ModuloExpr.SumExpr
+instance GHC.Show.Show Jikka.Core.Language.ModuloExpr.ModuloExpr
+instance GHC.Classes.Eq Jikka.Core.Language.ModuloExpr.ModuloExpr
+instance GHC.Classes.Ord Jikka.Core.Language.ModuloExpr.ModuloExpr
+
+
+-- | &lt;math&gt;
+module Jikka.Core.Convert.SpecializeFoldl
+
+-- | <a>run</a> reduces summations and products.
+--   
+--   <h2>Example</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   foldl (fun x y -&gt; x + y) 0 xs
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   sum xs
+--   </pre>
+--   
+--   <h2>List of builtin functions which are reduced</h2>
+--   
+--   <h3>Source functions</h3>
+--   
+--   <ul>
+--   <li><a>Foldl</a> &lt;math&gt;</li>
+--   </ul>
+--   
+--   <h3>Destination functions</h3>
+--   
+--   <ul>
+--   <li><a>Sum</a> &lt;math&gt;</li>
+--   <li><a>Product</a> &lt;math&gt;</li>
+--   <li><a>ModSum</a> &lt;math&gt;</li>
+--   <li><a>ModProduct</a> &lt;math&gt;</li>
+--   <li><a>All</a> &lt;math&gt;</li>
+--   <li><a>Any</a> &lt;math&gt;</li>
+--   <li><a>Max1</a> &lt;math&gt;</li>
+--   <li><a>Min1</a> &lt;math&gt;</li>
+--   <li><a>Iterate</a> &lt;math&gt;</li>
+--   </ul>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 module Jikka.Core.Convert.UnpackTuple
