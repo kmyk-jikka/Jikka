@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- |
 -- Module      : Jikka.Core.Convert.SpecializeFoldl
@@ -22,19 +23,46 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
+import Jikka.Core.Language.ModuloExpr
 import Jikka.Core.Language.RewriteRules
+
+convertToSum :: Expr -> Maybe Expr
+convertToSum = \case
+  Foldl' t1 IntTy (Lam2 x2 _ x1 _ body) init xs -> do
+    (a, b) <- makeAffineFunctionFromArithmeticExpr x2 (parseArithmeticExpr body)
+    guard $ isOneArithmeticExpr a
+    return $ Plus' init (Sum' (Map' t1 IntTy (Lam x1 t1 (formatArithmeticExpr b)) xs))
+  _ -> Nothing
+
+convertToModSum :: Expr -> Maybe Expr
+convertToModSum = \case
+  Foldl' t1 IntTy (Lam2 x2 _ x1 _ body) init xs -> do
+    body <- parseModuloExpr body
+    (a, b) <- makeAffineFunctionFromArithmeticExpr x2 (arithmeticExprFromModuloExpr body)
+    guard $ isOneArithmeticExpr a
+
+    -- `if` is required for cases like `foldl (fun y x -> y % 2) 3 xs`, which is the same to `if xs == nil then 3 else 1`.
+    let wrap :: Expr -> Expr
+        wrap =
+          if init `isModulo` Modulo (moduloOfModuloExpr body)
+            then id
+            else If' IntTy (Equal' (ListTy t1) xs (Nil' t1)) init
+
+    return . wrap $
+      ModPlus' init (ModSum' (Map' t1 IntTy (Lam x1 t1 (formatArithmeticExpr b)) xs) (moduloOfModuloExpr body)) (moduloOfModuloExpr body)
+  _ -> Nothing
 
 rule :: MonadAlpha m => RewriteRule m
 rule = simpleRewriteRule "Jikka.Core.Convert.SpecializeFoldl" $ \case
+  (convertToSum -> Just e) -> return e
+  (convertToModSum -> Just e) -> return e
+  -- TODO: Replace these operators with the better implementation like sum.
   Foldl' t1 t2 (Lam2 x2 _ x1 _ body) init xs -> case body of
-    -- Sum
-    Plus' (Var x2') e | x2' == x2 && x2 `isUnusedVar` e -> Just $ Sum' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs))
-    Plus' e (Var x2') | x2' == x2 && x2 `isUnusedVar` e -> Just $ Sum' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs))
-    Minus' (Var x2') e | x2' == x2 && x2 `isUnusedVar` e -> Just $ Minus' init (Sum' (Map' t1 t2 (Lam x1 t1 e) xs))
     -- Product
     Mult' (Var x2') e | x2' == x2 && x2 `isUnusedVar` e -> Just $ Product' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs))
     Mult' e (Var x2') | x2' == x2 && x2 `isUnusedVar` e -> Just $ Product' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs))
@@ -60,10 +88,6 @@ rule = simpleRewriteRule "Jikka.Core.Convert.SpecializeFoldl" $ \case
     _ -> Nothing
   -- The outer floor-mod is required because foldl for empty lists returns values without modulo.
   FloorMod' (Foldl' t1 t2 (Lam2 x2 _ x1 _ body) init xs) m -> case body of
-    -- ModSum
-    ModPlus' (Var x2') e m' | x2' == x2 && x2 `isUnusedVar` e && m' == m -> Just $ ModSum' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs)) m
-    ModPlus' e (Var x2') m' | x2' == x2 && x2 `isUnusedVar` e && m' == m -> Just $ ModSum' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs)) m
-    ModMinus' (Var x2') e m' | x2' == x2 && x2 `isUnusedVar` e && m' == m -> Just $ ModMinus' init (ModSum' (Map' t1 t2 (Lam x1 t1 e) xs) m) m
     -- ModProduct
     ModMult' (Var x2') e m' | x2' == x2 && x2 `isUnusedVar` e && m' == m -> Just $ ModProduct' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs)) m
     ModMult' e (Var x2') m' | x2' == x2 && x2 `isUnusedVar` e && m' == m -> Just $ ModProduct' (Cons' t2 init (Map' t1 t2 (Lam x1 t1 e) xs)) m
