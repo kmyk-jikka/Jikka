@@ -14,6 +14,7 @@ module Jikka.Core.Convert.PropagateMod
   )
 where
 
+import Control.Monad.Trans.Maybe
 import Data.List
 import Data.Maybe
 import Jikka.Common.Alpha
@@ -33,64 +34,55 @@ isModulo' e m = e `isModulo` Modulo m
 
 putFloorMod :: MonadAlpha m => Modulo -> Expr -> m (Maybe Expr)
 putFloorMod (Modulo m) =
-  let return' = return . Just
-   in \case
-        Negate' e -> return' $ ModNegate' e m
-        Plus' e1 e2 -> return' $ ModPlus' e1 e2 m
-        Minus' e1 e2 -> return' $ ModMinus' e1 e2 m
-        Mult' e1 e2 -> return' $ ModMult' e1 e2 m
-        JustDiv' e1 e2 -> return' $ ModMult' e1 (ModInv' e2 m) m
-        Pow' e1 e2 -> return' $ ModPow' e1 e2 m
-        MatAp' h w e1 e2 -> return' $ ModMatAp' h w e1 e2 m
-        MatAdd' h w e1 e2 -> return' $ ModMatAdd' h w e1 e2 m
-        MatMul' h n w e1 e2 -> return' $ ModMatMul' h n w e1 e2 m
-        MatPow' n e1 e2 -> return' $ ModMatPow' n e1 e2 m
-        Sum' e -> return' $ ModSum' e m
-        Product' e -> return' $ ModProduct' e m
-        LitInt' n -> case m of
-          LitInt' m -> return' $ LitInt' (n `mod` m)
-          _ -> return Nothing
-        Proj' ts i e | isVectorTy' ts -> return' $ Proj' ts i (VecFloorMod' (genericLength ts) e m)
-        Proj' ts i e
-          | isMatrixTy' ts ->
-            let (h, w) = fromJust (sizeOfMatrixTy (TupleTy ts))
-             in return' $ Proj' ts i (MatFloorMod' (toInteger h) (toInteger w) e m)
-        Map' t1 t2 f xs -> do
-          f <- putFloorMod (Modulo m) f
-          case f of
-            Nothing -> return Nothing
-            Just f -> return' $ Map' t1 t2 f xs
-        Foldl' t1 t2 f init xs -> do
-          f <- putFloorMod (Modulo m) f
-          case f of
-            Nothing -> return Nothing
-            Just f -> return' $ Foldl' t1 t2 f init xs
-        Lam x t body -> do
-          -- TODO: rename only if required
-          y <- genVarName x
-          body <- substitute x (Var y) body
-          body <- putFloorMod (Modulo m) body
-          case body of
-            Nothing -> return Nothing
-            Just body -> return' $ Lam y t body
-        e@(App _ _) -> case curryApp e of
-          (f@(Lam _ _ _), args) -> do
-            f <- putFloorMod (Modulo m) f
-            case f of
-              Nothing -> return Nothing
-              Just f -> return' $ uncurryApp f args
-          (Tuple' ts, es) | isVectorTy' ts -> do
-            es' <- mapM (putFloorMod (Modulo m)) es
-            if all isNothing es'
-              then return Nothing
-              else return' $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
-          (Tuple' ts, es) | isMatrixTy (TupleTy ts) -> do
-            es' <- mapM (putFloorMod (Modulo m)) es
-            if all isNothing es'
-              then return Nothing
-              else return' $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
-          _ -> return Nothing
-        _ -> return Nothing
+  runMaybeT . \case
+    Negate' e -> return $ ModNegate' e m
+    Plus' e1 e2 -> return $ ModPlus' e1 e2 m
+    Minus' e1 e2 -> return $ ModMinus' e1 e2 m
+    Mult' e1 e2 -> return $ ModMult' e1 e2 m
+    JustDiv' e1 e2 -> return $ ModMult' e1 (ModInv' e2 m) m
+    Pow' e1 e2 -> return $ ModPow' e1 e2 m
+    MatAp' h w e1 e2 -> return $ ModMatAp' h w e1 e2 m
+    MatAdd' h w e1 e2 -> return $ ModMatAdd' h w e1 e2 m
+    MatMul' h n w e1 e2 -> return $ ModMatMul' h n w e1 e2 m
+    MatPow' n e1 e2 -> return $ ModMatPow' n e1 e2 m
+    Sum' e -> return $ ModSum' e m
+    Product' e -> return $ ModProduct' e m
+    LitInt' n -> case m of
+      LitInt' m -> return $ LitInt' (n `mod` m)
+      _ -> MaybeT $ return Nothing
+    Proj' ts i e | isVectorTy' ts -> return $ Proj' ts i (VecFloorMod' (genericLength ts) e m)
+    Proj' ts i e
+      | isMatrixTy' ts ->
+        let (h, w) = fromJust (sizeOfMatrixTy (TupleTy ts))
+         in return $ Proj' ts i (MatFloorMod' (toInteger h) (toInteger w) e m)
+    Map' t1 t2 f xs -> do
+      f <- MaybeT $ putFloorMod (Modulo m) f
+      return $ Map' t1 t2 f xs
+    Foldl' t1 t2 f init xs -> do
+      f <- MaybeT $ putFloorMod (Modulo m) f
+      return $ Foldl' t1 t2 f init xs
+    Lam x t body -> do
+      -- TODO: rename only if required
+      y <- lift $ genVarName x
+      body <- lift $ substitute x (Var y) body
+      body <- MaybeT $ putFloorMod (Modulo m) body
+      return $ Lam y t body
+    e@(App _ _) -> case curryApp e of
+      (f@(Lam _ _ _), args) -> do
+        f <- MaybeT $ putFloorMod (Modulo m) f
+        return $ uncurryApp f args
+      (Tuple' ts, es) | isVectorTy' ts -> do
+        es' <- lift $ mapM (putFloorMod (Modulo m)) es
+        if all isNothing es'
+          then MaybeT $ return Nothing
+          else return $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
+      (Tuple' ts, es) | isMatrixTy (TupleTy ts) -> do
+        es' <- lift $ mapM (putFloorMod (Modulo m)) es
+        if all isNothing es'
+          then MaybeT $ return Nothing
+          else return $ uncurryApp (Tuple' ts) (zipWith fromMaybe es es')
+      _ -> MaybeT $ return Nothing
+    _ -> MaybeT $ return Nothing
 
 putFloorModGeneric :: MonadAlpha m => (Expr -> Modulo -> m Expr) -> Modulo -> Expr -> m Expr
 putFloorModGeneric fallback m e =
