@@ -4,11 +4,18 @@
 module Jikka.Common.Parse.JoinLines
   ( joinLinesWithParens,
     removeEmptyLines,
+    putTrailingNewline,
   )
 where
 
 import Jikka.Common.Error
 import Jikka.Common.Location
+
+putTrailingNewline :: Eq a => a -> [a] -> [a]
+putTrailingNewline newline tokens =
+  if not (null tokens) && last tokens /= newline
+    then tokens ++ [newline]
+    else tokens
 
 joinLinesWithParens :: forall m a. (MonadError Error m, Show a) => (a -> Bool) -> (a -> Bool) -> (a -> Bool) -> [WithLoc a] -> m [WithLoc a]
 joinLinesWithParens isOpen isClose isNewline = go []

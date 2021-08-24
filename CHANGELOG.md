@@ -1,5 +1,11 @@
 # Changelog for Jikka
 
+## 2021-08-24: v5.4.0.0
+
+- More and more tests are added and some bugs are removed.
+- An online judge is published: <https://judge.kimiyuki.net/>
+  - This judge contains example problems which Jikka can/will be able to solve.
+
 ## 2021-08-16: v5.3.0.0
 
 Many bugs are removed.

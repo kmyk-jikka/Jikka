@@ -19,7 +19,7 @@ module Jikka.Python.Parse.Alex
 import Data.Char (chr, isHexDigit, isOctDigit)
 import Jikka.Common.Error
 import Jikka.Common.Location
-import Jikka.Common.Parse.JoinLines (joinLinesWithParens, removeEmptyLines)
+import Jikka.Common.Parse.JoinLines (joinLinesWithParens, putTrailingNewline, removeEmptyLines)
 import Jikka.Common.Parse.OffsideRule (insertIndents)
 import Jikka.Python.Parse.Token
 }
@@ -243,6 +243,7 @@ run input = wrapError' "Jikka.Python.Parse.Alex failed" $ do
       Left err -> throwInternalError $ "Alex says: " ++ err
       Right tokens -> return tokens
     tokens <- reportErrors tokens
+    tokens <- return $ putTrailingNewline (WithLoc (Loc 0 0 0) Newline) tokens
     tokens <- joinLinesWithParens (`elem` [OpenParen, OpenBracket, OpenBrace]) (`elem` [CloseParen, CloseBracket, CloseBrace]) (== Newline) tokens
     tokens <- return $ removeEmptyLines (== Newline) tokens
     tokens <- insertIndents Indent Dedent (== Newline) tokens
