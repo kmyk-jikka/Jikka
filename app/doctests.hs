@@ -5,9 +5,10 @@ import Test.DocTest
 --
 -- >   main = doctest ["-isrc", "src/Jikka/Main.hs"]
 main :: IO ()
-main = doctest
-    [ "src/Jikka/Common/"
-    , "src/Jikka/Python/Convert/"
-    , "src/Jikka/Python/Language/"
-    , "src/Jikka/RestrictedPython/Language/"
+main =
+  doctest
+    [ "src/Jikka/Common/",
+      "src/Jikka/Python/Convert/",
+      "src/Jikka/Python/Language/",
+      "src/Jikka/RestrictedPython/Language/"
     ]
