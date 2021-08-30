@@ -26,6 +26,7 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Convert.Alpha as Alpha
+import Jikka.Core.Language.AssertedHint
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -37,7 +38,11 @@ import Jikka.Core.Language.RewriteRules
 reduceMin :: MonadAlpha m => RewriteRule m
 reduceMin =
   mconcat
-    [ -- list build functions
+    [ -- reduce minimum-cons if non-nil
+      pureRewriteRule "minimum/cons" $ \env -> \case
+        Min1' t (Cons' _ x xs) | nullWithHints (assertedHints env) xs == Just False -> Just $ Min2' t x (Min1' t xs)
+        _ -> Nothing,
+      -- list build functions
       [r| "minimum/nil" minimum nil = bottom<"no minimum in empty list"> |],
       [r| "minimum/cons/cons" forall x y zs. minimum (cons x (cons y zs)) = min x (minimum (cons y zs)) |],
       [r| "minimum/range" forall n. minimum (range n) = 0 |],
@@ -85,7 +90,11 @@ reduceMin =
 reduceMax :: MonadAlpha m => RewriteRule m
 reduceMax =
   mconcat
-    [ -- list build functions
+    [ -- reduce maximum-cons if non-nil
+      pureRewriteRule "maximum/cons" $ \env -> \case
+        Max1' t (Cons' _ x xs) | nullWithHints (assertedHints env) xs == Just False -> Just $ Max2' t x (Max1' t xs)
+        _ -> Nothing,
+      -- list build functions
       [r| "maximum/nil" maximum nil = bottom<"no maximum in empty list"> |],
       [r| "maximum/cons/cons" forall x y zs. maximum (cons x (cons y zs)) = max x (maximum (cons y zs)) |],
       [r| "maximum/range" forall n. maximum (range n) = n - 1 |],

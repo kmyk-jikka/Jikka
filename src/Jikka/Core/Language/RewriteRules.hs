@@ -12,6 +12,7 @@
 -- Portability : portable
 module Jikka.Core.Language.RewriteRules
   ( RewriteRule,
+    RewriteEnvironment (..),
 
     -- * Construct Rules
     makeRewriteRule,
@@ -20,6 +21,8 @@ module Jikka.Core.Language.RewriteRules
     traceRewriteRule,
 
     -- * Apply Rules
+    emptyRewriteEnvironment,
+    makeRewriteEnvironmentFromTypeEnv,
     applyRewriteRule,
     applyRewriteRuleToplevelExpr,
     applyRewriteRuleProgram,
@@ -32,11 +35,21 @@ import Data.Maybe
 import Debug.Trace
 import Jikka.Common.Error
 import Jikka.Core.Format (formatExpr)
+import Jikka.Core.Language.AssertedHint
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Util (curryFunTy)
 
+data RewriteEnvironment = RewriteEnvironment
+  { typeEnv :: [(VarName, Type)],
+    assertedHints :: [(VarName, AssertedHint)]
+  }
+  deriving (Eq, Ord, Show)
+
+putTypeEnv :: (VarName, Type) -> RewriteEnvironment -> RewriteEnvironment
+putTypeEnv (x, t) env = env {typeEnv = (x, t) : typeEnv env}
+
 data RewriteRule m
-  = RewriteRule ([(VarName, Type)] -> Expr -> m (Maybe Expr))
+  = RewriteRule (RewriteEnvironment -> Expr -> m (Maybe Expr))
   | NamedRule String (RewriteRule m)
   | EmptyRule
   | AltRule (RewriteRule m) (RewriteRule m)
@@ -48,7 +61,7 @@ instance Monad m => Semigroup (RewriteRule m) where
 instance Monad m => Monoid (RewriteRule m) where
   mempty = EmptyRule
 
-applyRewriteRuleToRootExpr :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
+applyRewriteRuleToRootExpr :: MonadError Error m => RewriteRule m -> RewriteEnvironment -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRuleToRootExpr f env e = go "(anonymous)" False f
   where
     go :: MonadError Error m => String -> Bool -> RewriteRule m -> StateT Integer m (Maybe Expr)
@@ -75,10 +88,10 @@ applyRewriteRuleToRootExpr f env e = go "(anonymous)" False f
           Nothing -> go ruleName dumpTrace g
       TraceRule f -> go ruleName True f
 
-makeRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
+makeRewriteRule :: Monad m => String -> (RewriteEnvironment -> Expr -> m (Maybe Expr)) -> RewriteRule m
 makeRewriteRule name f = NamedRule name (RewriteRule f)
 
-pureRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> Maybe Expr) -> RewriteRule m
+pureRewriteRule :: Monad m => String -> (RewriteEnvironment -> Expr -> Maybe Expr) -> RewriteRule m
 pureRewriteRule name f = NamedRule name (RewriteRule (\env e -> return (f env e)))
 
 simpleRewriteRule :: Monad m => String -> (Expr -> Maybe Expr) -> RewriteRule m
@@ -93,10 +106,10 @@ traceRewriteRule = TraceRule
 --
 -- * This function is idempotent.
 -- * This function doesn't terminate when a given rewrite rule doesn't terminate.
-applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
+applyRewriteRule :: MonadError Error m => RewriteRule m -> RewriteEnvironment -> Expr -> m (Maybe Expr)
 applyRewriteRule f env e = evalStateT (applyRewriteRule' f env e) 0
 
-applyRewriteRule' :: (MonadError Error m) => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
+applyRewriteRule' :: (MonadError Error m) => RewriteRule m -> RewriteEnvironment -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRule' = applyRewriteRulePreOrder
 
 coalesceMaybes :: a -> Maybe a -> b -> Maybe b -> Maybe (a, b)
@@ -105,7 +118,7 @@ coalesceMaybes a Nothing _ (Just b) = Just (a, b)
 coalesceMaybes _ (Just a) b Nothing = Just (a, b)
 coalesceMaybes _ (Just a) _ (Just b) = Just (a, b)
 
-applyRewriteRuleToImmediateSubExprs :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
+applyRewriteRuleToImmediateSubExprs :: MonadError Error m => RewriteRule m -> RewriteEnvironment -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRuleToImmediateSubExprs f env = \case
   Var _ -> return Nothing
   Lit _ -> return Nothing
@@ -113,13 +126,14 @@ applyRewriteRuleToImmediateSubExprs f env = \case
     e1' <- applyRewriteRuleToRootExpr f env e1
     e2' <- applyRewriteRuleToRootExpr f env e2
     return $ fmap (uncurry App) (coalesceMaybes e1 e1' e2 e2')
-  Lam x t body -> (Lam x t <$>) <$> applyRewriteRuleToRootExpr f ((x, t) : env) body
+  Lam x t body -> (Lam x t <$>) <$> applyRewriteRuleToRootExpr f (putTypeEnv (x, t) env) body
   Let x t e1 e2 -> do
     e1' <- applyRewriteRuleToRootExpr f env e1
-    e2' <- applyRewriteRuleToRootExpr f ((x, t) : env) e2
+    e2' <- applyRewriteRuleToRootExpr f (putTypeEnv (x, t) env) e2
     return $ fmap (uncurry (Let x t)) (coalesceMaybes e1 e1' e2 e2')
   Assert e1 e2 -> do
     e1' <- applyRewriteRuleToRootExpr f env e1
+    env <- return $ env {assertedHints = parseHints (fromMaybe e1 e1') ++ assertedHints env}
     e2' <- applyRewriteRuleToRootExpr f env e2
     return $ fmap (uncurry Assert) (coalesceMaybes e1 e1' e2 e2')
 
@@ -130,7 +144,7 @@ joinStateT f = do
   put s
   return a
 
-applyRewriteRulePreOrder :: forall m. MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> StateT Integer m (Maybe Expr)
+applyRewriteRulePreOrder :: forall m. MonadError Error m => RewriteRule m -> RewriteEnvironment -> Expr -> StateT Integer m (Maybe Expr)
 applyRewriteRulePreOrder f env e = do
   e' <- applyRewriteRuleToRootExpr f env e
   case e' of
@@ -150,25 +164,32 @@ applyRewriteRulePreOrder f env e = do
       e'' <- applyRewriteRulePreOrder f env e'
       return . Just $ fromMaybe e' e''
 
-applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
+applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> RewriteEnvironment -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
 applyRewriteRuleToplevelExpr f env = \case
   ResultExpr e -> (ResultExpr <$>) <$> applyRewriteRule' f env e
   ToplevelLet y t e cont -> do
     e' <- applyRewriteRule' f env e
-    cont' <- applyRewriteRuleToplevelExpr f ((y, t) : env) cont
+    cont' <- applyRewriteRuleToplevelExpr f (putTypeEnv (y, t) env) cont
     return $ fmap (uncurry (ToplevelLet y t)) (coalesceMaybes e e' cont cont')
   ToplevelLetRec g args ret body cont -> do
-    let env' = (g, curryFunTy (map snd args) ret) : env
-    body' <- applyRewriteRule' f (reverse args ++ env') body
+    let env' = putTypeEnv (g, curryFunTy (map snd args) ret) env
+    body' <- applyRewriteRule' f (foldr putTypeEnv env' args) body
     cont' <- applyRewriteRuleToplevelExpr f env' cont
     return $ fmap (uncurry (ToplevelLetRec g args ret)) (coalesceMaybes body body' cont cont')
   ToplevelAssert e1 e2 -> do
     e1' <- applyRewriteRule' f env e1
+    env <- return $ env {assertedHints = parseHints (fromMaybe e1 e1') ++ assertedHints env}
     e2' <- applyRewriteRuleToplevelExpr f env e2
     return $ fmap (uncurry ToplevelAssert) (coalesceMaybes e1 e1' e2 e2')
 
+emptyRewriteEnvironment :: RewriteEnvironment
+emptyRewriteEnvironment = RewriteEnvironment {typeEnv = [], assertedHints = []}
+
+makeRewriteEnvironmentFromTypeEnv :: [(VarName, Type)] -> RewriteEnvironment
+makeRewriteEnvironmentFromTypeEnv env = RewriteEnvironment {typeEnv = env, assertedHints = []}
+
 applyRewriteRuleProgram :: MonadError Error m => RewriteRule m -> Program -> m (Maybe Program)
-applyRewriteRuleProgram f prog = evalStateT (applyRewriteRuleToplevelExpr f [] prog) 0
+applyRewriteRuleProgram f prog = evalStateT (applyRewriteRuleToplevelExpr f emptyRewriteEnvironment prog) 0
 
 applyRewriteRuleProgram' :: MonadError Error m => RewriteRule m -> Program -> m Program
 applyRewriteRuleProgram' f prog = fromMaybe prog <$> applyRewriteRuleProgram f prog

@@ -10,6 +10,7 @@
 -- Portability : portable
 module Jikka.Core.Convert.ArithmeticExpr
   ( run,
+    runExpr,
   )
 where
 
@@ -20,15 +21,18 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck
 import Jikka.Core.Language.Util
 
-runExpr :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
-runExpr env e = do
+runExpr' :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
+runExpr' env e = do
   t <- typecheckExpr env e
   if t == IntTy
     then return . formatArithmeticExpr $ parseArithmeticExpr e
     else return e
 
+runExpr :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
+runExpr = mapSubExprM runExpr'
+
 runProgram :: MonadError Error m => Program -> m Program
-runProgram = mapExprProgramM (mapSubExprM runExpr) -- Doesn't use RewriteRules because the rewriting may not terminate.
+runProgram = mapExprProgramM (mapSubExprM runExpr') -- Doesn't use RewriteRules because the rewriting may not terminate.
 
 -- | `run` sorts arithmetical exprs.
 --

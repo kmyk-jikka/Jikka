@@ -135,10 +135,10 @@ rule =
         e@(ModMult' _ _ _) -> return $ go0 e
         e@(ModInv' _ _) -> return $ go0 e
         e@(ModPow' _ _ _) -> return $ go0 e
-        ModMatAp' h w e1 e2 m | not (e1 `isModulo'` m) || not (e2 `isModulo'` m) -> go2 m (ModMatAp' h w) (putMatFloorMod env, e1) (putVecFloorMod env, e2)
-        ModMatAdd' h w e1 e2 m | not (e1 `isModulo'` m) || not (e2 `isModulo'` m) -> go2 m (ModMatAdd' h w) (putMatFloorMod env, e1) (putMatFloorMod env, e2)
-        ModMatMul' h n w e1 e2 m | not (e1 `isModulo'` m) || not (e2 `isModulo'` m) -> go2 m (ModMatMul' h n w) (putMatFloorMod env, e1) (putMatFloorMod env, e2)
-        ModMatPow' n e1 e2 m | not (e1 `isModulo'` m) -> go2 m (ModMatPow' n) (putMatFloorMod env, e1) (\_ e -> return e, e2)
+        ModMatAp' h w e1 e2 m | not (e1 `isModulo'` m) || not (e2 `isModulo'` m) -> go2 m (ModMatAp' h w) (putMatFloorMod (typeEnv env), e1) (putVecFloorMod (typeEnv env), e2)
+        ModMatAdd' h w e1 e2 m | not (e1 `isModulo'` m) || not (e2 `isModulo'` m) -> go2 m (ModMatAdd' h w) (putMatFloorMod (typeEnv env), e1) (putMatFloorMod (typeEnv env), e2)
+        ModMatMul' h n w e1 e2 m | not (e1 `isModulo'` m) || not (e2 `isModulo'` m) -> go2 m (ModMatMul' h n w) (putMatFloorMod (typeEnv env), e1) (putMatFloorMod (typeEnv env), e2)
+        ModMatPow' n e1 e2 m | not (e1 `isModulo'` m) -> go2 m (ModMatPow' n) (putMatFloorMod (typeEnv env), e1) (\_ e -> return e, e2)
         ModSum' e m | not (e `isModulo'` m) -> go1 m ModSum' (putMapFloorMod, e)
         ModProduct' e m | not (e `isModulo'` m) -> go1 m ModProduct' (putMapFloorMod, e)
         FloorMod' e m ->
