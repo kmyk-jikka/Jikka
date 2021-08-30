@@ -592,7 +592,7 @@ runType tokens = wrapError' "Jikka.Core.Parse.Happy.runType" $ do
 runExpr :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Expr
 runExpr tokens = wrapError' "Jikka.Core.Parse.Happy.runExpr" $ do
     e <- liftEither $ runExpr_ tokens
-    mapTypeExprM replaceUnderscoresT e
+    e <- mapTypeExprM replaceUnderscoresT e
     mapSubExprM replaceUnderscoresE [] e
 
 runProgram :: (MonadAlpha m, MonadError Error m) => [WithLoc L.Token] -> m Program

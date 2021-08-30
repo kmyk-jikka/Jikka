@@ -12,14 +12,20 @@ module Jikka.Core.Language.ArithmeticExpr
     plusArithmeticExpr,
     minusArithmeticExpr,
     multArithmeticExpr,
+    incrArithmeticExpr,
+    decrArithmeticExpr,
+    sumArithmeticExpr,
     isZeroArithmeticExpr,
     isOneArithmeticExpr,
+    isIntegerArithmeticExpr,
+    integerFromArithmeticExpr,
 
     -- * Advanced functions
     unNPlusKPattern,
     makeVectorFromArithmeticExpr,
     makeAffineFunctionFromArithmeticExpr,
     splitConstantFactorArithmeticExpr,
+    splitToSumArithmeticExpr,
   )
 where
 
@@ -143,6 +149,15 @@ minusArithmeticExpr (ArithmeticExpr e1) (ArithmeticExpr e2) = ArithmeticExpr $ p
 multArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
 multArithmeticExpr (ArithmeticExpr e1) (ArithmeticExpr e2) = ArithmeticExpr $ multSumExpr e1 e2
 
+incrArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr
+incrArithmeticExpr = plusArithmeticExpr (integerArithmeticExpr 1)
+
+decrArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr
+decrArithmeticExpr = plusArithmeticExpr (integerArithmeticExpr (-1))
+
+sumArithmeticExpr :: [ArithmeticExpr] -> ArithmeticExpr
+sumArithmeticExpr = foldl plusArithmeticExpr (integerArithmeticExpr 0)
+
 parseSumExpr :: Expr -> SumExpr
 parseSumExpr = \case
   LitInt' n -> SumExpr {sumExprList = [], sumExprConst = n}
@@ -242,6 +257,14 @@ isZeroArithmeticExpr e = normalizeArithmeticExpr e == integerArithmeticExpr 0
 isOneArithmeticExpr :: ArithmeticExpr -> Bool
 isOneArithmeticExpr e = normalizeArithmeticExpr e == integerArithmeticExpr 1
 
+isIntegerArithmeticExpr :: ArithmeticExpr -> Bool
+isIntegerArithmeticExpr e = normalizeArithmeticExpr e == integerArithmeticExpr (sumExprConst (unArithmeticExpr e))
+
+integerFromArithmeticExpr :: ArithmeticExpr -> Maybe Integer
+integerFromArithmeticExpr e
+  | isIntegerArithmeticExpr e = Just (sumExprConst (unArithmeticExpr e))
+  | otherwise = Nothing
+
 -- | `unNPlusKPattern` recognizes a pattern of \(x + k\) for a variable \(x\) and an integer constant \(k \in \mathbb{Z}\).
 unNPlusKPattern :: ArithmeticExpr -> Maybe (VarName, Integer)
 unNPlusKPattern e = case normalizeArithmeticExpr e of
@@ -283,3 +306,10 @@ splitConstantFactorArithmeticExpr e =
 
 splitConstantFactorProductExpr :: ProductExpr -> (Integer, ProductExpr)
 splitConstantFactorProductExpr e = (productExprConst e, e {productExprConst = 1})
+
+splitToSumArithmeticExpr :: ArithmeticExpr -> [ArithmeticExpr]
+splitToSumArithmeticExpr e =
+  let e' = unArithmeticExpr $ normalizeArithmeticExpr e
+      es = map arithmeticalExprFromProductExpr (sumExprList e')
+      k = if sumExprConst e' == 0 then [] else [integerArithmeticExpr (sumExprConst e')]
+   in es ++ k

@@ -96,7 +96,7 @@ rule = makeRewriteRule "Jikka.Core.Convert.MatrixExponentiation" $ \env -> \case
   Iterate' (TupleTy ts) k (Lam x _ step) base | isVectorTy' ts -> do
     let n = genericLength ts
     let go n step base = MatAp' n n (MatPow' n step k) base
-    step <- toMatrix env x n step
+    step <- toMatrix (typeEnv env) x n step
     case step of
       Nothing -> return Nothing
       Just (a, Nothing) -> return . Just $ go n (fromMatrix a) base

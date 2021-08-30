@@ -16,45 +16,55 @@ import Test.Hspec
 run' :: String -> Either Error Program
 run' prog = evalAlphaT (run "<data>" (T.pack prog)) 100
 
+parseExpr' :: String -> Either Error Expr
+parseExpr' e = evalAlphaT (parseExpr e) 100
+
 spec :: Spec
-spec = describe "run" $ do
-  it "works" $ do
-    let prog =
-          unlines
-            [ "let rec solve$0 (n$1: int): int =",
-              "    let xs$2: int list =",
-              "        map (fun (i$3: int) ->",
-              "            i$3 * i$3",
-              "        ) (range n$1)",
-              "    in sum xs$2",
-              "in",
+spec = do
+  describe "run" $ do
+    it "works" $ do
+      let prog =
+            unlines
+              [ "let rec solve$0 (n$1: int): int =",
+                "    let xs$2: int list =",
+                "        map (fun (i$3: int) ->",
+                "            i$3 * i$3",
+                "        ) (range n$1)",
+                "    in sum xs$2",
+                "in",
+                "solve$0"
+              ]
+      let expected =
+            ToplevelLetRec
               "solve$0"
-            ]
-    let expected =
-          ToplevelLetRec
-            "solve$0"
-            [("n$1", IntTy)]
-            IntTy
-            ( Let
-                "xs$2"
-                (ListTy IntTy)
-                ( Map'
-                    (VarTy "$100")
-                    (VarTy "$101")
-                    ( Lam
-                        "i$3"
-                        IntTy
-                        (Mult' (Var "i$3") (Var "i$3"))
-                    )
-                    (Range1' (Var "n$1"))
-                )
-                (Sum' (Var "xs$2"))
-            )
-            (ResultExpr (Var "solve$0"))
-    run' prog `shouldBe` Right expected
-  it "inserts new type variables" $ do
-    let prog = "a[0 <- b][0]"
-    let expected =
-          ResultExpr
-            (At' (VarTy "$100") (SetAt' (VarTy "$101") (Var "a") (LitInt' 0) (Var "b")) (LitInt' 0))
-    run' prog `shouldBe` Right expected
+              [("n$1", IntTy)]
+              IntTy
+              ( Let
+                  "xs$2"
+                  (ListTy IntTy)
+                  ( Map'
+                      (VarTy "$100")
+                      (VarTy "$101")
+                      ( Lam
+                          "i$3"
+                          IntTy
+                          (Mult' (Var "i$3") (Var "i$3"))
+                      )
+                      (Range1' (Var "n$1"))
+                  )
+                  (Sum' (Var "xs$2"))
+              )
+              (ResultExpr (Var "solve$0"))
+      run' prog `shouldBe` Right expected
+    it "inserts new type variables" $ do
+      let prog = "a[0 <- b][0]"
+      let expected =
+            ResultExpr
+              (At' (VarTy "$100") (SetAt' (VarTy "$101") (Var "a") (LitInt' 0) (Var "b")) (LitInt' 0))
+      run' prog `shouldBe` Right expected
+
+  describe "parseExpr" $ do
+    it "works" $ do
+      let e = "n == 3"
+      let expected = Equal' (VarTy "$100") (Var "n") (LitInt' 3)
+      parseExpr' e `shouldBe` Right expected
