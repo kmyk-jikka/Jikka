@@ -151,6 +151,7 @@ mergeAssertions = go M.empty []
 
 -- | `Subst` is type substituion. It's a mapping from type variables to their actual types.
 newtype Subst = Subst {unSubst :: M.Map TypeName Type}
+  deriving (Eq, Ord, Show, Read)
 
 subst :: Subst -> Type -> Type
 subst sigma = \case
@@ -262,7 +263,7 @@ runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m 
 runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   eqns <- getDual <$> execWriterT (formularizeExpr e)
   let (eqns', assertions) = sortEquations eqns
-  let eqns'' = mergeAssertions assertions
+  let eqns'' = mergeAssertions (env ++ assertions)
   sigma <- solveEquations (eqns' ++ eqns'')
   let t0 = Nothing -- don't use substDefault
   env <- return $ map (second (subst' t0 sigma)) env
