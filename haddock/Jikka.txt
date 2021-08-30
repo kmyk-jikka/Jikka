@@ -1814,8 +1814,13 @@ negateArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr
 plusArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
 minusArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
 multArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr -> ArithmeticExpr
+incrArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr
+decrArithmeticExpr :: ArithmeticExpr -> ArithmeticExpr
+sumArithmeticExpr :: [ArithmeticExpr] -> ArithmeticExpr
 isZeroArithmeticExpr :: ArithmeticExpr -> Bool
 isOneArithmeticExpr :: ArithmeticExpr -> Bool
+isIntegerArithmeticExpr :: ArithmeticExpr -> Bool
+integerFromArithmeticExpr :: ArithmeticExpr -> Maybe Integer
 
 -- | <a>unNPlusKPattern</a> recognizes a pattern of &lt;math&gt; for a
 --   variable &lt;math&gt; and an integer constant &lt;math&gt;.
@@ -1842,6 +1847,7 @@ makeAffineFunctionFromArithmeticExpr :: VarName -> ArithmeticExpr -> Maybe (Arit
 -- | <a>splitConstantFactorArithmeticExpr</a> finds &lt;math&gt; and
 --   &lt;math&gt; for given &lt;math&gt; s.t. &lt;math&gt;.
 splitConstantFactorArithmeticExpr :: ArithmeticExpr -> (Integer, ArithmeticExpr)
+splitToSumArithmeticExpr :: ArithmeticExpr -> [ArithmeticExpr]
 instance GHC.Read.Read Jikka.Core.Language.ArithmeticExpr.ProductExpr
 instance GHC.Show.Show Jikka.Core.Language.ArithmeticExpr.ProductExpr
 instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticExpr.ProductExpr
@@ -1853,6 +1859,39 @@ instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticExpr.SumExpr
 instance GHC.Show.Show Jikka.Core.Language.ArithmeticExpr.ArithmeticExpr
 instance GHC.Classes.Eq Jikka.Core.Language.ArithmeticExpr.ArithmeticExpr
 instance GHC.Classes.Ord Jikka.Core.Language.ArithmeticExpr.ArithmeticExpr
+
+module Jikka.Core.Language.AssertedHint
+data AssertedHint
+
+-- | <tt>NotEqualHint n</tt> for a integer variable <tt>x</tt> means <tt>x
+--   /= n</tt>
+NotEqualHint :: ArithmeticExpr -> AssertedHint
+
+-- | <tt>BoundHint l r</tt> for a integer variable <tt>x</tt> means <tt>l
+--   &lt;= x &lt; r</tt>
+BoundHint :: Maybe ArithmeticExpr -> Maybe ArithmeticExpr -> AssertedHint
+
+-- | <tt>LengthHint t hint</tt> for a list variable <tt>xs</tt> means
+--   <tt>length xs</tt> satisfies <tt>hint</tt>
+LengthHint :: Type -> AssertedHint -> AssertedHint
+
+-- | <tt>AllHint t hint</tt> for a list variable <tt>xs</tt> means that
+--   <tt>x</tt> satisfies <tt>hint</tt> for all <tt>x</tt> in <tt>xs</tt>
+AllHint :: Type -> AssertedHint -> AssertedHint
+pattern EqualHint :: ArithmeticExpr -> AssertedHint
+parseHints :: Expr -> [(VarName, AssertedHint)]
+lowerBoundWithHints :: [(VarName, AssertedHint)] -> Expr -> Maybe Integer
+upperBoundWithHints :: [(VarName, AssertedHint)] -> Expr -> Maybe Integer
+isZeroWithHints :: [(VarName, AssertedHint)] -> Expr -> Maybe Bool
+nullWithHints :: [(VarName, AssertedHint)] -> Expr -> Maybe Bool
+lengthWithHints :: [(VarName, AssertedHint)] -> Expr -> Maybe Integer
+instance GHC.Show.Show Jikka.Core.Language.AssertedHint.AssertedHint
+instance GHC.Classes.Ord Jikka.Core.Language.AssertedHint.AssertedHint
+instance GHC.Classes.Eq Jikka.Core.Language.AssertedHint.AssertedHint
+instance GHC.Read.Read Jikka.Core.Language.AssertedHint.Term
+instance GHC.Show.Show Jikka.Core.Language.AssertedHint.Term
+instance GHC.Classes.Ord Jikka.Core.Language.AssertedHint.Term
+instance GHC.Classes.Eq Jikka.Core.Language.AssertedHint.Term
 
 module Jikka.Core.Language.LambdaPatterns
 pattern LamId :: Type -> Expr
@@ -2033,12 +2072,18 @@ run' :: Program -> Program
 
 module Jikka.Core.Language.RewriteRules
 data RewriteRule m
-makeRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
-pureRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> Maybe Expr) -> RewriteRule m
+data RewriteEnvironment
+RewriteEnvironment :: [(VarName, Type)] -> [(VarName, AssertedHint)] -> RewriteEnvironment
+[typeEnv] :: RewriteEnvironment -> [(VarName, Type)]
+[assertedHints] :: RewriteEnvironment -> [(VarName, AssertedHint)]
+makeRewriteRule :: Monad m => String -> (RewriteEnvironment -> Expr -> m (Maybe Expr)) -> RewriteRule m
+pureRewriteRule :: Monad m => String -> (RewriteEnvironment -> Expr -> Maybe Expr) -> RewriteRule m
 simpleRewriteRule :: Monad m => String -> (Expr -> Maybe Expr) -> RewriteRule m
 
 -- | <a>traceRewriteRule</a> prints logs when the <a>RewriteRule</a> works.
 traceRewriteRule :: Monad m => RewriteRule m -> RewriteRule m
+emptyRewriteEnvironment :: RewriteEnvironment
+makeRewriteEnvironmentFromTypeEnv :: [(VarName, Type)] -> RewriteEnvironment
 
 -- | <a>applyRewriteRule</a> applies a given rule to a given expr. This
 --   rewrites on all sub-exprs of the given expr, and repeats to rewrite
@@ -2049,10 +2094,13 @@ traceRewriteRule :: Monad m => RewriteRule m -> RewriteRule m
 --   <li>This function doesn't terminate when a given rewrite rule doesn't
 --   terminate.</li>
 --   </ul>
-applyRewriteRule :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> Expr -> m (Maybe Expr)
-applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> [(VarName, Type)] -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
+applyRewriteRule :: MonadError Error m => RewriteRule m -> RewriteEnvironment -> Expr -> m (Maybe Expr)
+applyRewriteRuleToplevelExpr :: MonadError Error m => RewriteRule m -> RewriteEnvironment -> ToplevelExpr -> StateT Integer m (Maybe ToplevelExpr)
 applyRewriteRuleProgram :: MonadError Error m => RewriteRule m -> Program -> m (Maybe Program)
 applyRewriteRuleProgram' :: MonadError Error m => RewriteRule m -> Program -> m Program
+instance GHC.Show.Show Jikka.Core.Language.RewriteRules.RewriteEnvironment
+instance GHC.Classes.Ord Jikka.Core.Language.RewriteRules.RewriteEnvironment
+instance GHC.Classes.Eq Jikka.Core.Language.RewriteRules.RewriteEnvironment
 instance GHC.Base.Monad m => GHC.Base.Semigroup (Jikka.Core.Language.RewriteRules.RewriteRule m)
 instance GHC.Base.Monad m => GHC.Base.Monoid (Jikka.Core.Language.RewriteRules.RewriteRule m)
 
@@ -2274,6 +2322,10 @@ instance GHC.Read.Read Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Show.Show Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Classes.Ord Jikka.Core.Convert.TypeInfer.Equation
 instance GHC.Classes.Eq Jikka.Core.Convert.TypeInfer.Equation
+instance GHC.Read.Read Jikka.Core.Convert.TypeInfer.Subst
+instance GHC.Show.Show Jikka.Core.Convert.TypeInfer.Subst
+instance GHC.Classes.Ord Jikka.Core.Convert.TypeInfer.Subst
+instance GHC.Classes.Eq Jikka.Core.Convert.TypeInfer.Subst
 
 
 -- | &lt;math&gt;
@@ -2598,6 +2650,7 @@ module Jikka.Core.Convert.ArithmeticExpr
 --   a + 1
 --   </pre>
 run :: MonadError Error m => Program -> m Program
+runExpr :: MonadError Error m => [(VarName, Type)] -> Expr -> m Expr
 
 
 module Jikka.Core.Convert.ANormal
@@ -2781,7 +2834,7 @@ parseRule :: (MonadAlpha m, MonadError Error m) => String -> m (String, [(VarNam
 
 module Jikka.Core.Language.QuasiRules
 r :: QuasiQuoter
-makeRewriteRule :: Monad m => String -> ([(VarName, Type)] -> Expr -> m (Maybe Expr)) -> RewriteRule m
+makeRewriteRule :: Monad m => String -> (RewriteEnvironment -> Expr -> m (Maybe Expr)) -> RewriteRule m
 genVarName' :: MonadAlpha m => m VarName
 instance GHC.Show.Show Jikka.Core.Language.QuasiRules.RenamedVarName
 instance GHC.Classes.Ord Jikka.Core.Language.QuasiRules.RenamedVarName
