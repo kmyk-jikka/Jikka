@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jikka Playground</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj"
+      crossorigin="anonymous"
+    ></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs/editor/editor.main.css"
+      integrity="sha256-KECQgd13qpSnhmqQZ45hb9K1w6RWvKwyG+otQIePbbY="
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs/loader.js"
+      integrity="sha256-oCEU89MMAhERW/zj2Mw1Yiqh2UDhJVjHt5452selrus="
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      require.config({
+        paths: {
+          vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs",
+        },
+      });
+
+      // Before loading vs/editor/editor.main, define a global MonacoEnvironment that overwrites
+      // the default worker url location (used when creating WebWorkers). The problem here is that
+      // HTML5 does not allow cross-domain web workers, so we need to proxy the instantiation of
+      // a web worker through a same-domain script
+      window.MonacoEnvironment = {
+        getWorkerUrl: function (workerId, label) {
+          return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+                self.MonacoEnvironment = {
+                baseUrl: 'http://www.mycdn.com/monaco-editor/min/'
+                };
+                importScripts('http://www.mycdn.com/monaco-editor/min/vs/base/worker/workerMain.js');`)}`;
+        },
+      };
+    </script>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Jikka Playground</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <h2 class="mt-3 mb-3">Jikka Playground</h2>
+
+      <div class="row">
+        <div class="col-md">
+          <div id="input" style="height: 600px; border: 1px solid grey"></div>
+        </div>
+        <div class="col-md">
+          <div id="output" style="height: 600px; border: 1px solid grey"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="jikka-asterius.mjs"></script>
+  </body>
+</html>

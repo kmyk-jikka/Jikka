@@ -29,6 +29,24 @@ jobs:
         run: |
           python3 scripts/make_gallery.py > docs/gh-pages/gallery/data.json
 
+      - name: Prepare for Asterius
+        run: |
+          sed -i 's/#ASTERIUS//' package.yaml
+          stack --system-ghc build --only-configure
+          stack --system-ghc install alex happy
+          find src -name \*.x | xargs -n1 alex
+          find src -name \*.x -delete
+          find src -name \*.y | xargs -n1 happy
+          find src -name \*.y -delete
+
+      - name: Compile to WebAssembly
+        run: |
+          echo ahc-cabal new-update >> build.sh
+          echo ahc-cabal new-build --flag compile-web-assembly >> build.sh
+          echo ahc-cabal new-install --flag compile-web-assembly --installdir . >> build.sh
+          echo ahc-dist --input-exe jikka-asterius --export-function=convert --no-main --input-mjs docs/gh-pages/playground/input.mjs --browser --output-directory docs/gh-pages/playground >> build.sh
+          docker run --rm -v $(pwd):/workspace -w /workspace terrorjack/asterius bash build.sh
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
