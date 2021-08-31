@@ -8,48 +8,29 @@ async function convert(prog) {
   return await i.exports.convert(prog);
 }
 
-// examples/dp_z-kubaru.py
-const script = `\
-# https://atcoder.jp/contests/dp/tasks/dp_z
-from typing import *
-
-INF = 10 ** 18
-
-def solve(n: int, c: int, h: List[int]) -> int:
-    assert 2 <= n <= 2 * 10 ** 5
-    assert 1 <= c <= 10 ** 12
-    assert len(h) == n
-    assert all(1 <= h_i <= 10 ** 6 for h_i in h)
-
-    dp = [INF for _ in range(n)]
-    dp[0] = 0
-    for i in range(n):
-        for j in range(i + 1, n):
-            dp[j] = min(dp[j], dp[i] + (h[i] - h[j]) ** 2 + c)
-    return dp[n - 1]
-
-def main() -> None:
-    n, c = map(int, input().split())
-    h = list(map(int, input().split()))
-    assert len(h) == n
-    ans = solve(n, c, h)
-    print(ans)
-
-if __name__ == '__main__':
-    main()
-`;
+function loadData() {
+  const req = new XMLHttpRequest();
+  req.open("GET", "../gallery/data.json", false);
+  req.send();
+  if (req.status != 200) {
+    throw Error(req.statusText);
+  }
+  return JSON.parse(req.responseText);
+}
 
 window.addEventListener("DOMContentLoaded", function () {
   require(["vs/editor/editor.main"], function () {
-    var input = monaco.editor.create(document.getElementById("input"), {
-      value: script,
+    // make editors
+    const input = monaco.editor.create(document.getElementById("input"), {
+      value: "loading...",
       language: "python",
     });
-    var output = monaco.editor.create(document.getElementById("output"), {
+    const output = monaco.editor.create(document.getElementById("output"), {
       value: "",
       language: "cpp",
     });
 
+    // transpiling periodically
     let lastValue = "";
     console.log(lastValue);
     const sync = function () {
@@ -70,5 +51,30 @@ window.addEventListener("DOMContentLoaded", function () {
       }
     };
     sync();
+
+    // make dropdown menu of examples
+    const dropdown = document.getElementById("dropdown");
+    function addItem(row) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.textContent = row["path"];
+      a.classList.add("dropdown-item");
+      a.addEventListener("click", function () {
+        input.setValue(row["python"]);
+      });
+      li.appendChild(a);
+      dropdown.appendChild(li);
+    }
+    const data = loadData();
+    for (const row of data["examples"]) {
+      addItem(row);
+      if (row["path"] == "examples/dp_z-kubaru.py") {
+        // default
+        input.setValue(row["python"]);
+      }
+    }
+    for (const row of data["errors"]) {
+      addItem(row);
+    }
   });
 });
