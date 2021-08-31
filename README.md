@@ -43,6 +43,10 @@ $ cabal update
 $ cabal install Jikka
 ```
 
+### Using on Web
+
+Go <https://kmyk.github.io/Jikka/playground>.
+
 ## Discussions
 
 Please feel free to use our [GitHub Discussions](https://github.com/kmyk/Jikka/discussions). / [GitHub Discussions](https://github.com/kmyk/Jikka/discussions) があるので気軽に使ってください。
@@ -59,6 +63,7 @@ For users:
   - A list of optimizations which Jikka does / Jikka が行なってくれる最適化の一覧
 - [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
   - [gallery](https://kmyk.github.io/Jikka/gallery)
+  - [playground](https://kmyk.github.io/Jikka/playground)
 - [CHANGELOG.md](https://github.com/kmyk/Jikka/blob/master/CHANGELOG.md)
 
 For developpers:
