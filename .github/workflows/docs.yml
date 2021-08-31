@@ -22,6 +22,9 @@ jobs:
       - name: Build dependencies
         run: stack --system-ghc build --only-dependencies
 
+      - name: Build and collect logs of splices
+        run: stack --system-ghc build --ghc-options=-ddump-splices --ghc-options=-ddump-to-file
+
       - name: Run Haddock
         run: stack --system-ghc haddock --haddock-arguments --odir=docs/gh-pages/haddock
 
@@ -38,11 +41,7 @@ jobs:
           find src -name \*.x -delete
           find src -name \*.y | xargs -n1 happy
           find src -name \*.y -delete
-
-      - uses: actions/cache@v2
-        with:
-          path: dist-newstyle
-          key: ${{ runner.os }}-stack-${{ hashFiles('stack.yaml') }}-asterius
+          python3 scripts/erase_template_haskell.py --rewrite
 
       - name: Compile to WebAssembly
         run: |
@@ -51,7 +50,6 @@ jobs:
           echo ahc-cabal new-install --flag compile-web-assembly --installdir . >> build.sh
           echo ahc-dist --input-exe jikka-asterius --export-function=convert --no-main --input-mjs docs/gh-pages/playground/input.mjs --browser --output-directory docs/gh-pages/playground >> build.sh
           docker run --rm -v $(pwd):/workspace -w /workspace terrorjack/asterius bash build.sh
-          sudo chown -R $USER dist-newstyle
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
