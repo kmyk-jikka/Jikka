@@ -12,6 +12,10 @@ Jikka takes such problems as input in the form of a program of a very restricted
 Jikka はそのような問題を自動で解きます。
 そのような問題をとても制限された Python のサブセット言語のコードの形で入力として受け取り、計算量を落とすような最適化を行い、C++ の実装に変換して出力します。
 
+## Try on Web
+
+Go <https://kmyk.github.io/Jikka/playground>.
+
 ## Usage
 
 ```console
@@ -42,10 +46,6 @@ $ stack install
 $ cabal update
 $ cabal install Jikka
 ```
-
-### Using on Web
-
-Go <https://kmyk.github.io/Jikka/playground>.
 
 ## Discussions
 
