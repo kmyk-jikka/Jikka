@@ -4,13 +4,13 @@
 
 Jikka is an automated solver for problems of competitive programming.
 
-In competitive programming, there are some problems which are solvable only with "repeating formula transformations", "pasting snippets of famous data structures", etc.
-Jikka automatically solves such problems.
-Jikka takes such problems as input in the form of a program of a very restricted subset of Python, optimizes the code to reduce the computational complexity, and outputs as an implementation in C++.
+In competitive programming, there are some problems that can be solved just by _repeating formula transformations_ or by _pasting snippets of famous data structures_.
+Jikka solves such problems automatically.
+Jikka takes problems as input in the form of programs of a very restricted subset of Python, optimizes the codes to reduce their computational complexity, and converts them to implementations of C++ for output.
 /
 競技プログラミングにおいて「ただ式変形をするだけで解ける」「ただデータ構造のライブラリを貼るだけで解ける」問題は実は少なくありません。
-Jikka はそのような問題を自動で解きます。
-そのような問題をとても制限された Python のサブセット言語のコードの形で入力として受け取り、計算量を落とすような最適化を行い、C++ の実装に変換して出力します。
+Jikka はそのような問題を自動で解いてくれます。
+Jikka は問題をとても制限された Python のサブセット言語のコードの形で入力として受け取り、計算量を落とすような最適化を行い、C++ の実装に変換して出力します。
 
 ## Try on Web
 
