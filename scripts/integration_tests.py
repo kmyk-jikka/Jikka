@@ -173,18 +173,20 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path, libr
             msg = 'no test cases'
             logger.error('%s: %s', str(script), msg)
             return msg
-        for inputcase, outputcase in testcases:
-            with open(outputcase, 'rb') as fh:
-                expected = fh.read()
 
-            matrix: List[Tuple[str, List[str]]] = []
-            if use_standard_python:
-                matrix.append(('standard Python', [sys.executable, str(script)]))
-            matrix.append(('restricted Python', [str(executable), 'execute', '--target', 'rpython', str(script)]))
-            matrix.append(('core', [str(executable), 'execute', '--target', 'core', str(script)]))
-            matrix.append(('C++', [str(tempdir / 'a.exe')]))
-            for title, command in matrix:
+        matrix: List[Tuple[str, List[str]]] = []
+        if use_standard_python:
+            matrix.append(('standard Python', [sys.executable, str(script)]))
+        matrix.append(('restricted Python', [str(executable), 'execute', '--target', 'rpython', str(script)]))
+        matrix.append(('core', [str(executable), 'execute', '--target', 'core', str(script)]))
+        matrix.append(('C++', [str(tempdir / 'a.exe')]))
+
+        for title, command in matrix:
+            for inputcase, outputcase in testcases:
+                with open(outputcase, 'rb') as fh:
+                    expected = fh.read()
                 logger.info('%s: %s: running as %s...', str(script), str(inputcase), title)
+
                 with open(inputcase, 'rb') as fh:
                     try:
                         actual = subprocess.check_output(command, stdin=fh, timeout=2 * TIMEOUT_FACTOR)
@@ -196,15 +198,15 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path, libr
                         else:
                             # Allow TLE on non C++
                             logger.info('%s: %s', str(script), msg)
-                            continue
+                            break  # knockout
                     except subprocess.SubprocessError as e:
                         msg = '{}: failed to run as {}: {}'.format(str(inputcase), title, e)
                         logger.error('%s: %s', str(script), msg)
                         return msg
-                    if actual.decode().split() != expected.decode().split():
-                        msg = '{}: wrong answer: {} is expected, but actually got {}'.format(str(inputcase), expected.decode().split(), actual.decode().split())
-                        logger.error('%s: %s', str(script), msg)
-                        return msg
+                if actual.decode().split() != expected.decode().split():
+                    msg = '{}: wrong answer: {} is expected, but actually got {}'.format(str(inputcase), expected.decode().split(), actual.decode().split())
+                    logger.error('%s: %s', str(script), msg)
+                    return msg
 
     logger.info('%s: accepted', str(script))
     return None
