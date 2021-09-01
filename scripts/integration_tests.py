@@ -189,7 +189,7 @@ def get_local_install_root() -> pathlib.Path:
 
 
 def find_unused_test_cases() -> List[pathlib.Path]:
-    scripts = list(pathlib.Path('examples').glob('*.py'))
+    scripts = list(pathlib.Path('examples').glob('*.py')) + list(pathlib.Path('examples', 'wip', 'tle').glob('*.py'))
     errors = list(pathlib.Path('examples', 'errors').glob('*.py'))
     unused = []
     for path in pathlib.Path('examples', 'data').glob('*'):
@@ -238,6 +238,10 @@ def main() -> None:
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
         futures = {}
         for path in pathlib.Path('examples').glob('*.py'):
+            if args.k and args.k not in path.name:
+                continue
+            futures[path] = executor.submit(run_integration_test, path, executable=executable)
+        for path in pathlib.Path('examples', 'wip', 'tle').glob('*.py'):
             if args.k and args.k not in path.name:
                 continue
             futures[path] = executor.submit(run_integration_test, path, executable=executable)

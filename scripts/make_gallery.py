@@ -45,14 +45,14 @@ def main() -> None:
     executable = get_local_install_root() / 'bin' / 'jikka'
     futures: Dict[Tuple[pathlib.Path, str], concurrent.futures.Future] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
-        for path in pathlib.Path('examples').glob('*.py'):
+        for path in list(pathlib.Path('examples').glob('*.py')) + list(pathlib.Path('examples', 'wip', 'tle').glob('*.py')):
             for target in ('rpython', 'core', 'cxx'):
                 futures[(path, target)] = executor.submit(transpile_python_script, path, target=target, executable=executable)
         for path in pathlib.Path('examples', 'errors').glob('*.py'):
             futures[(path, 'error')] = executor.submit(read_transpilation_error, path, executable=executable)
 
     examples = []
-    for path in sorted(pathlib.Path('examples').glob('*.py')):
+    for path in sorted(pathlib.Path('examples').glob('*.py')) + sorted(pathlib.Path('examples', 'wip', 'tle').glob('*.py')):
         with open(path) as fh:
             code = fh.read()
         examples.append({
