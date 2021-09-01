@@ -14,7 +14,7 @@ grep '\<Debug.Trace\>' $(find src test -name \*.hs | grep -v 'RewriteRules\.hs')
 # C++
 which clang-format \
     || { echo HINT: Please install clang-format; false; }
-for f in $(find runtime/include examples/data -name \*.\?pp); do diff $f <(clang-format $f) || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp);' ; false; }; done
+for f in $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems'); do diff $f <(clang-format $f) || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems');' ; false; }; done
 
 # Python
 isort --version \

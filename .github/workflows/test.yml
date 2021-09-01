@@ -39,5 +39,8 @@ jobs:
       - name: Run doctests
         run: stack --system-ghc test --ghc-options=-Werror Jikka:jikka-doctest
 
+      - name: Install dependencies of Library Checker
+        run: pip3 install -r examples/data/library-checker-problems/requirements.txt
+
       - name: Run integration tests
         run: python3 scripts/integration_tests.py

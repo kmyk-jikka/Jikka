@@ -11,4 +11,4 @@ jobs:
 
       - name: Run clang-format
         run: |
-          set -ex; for f in $(find runtime/include examples/data -name \*.\?pp); do diff $f <(clang-format $f); done
+          set -ex; for f in $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems'); do diff $f <(clang-format $f); done

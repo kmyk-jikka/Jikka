@@ -8,4 +8,4 @@ def f(n: int) -> int:
     return a
 
 def solve(n: int) -> int:
-    return f(n) % 1000000007
+    return f(n) % 998244353
