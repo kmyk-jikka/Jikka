@@ -25,6 +25,8 @@ yapf --version \
     || { echo HINT: Please install yapf with running '$ pip3 install -r scripts/requirements.txt'; false; }
 yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py \
     || { echo HINT: Please run '$ yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; false; }
+mypy --version \
+    || { echo HINT: Please install mypy with running '$ pip3 install -r scripts/requirements.txt'; false; }
 mypy scripts/*.py examples/data/*.py
 
 # YAML
