@@ -926,7 +926,7 @@ formatIOFormat :: IOFormat -> String
 packSubscriptedVar :: String -> [String] -> FormatExpr
 packSubscriptedVar' :: String -> [String] -> FormatTree
 unpackSubscriptedVar :: MonadError Error m => FormatExpr -> m (String, [String])
-makeReadValueIO :: (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (Vector value)) -> (Vector value -> value) -> IOFormat -> m ([value], Map String value)
+makeReadValueIO :: forall m value. (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (Vector value)) -> (Vector value -> value) -> IOFormat -> m ([value], Map String value)
 makeWriteValueIO :: (MonadError Error m, MonadIO m) => (value -> m [value]) -> (Integer -> value) -> (value -> m Integer) -> (value -> m (Vector value)) -> IOFormat -> Map String value -> value -> m ()
 instance GHC.Show.Show Jikka.Common.IOFormat.FormatExpr
 instance GHC.Read.Read Jikka.Common.IOFormat.FormatExpr
