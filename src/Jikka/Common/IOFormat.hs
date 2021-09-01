@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Jikka.Common.IOFormat where
 
@@ -127,16 +128,32 @@ unpackSubscriptedVar = \case
   At e i -> second (++ [i]) <$> unpackSubscriptedVar e
   e -> throwInternalError $ "not a subscripted variable: " ++ formatFormatExpr e
 
-makeReadValueIO :: (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (V.Vector value)) -> (V.Vector value -> value) -> IOFormat -> m ([value], M.Map String value)
+makeReadValueIO :: forall m value. (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (V.Vector value)) -> (V.Vector value -> value) -> IOFormat -> m ([value], M.Map String value)
 makeReadValueIO toInt fromInt toList fromList format = wrapError' "Jikka.Common.IOFormat.makeReadValueIO" $ do
-  env <- liftIO $ newIORef M.empty
-  sizes <- liftIO $ newIORef M.empty
-  let lookup x = do
+  env <- liftIO $ newIORef M.empty :: m (IORef (M.Map String value))
+  sizes <- liftIO $ newIORef M.empty :: m (IORef (M.Map String Integer))
+  let lookup :: String -> m value
+      lookup x = do
         y <- M.lookup x <$> liftIO (readIORef env)
         case y of
           Nothing -> throwInternalError $ "undefined variable: " ++ x
           Just y -> return y
-  let go = \case
+  let goEmpty :: FormatTree -> m ()
+      goEmpty = \case
+        Exp e -> do
+          (x, _) <- unpackSubscriptedVar e
+          y <- M.lookup x <$> liftIO (readIORef env)
+          case y of
+            Just _ -> return ()
+            Nothing -> do
+              let y = fromList V.empty
+              liftIO $ modifyIORef' env (M.insert x y)
+        Newline -> return ()
+        Seq formats -> mapM_ goEmpty formats
+        Loop _ _ body -> do
+          goEmpty body
+  let go :: FormatTree -> m ()
+      go = \case
         Exp e -> do
           (x, indices) <- unpackSubscriptedVar e
           word <- liftIO $ hGetWord stdin
@@ -171,9 +188,11 @@ makeReadValueIO toInt fromInt toList fromList format = wrapError' "Jikka.Common.
             Len (Var xs) -> toInteger . V.length <$> (toList =<< lookup xs)
             _ -> throwInternalError $ "invalid loop size in input tree: " ++ formatFormatExpr n
           liftIO $ modifyIORef' sizes (M.insert i n)
-          forM_ [0 .. n -1] $ \i' -> do
-            liftIO $ modifyIORef' env (M.insert i (fromInt i'))
-            go body
+          if n == 0
+            then goEmpty body
+            else forM_ [0 .. n -1] $ \i' -> do
+              liftIO $ modifyIORef' env (M.insert i (fromInt i'))
+              go body
   go (inputTree format)
   values <- mapM lookup (inputVariables format)
   env <- liftIO $ readIORef env
