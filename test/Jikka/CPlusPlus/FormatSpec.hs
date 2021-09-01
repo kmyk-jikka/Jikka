@@ -35,7 +35,7 @@ spec = do
               ]
       let formatted =
             [ "int64_t solve(int32_t n) {",
-              "    int64_t x = 0;",
+              "    int64_t x = 0ll;",
               "    for (int32_t i = 0; i < n; ++ i) {",
               "        x += int64_t(i);",
               "    }",
@@ -65,7 +65,7 @@ spec = do
               ]
       let formatted =
             [ "int64_t solve(int32_t n, std::vector<int64_t> h) {",
-              "    int64_t x = 0;",
+              "    int64_t x = 0ll;",
               "    for (int32_t i = 2; i < n; ++ i) {",
               "        x += h[i - 2];",
               "    }",

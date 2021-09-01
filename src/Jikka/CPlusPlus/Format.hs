@@ -196,9 +196,7 @@ formatType = \case
 formatLiteral :: Literal -> Code
 formatLiteral = \case
   LitInt32 n -> show n
-  LitInt64 n
-    | - (2 ^ 31) <= n && n < 2 ^ 31 -> show n
-    | otherwise -> show n ++ "ll"
+  LitInt64 n -> show n ++ "ll"
   LitBool p -> if p then "true" else "false"
   LitChar c -> show c
   LitString s -> show s
