@@ -37,18 +37,16 @@ import System.IO.Error
 #ifdef JIKKA_EMBED_RUNTIME
 embeddedRuntimeFiles :: [(FilePath, T.Text)]
 embeddedRuntimeFiles = $(embedDir "runtime/include")
-#endif
 
-{-# ANN readRuntimeFile ("HLint: ignore Redundant return" :: String) #-}
-readRuntimeFile :: (MonadIO m, MonadError Error m) => FilePath -> m T.Text
-readRuntimeFile path = do
-  return () -- Without this, Ormolu fails with "The GHC parser (in Haddock mode) failed: parse error on input `='"
-
-#ifdef JIKKA_EMBED_RUNTIME
+readRuntimeFile :: MonadError Error m => FilePath -> m T.Text
+readRuntimeFile path =
   case lookup ("runtime/include/" ++ path) embeddedRuntimeFiles of
     Just file -> return file
     Nothing -> throwInternalError $ "failed to open file. It may need recompile the binary?: " ++ path
+
 #else
+readRuntimeFile :: (MonadIO m, MonadError Error m) => FilePath -> m T.Text
+readRuntimeFile path = do
   resolvedPath <- liftIO $ getDataFileName ("runtime/include/" ++ path)
   file <- liftIO $ tryIOError (T.readFile resolvedPath)
   case file of
@@ -72,11 +70,11 @@ initialPreprocessorState =
 throwInternalErrorAt'' :: MonadError Error m => FilePath -> Integer -> String -> m a
 throwInternalErrorAt'' path lineno msg = wrapError' (path ++ " (line " ++ show lineno ++ ")") $ throwInternalError msg
 
-runLine :: (MonadIO m, MonadError Error m, MonadState PreprocessorState m) => FilePath -> Integer -> T.Text -> m [T.Text]
-runLine path lineno line
+runLine :: (MonadError Error m, MonadState PreprocessorState m) => (FilePath -> m T.Text) -> FilePath -> Integer -> T.Text -> m [T.Text]
+runLine readRuntimeFile path lineno line
   | "#include \"" `T.isPrefixOf` line = case T.splitOn "\"" line of
     ["#include ", path', ""] -> do
-      lines <- runFile (T.unpack path')
+      lines <- runFile readRuntimeFile (T.unpack path')
       return (lines ++ [T.pack ("#line " ++ show (lineno + 1) ++ " \"" ++ path ++ "\"")])
     _ -> throwInternalErrorAt'' path lineno "invalid #include \"...\""
   | otherwise = do
@@ -86,11 +84,11 @@ runLine path lineno line
       False : _ -> return []
       [] -> throwInternalError "there are more #endif than #ifdef and #ifndef"
 
-runLines :: (MonadIO m, MonadError Error m, MonadState PreprocessorState m) => FilePath -> Integer -> [T.Text] -> m [T.Text]
-runLines path lineno lines = concat <$> zipWithM (runLine path) [lineno ..] lines
+runLines :: (MonadError Error m, MonadState PreprocessorState m) => (FilePath -> m T.Text) -> FilePath -> Integer -> [T.Text] -> m [T.Text]
+runLines readRuntimeFile path lineno lines = concat <$> zipWithM (runLine readRuntimeFile path) [lineno ..] lines
 
-runFile :: (MonadIO m, MonadError Error m, MonadState PreprocessorState m) => FilePath -> m [T.Text]
-runFile path = do
+runFile :: (MonadError Error m, MonadState PreprocessorState m) => (FilePath -> m T.Text) -> FilePath -> m [T.Text]
+runFile readRuntimeFile path = do
   file <- readRuntimeFile path
   let lines = T.lines file
   let macro = map (\c -> if isAlphaNum c then toUpper c else '_') path
@@ -107,7 +105,7 @@ runFile path = do
     then return []
     else do
       modify' (\s -> s {definedMacros = S.insert macro macros})
-      (T.pack ("#line 3 \"" ++ path ++ "\"") :) <$> runLines path 3 (drop 2 (init lines))
+      (T.pack ("#line 3 \"" ++ path ++ "\"") :) <$> runLines readRuntimeFile path 3 (drop 2 (init lines))
 
 removeConsecutiveLineDirectives :: [T.Text] -> [T.Text]
 removeConsecutiveLineDirectives = \case
@@ -116,7 +114,11 @@ removeConsecutiveLineDirectives = \case
   [] -> []
 
 -- | `run` bundles runtime headers to C++ code like <https://github.com/online-judge-tools/verification-helper `oj-bundle` command>.
+#ifdef JIKKA_EMBED_RUNTIME
+run :: MonadError Error m => T.Text -> m T.Text
+#else
 run :: (MonadIO m, MonadError Error m) => T.Text -> m T.Text
+#endif
 run prog = wrapError' "Jikka.CPlusPlus.Convert.BundleRuntime" $ do
-  lines <- evalStateT (runLines "main.cpp" 1 (T.lines prog)) initialPreprocessorState
+  lines <- evalStateT (runLines readRuntimeFile "main.cpp" 1 (T.lines prog)) initialPreprocessorState
   return $ T.unlines (removeConsecutiveLineDirectives lines)

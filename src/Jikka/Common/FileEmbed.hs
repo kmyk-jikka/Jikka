@@ -3,6 +3,7 @@
 module Jikka.Common.FileEmbed where
 
 import Control.Monad
+import Data.Char
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Language.Haskell.TH
@@ -30,4 +31,5 @@ embedDir path = do
   paths <- runIO $ listDirectoryRecursive path
   contents <- runIO $ mapM T.readFile paths :: Q [T.Text]
   mapM_ addDependentFile paths
-  [e|zip paths contents :: [(FilePath, T.Text)]|]
+  let contents' = map (map ord . T.unpack) contents -- use [Int] instead of T.Text for scripts/erase_template_haskell.py
+  [e|zip paths (map (T.pack . map chr) contents') :: [(FilePath, T.Text)]|]
