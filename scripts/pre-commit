@@ -1,44 +1,52 @@
 #!/bin/bash
-set -ex
+set -x
 
 # Haskell
 stack exec ormolu -- --mode=check $(find src app test -name \*.hs) \
-    || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; false; }
-stack exec hlint -- src app test
-stack build --only-configure
+    || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; exit 1; }
+stack exec hlint -- src app test \
+    || exit 1
+stack build --only-configure \
+    || exit 1
 git diff --exit-code *.cabal \
-    || { echo HINT: Please run '$ git add *.cabal'; false; }
+    || { echo HINT: Please run '$ git add *.cabal'; exit 1; }
 grep '\<Debug.Trace\>' $(find src test -name \*.hs | grep -v 'RewriteRules\.hs') \
-    && { echo HINT: Please remove Debug.Trace from $(grep '\<Debug.Trace\>' -r src test | cut -d: -f1); false; }
+    && { echo HINT: Please remove Debug.Trace from $(grep '\<Debug.Trace\>' -r src test | cut -d: -f1); exit 1; }
 
 # C++
 which clang-format \
-    || { echo HINT: Please install clang-format; false; }
-for f in $(find runtime/include examples/data -name \*.\?pp); do diff $f <(clang-format $f) || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp);' ; false; }; done
+    || { echo HINT: Please install clang-format; exit 1; }
+for f in $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems'); do
+    diff $f <(clang-format $f) \
+        || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems');' ; exit 1; }
+done
 
 # Python
 isort --version \
-    || { echo HINT: Please install isort with running '$ pip3 install -r scripts/requirements.txt'; false; }
+    || { echo HINT: Please install isort with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
 isort --check-only --diff scripts/*.py examples/data/*.py \
-    || { echo HINT: Please run '$ isort scripts/*.py examples/data/*.py'; false; }
+    || { echo HINT: Please run '$ isort scripts/*.py examples/data/*.py'; exit 1; }
 yapf --version \
-    || { echo HINT: Please install yapf with running '$ pip3 install -r scripts/requirements.txt'; false; }
+    || { echo HINT: Please install yapf with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
 yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py \
-    || { echo HINT: Please run '$ yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; false; }
-mypy scripts/*.py examples/data/*.py
+    || { echo HINT: Please run '$ yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; exit 1; }
+mypy --version \
+    || { echo HINT: Please install mypy with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
+mypy --ignore-missing-imports scripts/*.py examples/data/*.py \
+    || exit 1
 
 # YAML
 which yarn \
-    || { echo HINT: Please install Yarn 'https://classic.yarnpkg.com/en/docs/install/'; false; }
+    || { echo HINT: Please install Yarn 'https://classic.yarnpkg.com/en/docs/install/'; exit 1; }
 yarn prettier --version \
-    || { echo HINT: Please run '$ yarn install'; false; }
+    || { echo HINT: Please run '$ yarn install'; exit 1; }
 yarn prettier --check $(git ls-files | grep '\.yml$\|\.yaml$\|\.json$') \
-    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.yml$\|\.yaml$\|\.json$'\'')'; false; }
+    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.yml$\|\.yaml$\|\.json$'\'')'; exit 1; }
 
 # Markdown
 yarn prettier --check $(git ls-files | grep '\.md$') \
-    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.md$'\'')'; false; }
+    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.md$'\'')'; exit 1; }
 
 # HTML and JavaScript
 yarn prettier --check $(git ls-files | grep '\.html\|.mjs$') \
-    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.html$\|.mjs$'\'')'; false; }
+    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.html$\|.mjs$'\'')'; exit 1; }

@@ -11,13 +11,12 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 from logging import DEBUG, basicConfig, getLogger
 from typing import *
 
 logger = getLogger(__name__)
 
-CXX_ONLY = 'large'
-NO_PYTHON = 'medium'
 TIMEOUT_FACTOR = 1 if os.environ.get('CI') is None else (5 if platform.system() == 'Linux' else 20)
 
 
@@ -29,13 +28,45 @@ def compile_cxx(src_path: pathlib.Path, dst_path: pathlib.Path):
 
 
 @functools.lru_cache(maxsize=None)
-def get_alias_mapping() -> Dict[str, str]:
-    with open(pathlib.Path('examples', 'data', 'aliases.json')) as fh:
+def get_metadata() -> Dict[str, str]:
+    with open(pathlib.Path('examples', 'data', 'METADATA.json')) as fh:
         return json.load(fh)
 
 
-def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[pathlib.Path]:
-    inputcases: List[pathlib.Path] = []
+def generate_test_cases_of_library_checker(*, problem_id: str, is_jikka_judge: bool, script: pathlib.Path) -> List[Tuple[pathlib.Path, pathlib.Path]]:
+    if is_jikka_judge:
+        directory = pathlib.Path('examples', 'data', 'jikka-judge-problems')
+    else:
+        directory = pathlib.Path('examples', 'data', 'library-checker-problems')
+
+    # calling library-checker-problems/generate.py
+    generate_py = directory / 'generate.py'
+    if not generate_py.exists():
+        logger.info("%s: %s: %s doesn't exist. checking out...", str(script), problem_id, str(generate_py))
+        subprocess.check_call(['git', 'submodule', 'init'])
+        subprocess.check_call(['git', 'submodule', 'update'])
+    info_tomls = list(directory.glob('**/{}/info.toml'.format(glob.escape(problem_id))))
+    if len(info_tomls) != 1:
+        logger.error('%s: %s: failed to find info.toml: %s', str(script), problem_id, info_tomls)
+        return []
+    info_toml = info_tomls[0]
+    try:
+        subprocess.check_call([sys.executable, str(generate_py), str(info_toml)])
+    except subprocess.CalledProcessError:
+        logger.exception("%s: %s: Library Checker's generate.py failed. You may need to run $ pip3 install -r examples/data/library-checker-problems/requirements.txt", str(script), problem_id)
+        return []
+
+    # collect testcases
+    testcases: List[Tuple[pathlib.Path, pathlib.Path]] = []
+    for inputcase in (info_toml.parent / 'in').iterdir():
+        outputcase = info_toml.parent / 'out' / (inputcase.stem + '.out')
+        testcases.append((inputcase, outputcase))
+    return testcases
+
+
+# TODO: This function should return None instead on errors.
+def collect_test_cases(script: pathlib.Path, *, tempdir: pathlib.Path, library_checker_lock: threading.Lock) -> List[Tuple[pathlib.Path, pathlib.Path]]:
+    testcases: List[Tuple[pathlib.Path, pathlib.Path]] = []
 
     # text files
     for path in pathlib.Path('examples', 'data').iterdir():
@@ -43,7 +74,7 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
             continue
         if path.suffix != '.in':
             continue
-        inputcases.append(path)
+        testcases.append((path, path.with_suffix('.out')))
 
     # using generators
     for generator_path in pathlib.Path('examples', 'data').glob(glob.escape(script.stem) + '*.generator.py'):
@@ -85,20 +116,36 @@ def collect_input_cases(script: pathlib.Path, *, tempdir: pathlib.Path) -> List[
                     except subprocess.SubprocessError as e:
                         logger.error('%s: %s: failed to generate an output of a random case: %s', str(script), str(inputcase), e)
                         return []
-            inputcases.append(inputcase)
+            testcases.append((inputcase, outputcase))
 
     # resolve alias
-    aliases = get_alias_mapping()
-    if script.stem in aliases:
-        if inputcases:
-            logger.error("%s: there must not be test cases when it uses an alias: %s", str(script), list(map(str, inputcases)))
+    metadata = get_metadata()
+    if script.stem in metadata:
+        value = metadata[script.stem]
+
+        if testcases:
+            logger.error("%s: there must not be test cases when it uses an alias: %s", str(script), list(map(str, testcases)))
             return []
-        return collect_input_cases(script.parent / (aliases[script.stem] + script.suffix), tempdir=tempdir)
 
-    return inputcases
+        if len(value.split('://')) != 2:
+            logger.info('%s: invalid item in examples/data/METADATA.json found. It must be like "SCHEME:PROBLEM_ID", but: %s', str(script), value)
+            return []
+        scheme, problem_id = value.split('://')
+        if scheme == 'alias':
+            testcases.extend(collect_test_cases(script.parent / (problem_id + script.suffix), tempdir=tempdir, library_checker_lock=library_checker_lock))
+        elif scheme in ('library-checker', 'jikka-judge'):
+            is_jikka_judge = (scheme == 'jikka-judge')
+            # Taking lock is needed because multiple scripts may use the same problem.
+            with library_checker_lock:
+                testcases.extend(generate_test_cases_of_library_checker(script=script, problem_id=problem_id, is_jikka_judge=is_jikka_judge))
+        else:
+            logger.info('%s: invalid item in examples/data/METADATA.json found. The scheme must be "alias", "library-checker" or "jikka-judge", but: %s', str(script), scheme)
+            return []
+
+    return testcases
 
 
-def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> Optional[str]:
+def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path, library_checker_lock: threading.Lock) -> Optional[str]:
     with tempfile.TemporaryDirectory() as tempdir_:
         tempdir = pathlib.Path(tempdir_)
 
@@ -121,42 +168,45 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path) -> O
             code = fh.read()
         use_standard_python = bool(re.search(rb'\bdef +main *\(', code)) and not bool(re.search(rb'\bjikka\b', code))
 
-        inputcases = collect_input_cases(script, tempdir=tempdir)
-        if not inputcases:
-            msg = 'no input cases'
+        testcases = collect_test_cases(script, tempdir=tempdir, library_checker_lock=library_checker_lock)
+        if not testcases:
+            msg = 'no test cases'
             logger.error('%s: %s', str(script), msg)
             return msg
-        for inputcase in inputcases:
-            outputcase = inputcase.with_suffix('.out')
-            with open(outputcase, 'rb') as fh:
-                expected = fh.read()
 
-            matrix: List[Tuple[str, List[str]]] = []
-            if use_standard_python:
-                matrix.append(('standard Python', [sys.executable, str(script)]))
-            matrix.append(('restricted Python', [str(executable), 'execute', '--target', 'rpython', str(script)]))
-            matrix.append(('core', [str(executable), 'execute', '--target', 'core', str(script)]))
-            matrix.append(('C++', [str(tempdir / 'a.exe')]))
-            for title, command in matrix:
-                if 'Python' in title and (NO_PYTHON in inputcase.name or CXX_ONLY in inputcase.name):
-                    continue
-                if title == 'core' and CXX_ONLY in inputcase.name:
-                    continue
-                if 'wip' in inputcase.name:
-                    continue
+        matrix: List[Tuple[str, List[str]]] = []
+        if use_standard_python:
+            matrix.append(('standard Python', [sys.executable, str(script)]))
+        matrix.append(('restricted Python', [str(executable), 'execute', '--target', 'rpython', str(script)]))
+        matrix.append(('core', [str(executable), 'execute', '--target', 'core', str(script)]))
+        matrix.append(('C++', [str(tempdir / 'a.exe')]))
 
+        for title, command in matrix:
+            for inputcase, outputcase in testcases:
+                with open(outputcase, 'rb') as fh:
+                    expected = fh.read()
                 logger.info('%s: %s: running as %s...', str(script), str(inputcase), title)
+
                 with open(inputcase, 'rb') as fh:
                     try:
-                        actual = subprocess.check_output(command, stdin=fh, timeout=(2 if title == 'C++' else 20) * TIMEOUT_FACTOR)
+                        actual = subprocess.check_output(command, stdin=fh, timeout=2 * TIMEOUT_FACTOR)
+                    except subprocess.TimeoutExpired as e:
+                        msg = '{}: TLE with {}: {}'.format(str(inputcase), title, e)
+                        if title == 'C++':
+                            logger.error('%s: %s', str(script), msg)
+                            return msg
+                        else:
+                            # Allow TLE on non C++
+                            logger.info('%s: %s', str(script), msg)
+                            break  # knockout
                     except subprocess.SubprocessError as e:
                         msg = '{}: failed to run as {}: {}'.format(str(inputcase), title, e)
                         logger.error('%s: %s', str(script), msg)
                         return msg
-                    if actual.decode().split() != expected.decode().split():
-                        msg = '{}: wrong answer: {} is expected, but actually got {}'.format(str(inputcase), expected.decode().split(), actual.decode().split())
-                        logger.error('%s: %s', str(script), msg)
-                        return msg
+                if actual.decode().split() != expected.decode().split():
+                    msg = '{}: wrong answer: {} is expected, but actually got {}'.format(str(inputcase), expected.decode().split(), actual.decode().split())
+                    logger.error('%s: %s', str(script), msg)
+                    return msg
 
     logger.info('%s: accepted', str(script))
     return None
@@ -193,7 +243,11 @@ def find_unused_test_cases() -> List[pathlib.Path]:
     errors = list(pathlib.Path('examples', 'errors').glob('*.py'))
     unused = []
     for path in pathlib.Path('examples', 'data').glob('*'):
-        if path.name == 'aliases.json':
+        if path.name == 'METADATA.json':
+            continue
+        if path.name == 'library-checker-problems':
+            continue
+        if path.name == 'jikka-judge-problems':
             continue
         name = path.name[:-len(''.join(path.suffixes))]
         if name not in [script.stem for script in scripts + errors]:
@@ -227,7 +281,16 @@ def main() -> None:
     parser.add_argument('-k', type=str)
     args = parser.parse_args()
 
-    basicConfig(level=DEBUG)
+    try:
+        import colorlog
+    except ImportError:
+        basicConfig(level=DEBUG)
+        logger.warn('Please install colorlog with $ pip3 install -r scripts/requirements.txt')
+    else:
+        formatter = colorlog.ColoredFormatter("%(log_color)s%(levelname)s%(reset)s:%(name)s:%(message)s")
+        handler = colorlog.StreamHandler()
+        handler.setFormatter(formatter)
+        basicConfig(level=DEBUG, handlers=[handler])
 
     if find_unused_test_cases():
         sys.exit(1)
@@ -237,14 +300,11 @@ def main() -> None:
     executable = get_local_install_root() / 'bin' / 'jikka'
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
         futures = {}
-        for path in pathlib.Path('examples').glob('*.py'):
+        library_checker_lock = threading.Lock()
+        for path in list(pathlib.Path('examples').glob('*.py')) + list(pathlib.Path('examples', 'wip', 'tle').glob('*.py')):
             if args.k and args.k not in path.name:
                 continue
-            futures[path] = executor.submit(run_integration_test, path, executable=executable)
-        for path in pathlib.Path('examples', 'wip', 'tle').glob('*.py'):
-            if args.k and args.k not in path.name:
-                continue
-            futures[path] = executor.submit(run_integration_test, path, executable=executable)
+            futures[path] = executor.submit(run_integration_test, path, executable=executable, library_checker_lock=library_checker_lock)
         for path in pathlib.Path('examples', 'errors').glob('*.py'):
             if args.k and args.k not in path.name:
                 continue
