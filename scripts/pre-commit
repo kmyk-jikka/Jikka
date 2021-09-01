@@ -32,7 +32,7 @@ yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py \
     || { echo HINT: Please run '$ yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; exit 1; }
 mypy --version \
     || { echo HINT: Please install mypy with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
-mypy scripts/*.py examples/data/*.py \
+mypy --ignore-missing-imports scripts/*.py examples/data/*.py \
     || exit 1
 
 # YAML

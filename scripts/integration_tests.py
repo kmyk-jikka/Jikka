@@ -281,7 +281,16 @@ def main() -> None:
     parser.add_argument('-k', type=str)
     args = parser.parse_args()
 
-    basicConfig(level=DEBUG)
+    try:
+        import colorlog
+    except ImportError:
+        basicConfig(level=DEBUG)
+        logger.warn('Please install colorlog with $ pip3 install -r scripts/requirements.txt')
+    else:
+        formatter = colorlog.ColoredFormatter("%(log_color)s%(levelname)s%(reset)s:%(name)s:%(message)s")
+        handler = colorlog.StreamHandler()
+        handler.setFormatter(formatter)
+        basicConfig(level=DEBUG, handlers=[handler])
 
     if find_unused_test_cases():
         sys.exit(1)
