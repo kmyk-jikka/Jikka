@@ -8,6 +8,12 @@ async function convert(prog) {
   return await i.exports.convert(prog);
 }
 
+async function bundleRuntime(prog) {
+  const m = await wasm;
+  const i = await rts.newAsteriusInstance(Object.assign(req, { module: m }));
+  return await i.exports.bundleRuntime(prog);
+}
+
 function loadData() {
   const req = new XMLHttpRequest();
   req.open("GET", "../gallery/data.json", false);
@@ -30,25 +36,28 @@ window.addEventListener("DOMContentLoaded", function () {
       language: "cpp",
     });
 
+    const bundle = document.getElementById("bundle");
+
     // transpiling periodically
-    let lastValue = "";
-    console.log(lastValue);
-    const sync = function () {
+    let lastProgram = "";
+    let lastBundle = "";
+    const sync = async function () {
       try {
-        if (input.getValue() == lastValue) {
-          setTimeout(sync, 1000);
-        } else {
-          lastValue = input.getValue();
+        if (input.getValue() != lastProgram || bundle.checked != lastBundle) {
+          lastProgram = input.getValue();
+          lastBundle = bundle.checked;
           output.setValue("transpiling...");
-          convert(lastValue).then(function (value) {
-            output.setValue(value);
-            setTimeout(sync, 1000);
-          });
+          let transpiledProgram = await convert(lastProgram);
+          if (lastBundle) {
+            transpiledProgram = await bundleRuntime(transpiledProgram);
+          }
+          output.setValue(transpiledProgram);
         }
       } catch (e) {
         console.log(e);
-        setTimeout(sync, 1000);
+        output.setValue(e.toString());
       }
+      setTimeout(sync, 1000);
     };
     sync();
 

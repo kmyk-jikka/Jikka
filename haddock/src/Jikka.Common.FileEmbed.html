@@ -3,21 +3,22 @@
 </span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Jikka.Common.FileEmbed</span><span> </span><span class="hs-keyword">where</span><span>
 </span><span id="line-4"></span><span>
 </span><span id="line-5"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span>
-</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
-</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text.IO</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
-</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span>
-</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH.Syntax</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">addDependentFile</span></span><span class="hs-special">)</span><span>
-</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Directory</span></span><span>
-</span><span id="line-11"></span><span>
-</span><span id="line-12"></span><span class="annot"><a href="Jikka.Common.FileEmbed.html#listDirectoryRecursive"><span class="hs-identifier hs-type">listDirectoryRecursive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span>
-</span><span id="line-13"></span><span id="listDirectoryRecursive"><span class="annot"><span class="annottext">listDirectoryRecursive :: FilePath -&gt; IO [FilePath]
-</span><a href="Jikka.Common.FileEmbed.html#listDirectoryRecursive"><span class="hs-identifier hs-var hs-var">listDirectoryRecursive</span></a></span></span><span> </span><span id="local-6989586621679938136"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938136"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-14"></span><span>  </span><span id="local-6989586621679938135"><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621679938135"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; FilePath) -&gt; [FilePath] -&gt; [FilePath]
+</span><span id="line-6"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Char</span></span><span>
+</span><span id="line-7"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text.IO</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH</span></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Language.Haskell.TH.Syntax</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">addDependentFile</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">System.Directory</span></span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="annot"><a href="Jikka.Common.FileEmbed.html#listDirectoryRecursive"><span class="hs-identifier hs-type">listDirectoryRecursive</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span class="hs-special">]</span><span>
+</span><span id="line-14"></span><span id="listDirectoryRecursive"><span class="annot"><span class="annottext">listDirectoryRecursive :: FilePath -&gt; IO [FilePath]
+</span><a href="Jikka.Common.FileEmbed.html#listDirectoryRecursive"><span class="hs-identifier hs-var hs-var">listDirectoryRecursive</span></a></span></span><span> </span><span id="local-6989586621679939027"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679939027"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-15"></span><span>  </span><span id="local-6989586621679939026"><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621679939026"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; FilePath) -&gt; [FilePath] -&gt; [FilePath]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938136"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
+</span><a href="#local-6989586621679939027"><span class="hs-identifier hs-var">path</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;/&quot;</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
@@ -26,60 +27,60 @@ forall a. [a] -&gt; [a] -&gt; [a]
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [FilePath]
 </span><span class="hs-identifier hs-var">listDirectory</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938136"><span class="hs-identifier hs-var">path</span></a></span><span>
-</span><span id="line-15"></span><span>  </span><span id="local-6989586621679938132"><span class="annot"><span class="annottext">[[FilePath]]
-</span><a href="#local-6989586621679938132"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; (FilePath -&gt; IO [FilePath]) -&gt; IO [[FilePath]]
+</span><a href="#local-6989586621679939027"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-16"></span><span>  </span><span id="local-6989586621679939023"><span class="annot"><span class="annottext">[[FilePath]]
+</span><a href="#local-6989586621679939023"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; (FilePath -&gt; IO [FilePath]) -&gt; IO [[FilePath]]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Traversable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m (t b)
 </span><span class="hs-identifier hs-var">forM</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621679938135"><span class="hs-identifier hs-var">paths</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; IO [FilePath]) -&gt; IO [[FilePath]])
+</span><a href="#local-6989586621679939026"><span class="hs-identifier hs-var">paths</span></a></span><span> </span><span class="annot"><span class="annottext">((FilePath -&gt; IO [FilePath]) -&gt; IO [[FilePath]])
 -&gt; (FilePath -&gt; IO [FilePath]) -&gt; IO [[FilePath]]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679938130"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938130"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-16"></span><span>    </span><span id="local-6989586621679938129"><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679938129"><span class="hs-identifier hs-var">isDir</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Bool
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679939021"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679939021"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-17"></span><span>    </span><span id="local-6989586621679939020"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679939020"><span class="hs-identifier hs-var">isDir</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Bool
 </span><span class="hs-identifier hs-var">doesDirectoryExist</span></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938130"><span class="hs-identifier hs-var">path</span></a></span><span>
-</span><span id="line-17"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
-</span><a href="#local-6989586621679938129"><span class="hs-identifier hs-var">isDir</span></a></span><span>
-</span><span id="line-18"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [FilePath]
+</span><a href="#local-6989586621679939021"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679939020"><span class="hs-identifier hs-var">isDir</span></a></span><span>
+</span><span id="line-19"></span><span>      </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [FilePath]
 </span><a href="Jikka.Common.FileEmbed.html#listDirectoryRecursive"><span class="hs-identifier hs-var">listDirectoryRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938130"><span class="hs-identifier hs-var">path</span></a></span><span>
-</span><span id="line-19"></span><span>      </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; IO [FilePath]
+</span><a href="#local-6989586621679939021"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-20"></span><span>      </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">[FilePath] -&gt; IO [FilePath]
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938130"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-20"></span><span>  </span><span class="annot"><span class="annottext">[FilePath] -&gt; IO [FilePath]
+</span><a href="#local-6989586621679939021"><span class="hs-identifier hs-var">path</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-21"></span><span>  </span><span class="annot"><span class="annottext">[FilePath] -&gt; IO [FilePath]
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="annot"><span class="annottext">([FilePath] -&gt; IO [FilePath]) -&gt; [FilePath] -&gt; IO [FilePath]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">[[FilePath]] -&gt; [FilePath]
 forall (t :: * -&gt; *) a. Foldable t =&gt; t [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">concat</span></span><span> </span><span class="annot"><span class="annottext">[[FilePath]]
-</span><a href="#local-6989586621679938132"><span class="hs-identifier hs-var">paths</span></a></span><span>
-</span><span id="line-21"></span><span>
-</span><span id="line-22"></span><span class="hs-comment">-- | `embedDir` find files recursively and embed their contents, like https://hackage.haskell.org/package/file-embed @file-embed@&gt;'s &lt;https://hackage.haskell.org/package/file-embed/docs/Data-FileEmbed.html#v:embedDir @embedDir@&gt;.</span><span>
-</span><span id="line-23"></span><span class="hs-comment">--</span><span>
-</span><span id="line-24"></span><span class="hs-comment">-- == Usage</span><span>
-</span><span id="line-25"></span><span class="hs-comment">--</span><span>
-</span><span id="line-26"></span><span class="hs-comment">-- &gt; myDir :: [(FilePath, Data.Text.Text)]</span><span>
-</span><span id="line-27"></span><span class="hs-comment">-- &gt; myDir = $(embedDir &quot;dirName&quot;)</span><span>
-</span><span id="line-28"></span><span class="annot"><a href="Jikka.Common.FileEmbed.html#embedDir"><span class="hs-identifier hs-type">embedDir</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Exp</span></span><span>
-</span><span id="line-29"></span><span id="embedDir"><span class="annot"><span class="annottext">embedDir :: FilePath -&gt; Q Exp
-</span><a href="Jikka.Common.FileEmbed.html#embedDir"><span class="hs-identifier hs-var hs-var">embedDir</span></a></span></span><span> </span><span id="local-6989586621679938125"><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938125"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-30"></span><span>  </span><span id="local-6989586621679938124"><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621679938124"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [FilePath] -&gt; Q [FilePath]
+</span><a href="#local-6989586621679939023"><span class="hs-identifier hs-var">paths</span></a></span><span>
+</span><span id="line-22"></span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- | `embedDir` find files recursively and embed their contents, like https://hackage.haskell.org/package/file-embed @file-embed@&gt;'s &lt;https://hackage.haskell.org/package/file-embed/docs/Data-FileEmbed.html#v:embedDir @embedDir@&gt;.</span><span>
+</span><span id="line-24"></span><span class="hs-comment">--</span><span>
+</span><span id="line-25"></span><span class="hs-comment">-- == Usage</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- &gt; myDir :: [(FilePath, Data.Text.Text)]</span><span>
+</span><span id="line-28"></span><span class="hs-comment">-- &gt; myDir = $(embedDir &quot;dirName&quot;)</span><span>
+</span><span id="line-29"></span><span class="annot"><a href="Jikka.Common.FileEmbed.html#embedDir"><span class="hs-identifier hs-type">embedDir</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">FilePath</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Exp</span></span><span>
+</span><span id="line-30"></span><span id="embedDir"><span class="annot"><span class="annottext">embedDir :: FilePath -&gt; Q Exp
+</span><a href="Jikka.Common.FileEmbed.html#embedDir"><span class="hs-identifier hs-var hs-var">embedDir</span></a></span></span><span> </span><span id="local-6989586621679939016"><span class="annot"><span class="annottext">FilePath
+</span><a href="#local-6989586621679939016"><span class="hs-identifier hs-var">path</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-31"></span><span>  </span><span id="local-6989586621679939015"><span class="annot"><span class="annottext">[FilePath]
+</span><a href="#local-6989586621679939015"><span class="hs-identifier hs-var">paths</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [FilePath] -&gt; Q [FilePath]
 forall a. IO a -&gt; Q a
 </span><span class="hs-identifier hs-var">runIO</span></span><span> </span><span class="annot"><span class="annottext">(IO [FilePath] -&gt; Q [FilePath]) -&gt; IO [FilePath] -&gt; Q [FilePath]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO [FilePath]
 </span><a href="Jikka.Common.FileEmbed.html#listDirectoryRecursive"><span class="hs-identifier hs-var">listDirectoryRecursive</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
-</span><a href="#local-6989586621679938125"><span class="hs-identifier hs-var">path</span></a></span><span>
-</span><span id="line-31"></span><span>  </span><span id="local-6989586621679938122"><span class="annot"><span class="annottext">[Text]
-</span><a href="#local-6989586621679938122"><span class="hs-identifier hs-var">contents</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [Text] -&gt; Q [Text]
+</span><a href="#local-6989586621679939016"><span class="hs-identifier hs-var">path</span></a></span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679939013"><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679939013"><span class="hs-identifier hs-var">contents</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO [Text] -&gt; Q [Text]
 forall a. IO a -&gt; Q a
 </span><span class="hs-identifier hs-var">runIO</span></span><span> </span><span class="annot"><span class="annottext">(IO [Text] -&gt; Q [Text]) -&gt; IO [Text] -&gt; Q [Text]
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -89,13 +90,24 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (a -&gt; m b) -&gt; t a -&gt; m (t b)
 </span><span class="hs-identifier hs-var">mapM</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Text
 </span><span class="hs-identifier hs-var">T.readFile</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621679938124"><span class="hs-identifier hs-var">paths</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span class="hs-special">]</span><span>
-</span><span id="line-32"></span><span>  </span><span class="annot"><span class="annottext">(FilePath -&gt; Q ()) -&gt; [FilePath] -&gt; Q ()
+</span><a href="#local-6989586621679939015"><span class="hs-identifier hs-var">paths</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Q</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span class="hs-special">]</span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><span class="annottext">(FilePath -&gt; Q ()) -&gt; [FilePath] -&gt; Q ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 (a -&gt; m b) -&gt; t a -&gt; m ()
 </span><span class="hs-identifier hs-var">mapM_</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; Q ()
 </span><span class="hs-identifier hs-var">addDependentFile</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
-</span><a href="#local-6989586621679938124"><span class="hs-identifier hs-var">paths</span></a></span><span>
-</span><span id="line-33"></span><span>  </span><span class="hs-special">[e|</span><span class="hs-identifier">zip</span><span> </span><span class="hs-identifier">paths</span><span> </span><span class="hs-identifier">contents</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-identifier">FilePath</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">T.Text</span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">|]</span><span>
-</span><span id="line-34"></span></pre></body></html>
+</span><a href="#local-6989586621679939015"><span class="hs-identifier hs-var">paths</span></a></span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679939009"><span class="annot"><span class="annottext">contents' :: [[Int]]
+</span><a href="#local-6989586621679939009"><span class="hs-identifier hs-var hs-var">contents'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Text -&gt; [Int]) -&gt; [Text] -&gt; [[Int]]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Char -&gt; Int) -&gt; FilePath -&gt; [Int]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+</span><span class="hs-identifier hs-var">ord</span></span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; [Int]) -&gt; (Text -&gt; FilePath) -&gt; Text -&gt; [Int]
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; FilePath
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Text]
+</span><a href="#local-6989586621679939013"><span class="hs-identifier hs-var">contents</span></a></span><span> </span><span class="hs-comment">-- use [Int] instead of T.Text for scripts/erase_template_haskell.py</span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-special">[e|</span><span class="hs-identifier">zip</span><span> </span><span class="hs-identifier">paths</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">map</span><span> </span><span class="hs-special">(</span><span class="hs-identifier">T.pack</span><span> </span><span class="hs-operator">.</span><span> </span><span class="hs-identifier">map</span><span> </span><span class="hs-identifier">chr</span><span class="hs-special">)</span><span> </span><span class="hs-identifier">contents'</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="hs-identifier">FilePath</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">T.Text</span><span class="hs-special">)</span><span class="hs-special">]</span><span class="hs-special">|]</span><span>
+</span><span id="line-36"></span></pre></body></html>
