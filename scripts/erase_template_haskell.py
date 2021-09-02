@@ -68,10 +68,32 @@ def apply_splices(*, code: str, splices: List[Splice]) -> str:
 
     buf = list(code)
     for splice in reversed(splices):
-        magic = 3
         l = offset[splice.line] + splice.column
         r = l + splice.width
-        buf[l - magic:r] = splice.after.strip()
+
+        # open
+        delta = 0
+        while l >= 0 and buf[l] != '[' and buf[l:l + 2] != ['$', '(']:
+            l -= 1
+            delta += 1
+        if delta >= 5 or l == 0:
+            raise RuntimeError('splicing failed: failed to find opening paren')
+        if buf[l] == '[':
+            paren = ']'
+        elif buf[l:l + 2] == ['$', '(']:
+            paren = ')'
+        else:
+            assert False
+
+        # close
+        delta = 0
+        while r <= len(buf) and buf[r - 1] != paren:
+            r += 1
+            delta += 1
+        if delta >= 5 or r == len(buf):
+            raise RuntimeError('splicing failed: failed to find closing paren')
+
+        buf[l:r] = splice.after.strip()
 
     return ''.join(buf)
 
@@ -82,11 +104,14 @@ def main() -> None:
     parser.add_argument('--dist-directory', type=pathlib.Path, default=pathlib.Path('.stack-work', 'dist'))
     parser.add_argument('--source-directory', type=pathlib.Path, default=pathlib.Path('src'))
     parser.add_argument('--rewrite', action='store_true')
+    parser.add_argument('--match')
     args = parser.parse_args()
 
     basicConfig(level=DEBUG)
 
     for dump_splices_path in args.dist_directory.glob('**/*.dump-splices'):
+        if args.match and not re.search(args.match, str(dump_splices_path)):
+            continue
         with open(dump_splices_path) as fh:
             content = fh.read()
         splices = parse_splices(content=content)

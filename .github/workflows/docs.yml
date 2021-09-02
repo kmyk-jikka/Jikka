@@ -23,7 +23,7 @@ jobs:
         run: stack --system-ghc build --only-dependencies
 
       - name: Build and collect logs of splices
-        run: stack --system-ghc build --ghc-options=-ddump-splices --ghc-options=-ddump-to-file
+        run: stack --system-ghc build --flag=Jikka:embed-runtime --ghc-options=-ddump-splices --ghc-options=-ddump-to-file
 
       - name: Run Haddock
         run: stack --system-ghc haddock --haddock-arguments --odir=docs/gh-pages/haddock
@@ -46,8 +46,8 @@ jobs:
       - name: Compile to WebAssembly
         run: |
           echo ahc-cabal new-update >> build.sh
-          echo ahc-cabal new-build --flag compile-web-assembly >> build.sh
-          echo ahc-cabal new-install --flag compile-web-assembly --installdir . >> build.sh
+          echo ahc-cabal new-build --flag=compile-web-assembly --flag=embed-runtime >> build.sh
+          echo ahc-cabal new-install --flag=compile-web-assembly --flag=embed-runtime --installdir . >> build.sh
           echo ahc-dist --input-exe jikka-asterius --export-function=convert --no-main --input-mjs docs/gh-pages/playground/input.mjs --browser --output-directory docs/gh-pages/playground >> build.sh
           docker run --rm -v $(pwd):/workspace -w /workspace terrorjack/asterius bash build.sh
 
