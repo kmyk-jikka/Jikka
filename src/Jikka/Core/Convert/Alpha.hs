@@ -21,6 +21,7 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.Lint
 
 rename :: MonadAlpha m => VarName -> m VarName
 rename x = do
@@ -96,4 +97,8 @@ runProgram prog = wrapError' "Jikka.Core.Convert.Alpha" $ do
 -- > in x2 = x0 + y1
 -- > x2 + y1
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run = runProgram
+run prog = do
+  prog <- runProgram prog
+  postcondition $ do
+    ensureAlphaConverted prog
+  return prog

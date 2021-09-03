@@ -19,7 +19,6 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Core.Convert.Alpha as Alpha
 import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -83,9 +82,8 @@ runProgram = applyRewriteRuleProgram' rule
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.UnpackTuple" $ do
   precondition $ do
-    ensureWellTyped prog
-  prog <- Alpha.run prog
+    lint prog
   prog <- runProgram prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

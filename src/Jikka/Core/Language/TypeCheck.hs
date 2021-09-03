@@ -199,9 +199,7 @@ typecheckToplevelExpr env = \case
       throwInternalError $ "assigned type is not correct: context = (let " ++ unVarName x ++ ": " ++ formatType t ++ " = " ++ formatExpr e ++ " in ...), expected type = " ++ formatType t ++ ", actual type = " ++ formatType t'
     typecheckToplevelExpr ((x, t) : env) cont
   ToplevelLetRec f args ret body cont -> do
-    let t = case args of
-          [] -> ret
-          _ -> curryFunTy (map snd args) ret
+    let t = curryFunTy (map snd args) ret
     ret' <- typecheckExpr (reverse args ++ (f, t) : env) body
     when (ret' /= ret) $ do
       throwInternalError $ "returned type is not correct: context = (let rec " ++ unVarName f ++ " " ++ unwords (map (\(x, t) -> unVarName x ++ ": " ++ formatType t) args) ++ ": " ++ formatType ret ++ " = " ++ formatExpr body ++ " in ...), expected type = " ++ formatType ret ++ ", actual type = " ++ formatType ret'

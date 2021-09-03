@@ -22,12 +22,12 @@ spec = describe "run" $ do
           ResultExpr $
             Plus'
               (Let "x" IntTy Lit1 (Var "x"))
-              (App (Lam "x" IntTy (Var "x")) Lit1)
+              (App (Lam "y" IntTy (Var "y")) Lit1)
     let expected =
           ResultExpr $
-            Let "x$0" IntTy Lit1 $
-              Let "$3" (Fun1STy IntTy) (Lam "x$1" IntTy (Var "x$1")) $
-                Let "$2" (Fun1STy IntTy) (Var "$3") $
-                  Let "$4" IntTy (App (Var "$2") Lit1) $
-                    Plus' (Var "x$0") (Var "$4")
+            Let "x" IntTy Lit1 $
+              Let "$1" (Fun1STy IntTy) (Lam "y" IntTy (Var "y")) $
+                Let "$0" (Fun1STy IntTy) (Var "$1") $
+                  Let "$2" IntTy (App (Var "$0") Lit1) $
+                    Plus' (Var "x") (Var "$2")
     run' prog `shouldBe` Right expected

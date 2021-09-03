@@ -107,8 +107,8 @@ runProgram = applyRewriteRuleProgram' rule
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.KubaruToMorau" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- runProgram prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

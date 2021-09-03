@@ -48,8 +48,8 @@ runProgram = mapExprProgramM (mapSubExprM runExpr') -- Doesn't use RewriteRules 
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ArithmeticExpr" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- runProgram prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

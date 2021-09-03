@@ -62,8 +62,8 @@ run' = mapToplevelExprProgram runToplevelExpr . mapExprProgram (mapSubExpr runEx
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.RemoveUnusedVars" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- return $ run' prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

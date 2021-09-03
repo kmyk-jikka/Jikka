@@ -38,18 +38,18 @@ spec = describe "run" $ do
             ]
     let step =
           unlines
-            [ "fun ($4: convex_hull_trick * int list) ($0: int) ->",
-              "    let ys: int list = $4.1",
-              "    in let ys$6: int list = snoc ys (cht_getmin $4.0 xs[$0 + 1] + c[$0 + 1])",
-              "    in let $5: convex_hull_trick = cht_insert $4.0 a[$0 + 1] b[$0 + 1]",
-              "    in ($5, ys$6)"
+            [ "fun ($7: convex_hull_trick * int list) ($8: int) ->",
+              "    let ys$9: int list = $7.1",
+              "    in let ys$10: int list = snoc ys$9 (cht_getmin $7.0 xs[$8 + 1] + c[$8 + 1])",
+              "    in let $11: convex_hull_trick = cht_insert $7.0 a[$8 + 1] b[$8 + 1]",
+              "    in ($11, ys$10)"
             ]
     let base =
           unlines
-            [ "let ys$2: int list = (snoc nil e)",
-              "in (foldl (fun ($1: convex_hull_trick) ($3: int) ->",
-              "    cht_insert $1 a[$3] b[$3]",
-              ") cht_init (range 1), ys$2)"
+            [ "let ys$12: int list = (snoc nil e)",
+              "in (foldl (fun ($13: convex_hull_trick) ($14: int) ->",
+              "    cht_insert $13 a[$14] b[$14]",
+              ") cht_init (range 1), ys$12)"
             ]
     let expected =
           parseProgram'
@@ -78,18 +78,18 @@ spec = describe "run" $ do
             ]
     let step =
           unlines
-            [ "fun ($4: convex_hull_trick * int list) ($0: int) ->",
-              "    let ys: int list = $4.1",
-              "    in let ys$6: int list = snoc ys (min (e ys - c[$0 + 1]) (cht_getmin $4.0 xs[$0 + 1]) + c[$0 + 1])",
-              "    in let $5: convex_hull_trick = cht_insert $4.0 a[$0 + 1] b[$0 + 1]",
-              "    in ($5, ys$6)"
+            [ "fun ($7: convex_hull_trick * int list) ($8: int) ->",
+              "    let ys$9: int list = $7.1",
+              "    in let ys$10: int list = snoc ys$9 (min (e ys$9 - c[$8 + 1]) (cht_getmin $7.0 xs[$8 + 1]) + c[$8 + 1])",
+              "    in let $11: convex_hull_trick = cht_insert $7.0 a[$8 + 1] b[$8 + 1]",
+              "    in ($11, ys$10)"
             ]
     let base =
           unlines
-            [ "let ys$2: int list = snoc nil ((let ys: int list = nil in e ys - c[0]) + c[0])",
-              "in (foldl (fun ($1: convex_hull_trick) ($3: int) ->",
-              "    cht_insert $1 a[$3] b[$3]",
-              ") cht_init (range 1), ys$2)"
+            [ "let ys$13: int list = snoc nil ((let ys$12: int list = nil in e ys$12 - c[0]) + c[0])",
+              "in (foldl (fun ($14: convex_hull_trick) ($15: int) ->",
+              "    cht_insert $14 a[$15] b[$15]",
+              ") cht_init (range 1), ys$13)"
             ]
     let expected =
           parseProgram'
