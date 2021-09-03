@@ -30,6 +30,11 @@ genVarName x = do
 genVarName' :: MonadAlpha m => m VarName
 genVarName' = genVarName (VarName "_")
 
+genVarName'' :: MonadAlpha m => Expr -> m VarName
+genVarName'' = \case
+  Var x -> genVarName x
+  _ -> genVarName'
+
 mapSubTypesM :: Monad m => (Type -> m Type) -> Type -> m Type
 mapSubTypesM f = go
   where
