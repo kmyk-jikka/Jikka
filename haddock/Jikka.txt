@@ -1738,36 +1738,6 @@ pattern SegmentTreeSetPoint' :: Semigroup' -> Expr -> Expr -> Expr -> Expr
 pattern Bottom' :: Type -> String -> Expr
 
 
-module Jikka.Core.Convert.Alpha
-
--- | <a>run</a> renames variables in exprs to avoid name conflictions, even
---   if the scopes of two variables are distinct.
---   
---   <h2>Examples</h2>
---   
---   Before:
---   
---   <pre>
---   let x = 0
---   in y = x + x
---   in x = x + y
---   x + y
---   </pre>
---   
---   After:
---   
---   <pre>
---   let x0 = 0
---   in y1 = x0 + x0
---   in x2 = x0 + y1
---   x2 + y1
---   </pre>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
-
-
 module Jikka.Core.Language.FreeVars
 
 -- | <a>isFreeVar</a> checks if the given variable occurs in the tiven
@@ -2034,42 +2004,6 @@ typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckProgram :: MonadError Error m => Program -> m Type
 
 
--- | <a>Lint</a> module checks the invariants of data types. Mainly, this
---   checks types of <a>Expr</a>.
-module Jikka.Core.Language.Lint
-precondition :: MonadError Error m => m a -> m a
-postcondition :: MonadError Error m => m a -> m a
-
--- | TODO: implement this
-ensureEagerlyEvaluatable :: MonadError Error m => Program -> m ()
-ensureWellTyped :: MonadError Error m => Program -> m ()
-
-
-module Jikka.Core.Convert.TrivialLetElimination
-
--- | <a>run</a> remove let-exprs whose assigned variables are used only at
---   most once. This assumes that the program is alpha-converted.
---   
---   For example, this converts the following:
---   
---   <pre>
---   let f = fun y -&gt; y
---   in let x = 1
---   in f(x + x)
---   </pre>
---   
---   to:
---   
---   <pre>
---   let x = 1
---   in (fun y -&gt; y) (x + x)
---   </pre>
---   
---   NOTE: this doesn't constant folding.
-run :: MonadError Error m => Program -> m Program
-run' :: Program -> Program
-
-
 module Jikka.Core.Language.RewriteRules
 data RewriteRule m
 data RewriteEnvironment
@@ -2103,6 +2037,50 @@ instance GHC.Classes.Ord Jikka.Core.Language.RewriteRules.RewriteEnvironment
 instance GHC.Classes.Eq Jikka.Core.Language.RewriteRules.RewriteEnvironment
 instance GHC.Base.Monad m => GHC.Base.Semigroup (Jikka.Core.Language.RewriteRules.RewriteRule m)
 instance GHC.Base.Monad m => GHC.Base.Monoid (Jikka.Core.Language.RewriteRules.RewriteRule m)
+
+
+module Jikka.Core.Language.NameCheck
+namecheckProgram :: MonadError Error m => Program -> m ()
+namecheckToplevelExpr :: MonadError Error m => [(VarName, Type)] -> ToplevelExpr -> m ()
+namecheckExpr :: MonadError Error m => [(VarName, Type)] -> Expr -> m ()
+
+
+-- | <a>Lint</a> module checks the invariants of data types. Mainly, this
+--   checks types of <a>Expr</a>.
+module Jikka.Core.Language.Lint
+precondition :: MonadError Error m => m a -> m a
+postcondition :: MonadError Error m => m a -> m a
+
+-- | TODO: implement this
+ensureEagerlyEvaluatable :: MonadError Error m => Program -> m ()
+ensureWellTyped :: MonadError Error m => Program -> m ()
+ensureAlphaConverted :: MonadError Error m => Program -> m ()
+lint :: MonadError Error m => Program -> m ()
+
+
+module Jikka.Core.Convert.TrivialLetElimination
+
+-- | <a>run</a> remove let-exprs whose assigned variables are used only at
+--   most once. This assumes that the program is alpha-converted.
+--   
+--   For example, this converts the following:
+--   
+--   <pre>
+--   let f = fun y -&gt; y
+--   in let x = 1
+--   in f(x + x)
+--   </pre>
+--   
+--   to:
+--   
+--   <pre>
+--   let x = 1
+--   in (fun y -&gt; y) (x + x)
+--   </pre>
+--   
+--   NOTE: this doesn't constant folding.
+run :: MonadError Error m => Program -> m Program
+run' :: Program -> Program
 
 
 module Jikka.Core.Convert.BubbleLet
@@ -2146,6 +2124,36 @@ module Jikka.Core.Convert.Beta
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 rule :: MonadAlpha m => RewriteRule m
+
+
+module Jikka.Core.Convert.Alpha
+
+-- | <a>run</a> renames variables in exprs to avoid name conflictions, even
+--   if the scopes of two variables are distinct.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   let x = 0
+--   in y = x + x
+--   in x = x + y
+--   x + y
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   let x0 = 0
+--   in y1 = x0 + x0
+--   in x2 = x0 + y1
+--   x2 + y1
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 
 module Jikka.Core.Language.ModuloExpr
 data ModuloExpr
@@ -2834,6 +2842,7 @@ parseRule :: (MonadAlpha m, MonadError Error m) => String -> m (String, [(VarNam
 
 module Jikka.Core.Language.QuasiRules
 r :: QuasiQuoter
+alphaExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 makeRewriteRule :: Monad m => String -> (RewriteEnvironment -> Expr -> m (Maybe Expr)) -> RewriteRule m
 genVarName' :: MonadAlpha m => m VarName
 instance GHC.Show.Show Jikka.Core.Language.QuasiRules.RenamedVarName
@@ -2933,7 +2942,7 @@ module Jikka.Core.Convert.ShortCutFusion
 --   <li><a>Elem</a> &lt;math&gt;</li>
 --   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <ul>
 --   <li><a>Range1</a> remains.</li>
@@ -2941,9 +2950,9 @@ rule :: MonadAlpha m => RewriteRule m
 --   <li><a>Range3</a> is removed.</li>
 --   <li><tt>Nil</tt> and <a>Cons</a> are kept as is.</li>
 --   </ul>
-reduceBuild :: MonadAlpha m => RewriteRule m
-reduceMapBuild :: MonadAlpha m => RewriteRule m
-reduceMap :: Monad m => RewriteRule m
+reduceBuild :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceMapBuild :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceMap :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <ul>
 --   <li>Functions are reordered as:</li>
@@ -2953,37 +2962,37 @@ reduceMap :: Monad m => RewriteRule m
 --   <li><a>Filter</a> (funcitons to reduce lengths) is firstly applied to
 --   lists</li>
 --   </ul>
-reduceMapMap :: MonadAlpha m => RewriteRule m
-reduceFoldMap :: MonadAlpha m => RewriteRule m
+reduceMapMap :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceFoldMap :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceFold :: Monad m => RewriteRule m
-reduceFoldBuild :: MonadAlpha m => RewriteRule m
+reduceFoldBuild :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 -- | &lt;math&gt;
 module Jikka.Core.Convert.EqualitySolving
-run :: MonadError Error m => Program -> m Program
-rule :: Monad m => RewriteRule m
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <a>moveLiteralToRight</a> moves literals to lhs of <a>(==)</a> or
 --   <a>(/=)</a>, using symmetricity.
-moveLiteralToRight :: Monad m => RewriteRule m
+moveLiteralToRight :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <a>convertGreaterToLess</a> erases <a>(&gt;)</a> and <a>(&gt;=)</a>.
-convertGreaterToLess :: Monad m => RewriteRule m
+convertGreaterToLess :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <a>reduceReflexivity</a> uses reflexivity.
-reduceReflexivity :: Monad m => RewriteRule m
+reduceReflexivity :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <a>makeRightZero</a> makes RHS of integer equality/inequality zero
 --   with subtracting RHS from both sides.
-makeRightZero :: Monad m => RewriteRule m
+makeRightZero :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <a>reduceIntInjective</a> removes injective functions from equalities
 --   of integers.
-reduceIntInjective :: Monad m => RewriteRule m
-reduceNot :: Monad m => RewriteRule m
-reduceListCtor :: Monad m => RewriteRule m
-reduceListInjective :: Monad m => RewriteRule m
+reduceIntInjective :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceNot :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceListCtor :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceListInjective :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 -- | &lt;math&gt;
@@ -3001,8 +3010,8 @@ module Jikka.Core.Convert.ConstantFolding
 --   <pre>
 --   3 x + 3
 --   </pre>
-run :: MonadError Error m => Program -> m Program
-rule :: MonadError Error m => RewriteRule m
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3027,7 +3036,7 @@ rule :: MonadError Error m => RewriteRule m
 --   <li><a>Gcd</a> &lt;math&gt;</li>
 --   <li><a>Lcm</a> &lt;math&gt;</li>
 --   </ul>
-reduceConstArithmeticExpr :: Monad m => RewriteRule m
+reduceConstArithmeticExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3037,7 +3046,7 @@ reduceConstArithmeticExpr :: Monad m => RewriteRule m
 --   <li><a>Min2</a> &lt;math&gt; (specialized to &lt;math&gt;)</li>
 --   <li><a>Max2</a> &lt;math&gt; (specialized to &lt;math&gt;)</li>
 --   </ul>
-reduceConstMaxExpr :: Monad m => RewriteRule m
+reduceConstMaxExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3048,7 +3057,7 @@ reduceConstMaxExpr :: Monad m => RewriteRule m
 --   <li><a>Or</a> &lt;math&gt;</li>
 --   <li><a>Implies</a> &lt;math&gt;</li>
 --   </ul>
-reduceIdempotentBooleanExpr :: Monad m => RewriteRule m
+reduceIdempotentBooleanExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3060,7 +3069,7 @@ reduceIdempotentBooleanExpr :: Monad m => RewriteRule m
 --   <li><a>Or</a> &lt;math&gt;</li>
 --   <li><a>Implies</a> &lt;math&gt;</li>
 --   </ul>
-reduceUnitBooleanExpr :: Monad m => RewriteRule m
+reduceUnitBooleanExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3069,7 +3078,7 @@ reduceUnitBooleanExpr :: Monad m => RewriteRule m
 --   <ul>
 --   <li><a>If</a> &lt;math&gt;</li>
 --   </ul>
-reduceConstBooleanExpr :: Monad m => RewriteRule m
+reduceConstBooleanExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3083,7 +3092,7 @@ reduceConstBooleanExpr :: Monad m => RewriteRule m
 --   <li><a>BitLeftShift</a> &lt;math&gt;</li>
 --   <li><a>BitRightShift</a> &lt;math&gt;</li>
 --   </ul>
-reduceUnitBitExpr :: Monad m => RewriteRule m
+reduceUnitBitExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3097,7 +3106,7 @@ reduceUnitBitExpr :: Monad m => RewriteRule m
 --   <li><a>BitLeftShift</a> &lt;math&gt;</li>
 --   <li><a>BitRightShift</a> &lt;math&gt;</li>
 --   </ul>
-reduceConstBitExpr :: Monad m => RewriteRule m
+reduceConstBitExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3112,7 +3121,7 @@ reduceConstBitExpr :: Monad m => RewriteRule m
 --   <li><a>Equal</a> &lt;math&gt; (specialized to &lt;math&gt;)</li>
 --   <li><a>NotEqual</a> &lt;math&gt; (specialized to &lt;math&gt;)</li>
 --   </ul>
-reduceConstIntComparison :: Monad m => RewriteRule m
+reduceConstIntComparison :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | <h2>List of functions which are reduced</h2>
 --   
@@ -3127,7 +3136,7 @@ reduceConstIntComparison :: Monad m => RewriteRule m
 --   <li><a>Equal</a> &lt;math&gt; (specialized to &lt;math&gt;)</li>
 --   <li><a>NotEqual</a> &lt;math&gt; (specialized to &lt;math&gt;)</li>
 --   </ul>
-reduceUnitBooleanComparison :: Monad m => RewriteRule m
+reduceUnitBooleanComparison :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 -- | &lt;math&gt;
@@ -3201,8 +3210,8 @@ module Jikka.Core.Convert.CloseSum
 --   <li><a>Sorted</a> &lt;math&gt;</li>
 --   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
-reduceSum :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | TODO: implement this.
 reduceProduct :: Monad m => RewriteRule m
@@ -3210,7 +3219,7 @@ reduceProduct :: Monad m => RewriteRule m
 -- | <ul>
 --   <li>This assumes that <tt>ModFloor</tt> is already propagated.</li>
 --   </ul>
-reduceModSum :: MonadAlpha m => RewriteRule m
+reduceModSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | TODO: implement this.
 reduceModProduct :: Monad m => RewriteRule m
@@ -3271,15 +3280,15 @@ module Jikka.Core.Convert.CloseMin
 --   <li><a>Sorted</a> &lt;math&gt;</li>
 --   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
-reduceMin :: MonadAlpha m => RewriteRule m
-reduceMax :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceMin :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceMax :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | TODO: implement this
-reduceArgMin :: Monad m => RewriteRule m
+reduceArgMin :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 -- | TODO: implement this
-reduceArgMax :: Monad m => RewriteRule m
+reduceArgMax :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 module Jikka.Core.Convert.CloseAll
@@ -3336,9 +3345,9 @@ module Jikka.Core.Convert.CloseAll
 --   <li><a>Sorted</a> &lt;math&gt;</li>
 --   </ul>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
-reduceAll :: MonadAlpha m => RewriteRule m
-reduceAny :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceAll :: (MonadAlpha m, MonadError Error m) => RewriteRule m
+reduceAny :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 -- | <a>Convert</a> is a module to combine other all optimizers.
