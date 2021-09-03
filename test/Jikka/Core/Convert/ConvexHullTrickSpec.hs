@@ -86,7 +86,7 @@ spec = describe "run" $ do
             ]
     let base =
           unlines
-            [ "let ys$2: int list = snoc nil ((let ys: int list = nil in e ys - c[0]) + c[0])",
+            [ "let ys$2: int list = snoc nil ((let ys$7: int list = nil in e ys$7 - c[0]) + c[0])",
               "in (foldl (fun ($1: convex_hull_trick) ($3: int) ->",
               "    cht_insert $1 a[$3] b[$3]",
               ") cht_init (range 1), ys$2)"

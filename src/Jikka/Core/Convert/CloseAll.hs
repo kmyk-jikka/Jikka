@@ -28,7 +28,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 
-reduceAll :: MonadAlpha m => RewriteRule m
+reduceAll :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceAll =
   mconcat
     [ -- list build functions
@@ -42,7 +42,7 @@ reduceAll =
       [r| "all/map/and" forall e1 e2 xs. all (map (fun x -> e1 && e2) xs) = all (map (fun x -> e1) xs) && all (map (fun x -> e2) xs) |]
     ]
 
-reduceAny :: MonadAlpha m => RewriteRule m
+reduceAny :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceAny =
   mconcat
     [ -- list build functions
@@ -57,7 +57,7 @@ reduceAny =
       [r| "any/map/implies" forall e1 e2 xs. any (map (fun x -> implies e1 e2) xs) = any (map (fun x -> not e1) xs) || any (map (fun x -> e2) xs) |]
     ]
 
-rule :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   mconcat
     [ reduceAll,
@@ -113,8 +113,8 @@ runProgram = applyRewriteRuleProgram' rule
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.CloseAll" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- runProgram prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

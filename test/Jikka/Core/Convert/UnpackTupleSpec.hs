@@ -25,7 +25,7 @@ spec = describe "run" $ do
             App (Lam "x" (TupleTy ts) (Plus' (Proj' ts 0 (Var "x")) (Proj' ts 1 (Var "x")))) (uncurryApp (Tuple' ts) [LitInt' 0, LitInt' 1])
     let expected =
           ResultExpr $
-            App2 (Lam2 "x$1" IntTy "x$2" IntTy (Plus' (Var "x$1") (Var "x$2"))) (LitInt' 0) (LitInt' 1)
+            App2 (Lam2 "x$0" IntTy "x$1" IntTy (Plus' (Var "x$0") (Var "x$1"))) (LitInt' 0) (LitInt' 1)
     run' prog `shouldBe` Right expected
   it "works on foldl" $ do
     let prog =
@@ -33,5 +33,5 @@ spec = describe "run" $ do
             Foldl' IntTy (TupleTy [IntTy]) (Lam2 "x" (TupleTy [IntTy]) "y" IntTy (uncurryApp (Tuple' [IntTy]) [Plus' (Proj' [IntTy] 0 (Var "x")) (Var "y")])) (uncurryApp (Tuple' [IntTy]) [LitInt' 0]) (Range1' (LitInt' 10))
     let expected =
           ResultExpr $
-            uncurryApp (Tuple' [IntTy]) [Foldl' IntTy IntTy (Lam2 "x$0" IntTy "y$1" IntTy (Plus' (Var "x$0") (Var "y$1"))) (LitInt' 0) (Range1' (LitInt' 10))]
+            uncurryApp (Tuple' [IntTy]) [Foldl' IntTy IntTy (Lam2 "x" IntTy "y" IntTy (Plus' (Var "x") (Var "y"))) (LitInt' 0) (Range1' (LitInt' 10))]
     run' prog `shouldBe` Right expected

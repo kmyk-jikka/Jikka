@@ -31,8 +31,8 @@ spec = describe "run" $ do
     let expected =
           ResultExpr
             ( Lam
-                "a$0"
+                "a"
                 IntTy
-                (Plus' (Var "a$0") (Var "a$0"))
+                (Plus' (Var "a") (Var "a"))
             )
     run' prog `shouldBe` Right expected

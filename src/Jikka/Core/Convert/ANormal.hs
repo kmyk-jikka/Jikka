@@ -16,7 +16,6 @@ where
 
 import Jikka.Common.Alpha (MonadAlpha)
 import Jikka.Common.Error
-import qualified Jikka.Core.Convert.Alpha as Alpha (runProgram)
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 import Jikka.Core.Language.TypeCheck
@@ -107,7 +106,9 @@ runProgram = mapToplevelExprProgramM go
 -- > in z
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ANormal" $ do
-  prog <- Alpha.runProgram prog
+  precondition $ do
+    lint prog
   prog <- runProgram prog
-  ensureWellTyped prog
+  postcondition $ do
+    lint prog
   return prog

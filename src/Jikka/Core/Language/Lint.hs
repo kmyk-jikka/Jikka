@@ -14,6 +14,7 @@ module Jikka.Core.Language.Lint where
 
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
+import Jikka.Core.Language.NameCheck
 import Jikka.Core.Language.TypeCheck
 
 precondition :: MonadError Error m => m a -> m a
@@ -31,3 +32,12 @@ ensureWellTyped :: MonadError Error m => Program -> m ()
 ensureWellTyped prog = wrapError' "Jikka.Core.Language.Lint.ensureWellTyped" $ do
   _ <- typecheckProgram prog
   return ()
+
+ensureAlphaConverted :: MonadError Error m => Program -> m ()
+ensureAlphaConverted prog = wrapError' "Jikka.Core.Language.Lint.ensureAlphaConverted" $ do
+  namecheckProgram prog
+
+lint :: MonadError Error m => Program -> m ()
+lint prog = do
+  ensureAlphaConverted prog
+  ensureWellTyped prog

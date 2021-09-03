@@ -25,7 +25,6 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Core.Convert.Alpha as Alpha
 import Jikka.Core.Language.AssertedHint
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -35,7 +34,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 
-reduceMin :: MonadAlpha m => RewriteRule m
+reduceMin :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceMin =
   mconcat
     [ -- reduce minimum-cons if non-nil
@@ -87,7 +86,7 @@ reduceMin =
         _ -> return Nothing
     ]
 
-reduceMax :: MonadAlpha m => RewriteRule m
+reduceMax :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceMax =
   mconcat
     [ -- reduce maximum-cons if non-nil
@@ -140,7 +139,7 @@ reduceMax =
     ]
 
 -- | TODO: implement this
-reduceArgMin :: Monad m => RewriteRule m
+reduceArgMin :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceArgMin = simpleRewriteRule "reduceArgMin" $ \case
   -- list map functions
   ArgMin' t (Reversed' _ xs) -> Just $ Minus' (Minus' (Len' t xs) (ArgMin' t xs)) Lit1
@@ -150,7 +149,7 @@ reduceArgMin = simpleRewriteRule "reduceArgMin" $ \case
   _ -> Nothing
 
 -- | TODO: implement this
-reduceArgMax :: Monad m => RewriteRule m
+reduceArgMax :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceArgMax = simpleRewriteRule "reduceArgMax" $ \case
   -- list map functions
   ArgMax' t (Reversed' _ xs) -> Just $ Minus' (Minus' (Len' t xs) (ArgMax' t xs)) Lit1
@@ -159,7 +158,7 @@ reduceArgMax = simpleRewriteRule "reduceArgMax" $ \case
   ArgMax' _ (Map' t1 t2 (Lam x t (Plus' e1 e2)) xs) | x `isUnusedVar` e2 -> Just $ ArgMax' t2 (Map' t1 t2 (Lam x t e1) xs)
   _ -> Nothing
 
-rule :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   mconcat
     [ reduceMin,
@@ -218,9 +217,8 @@ runProgram = applyRewriteRuleProgram' rule
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.CloseMin" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- runProgram prog
-  prog <- Alpha.run prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

@@ -28,6 +28,7 @@ where
 import Control.Monad.Trans.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import qualified Jikka.Core.Convert.Alpha as Alpha
 import Jikka.Core.Language.ArithmeticExpr
 import Jikka.Core.Language.Beta
 import Jikka.Core.Language.BuiltinPatterns
@@ -161,7 +162,7 @@ getLength = \case
   _ -> Nothing
 
 rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
-rule = makeRewriteRule "Jikka.Core.Convert.ConvexHullTrick" $ \_ -> \case
+rule = makeRewriteRule "Jikka.Core.Convert.ConvexHullTrick" $ \env -> \case
   -- build (fun f -> step(f)) base n
   Build' IntTy (Lam f _ step) base n -> runMaybeT $ do
     let ts = [ConvexHullTrickTy, ListTy IntTy]
@@ -217,7 +218,8 @@ rule = makeRewriteRule "Jikka.Core.Convert.ConvexHullTrick" $ \_ -> \case
               Let y ConvexHullTrickTy (ConvexHullTrickInsert' (Proj' ts 0 (Var x)) a b) $
                 uncurryApp (Tuple' ts) [Var y, Var f']
     -- proj 1 (foldl step' base' (range (n - 1)))
-    return $ Proj' ts 1 (Foldl' IntTy (TupleTy ts) step' base' (Range1' n))
+    let e = Proj' ts 1 (Foldl' IntTy (TupleTy ts) step' base' (Range1' n))
+    lift $ Alpha.runExpr (typeEnv env) e
   _ -> return Nothing
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
@@ -230,8 +232,8 @@ runProgram = applyRewriteRuleProgram' rule
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ConvexHullTrick" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- runProgram prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

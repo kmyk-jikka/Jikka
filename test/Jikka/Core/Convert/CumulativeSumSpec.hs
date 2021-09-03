@@ -33,11 +33,11 @@ spec = describe "run" $ do
             ]
     let expected =
           parseProgram'
-            [ "let rec f$0: int =",
-              "    let a$1: int list = range 1000",
-              "    in let n$2: int = 500",
-              "    in let $4 = scanl (+) 0 a$1",
-              "    in $4[n$2]",
-              "in f$0"
+            [ "let rec f: int =",
+              "    let a: int list = range 1000",
+              "    in let n: int = 500",
+              "    in let $0 = scanl (+) 0 a",
+              "    in $0[n]",
+              "in f"
             ]
     (formatProgram <$> run' prog) `shouldBe` Right (formatProgram expected)

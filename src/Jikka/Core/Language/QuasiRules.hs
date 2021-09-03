@@ -9,6 +9,7 @@ module Jikka.Core.Language.QuasiRules
 
     -- * Things which `r` uses.
     module Jikka.Core.Language.Expr,
+    alphaExpr,
     makeRewriteRule,
     genVarName',
   )
@@ -17,8 +18,10 @@ where
 import Control.Arrow
 import Control.Monad.State.Strict
 import Data.Data
+import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Format.Error
+import qualified Jikka.Core.Convert.Alpha as Alpha
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.RewriteRules
@@ -255,6 +258,9 @@ toExpE e = do
       e <- lift [e|Assert $(pure e1) $(pure e2)|]
       return (stmts1 ++ stmts2, e)
 
+alphaExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
+alphaExpr = Alpha.runExpr
+
 ruleExp :: String -> Q Exp
 ruleExp s = do
   (name, args, e1, e2) <- liftError $ parseRule s
@@ -274,11 +280,15 @@ ruleExp s = do
   supressUnusedMatchesWarnings' <- forM (typeVars env) $ \(_, y) -> do
     NoBindS <$> [e|return $(pure (VarE y))|]
   ((stmts, exp), _) <- runStateT (toExpE e2) env
-  exp' <- [e|return (Just $(pure exp))|]
-  let stmts' = supressUnusedMatchesWarnings ++ supressUnusedMatchesWarnings' ++ stmts ++ [NoBindS exp']
+  nop <- [e|return ()|]
+  exp' <- [e|return $(pure exp)|]
   [e|
-    makeRewriteRule $(pure (LitE (StringL name))) $ \_ e -> case e of
-      $(pure pat) -> $(pure (DoE stmts'))
+    makeRewriteRule $(pure (LitE (StringL name))) $ \env e -> case e of
+      $(pure pat) -> do
+        $(pure (DoE (supressUnusedMatchesWarnings ++ [NoBindS nop])))
+        $(pure (DoE (supressUnusedMatchesWarnings' ++ [NoBindS nop])))
+        e <- $(pure (DoE (stmts ++ [NoBindS exp'])))
+        Just <$> alphaExpr (typeEnv env) e
       _ -> return Nothing
     |]
 

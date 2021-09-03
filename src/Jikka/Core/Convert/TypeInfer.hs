@@ -39,7 +39,8 @@ import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
 import Jikka.Core.Language.Lint
-import Jikka.Core.Language.TypeCheck (literalToType, typecheckExpr, typecheckProgram)
+import Jikka.Core.Language.NameCheck (namecheckExpr)
+import Jikka.Core.Language.TypeCheck (literalToType, typecheckExpr)
 import Jikka.Core.Language.Util
 
 data Hint
@@ -248,7 +249,9 @@ substExpr t0 sigma env = mapSubExprM fixProj env . mapTypeExpr (subst' t0 sigma)
 -- > in let x: int = 1
 -- > in f(x + x)
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+run prog = wrapError' "Jikka.Core.Convert.TypeInfer.run" $ do
+  precondition $ do
+    ensureAlphaConverted prog
   eqns <- formularizeProgram prog
   let (eqns', assertions) = sortEquations eqns
   let eqns'' = mergeAssertions assertions
@@ -256,11 +259,14 @@ run prog = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   let t0 = Just UnitTy
   prog <- substProgram t0 sigma prog
   postcondition $ do
-    typecheckProgram prog
+    ensureAlphaConverted prog
+    ensureWellTyped prog
   return prog
 
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
-runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer.runExpr" $ do
+  precondition $ do
+    namecheckExpr env e
   eqns <- getDual <$> execWriterT (formularizeExpr e)
   let (eqns', assertions) = sortEquations eqns
   let eqns'' = mergeAssertions (env ++ assertions)
@@ -269,11 +275,15 @@ runExpr env e = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   env <- return $ map (second (subst' t0 sigma)) env
   e <- substExpr t0 sigma env e
   postcondition $ do
+    namecheckExpr env e
     typecheckExpr env e
   return e
 
 runRule :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> Expr -> m ([(VarName, Type)], Expr, Expr)
-runRule args e1 e2 = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
+runRule args e1 e2 = wrapError' "Jikka.Core.Convert.TypeInfer.runRule" $ do
+  precondition $ do
+    -- Underscores are allowed for names, so we don't use namecheckExpr here.
+    return ()
   eqns <- (getDual <$>) . execWriterT $ do
     t <- formularizeExpr e1
     formularizeExpr' e2 t
@@ -283,4 +293,8 @@ runRule args e1 e2 = wrapError' "Jikka.Core.Convert.TypeInfer" $ do
   args <- return $ map (second (subst sigma)) args -- don't use substDefault
   e1 <- return $ mapTypeExpr (subst sigma) e1 -- don't use substDefault
   e2 <- return $ mapTypeExpr (subst sigma) e2 -- don't use substDefault
+  postcondition $ do
+    -- Underscores are allowed for names, so we don't use namecheckExpr here.
+    -- Type variables can remain, so we don't use typecheckExpr here.
+    return ()
   return (args, e1, e2)

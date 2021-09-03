@@ -91,8 +91,8 @@ run' = runToplevelExpr M.empty
 run :: MonadError Error m => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ConstantPropagation" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- return $ run' prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog

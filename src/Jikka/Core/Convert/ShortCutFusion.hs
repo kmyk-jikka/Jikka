@@ -47,14 +47,14 @@ import Jikka.Core.Language.RewriteRules
 -- * `Range2` is removed.
 -- * `Range3` is removed.
 -- * `Nil` and `Cons` are kept as is.
-reduceBuild :: MonadAlpha m => RewriteRule m
+reduceBuild :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceBuild =
   mconcat
     [ [r| "range2" forall l r. range2 l r = map (fun i -> l + i) (range (r - l)) |],
       [r| "range3" forall l r step. range3 l r step = map (fun i -> l + i * step) (range ((r - l) /^ step)) |]
     ]
 
-reduceMapBuild :: MonadAlpha m => RewriteRule m
+reduceMapBuild :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceMapBuild =
   mconcat
     [ [r| "sorted/nil" sorted nil = nil |],
@@ -66,7 +66,7 @@ reduceMapBuild =
       [r| "map/cons" forall f x xs. map f (cons x xs) = cons (f x) (map f xs) |]
     ]
 
-reduceMap :: Monad m => RewriteRule m
+reduceMap :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceMap =
   mconcat
     [ [r| "map/id" forall xs. map (fun x -> x) xs = xs |],
@@ -79,7 +79,7 @@ reduceMap =
 --   * `Sort` and `Reversed` (functions to reorder) are lastly applied to lists
 --   * `Map` (functions to modify lists)
 --   * `Filter` (funcitons to reduce lengths) is firstly applied to lists
-reduceMapMap :: MonadAlpha m => RewriteRule m
+reduceMapMap :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceMapMap =
   mconcat
     [ [r| "map/map" forall f g xs. map g (map f xs) = map (fun x -> g (f x)) xs |],
@@ -92,7 +92,7 @@ reduceMapMap =
       [r| "sorted/sorted" forall xs. sorted (sorted xs) = sorted xs |]
     ]
 
-reduceFoldMap :: MonadAlpha m => RewriteRule m
+reduceFoldMap :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceFoldMap =
   mconcat
     [ -- reduce `Reversed`
@@ -117,7 +117,7 @@ reduceFold = simpleRewriteRule "foldl->iterate" $ \case
   Foldl' t1 t2 (Lam2 x2 _ x1 _ body) init xs | x1 `isUnusedVar` body -> Just $ Iterate' t2 (Len' t1 xs) (Lam x2 t2 body) init
   _ -> Nothing
 
-reduceFoldBuild :: MonadAlpha m => RewriteRule m
+reduceFoldBuild :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceFoldBuild =
   mconcat
     [ -- reduce `Foldl`
@@ -141,7 +141,7 @@ reduceFoldBuild =
       [r| "len/build" forall f base n. len (build f base n) = len base + n |]
     ]
 
-rule :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   mconcat
     [ reduceFoldMap,
@@ -197,8 +197,8 @@ runProgram = applyRewriteRuleProgram' rule
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ShortCutFusion" $ do
   precondition $ do
-    ensureWellTyped prog
+    lint prog
   prog <- runProgram prog
   postcondition $ do
-    ensureWellTyped prog
+    lint prog
   return prog
