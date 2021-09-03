@@ -34,13 +34,13 @@ spec = describe "run" $ do
             ]
     let expected =
           parseProgram'
-            [ "let a1$3: int list = range 1000",
-              "in let rec f$4 (k$5: int): int list =",
-              "    let a2$6 = a1$3",
-              "    in (foldl (fun a2$7 i$8 ->",
-              "        let $9 = 0 + segtree_getrange<int_plus> a2$7.1 0 (i$8 + 100)",
-              "        in (a2$7.0[i$8 + 10 <- $9], segtree_setpoint<int_plus> a2$7.1 (i$8 + 10) $9)",
-              "    ) (a2$6, segtree_init<int_plus> a2$6) (range k$5)).0",
-              "in f$4 100"
+            [ "let a1: int list = range 1000",
+              "in let rec f (k: int): int list =",
+              "    let a2$2 = a1",
+              "    in (foldl (fun a2$0 i ->",
+              "        let $1 = 0 + segtree_getrange<int_plus> a2$0.1 0 (i + 100)",
+              "        in (a2$0.0[i + 10 <- $1], segtree_setpoint<int_plus> a2$0.1 (i + 10) $1)",
+              "    ) (a2$2, segtree_init<int_plus> a2$2) (range k)).0",
+              "in f 100"
             ]
     (formatProgram <$> run' prog) `shouldBe` Right (formatProgram expected)

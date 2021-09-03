@@ -18,18 +18,30 @@ module Jikka.Core.Convert.Alpha
   )
 where
 
+import Control.Monad.State.Strict
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.Lint
 
-rename :: MonadAlpha m => VarName -> m VarName
-rename x = do
-  let base = takeWhile (/= '$') (unVarName x)
-  i <- nextCounter
-  return $ VarName (base ++ "$" ++ show i)
+type UsedVars = [VarName]
 
-runExpr' :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
+type RenameMapping = [(VarName, VarName)]
+
+rename :: (MonadState UsedVars m, MonadAlpha m) => VarName -> m VarName
+rename x = do
+  used <- get
+  y <-
+    if x `notElem` used
+      then return x
+      else do
+        let base = takeWhile (/= '$') (unVarName x)
+        i <- nextCounter
+        return $ VarName (base ++ "$" ++ show i)
+  put $ y : used
+  return y
+
+runExpr' :: (MonadState UsedVars m, MonadAlpha m, MonadError Error m) => RenameMapping -> Expr -> m Expr
 runExpr' env = \case
   Var x -> case lookup x env of
     Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
@@ -48,10 +60,10 @@ runExpr' env = \case
   Assert e1 e2 -> Assert <$> runExpr' env e1 <*> runExpr' env e2
 
 runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
-runExpr env e = wrapError' "Jikka.Core.Convert.Alpha" $ do
-  runExpr' (map (\(x, _) -> (x, x)) env) e
+runExpr env e = wrapError' "Jikka.Core.Convert.Alpha.runExpr" $ do
+  evalStateT (runExpr' (map (\(x, _) -> (x, x)) env) e) (map fst env)
 
-runToplevelExpr' :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
+runToplevelExpr' :: (MonadState UsedVars m, MonadAlpha m, MonadError Error m) => RenameMapping -> ToplevelExpr -> m ToplevelExpr
 runToplevelExpr' env = \case
   ResultExpr e -> ResultExpr <$> runExpr' env e
   ToplevelLet x t e cont -> do
@@ -72,12 +84,15 @@ runToplevelExpr' env = \case
   ToplevelAssert e1 e2 -> ToplevelAssert <$> runExpr' env e1 <*> runToplevelExpr' env e2
 
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
-runToplevelExpr env e = wrapError' "Jikka.Core.Convert.Alpha" $ do
-  runToplevelExpr' (map (\(x, _) -> (x, x)) env) e
+runToplevelExpr env e = wrapError' "Jikka.Core.Convert.Alpha.runToplevelExpr" $ do
+  evalStateT (runToplevelExpr' (map (\(x, _) -> (x, x)) env) e) (map fst env)
 
 runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-runProgram prog = wrapError' "Jikka.Core.Convert.Alpha" $ do
-  runToplevelExpr' [] prog
+runProgram prog = wrapError' "Jikka.Core.Convert.Alpha.runProgram" $ do
+  prog <- evalStateT (runToplevelExpr' [] prog) []
+  postcondition $ do
+    ensureAlphaConverted prog
+  return prog
 
 -- | `run` renames variables in exprs to avoid name conflictions, even if the scopes of two variables are distinct.
 --
@@ -97,8 +112,4 @@ runProgram prog = wrapError' "Jikka.Core.Convert.Alpha" $ do
 -- > in x2 = x0 + y1
 -- > x2 + y1
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-run prog = do
-  prog <- runProgram prog
-  postcondition $ do
-    ensureAlphaConverted prog
-  return prog
+run = runProgram

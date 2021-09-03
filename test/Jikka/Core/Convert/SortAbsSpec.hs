@@ -32,20 +32,20 @@ spec = describe "run" $ do
     let expected =
           parseProgram'
             [ "fun (a: int list) ->",
-              "    let a$6 = sorted a",
-              "    in sum (map (fun ($7: int) ->",
-              "        let a_i$8 = a$6[$7] in",
-              "        sum (map (fun ($9: int) ->",
-              "            let a_j$10 = a$6[$9]",
-              "            in a_i$8 - a_j$10",
-              "        ) (range $7))",
-              "        + (let $11 = $7",
-              "           in let a_j$12 = a$6[$11]",
+              "    let a$3 = sorted a",
+              "    in sum (map (fun ($4: int) ->",
+              "        let a_i = a$3[$4] in",
+              "        sum (map (fun ($5: int) ->",
+              "            let a_j = a$3[$5]",
+              "            in a_i - a_j",
+              "        ) (range $4))",
+              "        + (let $6 = $4",
+              "           in let a_j$7 = a$3[$6]",
               "           in 0)",
-              "        + sum (map (fun ($13: int) ->",
-              "            let a_j$14 = a$6[$13]",
-              "            in a_j$14 - a_i$8",
-              "        ) (range2 ($7 + 1) (len a$6)))",
-              "    ) (range (len a$6)))"
+              "        + sum (map (fun ($8: int) ->",
+              "            let a_j$9 = a$3[$8]",
+              "            in a_j$9 - a_i",
+              "        ) (range2 ($4 + 1) (len a$3)))",
+              "    ) (range (len a$3)))"
             ]
     (formatProgram <$> run' prog) `shouldBe` Right (formatProgram expected)

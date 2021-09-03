@@ -32,6 +32,6 @@ spec = describe "run" $ do
                 Range1' (LitInt' 100)
     let expected =
           ResultExpr $
-            Foldl' IntTy IntTy (Lam2 "$2" IntTy "$3" IntTy (App2 g (Var "$2") (App f (Var "$3")))) Lit0 $
+            Foldl' IntTy IntTy (Lam2 "$0" IntTy "$1" IntTy (App2 g (Var "$0") (App f (Var "$1")))) Lit0 $
               Range1' (LitInt' 100)
     run' prog `shouldBe` Right expected

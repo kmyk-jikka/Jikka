@@ -34,14 +34,14 @@ spec = describe "run" $ do
     let expected =
           ResultExpr
             ( Let
-                "x$0"
+                "x"
                 IntTy
                 Lit0
                 ( Let
-                    "x$1"
+                    "x$0"
                     IntTy
-                    (Plus' (Var "x$0") Lit1)
-                    (Var "x$1")
+                    (Plus' (Var "x") Lit1)
+                    (Var "x$0")
                 )
             )
     run' prog `shouldBe` Right expected
