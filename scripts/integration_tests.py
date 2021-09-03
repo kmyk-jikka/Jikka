@@ -58,7 +58,7 @@ def generate_test_cases_of_library_checker(*, problem_id: str, is_jikka_judge: b
 
     # collect testcases
     testcases: List[Tuple[pathlib.Path, pathlib.Path]] = []
-    for inputcase in (info_toml.parent / 'in').iterdir():
+    for inputcase in sorted((info_toml.parent / 'in').iterdir()):  # sorting makes examples first
         outputcase = info_toml.parent / 'out' / (inputcase.stem + '.out')
         testcases.append((inputcase, outputcase))
     return testcases
@@ -69,7 +69,7 @@ def collect_test_cases(script: pathlib.Path, *, tempdir: pathlib.Path, library_c
     testcases: List[Tuple[pathlib.Path, pathlib.Path]] = []
 
     # text files
-    for path in pathlib.Path('examples', 'data').iterdir():
+    for path in sorted(pathlib.Path('examples', 'data').iterdir()):
         if path.name[:-len(''.join(path.suffixes))] != script.stem:
             continue
         if path.suffix != '.in':
@@ -77,7 +77,7 @@ def collect_test_cases(script: pathlib.Path, *, tempdir: pathlib.Path, library_c
         testcases.append((path, path.with_suffix('.out')))
 
     # using generators
-    for generator_path in pathlib.Path('examples', 'data').glob(glob.escape(script.stem) + '*.generator.py'):
+    for generator_path in sorted(pathlib.Path('examples', 'data').glob(glob.escape(script.stem) + '*.generator.py')):
         _, testset_name, _, _ = generator_path.name.split('.')
 
         for solver_ext in ('.py', '.cpp'):
