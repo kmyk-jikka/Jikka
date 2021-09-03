@@ -36,6 +36,7 @@ where
 
 import Data.Bits
 import Data.Either
+import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -64,7 +65,7 @@ import Jikka.Core.Language.Runtime
 -- * `Abs` \(: \int \to \int\)
 -- * `Gcd` \(: \int \to \int \to \int\)
 -- * `Lcm` \(: \int \to \int \to \int\)
-reduceConstArithmeticExpr :: Monad m => RewriteRule m
+reduceConstArithmeticExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceConstArithmeticExpr =
   let return' = Just . LitInt'
    in simpleRewriteRule "reduceConstArithmeticExpr" $ \case
@@ -111,7 +112,7 @@ reduceConstArithmeticExpr =
 --
 -- * `Min2` \(: \forall \alpha. \alpha \to \alpha \to \alpha\) (specialized to \(\alpha = \lbrace \bool, \int \rbrace\))
 -- * `Max2` \(: \forall \alpha. \alpha \to \alpha \to \alpha\) (specialized to \(\alpha = \lbrace \bool, \int \rbrace\))
-reduceConstMaxExpr :: Monad m => RewriteRule m
+reduceConstMaxExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceConstMaxExpr = simpleRewriteRule "reduceConstMaxExpr" $ \case
   Min2' _ (LitInt' a) (LitInt' b) -> Just . LitInt' $ min a b
   Min2' _ (LitBool' a) (LitBool' b) -> Just . LitBool' $ min a b
@@ -127,7 +128,7 @@ reduceConstMaxExpr = simpleRewriteRule "reduceConstMaxExpr" $ \case
 -- * `And` \(: \bool \to \bool \to \bool\)
 -- * `Or` \(: \bool \to \bool \to \bool\)
 -- * `Implies` \(: \bool \to \bool \to \bool\)
-reduceIdempotentBooleanExpr :: Monad m => RewriteRule m
+reduceIdempotentBooleanExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceIdempotentBooleanExpr =
   mconcat
     [ [r| "join/and" forall x. x && x = x|],
@@ -145,7 +146,7 @@ reduceIdempotentBooleanExpr =
 -- * `And` \(: \bool \to \bool \to \bool\)
 -- * `Or` \(: \bool \to \bool \to \bool\)
 -- * `Implies` \(: \bool \to \bool \to \bool\)
-reduceUnitBooleanExpr :: Monad m => RewriteRule m
+reduceUnitBooleanExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceUnitBooleanExpr =
   mconcat
     [ [r| "not/true" not true = false|],
@@ -170,7 +171,7 @@ reduceUnitBooleanExpr =
 -- === Boolean functions
 --
 -- * `If` \(: \forall \alpha. \bool \to \alpha \to \alpha \to \alpha\)
-reduceConstBooleanExpr :: Monad m => RewriteRule m
+reduceConstBooleanExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceConstBooleanExpr =
   mconcat
     [ [r| "if/true" forall e1 e2. if true then e1 else e2 = e1|],
@@ -188,7 +189,7 @@ reduceConstBooleanExpr =
 -- * `BitXor` \(: \int \to \int \to \int\)
 -- * `BitLeftShift` \(: \int \to \int \to \int\)
 -- * `BitRightShift` \(: \int \to \int \to \int\)
-reduceUnitBitExpr :: Monad m => RewriteRule m
+reduceUnitBitExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceUnitBitExpr =
   mconcat
     [ [r| "bitand/0" forall x. 0 & x = 0 |],
@@ -220,7 +221,7 @@ reduceUnitBitExpr =
 -- * `BitXor` \(: \int \to \int \to \int\)
 -- * `BitLeftShift` \(: \int \to \int \to \int\)
 -- * `BitRightShift` \(: \int \to \int \to \int\)
-reduceConstBitExpr :: Monad m => RewriteRule m
+reduceConstBitExpr :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceConstBitExpr =
   let return' = Just . LitInt'
    in simpleRewriteRule "reduceConstBitExpr" $ \case
@@ -243,7 +244,7 @@ reduceConstBitExpr =
 -- * `GreaterEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 -- * `Equal` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 -- * `NotEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
-reduceConstIntComparison :: Monad m => RewriteRule m
+reduceConstIntComparison :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceConstIntComparison =
   simpleRewriteRule "comparison/const/int" $
     (LitBool' <$>) . \case
@@ -266,7 +267,7 @@ reduceConstIntComparison =
 -- * `GreaterEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 -- * `Equal` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
 -- * `NotEqual` \(: \forall \alpha. \alpha \to \alpha \to \bool\) (specialized to \(\alpha \in \lbrace \bool, \int \rbrace\))
-reduceUnitBooleanComparison :: Monad m => RewriteRule m
+reduceUnitBooleanComparison :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceUnitBooleanComparison =
   mconcat
     [ -- TODO: implement lessthan and lessequal
@@ -281,7 +282,7 @@ reduceUnitBooleanComparison =
       [r| "notequal/false'" forall x. x /= false = x |]
     ]
 
-rule :: MonadError Error m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   mconcat
     [ reduceConstArithmeticExpr,
@@ -295,7 +296,7 @@ rule =
       reduceUnitBooleanComparison
     ]
 
-runProgram :: MonadError Error m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
 -- | `run` folds constants in given programs.
@@ -306,7 +307,7 @@ runProgram = applyRewriteRuleProgram' rule
 -- to the follwoing:
 --
 -- > 3 x + 3
-run :: MonadError Error m => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.ConstantFolding" $ do
   precondition $ do
     lint prog

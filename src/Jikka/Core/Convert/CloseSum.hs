@@ -31,7 +31,6 @@ where
 
 import Jikka.Common.Alpha
 import Jikka.Common.Error
-import qualified Jikka.Core.Convert.Alpha as Alpha
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 import Jikka.Core.Language.FreeVars
@@ -40,7 +39,7 @@ import Jikka.Core.Language.Lint
 import Jikka.Core.Language.QuasiRules
 import Jikka.Core.Language.RewriteRules
 
-reduceSum :: MonadAlpha m => RewriteRule m
+reduceSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceSum =
   mconcat
     [ -- reduce list build functions
@@ -88,7 +87,7 @@ reduceProduct = simpleRewriteRule "reduceProduct" $ \case
 
 -- |
 -- * This assumes that `ModFloor` is already propagated.
-reduceModSum :: MonadAlpha m => RewriteRule m
+reduceModSum :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceModSum =
   mconcat
     [ -- the corner case
@@ -139,7 +138,7 @@ reduceModProduct = simpleRewriteRule "reduceModProduct" $ \case
     _ -> Nothing
   _ -> Nothing
 
-rule :: MonadAlpha m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   mconcat
     [ reduceSum,
@@ -207,7 +206,6 @@ run prog = wrapError' "Jikka.Core.Convert.CloseSum" $ do
   precondition $ do
     lint prog
   prog <- runProgram prog
-  prog <- Alpha.run prog
   postcondition $ do
     lint prog
   return prog

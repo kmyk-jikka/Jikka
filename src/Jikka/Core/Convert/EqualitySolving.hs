@@ -33,6 +33,7 @@ module Jikka.Core.Convert.EqualitySolving
   )
 where
 
+import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
@@ -42,7 +43,7 @@ import Jikka.Core.Language.RewriteRules
 import Jikka.Core.Language.Util
 
 -- | `moveLiteralToRight` moves literals to lhs of `(==)` or `(/=)`, using symmetricity.
-moveLiteralToRight :: Monad m => RewriteRule m
+moveLiteralToRight :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 moveLiteralToRight =
   mconcat
     [ simpleRewriteRule "equal/symmetricity/literal" $ \case
@@ -54,7 +55,7 @@ moveLiteralToRight =
     ]
 
 -- | `convertGreaterToLess` erases `(>)` and `(>=)`.
-convertGreaterToLess :: Monad m => RewriteRule m
+convertGreaterToLess :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 convertGreaterToLess =
   mconcat
     [ [r| "greaterthan->lessthan" forall x y. x > y = y < x |],
@@ -62,7 +63,7 @@ convertGreaterToLess =
     ]
 
 -- | `reduceReflexivity` uses reflexivity.
-reduceReflexivity :: Monad m => RewriteRule m
+reduceReflexivity :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceReflexivity =
   mconcat
     [ [r| "lessthan/reflexivity" forall x. x == x = false |],
@@ -72,7 +73,7 @@ reduceReflexivity =
     ]
 
 -- | `makeRightZero` makes RHS of integer equality/inequality zero with subtracting RHS from both sides.
-makeRightZero :: Monad m => RewriteRule m
+makeRightZero :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 makeRightZero =
   mconcat
     [ simpleRewriteRule "lessthan/right-zero" $ \case
@@ -90,7 +91,7 @@ makeRightZero =
     ]
 
 -- | `reduceIntInjective` removes injective functions from equalities of integers.
-reduceIntInjective :: Monad m => RewriteRule m
+reduceIntInjective :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceIntInjective =
   mconcat
     [ [r| "equal/negate" forall x y k. - x == 0 = x == 0  |],
@@ -98,7 +99,7 @@ reduceIntInjective =
       [r| "equal/fact'" forall x y. - fact x + fact y == 0 = x == y  |]
     ]
 
-reduceNot :: Monad m => RewriteRule m
+reduceNot :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceNot =
   mconcat
     [ [r| "equal/not" forall x y. not x == y = x /= y |],
@@ -107,7 +108,7 @@ reduceNot =
       [r| "notequal/not'" forall x y. x /= not y = x == y |]
     ]
 
-reduceListCtor :: Monad m => RewriteRule m
+reduceListCtor :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceListCtor =
   mconcat
     [ [r| "equal/nil/nil" forall x xs. nil == nil = true |],
@@ -116,13 +117,13 @@ reduceListCtor =
       [r| "equal/cons/cons" forall x xs y ys. cons x xs == cons y ys = x == y && xs == ys |]
     ]
 
-reduceListInjective :: Monad m => RewriteRule m
+reduceListInjective :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 reduceListInjective =
   mconcat
     [ [r| "equal/range/range" forall n1 n2. range n1 == range n2 = n1 == n2 |]
     ]
 
-rule :: Monad m => RewriteRule m
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 rule =
   mconcat
     [ moveLiteralToRight,
@@ -135,10 +136,10 @@ rule =
       reduceListInjective
     ]
 
-runProgram :: MonadError Error m => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 runProgram = applyRewriteRuleProgram' rule
 
-run :: MonadError Error m => Program -> m Program
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 run prog = wrapError' "Jikka.Core.Convert.EqualitySolving" $ do
   precondition $ do
     lint prog
