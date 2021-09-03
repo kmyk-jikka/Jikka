@@ -1739,10 +1739,6 @@ pattern Bottom' :: Type -> String -> Expr
 
 
 module Jikka.Core.Convert.Alpha
-rename :: MonadAlpha m => VarName -> m VarName
-runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> Expr -> m Expr
-runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, VarName)] -> ToplevelExpr -> m ToplevelExpr
-runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 -- | <a>run</a> renames variables in exprs to avoid name conflictions, even
 --   if the scopes of two variables are distinct.
@@ -1767,6 +1763,9 @@ runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 --   x2 + y1
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+runProgram :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+runToplevelExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> ToplevelExpr -> m ToplevelExpr
+runExpr :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 
 
 module Jikka.Core.Language.FreeVars
@@ -1914,6 +1913,7 @@ module Jikka.Core.Language.Util
 genType :: MonadAlpha m => m Type
 genVarName :: MonadAlpha m => VarName -> m VarName
 genVarName' :: MonadAlpha m => m VarName
+genVarName'' :: MonadAlpha m => Expr -> m VarName
 mapSubTypesM :: Monad m => (Type -> m Type) -> Type -> m Type
 mapTypeLiteralM :: Monad m => (Type -> m Type) -> Literal -> m Literal
 mapTypeExprM :: Monad m => (Type -> m Type) -> Expr -> m Expr
@@ -2839,6 +2839,42 @@ genVarName' :: MonadAlpha m => m VarName
 instance GHC.Show.Show Jikka.Core.Language.QuasiRules.RenamedVarName
 instance GHC.Classes.Ord Jikka.Core.Language.QuasiRules.RenamedVarName
 instance GHC.Classes.Eq Jikka.Core.Language.QuasiRules.RenamedVarName
+
+
+-- | &lt;math&gt;
+module Jikka.Core.Convert.SortAbs
+
+-- | <a>run</a> reduces &lt;math&gt; to &lt;math&gt; when &lt;math&gt;
+--   contains &lt;math&gt; and &lt;math&gt; holds.
+--   
+--   <h2>Example</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   sum (map (fun (a_i: int) -&gt;
+--       sum (map (fun (a_j: int) -&gt;
+--           abs (a_i - a_j)
+--       ) a)
+--   ) a)
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   let b = sort a
+--   in sum (map (fun (i: int) -&gt;
+--       (sum (map (fun (b_j: int) -&gt;
+--           b_i - b_j
+--       ) b[:i])
+--       + 0
+--       + sum (map (fun (b_j: int) -&gt;
+--           b_j - b_i
+--       ) b[i + 1:]))
+--   ) (range (length b)))
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 -- | &lt;math&gt;
