@@ -37,6 +37,7 @@ import qualified Jikka.Core.Convert.PropagateMod as PropagateMod
 import qualified Jikka.Core.Convert.RemoveUnusedVars as RemoveUnusedVars
 import qualified Jikka.Core.Convert.SegmentTree as SegmentTree
 import qualified Jikka.Core.Convert.ShortCutFusion as ShortCutFusion
+import qualified Jikka.Core.Convert.SortAbs as SortAbs
 import qualified Jikka.Core.Convert.SpecializeFoldl as SpecializeFoldl
 import qualified Jikka.Core.Convert.TrivialLetElimination as TrivialLetElimination
 import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
@@ -49,6 +50,7 @@ run'' prog = do
   prog <- UnpackTuple.run prog
   prog <- MatrixExponentiation.run prog
   prog <- SpecializeFoldl.run prog
+  prog <- SortAbs.run prog
   prog <- MakeScanl.run prog
   prog <- PropagateMod.run prog
   prog <- ConstantPropagation.run prog
