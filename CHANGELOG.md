@@ -1,10 +1,26 @@
 # Changelog for Jikka
 
+## 2021-09-04: v5.5.0.0
+
+Features:
+
+- Now Jikka is available on Web: <https://kmyk.github.io/Jikka/playground/>
+- Solve some formulae in the form of `∑ᵢ ∑ⱼ |aᵢ−aⱼ|` [#210](https://github.com/kmyk/Jikka/pull/210) by [@kmyk](https://github.com/kmyk)
+
+Bug Fix:
+
+- Fix a bug about `std::accumulate` ([#205](https://github.com/kmyk/Jikka/pull/205) by [@riantkb](https://github.com/riantkb)
+
 ## 2021-08-24: v5.4.0.0
 
-- More and more tests are added and some bugs are removed.
+Features:
+
 - An online judge is published: <https://judge.kimiyuki.net/>
   - This judge contains example problems which Jikka can/will be able to solve.
+
+Bug Fix:
+
+- More and more tests are added and some bugs are removed.
 
 ## 2021-08-16: v5.3.0.0
 
