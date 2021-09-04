@@ -51,6 +51,11 @@ jobs:
           echo ahc-dist --input-exe jikka-asterius --export-function=convert --no-main --input-mjs docs/gh-pages/playground/input.mjs --browser --output-directory docs/gh-pages/playground >> build.sh
           docker run --rm -v $(pwd):/workspace -w /workspace terrorjack/asterius bash build.sh
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: gh-pages
+          path: docs/gh-pages/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
