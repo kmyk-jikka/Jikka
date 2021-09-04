@@ -11,10 +11,10 @@
 module Jikka.Main where
 
 import Data.Maybe (fromMaybe)
-import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Version (showVersion)
 import qualified Jikka.CPlusPlus.Convert.BundleRuntime as BundleRuntime
+import qualified Jikka.CPlusPlus.Convert.EmbedOriginalCode as EmbedOriginalCode
 import Jikka.Common.Error
 import Jikka.Common.Format.Error (hPrintError, hPrintErrorWithText)
 import qualified Jikka.Main.Subcommand.Convert as Convert
@@ -134,9 +134,7 @@ runSubcommand subcmd opts path = case subcmd of
     output <-
       return $
         if target' == CPlusPlusTarget && embedOriginalCode opts
-          then
-            let headers = ["// This C++ code is transpiled using Jikka transpiler v" <> T.pack (showVersion version) <> " https://github.com/kmyk/Jikka", "// The original Python code:"]
-             in T.unlines (headers ++ map ("//     " <>) (T.lines input)) <> output
+          then EmbedOriginalCode.run input output
           else output
     liftIO $ T.putStr output
   "debug" -> Debug.run path -- TODO: make this subcommand convenient
