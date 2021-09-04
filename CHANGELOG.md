@@ -5,11 +5,11 @@
 Features:
 
 - Now Jikka is available on Web: <https://kmyk.github.io/Jikka/playground/>
-- Solve some formulae in the form of `∑ᵢ ∑ⱼ |aᵢ−aⱼ|` [#210](https://github.com/kmyk/Jikka/pull/210) by [@kmyk](https://github.com/kmyk)
+- Solve some formulae in the form of `∑ᵢ ∑ⱼ |aᵢ−aⱼ|` ([#210](https://github.com/kmyk/Jikka/pull/210) by [@kmyk](https://github.com/kmyk))
 
 Bug Fix:
 
-- Fix a bug about `std::accumulate` ([#205](https://github.com/kmyk/Jikka/pull/205) by [@riantkb](https://github.com/riantkb)
+- Fix a bug about `std::accumulate` ([#205](https://github.com/kmyk/Jikka/pull/205) by [@riantkb](https://github.com/riantkb))
 
 ## 2021-08-24: v5.4.0.0
 
