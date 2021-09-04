@@ -14,6 +14,12 @@ async function bundleRuntime(prog) {
   return await i.exports.bundleRuntime(prog);
 }
 
+async function embedOriginalCode(original, prog) {
+  const m = await wasm;
+  const i = await rts.newAsteriusInstance(Object.assign(req, { module: m }));
+  return await i.exports.embedOriginalCode(original, prog);
+}
+
 function loadData() {
   const req = new XMLHttpRequest();
   req.open("GET", "../gallery/data.json", false);
@@ -37,19 +43,32 @@ window.addEventListener("DOMContentLoaded", function () {
     });
 
     const bundle = document.getElementById("bundle");
+    const embed = document.getElementById("embed");
 
     // transpiling periodically
     let lastProgram = "";
-    let lastBundle = "";
+    let lastBundle = false;
+    let lastEmbed = false;
     const sync = async function () {
       try {
-        if (input.getValue() != lastProgram || bundle.checked != lastBundle) {
+        if (
+          input.getValue() != lastProgram ||
+          bundle.checked != lastBundle ||
+          embed.checked != lastEmbed
+        ) {
           lastProgram = input.getValue();
           lastBundle = bundle.checked;
+          lastEmbed = embed.checked;
           output.setValue("transpiling...");
           let transpiledProgram = await convert(lastProgram);
           if (lastBundle) {
             transpiledProgram = await bundleRuntime(transpiledProgram);
+          }
+          if (lastEmbed) {
+            transpiledProgram = await embedOriginalCode(
+              lastProgram,
+              transpiledProgram
+            );
           }
           output.setValue(transpiledProgram);
         }
