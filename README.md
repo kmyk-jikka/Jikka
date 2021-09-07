@@ -56,10 +56,8 @@ Please feel free to use our [GitHub Discussions](https://github.com/kmyk/Jikka/d
 For users:
 
 - [docs/language.md](https://github.com/kmyk/Jikka/blob/master/docs/language.md)
-  - [docs/language.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/language.ja.md) (Japanese translation)
   - The language specification of our restricted Python / Jikka で使われる制限された Python の言語仕様
 - [docs/optimization.md](https://github.com/kmyk/Jikka/blob/master/docs/optimization.md)
-  - [docs/optimization.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/optimization.ja.md) (Japanese translation)
   - A list of optimizations which Jikka does / Jikka が行なってくれる最適化の一覧
 - [examples/](https://github.com/kmyk/Jikka/blob/master/examples)
   - [gallery](https://kmyk.github.io/Jikka/gallery)
@@ -69,18 +67,16 @@ For users:
 For developpers:
 
 - [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
-  - [CONTRIBUTING.ja.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.ja.md) (Japanese translation)
 - My blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
-  - 競技プログラミングの問題を自動で解くとはどういうことなのかについて
+  - On what it means to automatically solve problems of competitive programming / 競技プログラミングの問題を自動で解くとはどういうことなのかについて
 - [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
-  - 動作原理や関連する理論について
+  - How it works and related theories / 動作原理や関連する理論
 - [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
-  - 実装方針について
+  - The policy of designs / 実装方針
 - [docs/internal.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.ja.md) (Japanese)
-  - 具体的な処理の流れについて
+  - The overview of internal processes / 内部の処理の流れ
 - [docs/core.md](https://github.com/kmyk/Jikka/blob/master/docs/core.md)
-  - [docs/core.ja.md](https://github.com/kmyk/Jikka/blob/master/docs/core.ja.md) (Japanese)
-  - core 言語の説明
+  - The specification of core language / core 言語の仕様
 - [Haddock](https://hackage.haskell.org/package/Jikka)
   - [Haddock (master)](https://kmyk.github.io/Jikka/haddock)
 
