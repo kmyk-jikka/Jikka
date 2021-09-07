@@ -1,5 +1,7 @@
 # docs/internal.ja.md
 
+(The English version of this document: [docs/internal.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.md))
+
 Jikka の内部実装について解説します。
 
 ## 0. 全体の構成
