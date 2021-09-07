@@ -73,7 +73,7 @@ For developpers:
   - How it works and related theories / 動作原理や関連する理論
 - [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
   - The policy of designs / 実装方針
-- [docs/internal.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.md) (Japanese)
+- [docs/internal.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.md)
   - The overview of internal processes / 内部の処理の流れ
 - [docs/core.md](https://github.com/kmyk/Jikka/blob/master/docs/core.md)
   - The specification of core language / core 言語の仕様
