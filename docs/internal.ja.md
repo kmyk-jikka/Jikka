@@ -295,7 +295,7 @@ def solve(n: int, a: List[int], q: int, l: List[int], r: List[int]) -> List[int]
     return a
 ```
 
-関数 `reduceCumulativeSum ` は [`v5.1.0.0` の時点](https://github.com/kmyk/Jikka/blob/795726a626ca3653555f6c5c176eb81de26b6d58/src/Jikka/Core/Convert/SegmentTree.hs#L123-L143) で次のような実装になっています。
+関数 `reduceCumulativeSum` は [`v5.1.0.0` の時点](https://github.com/kmyk/Jikka/blob/795726a626ca3653555f6c5c176eb81de26b6d58/src/Jikka/Core/Convert/SegmentTree.hs#L123-L143) で次のような実装になっています。
 
 ```haskell
 -- | `reduceCumulativeSum` converts combinations of cumulative sums and array assignments to segment trees.
@@ -321,7 +321,7 @@ reduceCumulativeSum = RewriteRule $ \_ -> \case
   _ -> return Nothing
 ```
 
-この関数 `reduceCumulativeSum ` は `foldl (\a i -> setat a index(i) e(a, i)) base incides` という形の式をまず探します。
+この関数 `reduceCumulativeSum` は `foldl (\a i -> setat a index(i) e(a, i)) base incides` という形の式をまず探します。
 ただしここに登場する型や式などは以下のようになります。
 
 - 型 `t`
@@ -333,7 +333,7 @@ reduceCumulativeSum = RewriteRule $ \_ -> \case
 - 式 `index(i)` (変数 `i` のみを使って書かれ、変数 `a` は現れない、型は `Int`)
 - 式 `e(a, i)` (変数 `a` および変数 `i` を使って書かれ、型は `t`)
 
-関数 `reduceCumulativeSum ` は、まず冒頭の (A) の行で `listCumulativeSum` を呼んで式 `e(a, i)` 中で累積和が用いられている箇所を列挙します。
+関数 `reduceCumulativeSum` は、まず冒頭の (A) の行で `listCumulativeSum` を呼んで式 `e(a, i)` 中で累積和が用いられている箇所を列挙します。
 ここから対応する半群を抜き出し、そして (B) の行で `replaceWithSegtrees` を呼んで式 `e(a, i)` 中の累積和をセグメント木を利用する式で置き換えます。
 また (C) の行でセグメント木を更新する式を作り、(D) の行で `foldl` に渡す関数の本体を作ります。
 さらに (E) の行でセグメント木の初期状態を作るような式 `base'` を用意し、(F) の行で結果の式を作って返却します。
@@ -437,6 +437,7 @@ int solve(int n) {
 ## 9. C++ の構文木を C++ コードに変換する
 
 C++ の構文木を文字列に変換します。
+
 括弧付けには [Text.Show](https://hackage.haskell.org/package/base/docs/Text-Show.html) のように precedence 値による方法を用いています。
 
 - ファイル: [src/Jikka/CPlusPlus/Format.hs](https://github.com/kmyk/Jikka/blob/master/src/Jikka/CPlusPlus/Format.hs) ([Jikka.CPlusPlus.Format](https://hackage.haskell.org/package/Jikka/docs/Jikka-CPlusPlus-Format.html))
