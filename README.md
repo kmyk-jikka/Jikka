@@ -71,7 +71,7 @@ For developpers:
   - On what it means to automatically solve problems of competitive programming / 競技プログラミングの問題を自動で解くとはどういうことなのかについて
 - [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
   - How it works and related theories / 動作原理や関連する理論
-- [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md) (Japanese)
+- [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md)
   - The policy of designs / 実装方針
 - [docs/internal.md](https://github.com/kmyk/Jikka/blob/master/docs/internal.md)
   - The overview of internal processes / 内部の処理の流れ

@@ -1,5 +1,7 @@
 # Design Doc
 
+(The English version of this document: [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md))
+
 ## Objective
 
 Jikka は競技プログラミングの問題を解くことそのものを自動化する。
