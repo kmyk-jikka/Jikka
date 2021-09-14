@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jikka.CPlusPlus.FormatSpec
   ( spec,
   )
@@ -6,6 +8,7 @@ where
 import Data.List
 import Jikka.CPlusPlus.Format
 import Jikka.CPlusPlus.Language.Expr
+import Jikka.CPlusPlus.Language.Util
 import Test.Hspec
 
 run'' :: Program -> [String]
@@ -19,18 +22,18 @@ spec = do
             Program
               [ FunDef
                   TyInt64
-                  (VarName "solve")
-                  [(TyInt32, VarName "n")]
-                  [ Declare TyInt64 (VarName "x") (DeclareCopy (Lit (LitInt64 0))),
+                  "solve"
+                  [(TyInt32, "n")]
+                  [ Declare TyInt64 "x" (DeclareCopy (Lit (LitInt64 0))),
                     For
                       TyInt32
-                      (VarName "i")
+                      "i"
                       (Lit (LitInt32 0))
-                      (BinOp LessThan (Var (VarName "i")) (Var (VarName "n")))
-                      (AssignIncr (LeftVar (VarName "i")))
-                      [ Assign (AssignExpr AddAssign (LeftVar (VarName "x")) (Call (Cast TyInt64) [Var (VarName "i")]))
+                      (BinOp LessThan (Var "i") (Var "n"))
+                      (AssignIncr (LeftVar "i"))
+                      [ Assign (AssignExpr AddAssign (LeftVar "x") (Call' (Cast TyInt64) [Var "i"]))
                       ],
-                    Return (Var (VarName "x"))
+                    Return (Var "x")
                   ]
               ]
       let formatted =
@@ -49,18 +52,18 @@ spec = do
             Program
               [ FunDef
                   TyInt64
-                  (VarName "solve")
-                  [(TyInt32, VarName "n"), (TyVector TyInt64, VarName "h")]
-                  [ Declare TyInt64 (VarName "x") (DeclareCopy (Lit (LitInt64 0))),
+                  "solve"
+                  [(TyInt32, "n"), (TyVector TyInt64, "h")]
+                  [ Declare TyInt64 "x" (DeclareCopy (Lit (LitInt64 0))),
                     For
                       TyInt32
-                      (VarName "i")
+                      "i"
                       (Lit (LitInt32 2))
-                      (BinOp LessThan (Var (VarName "i")) (Var (VarName "n")))
-                      (AssignIncr (LeftVar (VarName "i")))
-                      [ Assign (AssignExpr AddAssign (LeftVar (VarName "x")) (Call At [Var (VarName "h"), BinOp Sub (Var (VarName "i")) (Lit (LitInt32 2))]))
+                      (BinOp LessThan (Var "i") (Var "n"))
+                      (AssignIncr (LeftVar "i"))
+                      [ Assign (AssignExpr AddAssign (LeftVar "x") (Call' At [Var "h", BinOp Sub (Var "i") (Lit (LitInt32 2))]))
                       ],
-                    Return (Var (VarName "x"))
+                    Return (Var "x")
                   ]
               ]
       let formatted =

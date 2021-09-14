@@ -47,11 +47,11 @@ withScope f = do
   return x
 
 runVarName :: X.VarName' -> Y.VarName
-runVarName (X.WithLoc' _ (X.VarName x)) = Y.VarName x
+runVarName (X.WithLoc' _ (X.VarName occ flavour)) = Y.VarName occ flavour
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
-  X.VarTy (X.TypeName x) -> return $ Y.VarTy (Y.TypeName x)
+  X.VarTy (X.TypeName occ flavour) -> return $ Y.VarTy (Y.TypeName occ flavour)
   X.IntTy -> return Y.IntTy
   X.BoolTy -> return Y.BoolTy
   X.ListTy t -> Y.ListTy <$> runType t
@@ -60,14 +60,14 @@ runType = \case
   X.StringTy -> throwSemanticError "cannot use `str' type out of main function"
   X.SideEffectTy -> throwSemanticError "side-effect type must be used only as expr-statement" -- TODO: check in Jikka.RestrictedPython.Language.Lint
 
-runConstant :: MonadError Error m => X.Constant -> m Y.Expr
+runConstant :: (MonadAlpha m, MonadError Error m) => X.Constant -> m Y.Expr
 runConstant = \case
   X.ConstNone -> return $ Y.Tuple' []
   X.ConstInt n -> return $ Y.Lit (Y.LitInt n)
   X.ConstBool p -> return $ Y.Lit (Y.LitBool p)
   X.ConstBuiltin builtin -> runBuiltin builtin
 
-runBuiltin :: MonadError Error m => X.Builtin -> m Y.Expr
+runBuiltin :: (MonadAlpha m, MonadError Error m) => X.Builtin -> m Y.Expr
 runBuiltin builtin = do
   let go0 builtin = do
         return $ Y.Lit (Y.LitBuiltin builtin [])
@@ -109,10 +109,10 @@ runBuiltin builtin = do
       _ -> do
         ts <- mapM runType ts
         ret <- runType ret
-        let var i = Y.VarName ("xs" ++ show i)
-        let lam body = Y.Lam "go0" (Y.curryFunTy ts ret) (foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts))
-        let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts))
-        let body = Y.Map' Y.IntTy ret (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "go0") (map (Y.Var . var) [0 .. length ts - 1]))) (Y.Range1' len)
+        xs <- replicateM (length ts) Y.genVarName'
+        let lam body = Y.Lam "go0" (Y.curryFunTy ts ret) (foldr (\(i, t) -> Y.Lam (xs !! i) (Y.ListTy t)) body (zip [0 ..] ts))
+        let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (xs !! i))) [0 ..] ts))
+        let body = Y.Map' Y.IntTy ret (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "go0") (map (Y.Var . (xs !!)) [0 .. length ts - 1]))) (Y.Range1' len)
         return $ lam body
     X.BuiltinSorted t -> go1 Y.Sorted t
     X.BuiltinReversed t -> go1 Y.Reversed t
@@ -123,10 +123,10 @@ runBuiltin builtin = do
     X.BuiltinFilter t -> go1 Y.Filter t
     X.BuiltinZip ts -> do
       ts <- mapM runType ts
-      let var i = Y.VarName ("xs" ++ show i)
-      let lam body = foldr (\(i, t) -> Y.Lam (var i) (Y.ListTy t)) body (zip [0 ..] ts)
-      let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (var i))) [0 ..] ts))
-      let body = Y.Map' Y.IntTy (Y.TupleTy ts) (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts) (map (Y.Var . var) [0 .. length ts - 1]))) (Y.Range1' len)
+      xs <- replicateM (length ts) Y.genVarName'
+      let lam body = foldr (\(i, t) -> Y.Lam (xs !! i) (Y.ListTy t)) body (zip [0 ..] ts)
+      let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (xs !! i))) [0 ..] ts))
+      let body = Y.Map' Y.IntTy (Y.TupleTy ts) (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts) (map (Y.Var . (xs !!)) [0 .. length ts - 1]))) (Y.Range1' len)
       return $ lam body
     X.BuiltinAll -> go0 Y.All
     X.BuiltinAny -> go0 Y.Any
@@ -140,14 +140,14 @@ runBuiltin builtin = do
       when (n < 2) $ do
         throwTypeError $ "max expected 2 or more arguments, got " ++ show n
       t <- runType t
-      let args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
+      args <- replicateM n Y.genVarName'
       return $ Y.curryLam (map (,t) args) (foldr1 (Y.Max2' t) (map Y.Var args))
     X.BuiltinMin1 t -> go1 Y.Min1 t
     X.BuiltinMin t n -> do
       when (n < 2) $ do
         throwTypeError $ "max min 2 or more arguments, got " ++ show n
       t <- runType t
-      let args = map (\i -> Y.VarName ('x' : show i)) [0 .. n -1]
+      args <- replicateM n Y.genVarName'
       return $ Y.curryLam (map (,t) args) (foldr1 (Y.Min2' t) (map Y.Var args))
     X.BuiltinArgMax t -> go1 Y.ArgMax t
     X.BuiltinArgMin t -> go1 Y.ArgMin t

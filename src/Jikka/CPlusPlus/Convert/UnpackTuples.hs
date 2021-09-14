@@ -34,17 +34,19 @@ runExpr = \case
          in if shouldBeArray (map fst ys)
               then
                 let t = fst (head ys)
-                 in Call (ArrayExt t) es
+                 in Call' (ArrayExt t) es
               else
                 let ts = map fst ys
-                 in Call (StdTuple ts) es
+                 in Call' (StdTuple ts) es
   Lit lit -> return $ Lit lit
   UnOp op e -> UnOp op <$> runExpr e
   BinOp op e1 e2 -> BinOp op <$> runExpr e1 <*> runExpr e2
   Cond e1 e2 e3 -> Cond <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
   Lam args ret body -> Lam args ret <$> runStatements body []
-  Call f args -> runCall f args
-  CallExpr e args -> CallExpr <$> runExpr e <*> mapM runExpr args
+  Call f args -> case f of
+    Callable f -> runCall f args
+    _ -> Call <$> runExpr f <*> mapM runExpr args
+  Callable f -> return $ Callable f
 
 -- | `runCall` does the same thing to `runExpr` and also reduces `std::get<i>(e)` and `e[i]`.
 runCall :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Function -> [Expr] -> m Expr
@@ -60,9 +62,9 @@ runCall f args = do
           when (n < 0 || toInteger (length ys) <= n) $ do
             throwInternalError "index out of range"
           return $ es !! fromInteger n
-        Nothing -> return $ Call f args
+        Nothing -> return $ Call' f args
     -- std::get<n>(std::tuple<T1, T2, ...>(e1, e2, ...))
-    (StdGet n, [Call (StdTuple _) es]) -> do
+    (StdGet n, [Call' (StdTuple _) es]) -> do
       when (n < 0 || toInteger (length es) <= n) $ do
         throwInternalError "index out of range"
       return $ es !! fromInteger n
@@ -81,10 +83,10 @@ runCall f args = do
               when (n < 0 || toInteger (length ys) <= n) $ do
                 throwInternalError "index out of range"
               return (es !! fromInteger n)
-            Nothing -> return $ Call f args
-        Nothing -> return $ Call f args
+            Nothing -> return $ Call' f args
+        Nothing -> return $ Call' f args
     -- (std::array<T, n>{e1, e2, ...})[i]
-    (At, [Call (ArrayExt _) es, e2]) -> do
+    (At, [Call' (ArrayExt _) es, e2]) -> do
       let n = case e2 of
             Lit (LitInt32 n) -> Just n
             Lit (LitInt64 n) -> Just n
@@ -94,8 +96,8 @@ runCall f args = do
           when (n < 0 || toInteger (length es) <= n) $ do
             throwInternalError "index out of range"
           return (es !! fromInteger n)
-        Nothing -> return $ Call f args
-    _ -> return $ Call f args
+        Nothing -> return $ Call' f args
+    _ -> return $ Call' f args
 
 runLeftExpr :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => LeftExpr -> m LeftExpr
 runLeftExpr = \case
@@ -143,14 +145,14 @@ runStatement stmt cont = case stmt of
       DeclareInitialize es -> DeclareInitialize <$> mapM runExpr es
     case init of
       -- std::tuple<T1, T2, ...> x = std::tuple<...>(e1, e2, ...);
-      DeclareCopy (Call (StdTuple ts) es) -> do
-        ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
+      DeclareCopy (Call' (StdTuple ts) es) -> do
+        ys <- replicateM (length es) (renameVarName LocalNameHint x)
         modify' (M.insert x (zip ts ys))
         return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
       -- std::array<T, n> x = std::array<T, n>{e1, e2, ...};
-      DeclareCopy (Call (ArrayExt t) es) -> do
+      DeclareCopy (Call' (ArrayExt t) es) -> do
         let ts = replicate (length es) t
-        ys <- replicateM (length es) (renameVarName LocalNameKind (unVarName x))
+        ys <- replicateM (length es) (renameVarName LocalNameHint x)
         modify' (M.insert x (zip ts ys))
         return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
       _ -> do
@@ -169,20 +171,20 @@ runStatement stmt cont = case stmt of
             let ts = map fst ys
             let n = toInteger (length ts)
             let es = case e of
-                  Call (StdTuple _) es -> es
-                  Call (ArrayExt _) es -> es
+                  Call' (StdTuple _) es -> es
+                  Call' (ArrayExt _) es -> es
                   _ ->
                     if shouldBeArray ts
-                      then map (\i -> Call At [e, litInt32 i]) [0 .. n - 1]
-                      else map (\i -> Call (StdGet i) [e]) [0 .. n - 1]
-            tmpys <- replicateM (length ts) (newFreshName LocalNameKind)
+                      then map (\i -> Call' At [e, litInt32 i]) [0 .. n - 1]
+                      else map (\i -> Call' (StdGet i) [e]) [0 .. n - 1]
+            tmpys <- replicateM (length ts) (newFreshName LocalNameHint)
             return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts tmpys es ++ zipWith (\y e -> Assign (AssignExpr SimpleAssign (LeftVar y) (Var e))) (map snd ys) tmpys
           Nothing -> return [Assign (AssignExpr SimpleAssign (LeftVar x) e)]
       _ -> do
         forM_ (S.toList (freeVarsAssignExpr e)) $ \x -> do
           ys <- gets (M.lookup x)
           case ys of
-            Just _ -> throwInternalError $ "wrong assignment to a tuple: " ++ unVarName x
+            Just _ -> throwInternalError $ "wrong assignment to a tuple: " ++ formatVarName x
             Nothing -> return ()
         return [Assign e]
   Assert e -> do

@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 -- |
 -- Module      : Jikka.CPlusPlus.Language.Expr
 -- Description : contains data types of C++ language. / C++ のためのデータ型を含みます。
@@ -13,11 +11,36 @@
 -- The data types are intended to use for the code generation.
 module Jikka.CPlusPlus.Language.Expr where
 
-import Data.String (IsString)
+import Data.String
+import Jikka.Common.Name
 
-newtype VarName = VarName {unVarName :: String} deriving (Eq, Ord, Show, Read, IsString)
+data NameHint
+  = LocalNameHint
+  | LocalArgumentNameHint
+  | LoopCounterNameHint
+  | ConstantNameHint
+  | FunctionNameHint
+  | ArgumentNameHint
+  | AdHocNameHint String
+  deriving (Eq, Ord, Show, Read)
 
-newtype FunName = FunName {unFunName :: String} deriving (Eq, Ord, Show, Read, IsString)
+data VarName = VarName OccName NameFlavour (Maybe NameHint) deriving (Eq, Ord, Show, Read)
+
+instance IsString VarName where
+  fromString s =
+    let (occ, flavour) = toFlavouredName s
+     in VarName occ flavour Nothing
+
+formatVarName :: VarName -> String
+formatVarName (VarName occ flavour _) = formatFlavouredName occ flavour
+
+newtype FunName = FunName String deriving (Eq, Ord, Show, Read)
+
+instance IsString FunName where
+  fromString = FunName
+
+formatFunName :: FunName -> String
+formatFunName (FunName occ) = occ
 
 data Type
   = -- | @auto@
@@ -192,10 +215,9 @@ data Expr
     Cond Expr Expr Expr
   | -- | lambda expression @[=](T1 x1, T2 x2, ...) -> Tr { stmt1; stmt2; ... }@
     Lam [(Type, VarName)] Type [Statement]
-  | -- | @f(e1, e2, ...)@ for a fixed function @f@
-    Call Function [Expr]
-  | -- | @e(e1, e2, ...)@ for an callable expr @e@
-    CallExpr Expr [Expr]
+  | -- | @f(e1, e2, ...)@ for a callable @f@
+    Call Expr [Expr]
+  | Callable Function
   deriving (Eq, Ord, Show, Read)
 
 data LeftExpr
@@ -254,7 +276,7 @@ data ToplevelStatement
   = -- | @const T x = e;@
     VarDef Type VarName Expr
   | -- | @T f(T1 x1, T2 x2, ...) { stmt1; stmt2; ... }@
-    FunDef Type VarName [(Type, VarName)] [Statement]
+    FunDef Type FunName [(Type, VarName)] [Statement]
   | -- | @static_assert(e, msg);@
     StaticAssert Expr String
   deriving (Eq, Ord, Show, Read)

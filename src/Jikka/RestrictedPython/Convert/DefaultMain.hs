@@ -28,18 +28,18 @@ lookupSolve = \case
   [] -> throwSymbolError "solve function is not defined"
   ToplevelAnnAssign _ _ _ : stmts -> lookupSolve stmts
   ToplevelFunctionDef f args ret body : stmts -> case value' f of
-    VarName "solve" -> return (loc' f, args, ret, body)
+    VarName (Just "solve") Nothing -> return (loc' f, args, ret, body)
     _ -> lookupSolve stmts
   ToplevelAssert _ : stmts -> lookupSolve stmts
 
 makeInputFormatFromType :: (MonadAlpha m, MonadError Error m) => Type -> m (FormatTree, String)
 makeInputFormatFromType = \case
   IntTy -> do
-    x <- unVarName . value' <$> genVarName'
+    x <- formatVarName . value' <$> genVarName'
     return (Exp (Var x), x)
   ListTy t -> do
-    n <- unVarName . value' <$> genVarName'
-    i <- unVarName . value' <$> genVarName'
+    n <- formatVarName . value' <$> genVarName'
+    i <- formatVarName . value' <$> genVarName'
     (body, x) <- makeInputFormatFromType t
     body <- (`mapFormatTreeM` body) $ \case
       Exp e -> return $ Exp (At e i)
@@ -50,10 +50,10 @@ makeInputFormatFromType = \case
 makeOutputFormatFromType' :: (MonadAlpha m, MonadError Error m) => Type -> m (FormatTree, String)
 makeOutputFormatFromType' = \case
   IntTy -> do
-    x <- unVarName . value' <$> genVarName'
+    x <- formatVarName . value' <$> genVarName'
     return (Exp (Var x), x)
   ListTy t -> do
-    i <- unVarName . value' <$> genVarName'
+    i <- formatVarName . value' <$> genVarName'
     (body, x) <- makeOutputFormatFromType' t
     body <- (`mapFormatTreeM` body) $ \case
       Exp e -> return $ Exp (At e i)

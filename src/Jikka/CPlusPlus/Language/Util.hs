@@ -1,10 +1,10 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module Jikka.CPlusPlus.Language.Util where
 
 import Control.Monad.Identity
-import Data.Char (isAlphaNum, isNumber)
 import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.Common.Alpha
@@ -12,38 +12,23 @@ import Jikka.Common.Alpha
 fromLeftExpr :: LeftExpr -> Expr
 fromLeftExpr = \case
   LeftVar x -> Var x
-  LeftAt x e -> Call At [fromLeftExpr x, e]
-  LeftGet n e -> Call (Function "std::get" [TyIntValue n]) [fromLeftExpr e]
+  LeftAt x e -> Call' At [fromLeftExpr x, e]
+  LeftGet n e -> Call' (Function "std::get" [TyIntValue n]) [fromLeftExpr e]
 
-data NameKind
-  = LocalNameKind
-  | LocalArgumentNameKind
-  | LoopCounterNameKind
-  | ConstantNameKind
-  | FunctionNameKind
-  | ArgumentNameKind
-  deriving (Eq, Ord, Show, Read)
-
-fromNameKind :: NameKind -> String
-fromNameKind = \case
-  LocalNameKind -> "x"
-  LocalArgumentNameKind -> "b"
-  LoopCounterNameKind -> "i"
-  ConstantNameKind -> "c"
-  FunctionNameKind -> "f"
-  ArgumentNameKind -> "a"
-
-newFreshName :: MonadAlpha m => NameKind -> m VarName
-newFreshName kind = renameVarName kind ""
-
-renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
-renameVarName kind hint = do
+newFreshName :: MonadAlpha m => NameHint -> m VarName
+newFreshName kind = do
   i <- nextCounter
-  let f = reverse . dropWhile (\c -> isNumber c || c == '_') . reverse . takeWhile (\c -> isAlphaNum c || c == '_')
-  let prefix = case f hint of
-        "" -> fromNameKind kind
-        hint' -> hint' ++ "_"
-  return (VarName (prefix ++ show i))
+  return (VarName Nothing (Just i) (Just kind))
+
+renameVarName :: MonadAlpha m => NameHint -> VarName -> m VarName
+renameVarName kind (VarName occ _ _) = case occ of
+  Nothing -> newFreshName kind
+  Just occ -> renameVarName' kind occ
+
+renameVarName' :: MonadAlpha m => NameHint -> String -> m VarName
+renameVarName' kind occ = do
+  i <- nextCounter
+  return (VarName (Just occ) (Just i) (Just kind))
 
 freeVars :: Expr -> S.Set VarName
 freeVars = \case
@@ -53,8 +38,8 @@ freeVars = \case
   BinOp _ e1 e2 -> freeVars e1 <> freeVars e2
   Cond e1 e2 e3 -> freeVars e1 <> freeVars e2 <> freeVars e3
   Lam args _ body -> freeVarsStatements body S.\\ S.fromList (map snd args)
-  Call _ args -> mconcat (map freeVars args)
-  CallExpr f args -> freeVars f <> mconcat (map freeVars args)
+  Call f args -> freeVars f <> mconcat (map freeVars args)
+  Callable _ -> S.empty
 
 freeVarsStatements :: [Statement] -> S.Set VarName
 freeVarsStatements = mconcat . map freeVarsStatement
@@ -112,14 +97,17 @@ litInt32 n = Lit (LitInt32 n)
 incrExpr :: Expr -> Expr
 incrExpr e = BinOp Add e (Lit (LitInt32 1))
 
+pattern Call' :: Function -> [Expr] -> Expr
+pattern Call' f args = Call (Callable f) args
+
 size :: Expr -> Expr
-size e = Call MethodSize [e]
+size e = Call' MethodSize [e]
 
 at :: Expr -> Expr -> Expr
-at e i = Call At [e, i]
+at e i = Call' At [e, i]
 
 cast :: Type -> Expr -> Expr
-cast t e = Call (Cast t) [e]
+cast t e = Call' (Cast t) [e]
 
 assignSimple :: VarName -> Expr -> Statement
 assignSimple x e = Assign (AssignExpr SimpleAssign (LeftVar x) e)
@@ -128,25 +116,25 @@ assignAt :: VarName -> Expr -> Expr -> Statement
 assignAt xs i e = Assign (AssignExpr SimpleAssign (LeftAt (LeftVar xs) i) e)
 
 callFunction :: FunName -> [Type] -> [Expr] -> Expr
-callFunction f ts args = Call (Function f ts) args
+callFunction f ts args = Call' (Function f ts) args
 
 callFunction' :: FunName -> [Type] -> [Expr] -> Statement
 callFunction' = ((ExprStatement .) .) . callFunction
 
 callMethod :: Expr -> FunName -> [Expr] -> Expr
-callMethod e f args = Call (Method f) (e : args)
+callMethod e f args = Call' (Method f) (e : args)
 
 callMethod' :: Expr -> FunName -> [Expr] -> Statement
 callMethod' = ((ExprStatement .) .) . callMethod
 
 vecCtor :: Type -> [Expr] -> Expr
-vecCtor t es = Call (VecCtor t) es
+vecCtor t es = Call' (VecCtor t) es
 
 begin :: Expr -> Expr
-begin e = Call (Method "begin") [e]
+begin e = Call' (Method "begin") [e]
 
 end :: Expr -> Expr
-end e = Call (Method "end") [e]
+end e = Call' (Method "end") [e]
 
 mapExprStatementExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Expr -> m Expr
 mapExprStatementExprM f g = go
@@ -158,8 +146,8 @@ mapExprStatementExprM f g = go
       BinOp op e1 e2 -> f =<< (BinOp op <$> go e1 <*> go e2)
       Cond e1 e2 e3 -> f =<< (Cond <$> go e1 <*> go e2 <*> go e3)
       Lam args ret body -> f . Lam args ret . concat =<< mapM (mapExprStatementStatementM f g) body
-      Call g args -> f . Call g =<< mapM go args
-      CallExpr g args -> f =<< (CallExpr <$> go g <*> mapM go args)
+      Call g args -> f =<< (Call <$> go g <*> mapM go args)
+      Callable g -> f $ Callable g
 
 mapExprStatementLeftExprM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> LeftExpr -> m LeftExpr
 mapExprStatementLeftExprM f g = \case
@@ -255,3 +243,6 @@ replaceStatement x e = head . runIdentity . mapExprStatementStatementM go (retur
     go = \case
       Var y | y == x -> return e
       e' -> return e'
+
+mapToplevelStatementProgramM :: Monad m => (ToplevelStatement -> m [ToplevelStatement]) -> Program -> m Program
+mapToplevelStatementProgramM f prog = Program . concat <$> mapM f (decls prog)

@@ -13,6 +13,7 @@ module Jikka.Main.Subcommand.Convert (run) where
 
 import Data.Text (Text, pack)
 import qualified Jikka.CPlusPlus.Convert as FromCore
+import qualified Jikka.CPlusPlus.Convert.BurnFlavouredNames as BurnFlavouredNamesCPlusPlus
 import qualified Jikka.CPlusPlus.Format as FormatCPlusPlus
 import qualified Jikka.CPlusPlus.Language.Expr as CPlusPlus
 import Jikka.Common.Alpha
@@ -72,7 +73,9 @@ formatProgram = \case
   PythonProgram prog -> return . pack $ show prog -- TODO
   RestrictedPythonProgram prog -> FormatRestrictedPython.run prog
   CoreProgram prog -> FormatCore.run prog
-  CPlusPlusProgram prog -> FormatCPlusPlus.run prog
+  CPlusPlusProgram prog -> do
+    prog <- BurnFlavouredNamesCPlusPlus.run prog
+    FormatCPlusPlus.run prog
 
 run :: Target -> Target -> FilePath -> Text -> Either Error Text
 run source target path input = flip evalAlphaT 0 $ do

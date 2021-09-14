@@ -34,8 +34,8 @@ analyzeExpr = \case
     let ReadWriteList rs ws = analyzeStatements body
         args' = S.fromList (map snd args)
      in ReadWriteList (rs `S.difference` args') (ws `S.difference` args')
-  Call _ args -> mconcat (map analyzeExpr args)
-  CallExpr f args -> mconcat (map analyzeExpr (f : args))
+  Call f args -> mconcat (map analyzeExpr (f : args))
+  Callable _ -> mempty
 
 analyzeLeftExpr :: LeftExpr -> ReadWriteList
 analyzeLeftExpr = \case

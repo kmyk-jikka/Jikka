@@ -12,7 +12,7 @@
 module Jikka.RestrictedPython.Language.Expr
   ( -- * types
     TypeName (..),
-    unTypeName,
+    formatTypeName,
     Type (..),
     pattern NoneTy,
 
@@ -31,7 +31,7 @@ module Jikka.RestrictedPython.Language.Expr
 
     -- * exprs
     VarName (..),
-    unVarName,
+    formatVarName,
     module Jikka.Common.Location,
     VarName',
     Expr (..),
@@ -48,21 +48,28 @@ module Jikka.RestrictedPython.Language.Expr
   )
 where
 
-import Data.String (IsString)
+import Data.String
 import Jikka.Common.Location
+import Jikka.Common.Name
 import Jikka.Python.Language.Expr (BoolOp (..), CmpOp (..), Operator (..), UnaryOp (..))
 
-newtype VarName = VarName String deriving (Eq, Ord, Show, Read, IsString)
+data VarName = VarName OccName NameFlavour deriving (Eq, Ord, Show, Read)
 
-unVarName :: VarName -> String
-unVarName (VarName x) = x
+instance IsString VarName where
+  fromString = uncurry VarName . toFlavouredName
+
+formatVarName :: VarName -> String
+formatVarName (VarName occ flavour) = formatFlavouredName occ flavour
 
 type VarName' = WithLoc' VarName
 
-newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, IsString)
+data TypeName = TypeName OccName NameFlavour deriving (Eq, Ord, Show, Read)
 
-unTypeName :: TypeName -> String
-unTypeName (TypeName x) = x
+instance IsString TypeName where
+  fromString = uncurry TypeName . toFlavouredName
+
+formatTypeName :: TypeName -> String
+formatTypeName (TypeName occ flavour) = formatFlavouredName occ flavour
 
 newtype AttributeName = AttributeName String deriving (Eq, Ord, Show, Read, IsString)
 

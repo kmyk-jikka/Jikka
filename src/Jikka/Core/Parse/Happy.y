@@ -22,6 +22,7 @@ module Jikka.Core.Parse.Happy
     , runRule
     ) where
 
+import Data.String (fromString)
 import Data.List (intercalate)
 import Jikka.Common.Alpha
 import Jikka.Common.Error
@@ -232,7 +233,7 @@ topdecl :: { ToplevelExpr -> ToplevelExpr }
 
 -- Types
 atom_type :: { Type }
-    : IDENT                            { let (L.Ident x) = value $1 in VarTy (TypeName x) }
+    : IDENT                            { let (L.Ident x) = value $1 in VarTy (fromString x) }
     | "int"                            { IntTy }
     | "bool"                           { BoolTy }
     | atom_type "list"                 { ListTy $1 }
@@ -276,8 +277,8 @@ atom :: { Expr }
     | builtin                          { Lit (uncurry LitBuiltin $1) }
 
 identifier :: { VarName }
-    : IDENT                            { let (L.Ident x) = value $1 in VarName x }
-    | "_"                              { VarName "_" }
+    : IDENT                            { let (L.Ident x) = value $1 in fromString x }
+    | "_"                              { VarName Nothing Nothing }
 
 integer :: { Integer }
     : INTEGER                          { let (L.Int n) = value $1 in n }
@@ -528,7 +529,7 @@ expression_list :: { [Expr] }
 (<@>) = (<$>)
 
 underscoreTy :: Type
-underscoreTy = VarTy (TypeName "_")
+underscoreTy = VarTy (TypeName Nothing Nothing)
 
 makeTuple :: MonadError Error m => [Expr] -> Type -> m Expr
 makeTuple es t = case t of
@@ -544,13 +545,13 @@ makeProj e n t = case t of
 replaceUnderscoresT :: MonadAlpha m => Type -> m Type
 replaceUnderscoresT = mapSubTypesM go where
   go = \case
-    VarTy (TypeName "_") -> genType
+    VarTy (TypeName Nothing Nothing) -> genType
     t -> return t
 
 replaceUnderscoresE :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
 replaceUnderscoresE env = mapSubExprM go env where
   go _ = \case
-    Var (VarName "_") -> Var <$> genVarName'
+    Var (VarName Nothing Nothing) -> Var <$> genVarName'
     e@(Proj' [] i (Var x)) -> case lookup x env of
       Just (TupleTy ts) -> return $ Proj' ts i (Var x) -- Fix types of projections if it's easily possible.
       _ -> return e -- Some cases are impossible. You need to use Jikka.Core.Convert.TypeInfer.

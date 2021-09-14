@@ -29,7 +29,7 @@ type MainFunction = (Maybe Loc, [(VarName', Type)], Type, [Statement])
 splitMain :: Program -> (Maybe MainFunction, Program)
 splitMain = \case
   [] -> (Nothing, [])
-  ToplevelFunctionDef (WithLoc' loc (VarName "main")) args ret body : stmts -> (Just (loc, args, ret, body), stmts)
+  ToplevelFunctionDef (WithLoc' loc (VarName (Just "main") Nothing)) args ret body : stmts -> (Just (loc, args, ret, body), stmts)
   stmt : stmts -> second (stmt :) $ splitMain stmts
 
 checkMainType :: MonadError Error m => MainFunction -> m ()
@@ -78,21 +78,21 @@ pattern ListRange n <-
 parseAnnAssign :: (MonadAlpha m, MonadError Error m) => Target' -> Type -> Expr' -> [Statement] -> m (FormatTree, Maybe ([String], Either String [String]), [Statement])
 parseAnnAssign x _ e cont = do
   let subscriptTrg x = case value' x of
-        NameTrg x -> return (unVarName (value' x), [])
-        SubscriptTrg x (WithLoc' _ (Name i)) -> second (++ [unVarName (value' i)]) <$> subscriptTrg x
+        NameTrg x -> return (formatVarName (value' x), [])
+        SubscriptTrg x (WithLoc' _ (Name i)) -> second (++ [formatVarName (value' i)]) <$> subscriptTrg x
         _ -> throwSemanticErrorAt' (loc' x) $ "name target or subscript target is expected, but got: " ++ formatTarget x
   let subscriptTupleTrg x = case value' x of
         TupleTrg xs -> mapM subscriptTrg xs
         _ -> throwSemanticErrorAt' (loc' x) $ "tuple target is expected, but got: " ++ formatTarget x
   let nameTrg x = case value' x of
-        NameTrg x -> return $ unVarName (value' x)
+        NameTrg x -> return $ formatVarName (value' x)
         _ -> throwSemanticErrorAt' (loc' x) $ "name target is expected, but got: " ++ formatTarget x
   let nameOrTupleTrg x = case value' x of
-        NameTrg x -> return . Left $ unVarName (value' x)
+        NameTrg x -> return . Left $ formatVarName (value' x)
         TupleTrg xs -> Right <$> mapM nameTrg xs
         _ -> throwSemanticErrorAt' (loc' x) $ "name target or tuple target is expected, but got: " ++ formatTarget x
   let nameExpr e = case value' e of
-        Name x -> return $ unVarName (value' x)
+        Name x -> return $ formatVarName (value' x)
         _ -> throwSemanticErrorAt' (loc' e) $ "variable is expected, but got: " ++ formatExpr e
   case e of
     -- int(input())
@@ -107,8 +107,8 @@ parseAnnAssign x _ e cont = do
     ListMapIntInputSplit -> do
       (x, indices) <- subscriptTrg x
       case cont of
-        Assert (WithLoc' _ (Compare (CallBuiltin (BuiltinLen _) [WithLoc' _ (Name x')]) (CmpOp' Eq' _) n)) : cont | unVarName (value' x') == x -> do
-          i <- unVarName . value' <$> genVarName'
+        Assert (WithLoc' _ (Compare (CallBuiltin (BuiltinLen _) [WithLoc' _ (Name x')]) (CmpOp' Eq' _) n)) : cont | formatVarName (value' x') == x -> do
+          i <- formatVarName . value' <$> genVarName'
           n <- nameExpr n
           return (Seq [Loop i (Var n) (Exp (At (packSubscriptedVar x indices) i)), Newline], Nothing, cont)
         _ -> throwSemanticErrorAt' (loc' e) "after `xs = list(map(int, input().split()))', we need to write `assert len(xs) == n`"
@@ -122,7 +122,7 @@ parseAnnAssign x _ e cont = do
         For _ (CallBuiltin BuiltinRange1 [WithLoc' _ (Name n')]) _ : _ | value' n' == n -> return (Seq [], Nothing, cont) -- TODO: add more strict checks
         _ -> throwSemanticErrorAt' (loc' e) "after some repetition of `xs = list(range(n))', we need to write `for i in range(n):`"
     -- solve(...)
-    WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName "solve")))) args) -> do
+    WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName (Just "solve") Nothing)))) args) -> do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
       return (Seq [], Just (inputs, output), cont)
@@ -144,20 +144,20 @@ parseFor go x e body = do
     _ -> throwSemanticErrorAt' (loc' n) $ "for loops in main function must use `range(x)', `range(x + k)', `range(x - k)', `range(len(xs))`: " ++ formatExpr n
   n <- return $ case n of
     Right (n, k) ->
-      let n' = Var (unVarName (value' n))
+      let n' = Var (formatVarName (value' n))
        in if k == 0 then n' else Plus n' k
-    Left xs -> Len (Var (unVarName (value' xs)))
+    Left xs -> Len (Var (formatVarName (value' xs)))
   (input, solve, output) <- go body
   when (isJust solve) $ do
     throwSemanticError "cannot call `solve(...)' in for loop"
-  let x' = unVarName (value' x)
+  let x' = formatVarName (value' x)
   return (Loop x' n input, Loop x' n output)
 
 parseExprStatement :: (MonadAlpha m, MonadError Error m) => Expr' -> m FormatTree
 parseExprStatement e = do
   let subscriptExpr e = case value' e of
-        Name x -> return (unVarName (value' x), [])
-        Subscript e (WithLoc' _ (Name i)) -> second (++ [unVarName (value' i)]) <$> subscriptExpr e
+        Name x -> return (formatVarName (value' x), [])
+        Subscript e (WithLoc' _ (Name i)) -> second (++ [formatVarName (value' i)]) <$> subscriptExpr e
         _ -> throwSemanticErrorAt' (loc' e) $ "subscripted variable is expected, but got: " ++ formatExpr e
   let starredExpr e = do
         (e, starred) <- return $ case value' e of
@@ -169,7 +169,7 @@ parseExprStatement e = do
         | not starred = return $ packSubscriptedVar' x indices
         | otherwise = do
           let xs = packSubscriptedVar x indices
-          i <- unVarName . value' <$> genVarName'
+          i <- formatVarName . value' <$> genVarName'
           return $ Loop i (Len xs) (packSubscriptedVar' x (indices ++ [i]))
   case e of
     CallBuiltin (BuiltinPrint _) args -> do

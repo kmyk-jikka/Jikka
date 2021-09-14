@@ -69,7 +69,7 @@ renameLocalNew x = do
     Just y -> return y
     Nothing -> do
       y <- genVarName x
-      when (unVarName (value' x) /= "_") $ do
+      when (value' x /= VarName Nothing Nothing) $ do
         put $
           env
             { currentMapping = (value' x, value' y) : currentMapping env
@@ -92,7 +92,7 @@ renameLocalCompletelyNew :: (MonadAlpha m, MonadState Env m, MonadError Error m)
 renameLocalCompletelyNew x = do
   env <- get
   case lookupLocalName x env of
-    Just _ -> throwSemanticErrorAt' (loc' x) $ "cannot redefine variable: " ++ unVarName (value' x)
+    Just _ -> throwSemanticErrorAt' (loc' x) $ "cannot redefine variable: " ++ formatVarName (value' x)
     Nothing -> renameLocalNew x
 
 -- | `renameToplevel` records given variables to the `Env` without actual renaming.
@@ -103,11 +103,11 @@ renameToplevel x = do
     Just _ -> do
       let msg =
             if value' x `S.member` builtinNames
-              then "cannot assign to builtin function: " ++ unVarName (value' x)
-              else "cannot redefine variable in toplevel: " ++ unVarName (value' x)
+              then "cannot assign to builtin function: " ++ formatVarName (value' x)
+              else "cannot redefine variable in toplevel: " ++ formatVarName (value' x)
       throwSemanticErrorAt' (loc' x) msg
     Nothing -> do
-      when (unVarName (value' x) /= "_") $ do
+      when (formatVarName (value' x) /= "_") $ do
         put $
           env
             { currentMapping = (value' x, value' x) : currentMapping env
@@ -120,7 +120,7 @@ renameToplevelArgument = renameShadow
 
 popRename :: (MonadState Env m, MonadError Error m) => VarName' -> m ()
 popRename x =
-  when (unVarName (value' x) /= "_") $ do
+  when (formatVarName (value' x) /= "_") $ do
     y <- lookupName' x
     modify' $ \env -> env {currentMapping = delete (value' x, value' y) (currentMapping env)}
 
@@ -142,7 +142,7 @@ lookupName' x = do
   env <- get
   case lookupName x env of
     Just y -> return y
-    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined identifier: " ++ unVarName (value' x)
+    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined identifier: " ++ formatVarName (value' x)
 
 -- | `runAnnTarget` renames targets of annotated assignments.
 runAnnTarget :: (MonadState Env m, MonadAlpha m, MonadError Error m) => Target' -> m Target'

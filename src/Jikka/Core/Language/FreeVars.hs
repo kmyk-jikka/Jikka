@@ -10,7 +10,18 @@
 -- Portability : portable
 module Jikka.Core.Language.FreeVars where
 
+import Data.Maybe
+import qualified Data.Set as S
 import Jikka.Core.Language.Expr
+
+freeVars :: Expr -> S.Set VarName
+freeVars = \case
+  Var x -> S.singleton x
+  Lit _ -> S.empty
+  App f e -> freeVars f <> freeVars e
+  Lam x _ e -> S.delete x (freeVars e)
+  Let x _ e1 e2 -> freeVars e1 <> S.delete x (freeVars e2)
+  Assert e1 e2 -> freeVars e1 <> freeVars e2
 
 -- | `isFreeVar` checks if the given variable occurs in the tiven expr. This considers contexts.
 --
@@ -58,7 +69,10 @@ freeTyVars = \case
   DataStructureTy _ -> []
 
 findUnusedVarName :: VarName -> Expr -> VarName
-findUnusedVarName (VarName x) e = head . filter (`isUnusedVar` e) $ map (\i -> VarName (x ++ show i)) [0 ..]
+findUnusedVarName (VarName x _) e =
+  let xs = S.fromList (concatMap (\(VarName _ i) -> maybeToList i) (S.toList (freeVars e)))
+      flavour = head $ filter (`S.notMember` xs) [0 ..]
+   in VarName x (Just flavour)
 
 findUnusedVarName' :: Expr -> VarName
-findUnusedVarName' = findUnusedVarName (VarName "x")
+findUnusedVarName' = findUnusedVarName (VarName Nothing Nothing)

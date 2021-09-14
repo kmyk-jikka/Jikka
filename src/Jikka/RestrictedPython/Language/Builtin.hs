@@ -126,7 +126,7 @@ resolveBuiltin x n = wrapAt' (loc' x) . wrapError' "Jikka.RestrictedPython.Langu
       e <- resolveUniqueBuiltin x
       case value' e of
         Constant (ConstBuiltin _) -> return e
-        _ -> throwInternalError $ "not exhaustive: " ++ unVarName (value' x)
+        _ -> throwInternalError $ "not exhaustive: " ++ formatVarName (value' x)
 
 formatBuiltin :: Builtin -> String
 formatBuiltin = \case
@@ -294,7 +294,7 @@ resolveAttribute e@(WithLoc' _ (Name (WithLoc' _ "math"))) x = wrapAt' (loc' x) 
   _ -> return $ Attribute e x
 resolveAttribute e@(WithLoc' _ (Name (WithLoc' _ "jikka"))) x = wrapAt' (loc' x) $ case value' x of
   UnresolvedAttribute x' ->
-    let x'' = VarName (unAttributeName x')
+    let x'' = VarName (Just (unAttributeName x')) Nothing
      in if x'' `S.notMember` additionalBuiltinNames
           then throwSymbolError $ "unknown attribute: " ++ unAttributeName x'
           else value' <$> resolveUniqueBuiltin (x $> x'')

@@ -26,7 +26,7 @@ define :: (MonadState [(VarName, Type)] m, MonadError Error m) => VarName -> Typ
 define x t = do
   env <- get
   case lookup x env of
-    Just t' -> throwInternalError $ "name conflict: " ++ unVarName x ++ ": " ++ formatType t ++ " and " ++ unVarName x ++ ": " ++ formatType t'
+    Just t' -> throwInternalError $ "name conflict: " ++ formatVarName x ++ ": " ++ formatType t ++ " and " ++ formatVarName x ++ ": " ++ formatType t'
     Nothing -> put $ (x, t) : env
 
 namecheckExpr' :: (MonadState [(VarName, Type)] m, MonadError Error m) => Expr -> m ()
@@ -34,7 +34,7 @@ namecheckExpr' = \case
   Var x -> do
     env <- get
     case lookup x env of
-      Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
+      Nothing -> throwInternalError $ "undefined variable: " ++ formatVarName x
       Just _ -> return ()
   Lit _ -> return ()
   App f e -> do

@@ -45,7 +45,7 @@ lookupLocal x = do
   local <- get
   case M.lookup (value' x) (unLocal local) of
     Just v -> return v
-    Nothing -> throwInternalErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
+    Nothing -> throwInternalErrorAt' (loc' x) $ "undefined variable: " ++ formatVarName (value' x)
 
 assignSubscriptedTarget :: (MonadReader Global m, MonadState Local m, MonadError Error m) => Target' -> Expr' -> Value -> m ()
 assignSubscriptedTarget f index v = wrapAt' (loc' f) $ do
@@ -270,7 +270,7 @@ evalExpr e0 = wrapAt' (loc' e0) $ case value' e0 of
         global <- ask
         case M.lookup (value' x) (unGlobal global) of
           Just v -> return v
-          Nothing -> throwInternalError $ "undefined variable: " ++ unVarName (value' x)
+          Nothing -> throwInternalError $ "undefined variable: " ++ formatVarName (value' x)
   List _ es -> ListVal . V.fromList <$> mapM evalExpr es
   Tuple es -> TupleVal <$> mapM evalExpr es
   SubscriptSlice e from to step -> do
@@ -528,7 +528,7 @@ lookupGlobal :: MonadError Error m => VarName' -> Global -> m Value
 lookupGlobal x global =
   case M.lookup (value' x) (unGlobal global) of
     Just y -> return y
-    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined variable: " ++ unVarName (value' x)
+    Nothing -> throwSymbolErrorAt' (loc' x) $ "undefined variable: " ++ formatVarName (value' x)
 
 runWithGlobal :: MonadError Error m => Global -> Expr' -> m Value
 runWithGlobal global e = do
@@ -548,7 +548,7 @@ makeGlobal prog = do
 run :: MonadError Error m => Program -> [Value] -> m Value
 run prog args = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
   global <- makeGlobal prog
-  solve <- lookupGlobal (withoutLoc (VarName "solve")) global
+  solve <- lookupGlobal (withoutLoc (VarName (Just "solve") Nothing)) global
   runWithGlobal' global solve args
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value

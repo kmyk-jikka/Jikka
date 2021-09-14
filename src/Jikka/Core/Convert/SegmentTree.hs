@@ -52,8 +52,8 @@ pattern CumulativeSum t f e es <-
     )
   where
     CumulativeSum t f e es =
-      let x1 = findUnusedVarName (VarName "y") f
-          x2 = findUnusedVarName (VarName "x") f
+      let x1 = findUnusedVarName' f
+          x2 = findUnusedVarName' f
        in Scanl' t t (Lam2 x1 t x2 t (App (App f (Var x1)) (Var x2))) e es
 
 pattern CumulativeSumFlip t f e es <-
@@ -65,8 +65,8 @@ pattern CumulativeSumFlip t f e es <-
     )
   where
     CumulativeSumFlip t f e es =
-      let x1 = findUnusedVarName (VarName "y") f
-          x2 = findUnusedVarName (VarName "x") f
+      let x1 = findUnusedVarName' f
+          x2 = findUnusedVarName' f
        in Scanl' t t (Lam2 x1 t x2 t (App (App f (Var x2)) (Var x1))) e es
 
 builtinToSemigroup :: Builtin -> [Type] -> Maybe Semigroup'
