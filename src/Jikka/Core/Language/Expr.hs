@@ -17,47 +17,25 @@
 module Jikka.Core.Language.Expr where
 
 import Data.Data
-import Data.List
-import Data.Maybe
 import Data.String
-import Text.Read
-
-type OccName = Maybe String
-
-type NameFlavour = Maybe Int
+import Jikka.Common.Name
 
 -- NOTE: @VarName occ flavour == VarName occ' flavour'@ is defined as @occ == occ' && flavour == flavour'@ but we assume that this is equivalent to @flavour == flavour'@ unless they are @Nothing@.
 data VarName = VarName OccName NameFlavour deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 instance IsString VarName where
-  fromString = \case
-    "_" -> VarName Nothing Nothing
-    s -> case elemIndex '$' s of
-      Just i ->
-        let (occ, flavour) = splitAt i s
-            occ' = if occ == "" then Nothing else Just occ
-            flavour' = case readMaybe (tail flavour) of
-              Just i -> i
-              Nothing -> error $ "Jikka.Core.Language.Expr.fromString: invalid var name: " ++ s
-         in VarName occ' (Just flavour')
-      Nothing -> VarName (Just s) Nothing
+  fromString = uncurry VarName . toFlavouredName
 
 formatVarName :: VarName -> String
-formatVarName = \case
-  VarName Nothing Nothing -> "_"
-  VarName name flavour -> fromMaybe "" name ++ maybe "" (('$' :) . show) flavour
+formatVarName (VarName occ flavour) = formatFlavouredName occ flavour
 
 data TypeName = TypeName OccName NameFlavour deriving (Eq, Ord, Show, Read, Data, Typeable)
 
 instance IsString TypeName where
-  fromString s =
-    let VarName occ flavour = fromString s
-     in TypeName occ flavour
+  fromString = uncurry TypeName . toFlavouredName
 
 formatTypeName :: TypeName -> String
-formatTypeName = \case
-  TypeName Nothing Nothing -> "_"
-  TypeName name flavour -> fromMaybe "" name ++ maybe "" (('$' :) . show) flavour
+formatTypeName (TypeName occ flavour) = formatFlavouredName occ flavour
 
 -- | `Type` represents the types of our core language. This is similar to the `Type` of GHC Core.
 -- See also [commentary/compiler/type-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/type-type).

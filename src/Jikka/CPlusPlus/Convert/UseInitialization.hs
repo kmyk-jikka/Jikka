@@ -22,10 +22,10 @@ import Jikka.Common.Error
 runStatement :: Statement -> Statement
 runStatement = \case
   Declare t x init -> case (t, init) of
-    (TyVector _, DeclareCopy (Call (VecCtor _) [])) -> Declare t x DeclareDefault
-    (TyVector _, DeclareCopy (Call (VecCtor _) es)) -> Declare t x (DeclareInitialize es)
-    (TyConvexHullTrick, DeclareCopy (Call ConvexHullTrickCtor es)) -> Declare t x (DeclareInitialize es)
-    (TySegmentTree _, DeclareCopy (Call (SegmentTreeCtor _) es)) -> Declare t x (DeclareInitialize es)
+    (TyVector _, DeclareCopy (Call' (VecCtor _) [])) -> Declare t x DeclareDefault
+    (TyVector _, DeclareCopy (Call' (VecCtor _) es)) -> Declare t x (DeclareInitialize es)
+    (TyConvexHullTrick, DeclareCopy (Call' ConvexHullTrickCtor es)) -> Declare t x (DeclareInitialize es)
+    (TySegmentTree _, DeclareCopy (Call' (SegmentTreeCtor _) es)) -> Declare t x (DeclareInitialize es)
     (_, _) -> Declare t x init
   stmt -> stmt
 

@@ -19,7 +19,6 @@ module Jikka.CPlusPlus.Convert.FromCore
 where
 
 import Control.Monad.Writer.Strict
-import Data.Maybe
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
@@ -36,17 +35,56 @@ import qualified Jikka.Core.Language.Util as X
 -- monad
 
 renameVarName' :: MonadAlpha m => Y.NameKind -> X.VarName -> m Y.VarName
-renameVarName' kind (X.VarName x _) = Y.renameVarName kind (fromMaybe "" x)
+renameVarName' kind (X.VarName occ _) = case occ of
+  Nothing -> Y.newFreshName kind
+  Just occ -> Y.renameVarName' kind occ
 
-type Env = [(X.VarName, X.Type, Y.VarName)]
+renameFunName' :: MonadError Error m => X.VarName -> m Y.FunName
+renameFunName' = \case
+  X.VarName (Just occ) _ -> return $ Y.FunName occ
+  _ -> throwInternalError "annonymous toplevel-let is not allowed"
+
+data Env = Env
+  { typeEnv :: [(X.VarName, X.Type)],
+    varMapping :: [(X.VarName, Y.VarName)],
+    funMapping :: [(X.VarName, Y.FunName)]
+  }
+  deriving (Eq, Ord, Show, Read)
+
+emptyEnv :: Env
+emptyEnv =
+  Env
+    { typeEnv = [],
+      varMapping = [],
+      funMapping = []
+    }
+
+pushVar :: X.VarName -> X.Type -> Y.VarName -> Env -> Env
+pushVar x t y env =
+  env
+    { typeEnv = (x, t) : typeEnv env,
+      varMapping = (x, y) : varMapping env
+    }
+
+pushFun :: X.VarName -> X.Type -> Y.FunName -> Env -> Env
+pushFun x t y env =
+  env
+    { typeEnv = (x, t) : typeEnv env,
+      funMapping = (x, y) : funMapping env
+    }
 
 typecheckExpr :: MonadError Error m => Env -> X.Expr -> m X.Type
-typecheckExpr env = X.typecheckExpr (map (\(x, t, _) -> (x, t)) env)
+typecheckExpr env = X.typecheckExpr (typeEnv env)
 
 lookupVarName :: MonadError Error m => Env -> X.VarName -> m Y.VarName
-lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
+lookupVarName env x = case lookup x (varMapping env) of
   Just y -> return y
   Nothing -> throwInternalError $ "undefined variable: " ++ X.formatVarName x
+
+lookupFunName :: MonadError Error m => Env -> X.VarName -> m Y.FunName
+lookupFunName env x = case lookup x (funMapping env) of
+  Just y -> return y
+  Nothing -> throwInternalError $ "undefined function: " ++ X.formatVarName x
 
 class Monad m => MonadStatements m where
   useStatement :: Y.Statement -> m ()
@@ -106,7 +144,7 @@ runLiteral env = \case
     return $ Y.vecCtor t []
   X.LitBottom t err -> do
     t <- runType t
-    return $ Y.Call (Y.Function "jikka::error" [t]) [Y.Lit (Y.LitString err)]
+    return $ Y.Call' (Y.Function "jikka::error" [t]) [Y.Lit (Y.LitString err)]
 
 arityOfBuiltin :: MonadError Error m => X.Builtin -> [X.Type] -> m Int
 arityOfBuiltin builtin ts = case builtin of
@@ -266,18 +304,18 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.Plus -> go02 $ \e1 e2 -> Y.BinOp Y.Add e1 e2
     X.Minus -> go02 $ \e1 e2 -> Y.BinOp Y.Sub e1 e2
     X.Mult -> go02 $ \e1 e2 -> Y.BinOp Y.Mul e1 e2
-    X.FloorDiv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::floordiv" []) [e1, e2]
-    X.FloorMod -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::floormod" []) [e1, e2]
-    X.CeilDiv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceildiv" []) [e1, e2]
-    X.CeilMod -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::ceilmod" []) [e1, e2]
-    X.JustDiv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::justdiv" []) [e1, e2]
-    X.Pow -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::pow" []) [e1, e2]
+    X.FloorDiv -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::floordiv" []) [e1, e2]
+    X.FloorMod -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::floormod" []) [e1, e2]
+    X.CeilDiv -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::ceildiv" []) [e1, e2]
+    X.CeilMod -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::ceilmod" []) [e1, e2]
+    X.JustDiv -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::justdiv" []) [e1, e2]
+    X.Pow -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::notmod::pow" []) [e1, e2]
     -- advanced arithmetical functions
-    X.Abs -> go01 $ \e -> Y.Call (Y.Function "std::abs" []) [e]
-    X.Gcd -> go02 $ \e1 e2 -> Y.Call (Y.Function "std::gcd" []) [e1, e2]
-    X.Lcm -> go02 $ \e1 e2 -> Y.Call (Y.Function "std::lcm" []) [e1, e2]
-    X.Min2 -> go12 $ \t e1 e2 -> Y.Call (Y.Function "std::min" [t]) [e1, e2]
-    X.Max2 -> go12 $ \t e1 e2 -> Y.Call (Y.Function "std::max" [t]) [e1, e2]
+    X.Abs -> go01 $ \e -> Y.Call' (Y.Function "std::abs" []) [e]
+    X.Gcd -> go02 $ \e1 e2 -> Y.Call' (Y.Function "std::gcd" []) [e1, e2]
+    X.Lcm -> go02 $ \e1 e2 -> Y.Call' (Y.Function "std::lcm" []) [e1, e2]
+    X.Min2 -> go12 $ \t e1 e2 -> Y.Call' (Y.Function "std::min" [t]) [e1, e2]
+    X.Max2 -> go12 $ \t e1 e2 -> Y.Call' (Y.Function "std::max" [t]) [e1, e2]
     X.Iterate -> go13'' $ runIterate env
     -- logical functions
     X.Not -> go01 $ \e -> Y.UnOp Y.Not e
@@ -293,25 +331,25 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.BitLeftShift -> go02 $ \e1 e2 -> Y.BinOp Y.BitLeftShift e1 e2
     X.BitRightShift -> go02 $ \e1 e2 -> Y.BinOp Y.BitRightShift e1 e2
     -- matrix functions
-    X.MatAp h w -> go02 $ \f x -> Y.Call (Y.Function "jikka::mat::ap" [Y.TyIntValue h, Y.TyIntValue w]) [f, x]
-    X.MatZero h w -> go00 $ Y.Call (Y.Function "jikka::mat::zero" [Y.TyIntValue h, Y.TyIntValue w]) []
-    X.MatOne n -> go00 $ Y.Call (Y.Function "jikka::mat::one" [Y.TyIntValue n]) []
-    X.MatAdd h w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::add" [Y.TyIntValue h, Y.TyIntValue w]) [f, g]
-    X.MatMul h n w -> go02 $ \f g -> Y.Call (Y.Function "jikka::mat::mul" [Y.TyIntValue h, Y.TyIntValue n, Y.TyIntValue w]) [f, g]
-    X.MatPow n -> go02 $ \f k -> Y.Call (Y.Function "jikka::mat::pow" [Y.TyIntValue n]) [f, k]
-    X.VecFloorMod n -> go02 $ \x m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue n]) [x, m]
-    X.MatFloorMod h w -> go02 $ \f m -> Y.Call (Y.Function "jikka::modmat::floormod" [Y.TyIntValue h, Y.TyIntValue w]) [f, m]
+    X.MatAp h w -> go02 $ \f x -> Y.Call' (Y.Function "jikka::mat::ap" [Y.TyIntValue h, Y.TyIntValue w]) [f, x]
+    X.MatZero h w -> go00 $ Y.Call' (Y.Function "jikka::mat::zero" [Y.TyIntValue h, Y.TyIntValue w]) []
+    X.MatOne n -> go00 $ Y.Call' (Y.Function "jikka::mat::one" [Y.TyIntValue n]) []
+    X.MatAdd h w -> go02 $ \f g -> Y.Call' (Y.Function "jikka::mat::add" [Y.TyIntValue h, Y.TyIntValue w]) [f, g]
+    X.MatMul h n w -> go02 $ \f g -> Y.Call' (Y.Function "jikka::mat::mul" [Y.TyIntValue h, Y.TyIntValue n, Y.TyIntValue w]) [f, g]
+    X.MatPow n -> go02 $ \f k -> Y.Call' (Y.Function "jikka::mat::pow" [Y.TyIntValue n]) [f, k]
+    X.VecFloorMod n -> go02 $ \x m -> Y.Call' (Y.Function "jikka::modmat::floormod" [Y.TyIntValue n]) [x, m]
+    X.MatFloorMod h w -> go02 $ \f m -> Y.Call' (Y.Function "jikka::modmat::floormod" [Y.TyIntValue h, Y.TyIntValue w]) [f, m]
     -- modular functions
-    X.ModNegate -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::mod::negate" []) [e1, e2]
-    X.ModPlus -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::plus" []) [e1, e2, e3]
-    X.ModMinus -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::minus" []) [e1, e2, e3]
-    X.ModMult -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::mult" []) [e1, e2, e3]
-    X.ModInv -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::mod::inv" []) [e1, e2]
-    X.ModPow -> go03 $ \e1 e2 e3 -> Y.Call (Y.Function "jikka::mod::pow" []) [e1, e2, e3]
-    X.ModMatAp h w -> go03 $ \f x m -> Y.Call (Y.Function "jikka::modmat::ap" [Y.TyIntValue h, Y.TyIntValue w]) [f, x, m]
-    X.ModMatAdd h w -> go03 $ \f g m -> Y.Call (Y.Function "jikka::modmat::add" [Y.TyIntValue h, Y.TyIntValue w]) [f, g, m]
-    X.ModMatMul h n w -> go03 $ \f g m -> Y.Call (Y.Function "jikka::modmat::mul" [Y.TyIntValue h, Y.TyIntValue n, Y.TyIntValue w]) [f, g, m]
-    X.ModMatPow n -> go03 $ \f k m -> Y.Call (Y.Function "jikka::modmat::pow" [Y.TyIntValue n]) [f, k, m]
+    X.ModNegate -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::mod::negate" []) [e1, e2]
+    X.ModPlus -> go03 $ \e1 e2 e3 -> Y.Call' (Y.Function "jikka::mod::plus" []) [e1, e2, e3]
+    X.ModMinus -> go03 $ \e1 e2 e3 -> Y.Call' (Y.Function "jikka::mod::minus" []) [e1, e2, e3]
+    X.ModMult -> go03 $ \e1 e2 e3 -> Y.Call' (Y.Function "jikka::mod::mult" []) [e1, e2, e3]
+    X.ModInv -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::mod::inv" []) [e1, e2]
+    X.ModPow -> go03 $ \e1 e2 e3 -> Y.Call' (Y.Function "jikka::mod::pow" []) [e1, e2, e3]
+    X.ModMatAp h w -> go03 $ \f x m -> Y.Call' (Y.Function "jikka::modmat::ap" [Y.TyIntValue h, Y.TyIntValue w]) [f, x, m]
+    X.ModMatAdd h w -> go03 $ \f g m -> Y.Call' (Y.Function "jikka::modmat::add" [Y.TyIntValue h, Y.TyIntValue w]) [f, g, m]
+    X.ModMatMul h n w -> go03 $ \f g m -> Y.Call' (Y.Function "jikka::modmat::mul" [Y.TyIntValue h, Y.TyIntValue n, Y.TyIntValue w]) [f, g, m]
+    X.ModMatPow n -> go03 $ \f k m -> Y.Call' (Y.Function "jikka::modmat::pow" [Y.TyIntValue n]) [f, k, m]
     -- list functions
     X.Cons -> go12' $ \t x xs -> do
       ys <- Y.newFreshName Y.LocalNameKind
@@ -361,7 +399,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       useStatement $ Y.ForEach t x xs (body ++ [Y.If f [Y.callMethod' (Y.Var ys) "push_back" [Y.Var x]] Nothing])
       return $ Y.Var ys
     X.At -> go12 $ \_ e1 e2 -> Y.at e1 e2
-    X.SetAt -> go13 $ \t xs i x -> Y.Call (Y.SetAt t) [xs, i, x]
+    X.SetAt -> go13 $ \t xs i x -> Y.Call' (Y.SetAt t) [xs, i, x]
     X.Elem -> go12' $ \_ xs x -> do
       y <- Y.newFreshName Y.LocalNameKind
       useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
@@ -406,11 +444,15 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       return $ Y.Var y
     X.Gcd1 -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto, Y.VarName "a"), (Y.TyAuto, Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var $ Y.VarName "a", Y.Var $ Y.VarName "b"]]])))
+      a <- Y.newFreshName Y.LocalArgumentNameKind
+      b <- Y.newFreshName Y.LocalArgumentNameKind
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto, a), (Y.TyAuto, b)] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var a, Y.Var b]]])))
       return $ Y.Var y
     X.Lcm1 -> go11' $ \t xs -> do
       y <- Y.newFreshName Y.LocalNameKind
-      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto, Y.VarName "a"), (Y.TyAuto, Y.VarName "b")] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var $ Y.VarName "a", Y.Var $ Y.VarName "b"]]])))
+      a <- Y.newFreshName Y.LocalArgumentNameKind
+      b <- Y.newFreshName Y.LocalArgumentNameKind
+      useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto, a), (Y.TyAuto, b)] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var a, Y.Var b]]])))
       return $ Y.Var y
     X.All -> go01' $ \xs -> do
       y <- Y.newFreshName Y.LocalNameKind
@@ -430,7 +472,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
       useStatement $ Y.callFunction' "std::reverse" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
       return $ Y.Var ys
-    X.Range1 -> go01 $ \n -> Y.Call Y.Range [n]
+    X.Range1 -> go01 $ \n -> Y.Call' Y.Range [n]
     X.Range2 -> go02' $ \from to -> do
       ys <- Y.newFreshName Y.LocalNameKind
       useStatement $ Y.Declare (Y.TyVector Y.TyInt64) ys (Y.DeclareCopy (Y.vecCtor Y.TyInt64 [Y.BinOp Y.Sub to from]))
@@ -445,12 +487,12 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     -- tuple functions
     X.Tuple -> goNN $ \ts es ->
       if Y.shouldBeArray ts
-        then Y.Call (Y.ArrayExt (head ts)) es
-        else Y.Call (Y.StdTuple ts) es
+        then Y.Call' (Y.ArrayExt (head ts)) es
+        else Y.Call' (Y.StdTuple ts) es
     X.Proj n -> goN1 $ \ts e ->
       if Y.shouldBeArray ts
         then Y.at e (Y.Lit (Y.LitInt32 n))
-        else Y.Call (Y.StdGet (toInteger n)) [e]
+        else Y.Call' (Y.StdGet (toInteger n)) [e]
     -- comparison
     X.LessThan -> go12 $ \_ e1 e2 -> Y.BinOp Y.LessThan e1 e2
     X.LessEqual -> go12 $ \_ e1 e2 -> Y.BinOp Y.LessEqual e1 e2
@@ -459,42 +501,42 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.Equal -> go12 $ \_ e1 e2 -> Y.BinOp Y.Equal e1 e2
     X.NotEqual -> go12 $ \_ e1 e2 -> Y.BinOp Y.NotEqual e1 e2
     -- combinational functions
-    X.Fact -> go01 $ \e -> Y.Call (Y.Function "jikka::notmod::fact" []) [e]
-    X.Choose -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::choose" []) [e1, e2]
-    X.Permute -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::permute" []) [e1, e2]
-    X.MultiChoose -> go02 $ \e1 e2 -> Y.Call (Y.Function "jikka::notmod::multichoose" []) [e1, e2]
+    X.Fact -> go01 $ \e -> Y.Call' (Y.Function "jikka::notmod::fact" []) [e]
+    X.Choose -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::notmod::choose" []) [e1, e2]
+    X.Permute -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::notmod::permute" []) [e1, e2]
+    X.MultiChoose -> go02 $ \e1 e2 -> Y.Call' (Y.Function "jikka::notmod::multichoose" []) [e1, e2]
     -- data structures
-    X.ConvexHullTrickInit -> go00 $ Y.Call Y.ConvexHullTrickCtor []
-    X.ConvexHullTrickGetMin -> go02 $ \cht x -> Y.Call (Y.Method "get_min") [cht, x]
-    X.ConvexHullTrickInsert -> go03 $ \cht a b -> Y.Call Y.ConvexHullTrickCopyAddLine [cht, a, b]
-    X.SegmentTreeInitList semigrp -> go01 $ \a -> Y.Call (Y.SegmentTreeCtor (runSemigroup semigrp)) [a]
-    X.SegmentTreeGetRange _ -> go03 $ \segtree l r -> Y.Call (Y.Method "prod") [segtree, l, r]
-    X.SegmentTreeSetPoint semigrp -> go03 $ \segtree i a -> Y.Call (Y.SegmentTreeCopySetPoint (runSemigroup semigrp)) [segtree, i, a]
+    X.ConvexHullTrickInit -> go00 $ Y.Call' Y.ConvexHullTrickCtor []
+    X.ConvexHullTrickGetMin -> go02 $ \cht x -> Y.Call' (Y.Method "get_min") [cht, x]
+    X.ConvexHullTrickInsert -> go03 $ \cht a b -> Y.Call' Y.ConvexHullTrickCopyAddLine [cht, a, b]
+    X.SegmentTreeInitList semigrp -> go01 $ \a -> Y.Call' (Y.SegmentTreeCtor (runSemigroup semigrp)) [a]
+    X.SegmentTreeGetRange _ -> go03 $ \segtree l r -> Y.Call' (Y.Method "prod") [segtree, l, r]
+    X.SegmentTreeSetPoint semigrp -> go03 $ \segtree i a -> Y.Call' (Y.SegmentTreeCopySetPoint (runSemigroup semigrp)) [segtree, i, a]
 
 runExprFunction :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction env f e = case f of
   X.Lam x t body -> do
     y <- renameVarName' Y.LocalArgumentNameKind x
-    (stmts, body) <- runStatementsT $ runExpr ((x, t, y) : env) body
+    (stmts, body) <- runStatementsT $ runExpr (pushVar x t y env) body
     let stmts' = map (Y.replaceStatement y e) stmts
     let body' = Y.replaceExpr y e body
     return ([], stmts', body')
   f -> do
     (stmts, f) <- runStatementsT $ runExpr env f
-    return (stmts, [], Y.CallExpr f [e])
+    return (stmts, [], Y.Call f [e])
 
 runExprFunction2 :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction2 env f e1 e2 = case f of
   X.Lam2 x1 t1 x2 t2 body -> do
     y1 <- renameVarName' Y.LocalArgumentNameKind x1
     y2 <- renameVarName' Y.LocalArgumentNameKind x2
-    (stmts, body) <- runStatementsT $ runExpr ((x2, t2, y2) : (x1, t1, y1) : env) body
+    (stmts, body) <- runStatementsT $ runExpr (pushVar x2 t2 y2 (pushVar x1 t1 y1 env)) body
     let stmts' = map (Y.replaceStatement y2 e2 . Y.replaceStatement y1 e1) stmts
     let body' = Y.replaceExpr y2 e2 $ Y.replaceExpr y1 e1 body
     return ([], stmts', body')
   f -> do
     (stmts, f) <- runStatementsT $ runExpr env f
-    return (stmts, [], Y.CallExpr (Y.CallExpr f [e1]) [e2])
+    return (stmts, [], Y.Call (Y.Call f [e1]) [e2])
 
 runAssert :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m ()
 runAssert env = \case
@@ -514,8 +556,11 @@ runAssert env = \case
 runExpr :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Expr -> m Y.Expr
 runExpr env = \case
   X.Var x -> do
-    y <- lookupVarName env x
-    return $ Y.Var y
+    case lookupVarName env x of
+      Right y -> return $ Y.Var y
+      Left _ -> case lookupFunName env x of
+        Right f -> return $ Y.Callable (Y.Function f [])
+        Left _ -> throwInternalError $ "undefined variable: " ++ X.formatVarName x
   X.Lit lit -> do
     runLiteral env lit
   e@(X.App _ _) -> do
@@ -540,15 +585,15 @@ runExpr env = \case
               else do
                 args' <- mapM (runExpr env) (drop arity args)
                 e <- runAppBuiltin env builtin bts (take arity args)
-                return $ Y.CallExpr e args'
+                return $ Y.Call e args'
       _ -> do
         f <- runExpr env f
         args <- mapM (runExpr env) args
-        return $ Y.CallExpr f args
+        return $ Y.Call f args
   e@(X.Lam _ _ _) -> do
     let (args, body) = X.uncurryLam e
     ys <- mapM (renameVarName' Y.LocalArgumentNameKind . fst) args
-    let env' = reverse (zipWith (\(x, t) y -> (x, t, y)) args ys) ++ env
+    let env' = foldl (\env ((x, t), y) -> pushVar x t y env) env (zip args ys)
     ret <- runType =<< typecheckExpr env' body
     (stmts, body) <- runStatementsT $ runExpr env' body
     ts <- mapM (runType . snd) args
@@ -559,18 +604,18 @@ runExpr env = \case
     t' <- runType t
     e1 <- runExpr env e1
     useStatement $ Y.Declare t' y (Y.DeclareCopy e1)
-    runExpr ((x, t, y) : env) e2
+    runExpr (pushVar x t y env) e2
   X.Assert e1 e2 -> do
     runAssert env e1
     runExpr env e2
 
-runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.VarName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
+runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.FunName -> [(X.VarName, X.Type)] -> X.Type -> X.Expr -> m [Y.ToplevelStatement]
 runToplevelFunDef env f args ret body = do
   ret <- runType ret
   args <- forM args $ \(x, t) -> do
     y <- renameVarName' Y.ArgumentNameKind x
     return (x, t, y)
-  (stmts, result) <- runStatementsT $ runExpr (reverse args ++ env) body
+  (stmts, result) <- runStatementsT $ runExpr (foldl (\env (x, t, y) -> pushVar x t y env) env args) body
   args <- forM args $ \(_, t, y) -> do
     t <- runType t
     return (t, y)
@@ -582,7 +627,7 @@ runToplevelVarDef env x t e = do
   (stmts, e) <- runStatementsT $ runExpr env e
   case stmts of
     [] -> return [Y.VarDef t x e]
-    _ -> return [Y.VarDef t x (Y.CallExpr (Y.Lam [] t (stmts ++ [Y.Return e])) [])]
+    _ -> return [Y.VarDef t x (Y.Call (Y.Lam [] t (stmts ++ [Y.Return e])) [])]
 
 runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -> m [Y.ToplevelStatement]
 runToplevelExpr env = \case
@@ -593,7 +638,7 @@ runToplevelExpr env = \case
       _ -> throwInternalError "solve function must be a function" -- TODO: add check in restricted Python
     ret <- runType ret
     -- do eta-expansion to define it as a function.
-    e <- X.etaExpand (map (\(x, t, _) -> (x, t)) env) e
+    e <- X.etaExpand (typeEnv env) e
     (args, body) <- case X.uncurryLam e of
       (args, body) | length args == length ts -> return (args, body)
       _ -> throwInternalError "the result expr must be eta-converted"
@@ -601,16 +646,16 @@ runToplevelExpr env = \case
     args <- forM args $ \(x, t) -> do
       y <- renameVarName' Y.ArgumentNameKind x
       return (x, t, y)
-    (stmts, e) <- runStatementsT $ runExpr (reverse args ++ env) body
+    (stmts, e) <- runStatementsT $ runExpr (foldl (\env (x, t, y) -> pushVar x t y env) env args) body
     let body = stmts ++ [Y.Return e]
     args' <- forM args $ \(_, t, y) -> do
       t <- runType t
       return (t, y)
-    let f = Y.VarName "solve"
+    let f = Y.FunName "solve"
     return [Y.FunDef ret f args' body]
   X.ToplevelLet x t e cont -> case (X.uncurryLam e, X.uncurryFunTy t) of
     ((args@(_ : _), body), (ts@(_ : _), ret)) -> do
-      g <- renameVarName' Y.FunctionNameKind x
+      g <- renameFunName' x
       (args, body) <-
         if length args < length ts
           then do
@@ -619,28 +664,28 @@ runToplevelExpr env = \case
             let body' = X.uncurryApp body (map X.Var xs)
             return (args', body')
           else return (args, body)
-      stmt <- runToplevelFunDef ((x, t, g) : env) g args ret body
-      cont <- runToplevelExpr ((x, t, g) : env) cont
+      stmt <- runToplevelFunDef (pushFun x t g env) g args ret body
+      cont <- runToplevelExpr (pushFun x t g env) cont
       return $ stmt ++ cont
     _ -> do
       y <- renameVarName' Y.ConstantNameKind x
       stmt <- runToplevelVarDef env y t e
-      cont <- runToplevelExpr ((x, t, y) : env) cont
+      cont <- runToplevelExpr (pushVar x t y env) cont
       return $ stmt ++ cont
   X.ToplevelLetRec f args ret body cont -> do
-    g <- renameVarName' Y.FunctionNameKind f
+    g <- renameFunName' f
     let t = X.curryFunTy (map snd args) ret
-    stmt <- runToplevelFunDef ((f, t, g) : env) g args ret body
-    cont <- runToplevelExpr ((f, t, g) : env) cont
+    stmt <- runToplevelFunDef (pushFun f t g env) g args ret body
+    cont <- runToplevelExpr (pushFun f t g env) cont
     return $ stmt ++ cont
   X.ToplevelAssert e cont -> do
     (stmts, e) <- runStatementsT $ runExpr env e
-    let stmt = Y.StaticAssert (Y.CallExpr (Y.Lam [] Y.TyBool (stmts ++ [Y.Return e])) []) ""
+    let stmt = Y.StaticAssert (Y.Call (Y.Lam [] Y.TyBool (stmts ++ [Y.Return e])) []) ""
     cont <- runToplevelExpr env cont
     return $ stmt : cont
 
 runProgram :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
-runProgram prog = Y.Program <$> runToplevelExpr [] prog
+runProgram prog = Y.Program <$> runToplevelExpr emptyEnv prog
 
 run :: (MonadAlpha m, MonadError Error m) => X.Program -> m Y.Program
 run prog = wrapError' "Jikka.CPlusPlus.Convert.FromCore" $ do

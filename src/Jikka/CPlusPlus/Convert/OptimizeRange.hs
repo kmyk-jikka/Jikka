@@ -20,13 +20,13 @@ import Jikka.Common.Error
 
 runExpr :: Monad m => Expr -> m Expr
 runExpr = \case
-  Call At [Call Range [_], i] -> return i
-  Call MethodSize [Call Range [n]] -> return n
+  Call' At [Call' Range [_], i] -> return i
+  Call' MethodSize [Call' Range [n]] -> return n
   e -> return e
 
 runStatement :: Monad m => Statement -> m Statement
 runStatement = \case
-  ForEach _ x (Call Range [n]) body -> return $ repStatement x n body -- TODO: check n is not updated in body
+  ForEach _ x (Call' Range [n]) body -> return $ repStatement x n body -- TODO: check n is not updated in body
   stmt -> return stmt
 
 runProgram :: Monad m => Program -> m Program

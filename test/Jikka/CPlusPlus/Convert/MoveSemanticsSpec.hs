@@ -7,6 +7,7 @@ where
 
 import Jikka.CPlusPlus.Convert.MoveSemantics
 import Jikka.CPlusPlus.Language.Expr
+import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Test.Hspec
@@ -52,10 +53,10 @@ spec = describe "run" $ do
                 "func"
                 [(TyVector TyInt32, "a")]
                 [ Declare (TyVector TyInt32) "b" (DeclareCopy (Var "a")),
-                  ExprStatement (Call (Method "push_back") [Var "b", Lit (LitInt32 10)]),
+                  ExprStatement (Call' (Method "push_back") [Var "b", Lit (LitInt32 10)]),
                   Declare (TyVector TyInt32) "c" (DeclareCopy (Var "b")),
-                  ExprStatement (Call (Method "push_back") [Var "b", Lit (LitInt32 10)]),
-                  Return (BinOp Add (Call MethodSize [Var "b"]) (Call MethodSize [Var "c"]))
+                  ExprStatement (Call' (Method "push_back") [Var "b", Lit (LitInt32 10)]),
+                  Return (BinOp Add (Call' MethodSize [Var "b"]) (Call' MethodSize [Var "c"]))
                 ]
             ]
     let expected =
@@ -64,10 +65,10 @@ spec = describe "run" $ do
                 TyInt32
                 "func"
                 [(TyVector TyInt32, "a")]
-                [ ExprStatement (Call (Method "push_back") [Var "a", Lit (LitInt32 10)]),
+                [ ExprStatement (Call' (Method "push_back") [Var "a", Lit (LitInt32 10)]),
                   Declare (TyVector TyInt32) "c" (DeclareCopy (Var "a")),
-                  ExprStatement (Call (Method "push_back") [Var "a", Lit (LitInt32 10)]),
-                  Return (BinOp Add (Call MethodSize [Var "a"]) (Call MethodSize [Var "c"]))
+                  ExprStatement (Call' (Method "push_back") [Var "a", Lit (LitInt32 10)]),
+                  Return (BinOp Add (Call' MethodSize [Var "a"]) (Call' MethodSize [Var "c"]))
                 ]
             ]
     run' prog `shouldBe` Right expected
@@ -127,7 +128,7 @@ spec = describe "run" $ do
                 "func"
                 [(TyVector TyInt32, "a")]
                 [ Declare (TyVector TyInt32) "b" (DeclareCopy (Var "a")),
-                  Assign (AssignExpr AddAssign (LeftAt (LeftVar "b") (Lit (LitInt32 0))) (Call At [Var "a", Lit (LitInt32 1)])),
+                  Assign (AssignExpr AddAssign (LeftAt (LeftVar "b") (Lit (LitInt32 0))) (Call' At [Var "a", Lit (LitInt32 1)])),
                   Assign (AssignExpr SimpleAssign (LeftVar "a") (Var "b")),
                   Return (Var "a")
                 ]
@@ -138,7 +139,7 @@ spec = describe "run" $ do
                 (TyVector TyInt32)
                 "func"
                 [(TyVector TyInt32, "a")]
-                [ Assign (AssignExpr AddAssign (LeftAt (LeftVar "a") (Lit (LitInt32 0))) (Call At [Var "a", Lit (LitInt32 1)])),
+                [ Assign (AssignExpr AddAssign (LeftAt (LeftVar "a") (Lit (LitInt32 0))) (Call' At [Var "a", Lit (LitInt32 1)])),
                   Return (Var "a")
                 ]
             ]

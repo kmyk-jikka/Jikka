@@ -34,8 +34,8 @@ runExpr = \case
   BinOp op e1 e2 -> BinOp op <$> runExpr e1 <*> runExpr e2
   Cond e1 e2 e3 -> Cond <$> runExpr e1 <*> runExpr e2 <*> runExpr e3
   Lam args ret body -> Lam args ret <$> runStatements body []
-  Call f args -> Call f <$> mapM runExpr args
-  CallExpr f args -> CallExpr <$> runExpr f <*> mapM runExpr args
+  Call f args -> Call <$> runExpr f <*> mapM runExpr args
+  Callable f -> return $ Callable f
 
 runLeftExpr :: MonadState (M.Map VarName VarName) m => LeftExpr -> m LeftExpr
 runLeftExpr = \case
@@ -120,16 +120,16 @@ runStatement stmt cont = case stmt of
       DeclareCopy (Var x) | (x `isMovableTo` y) SimpleCopy env cont -> do
         modify' (M.insert y x)
         return []
-      DeclareCopy (Call (SetAt _) [Var x, i, xi])
+      DeclareCopy (Call' (SetAt _) [Var x, i, xi])
         | (x `isMovableTo` y) UpdatedCopy env cont -> do
           modify' (M.insert y x)
           return [Assign (AssignExpr SimpleAssign (LeftAt (LeftVar x) i) xi)]
-      DeclareCopy (Call ConvexHullTrickCtor []) -> return [Declare t y DeclareDefault]
-      DeclareCopy (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+      DeclareCopy (Call' ConvexHullTrickCtor []) -> return [Declare t y DeclareDefault]
+      DeclareCopy (Call' ConvexHullTrickCopyAddLine [Var x, a, b])
         | (x `isMovableTo` y) UpdatedCopy env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
-      DeclareCopy (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
+      DeclareCopy (Call' (SegmentTreeCopySetPoint _) [Var x, i, a])
         | (x `isMovableTo` y) UpdatedCopy env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "set" [i, a]]
@@ -143,19 +143,19 @@ runStatement stmt cont = case stmt of
     env <- get
     case e of
       AssignExpr SimpleAssign (LeftVar y) (Var x) | x == y -> return []
-      AssignExpr SimpleAssign (LeftVar y) (Call (SetAt _) [Var x, i, xi])
+      AssignExpr SimpleAssign (LeftVar y) (Call' (SetAt _) [Var x, i, xi])
         | x == y -> return [Assign (AssignExpr SimpleAssign (LeftAt (LeftVar x) i) xi)]
         | (x `isMovableTo` y) UpdatedCopy env cont -> do
           modify' (M.insert y x)
           return [Assign (AssignExpr SimpleAssign (LeftAt (LeftVar x) i) xi)]
         | otherwise -> return [Assign e]
-      AssignExpr SimpleAssign (LeftVar y) (Call ConvexHullTrickCopyAddLine [Var x, a, b])
+      AssignExpr SimpleAssign (LeftVar y) (Call' ConvexHullTrickCopyAddLine [Var x, a, b])
         | x == y -> return [callMethod' (Var x) "add_line" [a, b]]
         | (x `isMovableTo` y) UpdatedCopy env cont -> do
           modify' (M.insert y x)
           return [callMethod' (Var x) "add_line" [a, b]]
         | otherwise -> return [Assign e]
-      AssignExpr SimpleAssign (LeftVar y) (Call (SegmentTreeCopySetPoint _) [Var x, i, a])
+      AssignExpr SimpleAssign (LeftVar y) (Call' (SegmentTreeCopySetPoint _) [Var x, i, a])
         | x == y -> return [callMethod' (Var x) "set" [i, a]]
         | (x `isMovableTo` y) UpdatedCopy env cont -> do
           modify' (M.insert y x)

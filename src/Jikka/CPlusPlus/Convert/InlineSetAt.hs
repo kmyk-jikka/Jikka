@@ -22,9 +22,9 @@ import Jikka.Common.Error
 
 runExpr :: (MonadAlpha m, MonadWriter [Statement] m) => Expr -> m Expr
 runExpr = \case
-  Call (SetAt t) [xs, i, x] -> do
+  Call' (SetAt t) [xs, i, x] -> do
     y <- case xs of
-      Var (VarName xs) -> renameVarName LocalNameKind xs
+      Var xs -> renameVarName LocalNameKind xs
       _ -> newFreshName LocalNameKind
     tell
       [ Declare (TyVector t) y (DeclareCopy xs),

@@ -204,9 +204,45 @@ formatLiteral = \case
 formatExpr' :: Prec -> Expr -> Code
 formatExpr' prec = resolvePrec prec . formatExpr
 
+formatFunction :: Function -> Maybe [Expr] -> (Code, Prec)
+formatFunction f args =
+  let args' = intercalate ", " (maybe [] (map (formatExpr' CommaPrec)) args)
+      call f = case args of
+        Nothing -> (f, IdentPrec)
+        Just _ -> (f ++ "(" ++ args' ++ ")", FunCallPrec)
+      method f = case args of
+        Just (e : args) -> (formatExpr' FunCallPrec e ++ "." ++ f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
+        _ -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: no receiver for method: " ++ f
+   in case f of
+        Function f ts -> call $ formatFunName f ++ (if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">")
+        Method f -> method $ formatFunName f
+        At -> case args of
+          Just [e1, e2] ->
+            let e1' = formatExpr' FunCallPrec e1
+                e2' = formatExpr' ParenPrec e2
+             in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
+          _ -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: wrong number of arguments for subscription: " ++ show (length args)
+        SetAt t -> call $ "jikka::set_at<" ++ formatType t ++ ">"
+        Cast t -> call $ formatType t
+        StdTuple ts -> call $ "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
+        StdGet n -> call $ "std::get<" ++ show n ++ ">"
+        ArrayExt t -> case args of
+          Nothing -> error "cannot use array extensional notation without any application"
+          Just args -> ("std::array<" ++ formatType t ++ ", " ++ show (length args) ++ ">{" ++ args' ++ "}", IdentPrec)
+        VecExt t -> case args of
+          Nothing -> error "cannot use vector extensional notation without any application"
+          Just _ -> ("std::vector<" ++ formatType t ++ ">{" ++ args' ++ "}", IdentPrec)
+        VecCtor t -> call $ "std::vector<" ++ formatType t ++ ">"
+        Range -> call "jikka::range"
+        MethodSize -> method "size"
+        ConvexHullTrickCtor -> call "jikka::convex_hull_trick"
+        ConvexHullTrickCopyAddLine -> call "jikka::convex_hull_trick::add_line"
+        SegmentTreeCtor mon -> call (formatType (TySegmentTree mon))
+        SegmentTreeCopySetPoint _ -> call "jikka::segment_tree_set"
+
 formatExpr :: Expr -> (Code, Prec)
 formatExpr = \case
-  Var x -> (unVarName x, IdentPrec)
+  Var x -> (formatVarName x, IdentPrec)
   Lit lit -> (formatLiteral lit, IdentPrec)
   UnOp op e ->
     let (op', prec) = formatUnaryOp op
@@ -218,42 +254,17 @@ formatExpr = \case
         e2' = resolvePrecRight prec (formatExpr e2)
      in (e1' ++ " " ++ op' ++ " " ++ e2', prec)
   Lam args ret body ->
-    let args' = map (\(t, x) -> formatType t ++ " " ++ unVarName x) args
+    let args' = map (\(t, x) -> formatType t ++ " " ++ formatVarName x) args
         ret' = formatType ret
         body' = concatMap formatStatement body
      in ("[=](" ++ intercalate ", " args' ++ ") -> " ++ ret' ++ "{ " ++ unwords body' ++ " }", FunCallPrec)
-  Call f args ->
-    let args' = intercalate ", " (map (formatExpr' CommaPrec) args)
-        call f = (f ++ "(" ++ args' ++ ")", FunCallPrec)
-        method f = case args of
-          [] -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: no receiver for method: " ++ f
-          e : args -> (formatExpr' FunCallPrec e ++ "." ++ f ++ "(" ++ intercalate ", " (map (formatExpr' CommaPrec) args) ++ ")", FunCallPrec)
-     in case f of
-          Function f ts -> call $ unFunName f ++ (if null ts then "" else "<" ++ intercalate ", " (map formatType ts) ++ ">")
-          Method f -> method $ unFunName f
-          At -> case args of
-            [e1, e2] ->
-              let e1' = formatExpr' FunCallPrec e1
-                  e2' = formatExpr' ParenPrec e2
-               in (e1' ++ "[" ++ e2' ++ "]", FunCallPrec)
-            _ -> error $ "Jikka.CPlusPlus.Language.Format.formatExpr: wrong number of arguments for subscription: " ++ show (length args)
-          SetAt t -> call $ "jikka::set_at<" ++ formatType t ++ ">"
-          Cast t -> call $ formatType t
-          StdTuple ts -> call $ "std::tuple<" ++ intercalate ", " (map formatType ts) ++ ">"
-          StdGet n -> call $ "std::get<" ++ show n ++ ">"
-          ArrayExt t -> ("std::array<" ++ formatType t ++ ", " ++ show (length args) ++ ">{" ++ args' ++ "}", IdentPrec)
-          VecExt t -> ("std::vector<" ++ formatType t ++ ">{" ++ args' ++ "}", IdentPrec)
-          VecCtor t -> call $ "std::vector<" ++ formatType t ++ ">"
-          Range -> call "jikka::range"
-          MethodSize -> method "size"
-          ConvexHullTrickCtor -> call "jikka::convex_hull_trick"
-          ConvexHullTrickCopyAddLine -> call "jikka::convex_hull_trick::add_line"
-          SegmentTreeCtor mon -> call (formatType (TySegmentTree mon))
-          SegmentTreeCopySetPoint _ -> call "jikka::segment_tree_set"
-  CallExpr f args ->
-    let f' = formatExpr' FunCallPrec f
-        args' = intercalate ", " (map (formatExpr' CommaPrec) args)
-     in (f' ++ "(" ++ args' ++ ")", FunCallPrec)
+  Call f args -> case f of
+    Callable f -> formatFunction f (Just args)
+    _ -> do
+      let f' = formatExpr' FunCallPrec f
+          args' = intercalate ", " (map (formatExpr' CommaPrec) args)
+       in (f' ++ "(" ++ args' ++ ")", FunCallPrec)
+  Callable f -> formatFunction f Nothing
   Cond e1 e2 e3 ->
     let e1' = resolvePrecLeft CondPrec (formatExpr e1)
         e2' = resolvePrec CondPrec (formatExpr e2)
@@ -291,12 +302,12 @@ formatStatement = \case
         cond' = formatExpr' ParenPrec cond
         incr' = resolvePrec ParenPrec $ formatAssignExpr incr
         body' = concatMap formatStatement body
-     in ["for (" ++ t' ++ " " ++ unVarName x ++ " = " ++ init' ++ "; " ++ cond' ++ "; " ++ incr' ++ ") {"] ++ body' ++ ["}"]
+     in ["for (" ++ t' ++ " " ++ formatVarName x ++ " = " ++ init' ++ "; " ++ cond' ++ "; " ++ incr' ++ ") {"] ++ body' ++ ["}"]
   ForEach t x xs body ->
     let t' = formatType t
         xs' = formatExpr' ParenPrec xs
         body' = concatMap formatStatement body
-     in ["for (" ++ t' ++ " " ++ unVarName x ++ " : " ++ xs' ++ ") {"] ++ body' ++ ["}"]
+     in ["for (" ++ t' ++ " " ++ formatVarName x ++ " : " ++ xs' ++ ") {"] ++ body' ++ ["}"]
   While cond body ->
     let cond' = formatExpr' ParenPrec cond
         body' = concatMap formatStatement body
@@ -307,20 +318,20 @@ formatStatement = \case
           DeclareDefault -> ""
           DeclareCopy e -> " = " ++ resolvePrecRight AssignPrec (formatExpr e)
           DeclareInitialize es -> "(" ++ intercalate ", " (map (formatExpr' CommaPrec) es) ++ ")"
-     in [t' ++ " " ++ unVarName x ++ init' ++ ";"]
-  DeclareDestructure xs e -> ["auto [" ++ intercalate ", " (map unVarName xs) ++ "] = " ++ resolvePrecRight AssignPrec (formatExpr e) ++ ";"]
+     in [t' ++ " " ++ formatVarName x ++ init' ++ ";"]
+  DeclareDestructure xs e -> ["auto [" ++ intercalate ", " (map formatVarName xs) ++ "] = " ++ resolvePrecRight AssignPrec (formatExpr e) ++ ";"]
   Assign e -> [resolvePrec ParenPrec (formatAssignExpr e) ++ ";"]
   Assert e -> ["assert (" ++ formatExpr' ParenPrec e ++ ");"]
   Return e -> ["return " ++ formatExpr' ParenPrec e ++ ";"]
 
 formatToplevelStatement :: ToplevelStatement -> [Code]
 formatToplevelStatement = \case
-  VarDef t x e -> [formatType t ++ " " ++ unVarName x ++ " = " ++ resolvePrecRight AssignPrec (formatExpr e) ++ ";"]
+  VarDef t x e -> [formatType t ++ " " ++ formatVarName x ++ " = " ++ resolvePrecRight AssignPrec (formatExpr e) ++ ";"]
   FunDef ret f args body ->
     let ret' = formatType ret
-        args' = intercalate ", " $ map (\(t, x) -> formatType t ++ " " ++ unVarName x) args
+        args' = intercalate ", " $ map (\(t, x) -> formatType t ++ " " ++ formatVarName x) args
         body' = concatMap formatStatement body
-     in [ret' ++ " " ++ unVarName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
+     in [ret' ++ " " ++ formatFunName f ++ "(" ++ args' ++ ") {"] ++ body' ++ ["}"]
   StaticAssert e msg ->
     ["static_assert (" ++ resolvePrec CommaPrec (formatExpr e) ++ ", " ++ formatLiteral (LitString msg) ++ ");"]
 
