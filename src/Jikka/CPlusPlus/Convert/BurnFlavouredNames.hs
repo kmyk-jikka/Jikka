@@ -38,8 +38,8 @@ emptyEnv =
       usedVars = S.empty
     }
 
-fromNameKind :: Maybe NameHint -> String
-fromNameKind = \case
+fromNameHint :: Maybe NameHint -> String
+fromNameHint = \case
   Nothing -> "u"
   Just LocalNameHint -> "x"
   Just LocalArgumentNameHint -> "b"
@@ -47,11 +47,12 @@ fromNameKind = \case
   Just ConstantNameHint -> "c"
   Just FunctionNameHint -> "f"
   Just ArgumentNameHint -> "a"
+  Just (AdHocNameHint hint) -> hint
 
 chooseOccName :: S.Set String -> VarName -> String
 chooseOccName used (VarName occ _ kind) =
   let occ_workaround = (\s -> if '$' `elem` s then Nothing else Just s) =<< occ -- TODO: Remove this after Python stops using variables with `$`.
-      base = fromMaybe (fromNameKind kind) occ_workaround
+      base = fromMaybe (fromNameHint kind) occ_workaround
       occs = base : map (\i -> base ++ show i) [2 ..]
       occ' = head $ filter (`S.notMember` used) occs
    in occ'

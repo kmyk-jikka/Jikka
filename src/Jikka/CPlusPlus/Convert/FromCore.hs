@@ -44,6 +44,16 @@ renameFunName' = \case
   X.VarName (Just occ) _ -> return $ Y.FunName occ
   _ -> throwInternalError "annonymous toplevel-let is not allowed"
 
+newFreshNameWithAdHocHintFromExpr :: MonadAlpha m => String -> Y.Expr -> m Y.VarName
+newFreshNameWithAdHocHintFromExpr prefix e = case e of
+  Y.Var (Y.VarName (Just occ) _ _) -> Y.newFreshName (Y.AdHocNameHint (prefix ++ "_" ++ occ))
+  _ -> Y.newFreshName (Y.AdHocNameHint prefix)
+
+newFreshNameWithAdHocHintFromExpr' :: MonadAlpha m => String -> X.Expr -> m Y.VarName
+newFreshNameWithAdHocHintFromExpr' prefix e = case e of
+  X.Var (X.VarName (Just occ) _) -> Y.newFreshName (Y.AdHocNameHint (prefix ++ "_" ++ occ))
+  _ -> Y.newFreshName (Y.AdHocNameHint prefix)
+
 data Env = Env
   { typeEnv :: [(X.VarName, X.Type)],
     varMapping :: [(X.VarName, Y.VarName)],
@@ -204,7 +214,7 @@ runFoldl env t1 t2 f init xs = do
 
 runMap :: (MonadStatements m, MonadAlpha m, MonadError Error m) => Env -> X.Type -> X.Type -> X.Expr -> X.Expr -> m Y.Expr
 runMap env _ t2 f xs = do
-  ys <- Y.newFreshName Y.LocalNameHint
+  ys <- newFreshNameWithAdHocHintFromExpr' "mapped" xs
   t2 <- runType t2
   case (f, xs) of
     -- optimize @map (const e) xs@
@@ -391,7 +401,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.Filter -> go12'' $ \t f xs -> do
       xs <- runExpr env xs
       t <- runType t
-      ys <- Y.newFreshName Y.LocalNameHint
+      ys <- newFreshNameWithAdHocHintFromExpr "filtered" xs
       x <- Y.newFreshName Y.LocalNameHint
       (stmtsF, body, f) <- runExprFunction env f (Y.Var x)
       useStatement $ Y.Declare (Y.TyVector t) ys Y.DeclareDefault
@@ -405,70 +415,70 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
       return $ Y.Var y
     X.Sum -> go01' $ \xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "sum" xs
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0]))
       return $ Y.Var y
     X.ModSum -> go02' $ \xs m -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "sum" xs
       x <- Y.newFreshName Y.LocalNameHint
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 0))
       useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.AddAssign (Y.LeftVar y) (Y.callFunction "jikka::floormod" [] [Y.Var x, m]))]
       return $ Y.callFunction "jikka::floormod" [] [Y.Var y, m]
     X.Product -> go01' $ \xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "prod" xs
       x <- Y.newFreshName Y.LocalNameHint
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1))
       useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.MulAssign (Y.LeftVar y) (Y.Var x))]
       return $ Y.Var y
     X.ModProduct -> go02' $ \xs m -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "prod" xs
       x <- Y.newFreshName Y.LocalNameHint
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1))
       useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::mod::mult" [] [Y.Var y, Y.Var x, m]))]
       return $ Y.Var y
     X.Min1 -> go11' $ \t xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "min" xs
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs])))
       return $ Y.Var y
     X.Max1 -> go11' $ \t xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "max" xs
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs])))
       return $ Y.Var y
     X.ArgMin -> go11' $ \t xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "argmin" xs
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::min_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
       return $ Y.Var y
     X.ArgMax -> go11' $ \t xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "argmax" xs
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.BinOp Y.Sub (Y.callFunction "std::max_element" [] [Y.begin xs, Y.end xs]) (Y.begin xs)))
       return $ Y.Var y
     X.Gcd1 -> go11' $ \t xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "gcd" xs
       a <- Y.newFreshName Y.LocalArgumentNameHint
       b <- Y.newFreshName Y.LocalArgumentNameHint
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto, a), (Y.TyAuto, b)] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var a, Y.Var b]]])))
       return $ Y.Var y
     X.Lcm1 -> go11' $ \t xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "lcm" xs
       a <- Y.newFreshName Y.LocalArgumentNameHint
       b <- Y.newFreshName Y.LocalArgumentNameHint
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto, a), (Y.TyAuto, b)] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var a, Y.Var b]]])))
       return $ Y.Var y
     X.All -> go01' $ \xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "all" xs
       useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.Equal (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool False)]) (Y.end xs)))
       return $ Y.Var y
     X.Any -> go01' $ \xs -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- newFreshNameWithAdHocHintFromExpr "any" xs
       useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, Y.Lit (Y.LitBool True)]) (Y.end xs)))
       return $ Y.Var y
     X.Sorted -> go11' $ \t xs -> do
-      ys <- Y.newFreshName Y.LocalNameHint
+      ys <- newFreshNameWithAdHocHintFromExpr "sorted" xs
       useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
       useStatement $ Y.callFunction' "std::sort" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
       return $ Y.Var ys
     X.Reversed -> go11' $ \t xs -> do
-      ys <- Y.newFreshName Y.LocalNameHint
+      ys <- newFreshNameWithAdHocHintFromExpr "reversed" xs
       useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
       useStatement $ Y.callFunction' "std::reverse" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys)]
       return $ Y.Var ys

@@ -21,6 +21,7 @@ data NameHint
   | ConstantNameHint
   | FunctionNameHint
   | ArgumentNameHint
+  | AdHocNameHint String
   deriving (Eq, Ord, Show, Read)
 
 data VarName = VarName OccName NameFlavour (Maybe NameHint) deriving (Eq, Ord, Show, Read)
