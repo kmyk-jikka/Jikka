@@ -62,7 +62,7 @@ spec = describe "run" $ do
           Y.FunDef
             Y.TyInt64
             "solve"
-            [(Y.TyInt64, "a3")]
-            [Y.Return (Y.CallExpr (Y.Var "f_0") [Y.Var "a3"])]
+            [(Y.TyInt64, "a4")]
+            [Y.Return (Y.CallExpr (Y.Var "f_0") [Y.Var "a4"])]
     let expected = Y.Program [expectedF, expectedSolve]
     run' prog `shouldBe` Right expected

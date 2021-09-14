@@ -25,6 +25,7 @@ import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
 import qualified Jikka.Core.Language.BuiltinPatterns as X
+import qualified Jikka.Core.Language.Eta as X
 import qualified Jikka.Core.Language.Expr as X
 import qualified Jikka.Core.Language.LambdaPatterns as X
 import qualified Jikka.Core.Language.TypeCheck as X
@@ -586,32 +587,26 @@ runToplevelExpr :: (MonadAlpha m, MonadError Error m) => Env -> X.ToplevelExpr -
 runToplevelExpr env = \case
   X.ResultExpr e -> do
     t <- typecheckExpr env e
-    case X.uncurryFunTy t of
-      (ts@(_ : _), ret) -> do
-        let f = Y.VarName "solve"
-        (args, body) <- case X.uncurryLam e of
-          (args, body) | length args == length ts -> do
-            -- merge two sets of arguments which introduced by @FunTy@ and @Lam@
-            args <- forM args $ \(x, t) -> do
-              y <- renameVarName' Y.ArgumentNameKind x
-              return (x, t, y)
-            (stmts, e) <- runStatementsT $ runExpr (reverse args ++ env) body
-            let body = stmts ++ [Y.Return e]
-            args' <- forM args $ \(_, t, y) -> do
-              t <- runType t
-              return (t, y)
-            return (args', body)
-          _ -> do
-            args <- forM ts $ \t -> do
-              t <- runType t
-              y <- Y.newFreshName Y.ArgumentNameKind
-              return (t, y)
-            (stmts, e) <- runStatementsT $ runExpr env e
-            let body = stmts ++ [Y.Return (Y.CallExpr e (map (Y.Var . snd) args))]
-            return (args, body)
-        ret <- runType ret
-        return [Y.FunDef ret f args body]
+    (ts, ret) <- case X.uncurryFunTy t of
+      (ts@(_ : _), ret) -> return (ts, ret)
       _ -> throwInternalError "solve function must be a function" -- TODO: add check in restricted Python
+    ret <- runType ret
+    -- do eta-expansion to define it as a function.
+    e <- X.etaExpand (map (\(x, t, _) -> (x, t)) env) e
+    (args, body) <- case X.uncurryLam e of
+      (args, body) | length args == length ts -> return (args, body)
+      _ -> throwInternalError "the result expr must be eta-converted"
+    -- merge two sets of arguments which introduced by @FunTy@ and @Lam@
+    args <- forM args $ \(x, t) -> do
+      y <- renameVarName' Y.ArgumentNameKind x
+      return (x, t, y)
+    (stmts, e) <- runStatementsT $ runExpr (reverse args ++ env) body
+    let body = stmts ++ [Y.Return e]
+    args' <- forM args $ \(_, t, y) -> do
+      t <- runType t
+      return (t, y)
+    let f = Y.VarName "solve"
+    return [Y.FunDef ret f args' body]
   X.ToplevelLet x t e cont -> case (X.uncurryLam e, X.uncurryFunTy t) of
     ((args@(_ : _), body), (ts@(_ : _), ret)) -> do
       g <- renameVarName' Y.FunctionNameKind x
