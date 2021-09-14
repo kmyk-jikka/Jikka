@@ -85,7 +85,7 @@ spec = do
       run' prog `shouldBe` Right expected
 
   describe "runExpr" $ do
-    it "works" $ do
+    it "works on an equation" $ do
       let env = [("xs", ListTy BoolTy)]
       let e =
             parseExpr'
@@ -94,5 +94,17 @@ spec = do
       let expected =
             parseExpr'
               [ "xs ==@(bool list) nil@bool"
+              ]
+      runExpr' env e `shouldBe` Right expected
+
+    it "works on lambdas and applications" $ do
+      let env = [("f", Fun3Ty IntTy BoolTy UnitTy (ListTy IntTy))]
+      let e =
+            parseExpr'
+              [ "fun x y z -> f x y z"
+              ]
+      let expected =
+            parseExpr'
+              [ "fun (x: int) (y: bool) (z: unit) -> f x y z"
               ]
       runExpr' env e `shouldBe` Right expected
