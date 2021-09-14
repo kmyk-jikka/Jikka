@@ -27,3 +27,13 @@ formatFlavouredName :: OccName -> NameFlavour -> String
 formatFlavouredName occ flavour = case (occ, flavour) of
   (Nothing, Nothing) -> "_"
   _ -> fromMaybe "" occ ++ maybe "" (('$' :) . show) flavour
+
+data NameHint
+  = LocalNameHint
+  | LocalArgumentNameHint
+  | LoopCounterNameHint
+  | ConstantNameHint
+  | FunctionNameHint
+  | ArgumentNameHint
+  | AdHocNameHint String
+  deriving (Eq, Ord, Show, Read)

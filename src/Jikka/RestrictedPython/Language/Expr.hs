@@ -53,13 +53,15 @@ import Jikka.Common.Location
 import Jikka.Common.Name
 import Jikka.Python.Language.Expr (BoolOp (..), CmpOp (..), Operator (..), UnaryOp (..))
 
-data VarName = VarName OccName NameFlavour deriving (Eq, Ord, Show, Read)
+data VarName = VarName OccName NameFlavour (Maybe NameHint) deriving (Eq, Ord, Show, Read)
 
 instance IsString VarName where
-  fromString = uncurry VarName . toFlavouredName
+  fromString s =
+    let (occ, flavour) = toFlavouredName s
+     in VarName occ flavour Nothing
 
 formatVarName :: VarName -> String
-formatVarName (VarName occ flavour) = formatFlavouredName occ flavour
+formatVarName (VarName occ flavour _) = formatFlavouredName occ flavour
 
 type VarName' = WithLoc' VarName
 

@@ -8,6 +8,7 @@ import Control.Monad.Identity
 import qualified Data.Set as S
 import Jikka.CPlusPlus.Language.Expr
 import Jikka.Common.Alpha
+import Jikka.Common.Name
 
 fromLeftExpr :: LeftExpr -> Expr
 fromLeftExpr = \case

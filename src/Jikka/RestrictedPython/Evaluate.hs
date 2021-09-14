@@ -548,7 +548,7 @@ makeGlobal prog = do
 run :: MonadError Error m => Program -> [Value] -> m Value
 run prog args = wrapError' "Jikka.RestrictedPython.Evaluate" $ do
   global <- makeGlobal prog
-  solve <- lookupGlobal (withoutLoc (VarName (Just "solve") Nothing)) global
+  solve <- lookupGlobal (withoutLoc (VarName (Just "solve") Nothing Nothing)) global
   runWithGlobal' global solve args
 
 evalBinOp :: MonadError Error m => Value -> Operator -> Value -> m Value

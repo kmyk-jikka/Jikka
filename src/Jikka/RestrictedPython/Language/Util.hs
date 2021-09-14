@@ -67,10 +67,12 @@ genType :: MonadAlpha m => m Type
 genType = VarTy . TypeName Nothing . Just <$> nextCounter
 
 genVarName :: MonadAlpha m => VarName' -> m VarName'
-genVarName x@(WithLoc' _ (VarName occ _)) = WithLoc' (loc' x) . VarName occ . Just <$> nextCounter
+genVarName x@(WithLoc' _ (VarName occ _ hint)) = do
+  i <- nextCounter
+  return . WithLoc' (loc' x) $ VarName occ (Just i) hint
 
 genVarName' :: MonadAlpha m => m VarName'
-genVarName' = genVarName (withoutLoc (VarName Nothing Nothing))
+genVarName' = genVarName (withoutLoc (VarName Nothing Nothing Nothing))
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
@@ -348,4 +350,4 @@ targetToExpr e =
     SubscriptTrg e1 e2 -> Subscript (targetToExpr e1) e2
 
 toplevelMainDef :: [Statement] -> Program
-toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName (Just "main") Nothing)) [] IntTy body]
+toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName (Just "main") Nothing Nothing)) [] IntTy body]

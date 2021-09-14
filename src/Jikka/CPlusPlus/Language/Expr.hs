@@ -14,16 +14,6 @@ module Jikka.CPlusPlus.Language.Expr where
 import Data.String
 import Jikka.Common.Name
 
-data NameHint
-  = LocalNameHint
-  | LocalArgumentNameHint
-  | LoopCounterNameHint
-  | ConstantNameHint
-  | FunctionNameHint
-  | ArgumentNameHint
-  | AdHocNameHint String
-  deriving (Eq, Ord, Show, Read)
-
 data VarName = VarName OccName NameFlavour (Maybe NameHint) deriving (Eq, Ord, Show, Read)
 
 instance IsString VarName where

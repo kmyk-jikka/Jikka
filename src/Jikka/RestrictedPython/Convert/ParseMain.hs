@@ -29,7 +29,7 @@ type MainFunction = (Maybe Loc, [(VarName', Type)], Type, [Statement])
 splitMain :: Program -> (Maybe MainFunction, Program)
 splitMain = \case
   [] -> (Nothing, [])
-  ToplevelFunctionDef (WithLoc' loc (VarName (Just "main") Nothing)) args ret body : stmts -> (Just (loc, args, ret, body), stmts)
+  ToplevelFunctionDef (WithLoc' loc (VarName (Just "main") Nothing Nothing)) args ret body : stmts -> (Just (loc, args, ret, body), stmts)
   stmt : stmts -> second (stmt :) $ splitMain stmts
 
 checkMainType :: MonadError Error m => MainFunction -> m ()
@@ -122,7 +122,7 @@ parseAnnAssign x _ e cont = do
         For _ (CallBuiltin BuiltinRange1 [WithLoc' _ (Name n')]) _ : _ | value' n' == n -> return (Seq [], Nothing, cont) -- TODO: add more strict checks
         _ -> throwSemanticErrorAt' (loc' e) "after some repetition of `xs = list(range(n))', we need to write `for i in range(n):`"
     -- solve(...)
-    WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName (Just "solve") Nothing)))) args) -> do
+    WithLoc' _ (Call (WithLoc' _ (Name (WithLoc' _ (VarName (Just "solve") Nothing Nothing)))) args) -> do
       inputs <- mapM nameExpr args
       output <- nameOrTupleTrg x
       return (Seq [], Just (inputs, output), cont)

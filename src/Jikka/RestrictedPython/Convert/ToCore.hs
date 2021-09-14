@@ -47,7 +47,7 @@ withScope f = do
   return x
 
 runVarName :: X.VarName' -> Y.VarName
-runVarName (X.WithLoc' _ (X.VarName occ flavour)) = Y.VarName occ flavour
+runVarName (X.WithLoc' _ (X.VarName occ flavour _)) = Y.VarName occ flavour
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case

@@ -28,7 +28,7 @@ lookupSolve = \case
   [] -> throwSymbolError "solve function is not defined"
   ToplevelAnnAssign _ _ _ : stmts -> lookupSolve stmts
   ToplevelFunctionDef f args ret body : stmts -> case value' f of
-    VarName (Just "solve") Nothing -> return (loc' f, args, ret, body)
+    VarName (Just "solve") Nothing Nothing -> return (loc' f, args, ret, body)
     _ -> lookupSolve stmts
   ToplevelAssert _ : stmts -> lookupSolve stmts
 
