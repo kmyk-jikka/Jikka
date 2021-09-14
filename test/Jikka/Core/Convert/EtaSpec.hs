@@ -8,30 +8,40 @@ where
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Core.Convert.Eta (run)
-import Jikka.Core.Language.BuiltinPatterns
+import qualified Jikka.Core.Convert.TypeInfer as TypeInfer
 import Jikka.Core.Language.Expr
+import Jikka.Core.Parse (parseProgram)
 import Test.Hspec
 
 run' :: Program -> Either Error Program
 run' = flip evalAlphaT 0 . run
 
+parseProgram' :: [String] -> Program
+parseProgram' = fromSuccess . flip evalAlphaT 100 . (TypeInfer.run <=< parseProgram . unlines)
+
 spec :: Spec
 spec = describe "run" $ do
-  it "works" $ do
+  it "works on a let" $ do
     let prog =
-          ResultExpr
-            ( Let
-                "plus"
-                (FunTy IntTy (FunTy IntTy IntTy))
-                (Builtin Plus)
-                (Var "plus")
-            )
+          parseProgram'
+            [ "fun (n: int) ->",
+              "    let f = sum",
+              "    in f"
+            ]
     let expected =
-          ResultExpr
-            ( Let
-                "plus"
-                (FunTy IntTy (FunTy IntTy IntTy))
-                (Lam "$0" IntTy (Lam "$1" IntTy (Plus' (Var "$0") (Var "$1"))))
-                (Var "plus")
-            )
+          parseProgram'
+            [ "fun (n: int) ->",
+              "    let f = fun $0 -> sum $0",
+              "    in f"
+            ]
+    run' prog `shouldBe` Right expected
+  it "works in map" $ do
+    let prog =
+          parseProgram'
+            [ "map sum nil"
+            ]
+    let expected =
+          parseProgram'
+            [ "map (fun $0 -> sum $0) nil"
+            ]
     run' prog `shouldBe` Right expected
