@@ -22,22 +22,22 @@
 </span><span id="line-22"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html"><span class="hs-identifier">Jikka.Core.Language.Expr</span></a></span><span>
 </span><span id="line-23"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Util.html"><span class="hs-identifier">Jikka.Core.Language.Util</span></a></span><span>
 </span><span id="line-24"></span><span>
-</span><span id="line-25"></span><span id="local-6989586621679999666"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-type">define</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679999666"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679999666"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679999666"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-25"></span><span id="local-6989586621680004056"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-type">define</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621680004056"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004056"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004056"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-26"></span><span id="define"><span class="annot"><span class="annottext">define :: VarName -&gt; Type -&gt; m ()
-</span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var hs-var">define</span></a></span></span><span> </span><span id="local-6989586621679999640"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999640"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679999639"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999639"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-27"></span><span>  </span><span id="local-6989586621679999638"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999638"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m [(VarName, Type)]
+</span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var hs-var">define</span></a></span></span><span> </span><span id="local-6989586621680004030"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004030"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680004029"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004029"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-27"></span><span>  </span><span id="local-6989586621680004028"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680004028"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m [(VarName, Type)]
 forall s (m :: * -&gt; *). MonadState s m =&gt; m s
 </span><span class="hs-identifier hs-var">get</span></span><span>
 </span><span id="line-28"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; [(VarName, Type)] -&gt; Maybe Type
 forall a b. Eq a =&gt; a -&gt; [(a, b)] -&gt; Maybe b
 </span><span class="hs-identifier hs-var">lookup</span></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999640"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999638"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679999635"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999635"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m ()
+</span><a href="#local-6989586621680004030"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680004028"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621680004025"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004025"><span class="hs-identifier hs-var">t'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
 </span><a href="Jikka.Common.Error.html#throwInternalError"><span class="hs-identifier hs-var">throwInternalError</span></a></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m ()) -&gt; String -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
@@ -45,55 +45,55 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;name conflict: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
-</span><a href="Jikka.Core.Language.Expr.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999640"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+</span><a href="Jikka.Core.Language.Expr.html#formatVarName"><span class="hs-identifier hs-var">formatVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004030"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
 </span><a href="Jikka.Core.Format.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999639"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+</span><a href="#local-6989586621680004029"><span class="hs-identifier hs-var">t</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot; and &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
-</span><a href="Jikka.Core.Language.Expr.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999640"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
+</span><a href="Jikka.Core.Language.Expr.html#formatVarName"><span class="hs-identifier hs-var">formatVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004030"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Type -&gt; String
 </span><a href="Jikka.Core.Format.html#formatType"><span class="hs-identifier hs-var">formatType</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999635"><span class="hs-identifier hs-var">t'</span></a></span><span>
+</span><a href="#local-6989586621680004025"><span class="hs-identifier hs-var">t'</span></a></span><span>
 </span><span id="line-30"></span><span>    </span><span class="annot"><span class="annottext">Maybe Type
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; m ()
 forall s (m :: * -&gt; *). MonadState s m =&gt; s -&gt; m ()
 </span><span class="hs-identifier hs-var">put</span></span><span> </span><span class="annot"><span class="annottext">([(VarName, Type)] -&gt; m ()) -&gt; [(VarName, Type)] -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999640"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999639"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; [(VarName, Type)] -&gt; [(VarName, Type)]
+</span><a href="#local-6989586621680004030"><span class="hs-identifier hs-var">x</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004029"><span class="hs-identifier hs-var">t</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; [(VarName, Type)] -&gt; [(VarName, Type)]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999638"><span class="hs-identifier hs-var">env</span></a></span><span>
+</span><a href="#local-6989586621680004028"><span class="hs-identifier hs-var">env</span></a></span><span>
 </span><span id="line-31"></span><span>
-</span><span id="line-32"></span><span id="local-6989586621679999667"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-type">namecheckExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679999667"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679999667"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679999667"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-32"></span><span id="local-6989586621680004057"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-type">namecheckExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621680004057"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004057"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004057"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-33"></span><span id="namecheckExpr%27"><span class="annot"><span class="annottext">namecheckExpr' :: Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var hs-var">namecheckExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-34"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621679999629"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999629"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621679999628"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999628"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m [(VarName, Type)]
+</span><span id="line-34"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Var"><span class="hs-identifier hs-type">Var</span></a></span><span> </span><span id="local-6989586621680004019"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004019"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621680004018"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680004018"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m [(VarName, Type)]
 forall s (m :: * -&gt; *). MonadState s m =&gt; m s
 </span><span class="hs-identifier hs-var">get</span></span><span>
 </span><span id="line-36"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">VarName -&gt; [(VarName, Type)] -&gt; Maybe Type
 forall a b. Eq a =&gt; a -&gt; [(a, b)] -&gt; Maybe b
 </span><span class="hs-identifier hs-var">lookup</span></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999629"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999628"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621680004019"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680004018"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-37"></span><span>      </span><span class="annot"><span class="annottext">Maybe Type
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a
@@ -103,8 +103,8 @@ forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-string">&quot;undefined variable: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">VarName -&gt; String
-</span><a href="Jikka.Core.Language.Expr.html#unVarName"><span class="hs-identifier hs-var">unVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999629"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><a href="Jikka.Core.Language.Expr.html#formatVarName"><span class="hs-identifier hs-var">formatVarName</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004019"><span class="hs-identifier hs-var">x</span></a></span><span>
 </span><span id="line-38"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">Type
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
@@ -113,83 +113,83 @@ forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">() -&gt; m ()
 forall (m :: * -&gt; *) a. Monad m =&gt; a -&gt; m a
 </span><span class="hs-identifier hs-var">return</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621679999625"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999625"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679999624"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999624"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-40"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#App"><span class="hs-identifier hs-type">App</span></a></span><span> </span><span id="local-6989586621680004015"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004015"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680004014"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004014"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-41"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999625"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><a href="#local-6989586621680004015"><span class="hs-identifier hs-var">f</span></a></span><span>
 </span><span id="line-42"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999624"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621679999622"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999622"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679999621"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999621"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679999620"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999620"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680004014"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-43"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Lam"><span class="hs-identifier hs-type">Lam</span></a></span><span> </span><span id="local-6989586621680004012"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004012"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680004011"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004011"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680004010"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004010"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-44"></span><span>    </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 VarName -&gt; Type -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var">define</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999622"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999621"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680004012"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004011"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-45"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999620"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-46"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621679999618"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999618"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679999617"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999617"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679999616"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999616"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679999615"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999615"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680004010"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-46"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Let"><span class="hs-identifier hs-type">Let</span></a></span><span> </span><span id="local-6989586621680004008"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680004008"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680004007"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004007"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680004006"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004006"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621680004005"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004005"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-47"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999616"><span class="hs-identifier hs-var">e1</span></a></span><span>
+</span><a href="#local-6989586621680004006"><span class="hs-identifier hs-var">e1</span></a></span><span>
 </span><span id="line-48"></span><span>    </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 VarName -&gt; Type -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var">define</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999618"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999617"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680004008"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680004007"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-49"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999615"><span class="hs-identifier hs-var">e2</span></a></span><span>
-</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Assert"><span class="hs-identifier hs-type">Assert</span></a></span><span> </span><span id="local-6989586621679999613"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999613"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679999612"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999612"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680004005"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Assert"><span class="hs-identifier hs-type">Assert</span></a></span><span> </span><span id="local-6989586621680004003"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004003"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621680004002"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680004002"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-51"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999613"><span class="hs-identifier hs-var">e1</span></a></span><span>
+</span><a href="#local-6989586621680004003"><span class="hs-identifier hs-var">e1</span></a></span><span>
 </span><span id="line-52"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999612"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><a href="#local-6989586621680004002"><span class="hs-identifier hs-var">e2</span></a></span><span>
 </span><span id="line-53"></span><span>
-</span><span id="line-54"></span><span id="local-6989586621679999611"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr"><span class="hs-identifier hs-type">namecheckExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679999611"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679999611"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-54"></span><span id="local-6989586621680004001"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr"><span class="hs-identifier hs-type">namecheckExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004001"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Expr"><span class="hs-identifier hs-type">Expr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004001"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-55"></span><span id="namecheckExpr"><span class="annot"><span class="annottext">namecheckExpr :: [(VarName, Type)] -&gt; Expr -&gt; m ()
-</span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr"><span class="hs-identifier hs-var hs-var">namecheckExpr</span></a></span></span><span> </span><span id="local-6989586621679999610"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999610"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621679999609"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999609"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m () -&gt; m ()
+</span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr"><span class="hs-identifier hs-var hs-var">namecheckExpr</span></a></span></span><span> </span><span id="local-6989586621680004000"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680004000"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621680003999"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680003999"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Jikka.Core.Language.NameCheck.namecheckExpr&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
@@ -202,116 +202,116 @@ forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999609"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999610"><span class="hs-identifier hs-var">env</span></a></span><span>
+</span><a href="#local-6989586621680003999"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680004000"><span class="hs-identifier hs-var">env</span></a></span><span>
 </span><span id="line-57"></span><span>
-</span><span id="line-58"></span><span id="local-6989586621679999656"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-type">namecheckToplevelExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621679999656"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679999656"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679999656"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-58"></span><span id="local-6989586621680004046"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-type">namecheckToplevelExpr'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">MonadState</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><a href="#local-6989586621680004046"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680004046"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680004046"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-59"></span><span id="namecheckToplevelExpr%27"><span class="annot"><span class="annottext">namecheckToplevelExpr' :: ToplevelExpr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-var hs-var">namecheckToplevelExpr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-glyph">\</span><span class="hs-glyph">case</span><span>
-</span><span id="line-60"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ResultExpr"><span class="hs-identifier hs-type">ResultExpr</span></a></span><span> </span><span id="local-6989586621679999604"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999604"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m ()
+</span><span id="line-60"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ResultExpr"><span class="hs-identifier hs-type">ResultExpr</span></a></span><span> </span><span id="local-6989586621680003994"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680003994"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999604"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-61"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelLet"><span class="hs-identifier hs-type">ToplevelLet</span></a></span><span> </span><span id="local-6989586621679999602"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999602"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621679999601"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999601"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679999600"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999600"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679999599"><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999599"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680003994"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelLet"><span class="hs-identifier hs-type">ToplevelLet</span></a></span><span> </span><span id="local-6989586621680003992"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680003992"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span id="local-6989586621680003991"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003991"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621680003990"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680003990"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621680003989"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621680003989"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999600"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><a href="#local-6989586621680003990"><span class="hs-identifier hs-var">e</span></a></span><span>
 </span><span id="line-63"></span><span>    </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 VarName -&gt; Type -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var">define</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999602"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999601"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680003992"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003991"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-64"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 ToplevelExpr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-var">namecheckToplevelExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999599"><span class="hs-identifier hs-var">cont</span></a></span><span>
-</span><span id="line-65"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelLetRec"><span class="hs-identifier hs-type">ToplevelLetRec</span></a></span><span> </span><span id="local-6989586621679999597"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999597"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679999596"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999596"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621679999595"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999595"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span id="local-6989586621679999594"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999594"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span id="local-6989586621679999593"><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999593"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-66"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679999592"><span class="annot"><span class="annottext">t :: Type
-</span><a href="#local-6989586621679999592"><span class="hs-identifier hs-var hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Type -&gt; Type
+</span><a href="#local-6989586621680003989"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelLetRec"><span class="hs-identifier hs-type">ToplevelLetRec</span></a></span><span> </span><span id="local-6989586621680003987"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680003987"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621680003986"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680003986"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span id="local-6989586621680003985"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003985"><span class="hs-identifier hs-var">ret</span></a></span></span><span> </span><span id="local-6989586621680003984"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680003984"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span id="local-6989586621680003983"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621680003983"><span class="hs-identifier hs-var">cont</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-66"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621680003982"><span class="annot"><span class="annottext">t :: Type
+</span><a href="#local-6989586621680003982"><span class="hs-identifier hs-var hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Type] -&gt; Type -&gt; Type
 </span><a href="Jikka.Core.Language.Util.html#curryFunTy"><span class="hs-identifier hs-var">curryFunTy</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">((VarName, Type) -&gt; Type) -&gt; [(VarName, Type)] -&gt; [Type]
 forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
 </span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">(VarName, Type) -&gt; Type
 forall a b. (a, b) -&gt; b
 </span><span class="hs-identifier hs-var">snd</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999596"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999595"><span class="hs-identifier hs-var">ret</span></a></span><span>
+</span><a href="#local-6989586621680003986"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003985"><span class="hs-identifier hs-var">ret</span></a></span><span>
 </span><span id="line-67"></span><span>    </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 VarName -&gt; Type -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var">define</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999597"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999592"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680003987"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003982"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-68"></span><span>    </span><span class="annot"><span class="annottext">[(VarName, Type)] -&gt; ((VarName, Type) -&gt; m ()) -&gt; m ()
 forall (t :: * -&gt; *) (m :: * -&gt; *) a b.
 (Foldable t, Monad m) =&gt;
 t a -&gt; (a -&gt; m b) -&gt; m ()
 </span><span class="hs-identifier hs-var">forM_</span></span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999596"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">(((VarName, Type) -&gt; m ()) -&gt; m ())
+</span><a href="#local-6989586621680003986"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">(((VarName, Type) -&gt; m ()) -&gt; m ())
 -&gt; ((VarName, Type) -&gt; m ()) -&gt; m ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
-</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679999589"><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999589"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679999588"><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999588"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621680003979"><span class="annot"><span class="annottext">VarName
+</span><a href="#local-6989586621680003979"><span class="hs-identifier hs-var">x</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621680003978"><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003978"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-69"></span><span>      </span><span class="annot"><span class="annottext">VarName -&gt; Type -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 VarName -&gt; Type -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#define"><span class="hs-identifier hs-var">define</span></a></span><span> </span><span class="annot"><span class="annottext">VarName
-</span><a href="#local-6989586621679999589"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
-</span><a href="#local-6989586621679999588"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><a href="#local-6989586621680003979"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="annot"><span class="annottext">Type
+</span><a href="#local-6989586621680003978"><span class="hs-identifier hs-var">t</span></a></span><span>
 </span><span id="line-70"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999594"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><a href="#local-6989586621680003984"><span class="hs-identifier hs-var">body</span></a></span><span>
 </span><span id="line-71"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 ToplevelExpr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-var">namecheckToplevelExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999593"><span class="hs-identifier hs-var">cont</span></a></span><span>
-</span><span id="line-72"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelAssert"><span class="hs-identifier hs-type">ToplevelAssert</span></a></span><span> </span><span id="local-6989586621679999586"><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999586"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621679999585"><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999585"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="#local-6989586621680003983"><span class="hs-identifier hs-var">cont</span></a></span><span>
+</span><span id="line-72"></span><span>  </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelAssert"><span class="hs-identifier hs-type">ToplevelAssert</span></a></span><span> </span><span id="local-6989586621680003976"><span class="annot"><span class="annottext">Expr
+</span><a href="#local-6989586621680003976"><span class="hs-identifier hs-var">e1</span></a></span></span><span> </span><span id="local-6989586621680003975"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621680003975"><span class="hs-identifier hs-var">e2</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-73"></span><span>    </span><span class="annot"><span class="annottext">Expr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 Expr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckExpr%27"><span class="hs-identifier hs-var">namecheckExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">Expr
-</span><a href="#local-6989586621679999586"><span class="hs-identifier hs-var">e1</span></a></span><span>
+</span><a href="#local-6989586621680003976"><span class="hs-identifier hs-var">e1</span></a></span><span>
 </span><span id="line-74"></span><span>    </span><span class="annot"><span class="annottext">ToplevelExpr -&gt; m ()
 forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 ToplevelExpr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-var">namecheckToplevelExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999585"><span class="hs-identifier hs-var">e2</span></a></span><span>
+</span><a href="#local-6989586621680003975"><span class="hs-identifier hs-var">e2</span></a></span><span>
 </span><span id="line-75"></span><span>
-</span><span id="line-76"></span><span id="local-6989586621679999584"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr"><span class="hs-identifier hs-type">namecheckToplevelExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679999584"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679999584"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-76"></span><span id="local-6989586621680003974"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr"><span class="hs-identifier hs-type">namecheckToplevelExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003974"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Jikka.Core.Language.Expr.html#VarName"><span class="hs-identifier hs-type">VarName</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Type"><span class="hs-identifier hs-type">Type</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#ToplevelExpr"><span class="hs-identifier hs-type">ToplevelExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003974"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-77"></span><span id="namecheckToplevelExpr"><span class="annot"><span class="annottext">namecheckToplevelExpr :: [(VarName, Type)] -&gt; ToplevelExpr -&gt; m ()
-</span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr"><span class="hs-identifier hs-var hs-var">namecheckToplevelExpr</span></a></span></span><span> </span><span id="local-6989586621679999583"><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999583"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621679999582"><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999582"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m () -&gt; m ()
+</span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr"><span class="hs-identifier hs-var hs-var">namecheckToplevelExpr</span></a></span></span><span> </span><span id="local-6989586621680003973"><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680003973"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621680003972"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621680003972"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Jikka.Core.Language.NameCheck.namecheckToplevelExpr&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
@@ -324,13 +324,13 @@ forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 ToplevelExpr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-var">namecheckToplevelExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999582"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
-</span><a href="#local-6989586621679999583"><span class="hs-identifier hs-var">env</span></a></span><span>
+</span><a href="#local-6989586621680003972"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[(VarName, Type)]
+</span><a href="#local-6989586621680003973"><span class="hs-identifier hs-var">env</span></a></span><span>
 </span><span id="line-79"></span><span>
-</span><span id="line-80"></span><span id="local-6989586621679999581"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckProgram"><span class="hs-identifier hs-type">namecheckProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679999581"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679999581"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
+</span><span id="line-80"></span><span id="local-6989586621680003971"><span class="annot"><a href="Jikka.Core.Language.NameCheck.html#namecheckProgram"><span class="hs-identifier hs-type">namecheckProgram</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadError</span></span><span> </span><span class="annot"><a href="Jikka.Common.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621680003971"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Jikka.Core.Language.Expr.html#Program"><span class="hs-identifier hs-type">Program</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621680003971"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span></span><span>
 </span><span id="line-81"></span><span id="namecheckProgram"><span class="annot"><span class="annottext">namecheckProgram :: ToplevelExpr -&gt; m ()
-</span><a href="Jikka.Core.Language.NameCheck.html#namecheckProgram"><span class="hs-identifier hs-var hs-var">namecheckProgram</span></a></span></span><span> </span><span id="local-6989586621679999579"><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999579"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m () -&gt; m ()
+</span><a href="Jikka.Core.Language.NameCheck.html#namecheckProgram"><span class="hs-identifier hs-var hs-var">namecheckProgram</span></a></span></span><span> </span><span id="local-6989586621680003969"><span class="annot"><span class="annottext">ToplevelExpr
+</span><a href="#local-6989586621680003969"><span class="hs-identifier hs-var">prog</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; m () -&gt; m ()
 forall (m :: * -&gt; *) a. MonadError Error m =&gt; String -&gt; m a -&gt; m a
 </span><a href="Jikka.Common.Error.html#wrapError%27"><span class="hs-identifier hs-var">wrapError'</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Jikka.Core.Language.NameCheck.namecheckProgram&quot;</span></span><span> </span><span class="annot"><span class="annottext">(m () -&gt; m ()) -&gt; m () -&gt; m ()
@@ -343,5 +343,5 @@ forall (m :: * -&gt; *).
 (MonadState [(VarName, Type)] m, MonadError Error m) =&gt;
 ToplevelExpr -&gt; m ()
 </span><a href="Jikka.Core.Language.NameCheck.html#namecheckToplevelExpr%27"><span class="hs-identifier hs-var">namecheckToplevelExpr'</span></a></span><span> </span><span class="annot"><span class="annottext">ToplevelExpr
-</span><a href="#local-6989586621679999579"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><a href="#local-6989586621680003969"><span class="hs-identifier hs-var">prog</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
 </span><span id="line-83"></span></pre></body></html>

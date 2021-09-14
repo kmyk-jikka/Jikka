@@ -10,15 +10,397 @@
 @version 5.5.0.0
 
 
+-- | <a>Alpha</a> provides a monad to run alpha-conversion. This monad has
+--   only a feature to make unique numbers.
+module Jikka.Common.Alpha
+class Monad m => MonadAlpha m
+nextCounter :: MonadAlpha m => m Int
+newtype AlphaT m a
+AlphaT :: (Int -> m (a, Int)) -> AlphaT m a
+[runAlphaT] :: AlphaT m a -> Int -> m (a, Int)
+liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
+evalAlphaT :: Functor m => AlphaT m a -> Int -> m a
+evalAlpha :: AlphaT Identity a -> Int -> a
+resetAlphaT :: Monad m => Int -> AlphaT m ()
+instance GHC.Base.Monad m => Jikka.Common.Alpha.MonadAlpha (Jikka.Common.Alpha.AlphaT m)
+instance GHC.Base.Functor m => GHC.Base.Functor (Jikka.Common.Alpha.AlphaT m)
+instance GHC.Base.Monad m => GHC.Base.Applicative (Jikka.Common.Alpha.AlphaT m)
+instance GHC.Base.Monad m => GHC.Base.Monad (Jikka.Common.Alpha.AlphaT m)
+instance Control.Monad.Fix.MonadFix m => Control.Monad.Fix.MonadFix (Jikka.Common.Alpha.AlphaT m)
+instance Control.Monad.Trans.Class.MonadTrans Jikka.Common.Alpha.AlphaT
+instance Control.Monad.Error.Class.MonadError e m => Control.Monad.Error.Class.MonadError e (Jikka.Common.Alpha.AlphaT m)
+instance Control.Monad.IO.Class.MonadIO m => Control.Monad.IO.Class.MonadIO (Jikka.Common.Alpha.AlphaT m)
+instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Except.ExceptT e m)
+instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Reader.ReaderT r m)
+instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT s m)
+instance (Jikka.Common.Alpha.MonadAlpha m, GHC.Base.Monoid w) => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Writer.Strict.WriterT w m)
+instance Jikka.Common.Alpha.MonadAlpha GHC.Types.IO
+instance Jikka.Common.Alpha.MonadAlpha Language.Haskell.TH.Syntax.Q
+
+module Jikka.Common.Combinatorics
+fact :: Integral a => a -> a
+choose :: Integral a => a -> a -> a
+permute :: Integral a => a -> a -> a
+multichoose :: Integral a => a -> a -> a
+
+module Jikka.Common.FileEmbed
+listDirectoryRecursive :: FilePath -> IO [FilePath]
+
+-- | <a>embedDir</a> find files recursively and embed their contents, like
+--   <a>https://hackage.haskell.org/package/file-embed</a>
+--   <tt>file-embed</tt>&gt;'s <a>@embedDir@</a>.
+--   
+--   <h2>Usage</h2>
+--   
+--   <pre>
+--   myDir :: [(FilePath, Data.Text.Text)]
+--   myDir = $(embedDir "dirName")
+--   </pre>
+embedDir :: FilePath -> Q Exp
+
+module Jikka.Common.Format.AutoIndent
+indent :: String
+dedent :: String
+makeIndentFromMarkers :: Int -> [String] -> [String]
+makeIndentFromBraces :: Int -> [String] -> [String]
+insertIndentDedentFromBraces :: [String] -> [String]
+
+module Jikka.Common.Format.Color
+data ColorFlag
+EnableColor :: ColorFlag
+DisableColor :: ColorFlag
+withColor :: ColorFlag -> Color -> String -> String
+withBold :: ColorFlag -> String -> String
+hGetColorFlag :: Handle -> IO ColorFlag
+
+-- | ANSI's eight standard colors. They come in two intensities, which are
+--   controlled by <a>ColorIntensity</a>. Many terminals allow the colors
+--   of the standard palette to be customised, so that, for example,
+--   <tt>setSGR [ SetColor Foreground Vivid Green ]</tt> may not result in
+--   bright green characters.
+data Color
+Black :: Color
+Red :: Color
+Green :: Color
+Yellow :: Color
+Blue :: Color
+Magenta :: Color
+Cyan :: Color
+White :: Color
+instance GHC.Read.Read Jikka.Common.Format.Color.ColorFlag
+instance GHC.Show.Show Jikka.Common.Format.Color.ColorFlag
+instance GHC.Classes.Ord Jikka.Common.Format.Color.ColorFlag
+instance GHC.Classes.Eq Jikka.Common.Format.Color.ColorFlag
+
+module Jikka.Common.Format.Show
+run :: Show program => program -> Either String Text
+
+module Jikka.Common.Graph
+type Graph = Vector [Int]
+makeReversedDigraph :: Graph -> Graph
+makeInducedDigraph :: Graph -> Vector Int -> Graph
+
+-- | <a>decomposeToStronglyConnectedComponents</a> does SCC in &lt;math&gt;
+--   using Kosaraju's algorithm. It takes a digraph &lt;math&gt; as an
+--   adjacent list &lt;math&gt;, and returns an mapping &lt;math&gt; for
+--   the SCC DAG &lt;math&gt;. The indices of vertices of the SCC DAG are
+--   topologically sorted.
+decomposeToStronglyConnectedComponents :: Graph -> Vector Int
+
+-- | <a>topologicalSort</a> does topological sort in &lt;math&gt; using
+--   Tarjan's algorithm. The input is an adjacent list of a DAG.
+topologicalSort :: Graph -> Vector Int
+
+module Jikka.Common.IO
+hTakeWhile :: Handle -> (Char -> Bool) -> IO String
+hGetWord :: Handle -> IO String
+getWord :: IO String
+
+module Jikka.Common.Location
+
+-- | <a>Loc</a> represents a location of something in the users' source
+--   code. <a>line</a> and <a>column</a> is 1-based.
+data Loc
+Loc :: !Int -> !Int -> !Int -> Loc
+[line] :: Loc -> !Int
+[column] :: Loc -> !Int
+[width] :: Loc -> !Int
+data WithLoc a
+WithLoc :: !Loc -> !a -> WithLoc a
+[loc] :: WithLoc a -> !Loc
+[value] :: WithLoc a -> !a
+data WithLoc' a
+WithLoc' :: !Maybe Loc -> !a -> WithLoc' a
+[loc'] :: WithLoc' a -> !Maybe Loc
+[value'] :: WithLoc' a -> !a
+withoutLoc :: a -> WithLoc' a
+instance GHC.Read.Read Jikka.Common.Location.Loc
+instance GHC.Show.Show Jikka.Common.Location.Loc
+instance GHC.Classes.Ord Jikka.Common.Location.Loc
+instance GHC.Classes.Eq Jikka.Common.Location.Loc
+instance GHC.Base.Functor Jikka.Common.Location.WithLoc
+instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc a)
+instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc a)
+instance GHC.Base.Functor Jikka.Common.Location.WithLoc'
+instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc' a)
+instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc' a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc' a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc' a)
+instance Data.String.IsString a => Data.String.IsString (Jikka.Common.Location.WithLoc' a)
+
+module Jikka.Common.Format.Location
+prettyLoc :: Loc -> String
+prettyLocWithText :: ColorFlag -> Text -> Loc -> [String]
+
+
+module Jikka.Common.Error
+data Responsibility
+UserMistake :: Responsibility
+ImplementationBug :: Responsibility
+data ErrorGroup
+
+-- | It's impossible to split the given source text into tokens.
+LexicalError :: ErrorGroup
+
+-- | It's impossible to construct AST from tokens.
+SyntaxError :: ErrorGroup
+
+-- | There are undefined variables or functions in AST.
+SymbolError :: ErrorGroup
+
+-- | It's impossible reconstruct types for AST.
+TypeError :: ErrorGroup
+
+-- | other semantic erros
+SemanticError :: ErrorGroup
+
+-- | User's program are not ready to evaluate.
+EvaluationError :: ErrorGroup
+
+-- | User's program failed while running.
+RuntimeError :: ErrorGroup
+
+-- | User's program violates its assertion.
+AssertionError :: ErrorGroup
+
+-- | The given command line arguments are not acceptable.
+CommandLineError :: ErrorGroup
+
+-- | User's program was correctly running but wrong input text is given.
+WrongInputError :: ErrorGroup
+
+-- | It's an bug of implementation.
+InternalError :: ErrorGroup
+data Error
+Error :: String -> Error
+ErrorAppend :: Error -> Error -> Error
+WithGroup :: ErrorGroup -> Error -> Error
+WithWrapped :: String -> Error -> Error
+WithLocation :: Loc -> Error -> Error
+WithResponsibility :: Responsibility -> Error -> Error
+wrapError :: MonadError e m => (e -> e) -> m a -> m a
+wrapError' :: MonadError Error m => String -> m a -> m a
+wrapAt :: MonadError Error m => Loc -> m a -> m a
+wrapAt' :: MonadError Error m => Maybe Loc -> m a -> m a
+maybeToError :: MonadError a m => a -> Maybe b -> m b
+eitherToError :: MonadError a m => Either a b -> m b
+fromSuccess :: Either Error a -> a
+
+-- | <a>catchError</a>` is the inverse of <tt>liftError</tt>.
+catchError' :: MonadError e m => m a -> m (Either e a)
+reportErrors :: MonadError Error m => [Either Error a] -> m [a]
+reportErrors2 :: MonadError Error m => Either Error a -> Either Error b -> m (a, b)
+reportErrors3 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> m (a, b, c)
+reportErrors4 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> Either Error d -> m (a, b, c, d)
+reportErrors5 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> Either Error d -> Either Error e -> m (a, b, c, d, e)
+lexicalError :: String -> Error
+lexicalErrorAt :: Loc -> String -> Error
+syntaxError :: String -> Error
+syntaxErrorAt :: Loc -> String -> Error
+symbolError :: String -> Error
+symbolErrorAt :: Loc -> String -> Error
+typeError :: String -> Error
+semanticError :: String -> Error
+evaluationError :: String -> Error
+runtimeError :: String -> Error
+assertionError :: String -> Error
+commandLineError :: String -> Error
+wrongInputError :: String -> Error
+internalError :: String -> Error
+throwLexicalError :: MonadError Error m => String -> m a
+throwLexicalErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSyntaxError :: MonadError Error m => String -> m a
+throwSyntaxErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSyntaxErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwSymbolError :: MonadError Error m => String -> m a
+throwSymbolErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSymbolErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwTypeError :: MonadError Error m => String -> m a
+throwTypeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwTypeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwSemanticError :: MonadError Error m => String -> m a
+throwSemanticErrorAt :: MonadError Error m => Loc -> String -> m a
+throwSemanticErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwEvaluationError :: MonadError Error m => String -> m a
+throwRuntimeError :: MonadError Error m => String -> m a
+throwRuntimeErrorAt :: MonadError Error m => Loc -> String -> m a
+throwRuntimeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+throwAssertionError :: MonadError Error m => String -> m a
+throwCommandLineError :: MonadError Error m => String -> m a
+throwWrongInputError :: MonadError Error m => String -> m a
+throwInternalError :: MonadError Error m => String -> m a
+throwInternalErrorAt :: MonadError Error m => Loc -> String -> m a
+throwInternalErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
+bug :: String -> a
+todo :: String -> a
+instance GHC.Read.Read Jikka.Common.Error.Responsibility
+instance GHC.Show.Show Jikka.Common.Error.Responsibility
+instance GHC.Classes.Ord Jikka.Common.Error.Responsibility
+instance GHC.Classes.Eq Jikka.Common.Error.Responsibility
+instance GHC.Read.Read Jikka.Common.Error.ErrorGroup
+instance GHC.Show.Show Jikka.Common.Error.ErrorGroup
+instance GHC.Classes.Ord Jikka.Common.Error.ErrorGroup
+instance GHC.Classes.Eq Jikka.Common.Error.ErrorGroup
+instance GHC.Read.Read Jikka.Common.Error.Error
+instance GHC.Show.Show Jikka.Common.Error.Error
+instance GHC.Classes.Ord Jikka.Common.Error.Error
+instance GHC.Classes.Eq Jikka.Common.Error.Error
+instance GHC.Base.Semigroup Jikka.Common.Error.Error
+
+module Jikka.Common.IOFormat
+data FormatExpr
+Var :: String -> FormatExpr
+Plus :: FormatExpr -> Integer -> FormatExpr
+At :: FormatExpr -> String -> FormatExpr
+Len :: FormatExpr -> FormatExpr
+data FormatTree
+Exp :: FormatExpr -> FormatTree
+Newline :: FormatTree
+Seq :: [FormatTree] -> FormatTree
+Loop :: String -> FormatExpr -> FormatTree -> FormatTree
+data IOFormat
+IOFormat :: [String] -> FormatTree -> Either String [String] -> FormatTree -> IOFormat
+[inputVariables] :: IOFormat -> [String]
+[inputTree] :: IOFormat -> FormatTree
+
+-- | This uses <a>Either</a> to distinguish a type and the 1-tuple of it.
+[outputVariables] :: IOFormat -> Either String [String]
+[outputTree] :: IOFormat -> FormatTree
+mapFormatTreeM :: Monad m => (FormatTree -> m FormatTree) -> FormatTree -> m FormatTree
+mapFormatTree :: (FormatTree -> FormatTree) -> FormatTree -> FormatTree
+normalizeFormatTree :: FormatTree -> FormatTree
+normalizeIOFormat :: IOFormat -> IOFormat
+hasNewline :: FormatTree -> Bool
+formatFormatExpr :: FormatExpr -> String
+formatFormatTree :: FormatTree -> String
+formatIOFormat :: IOFormat -> String
+packSubscriptedVar :: String -> [String] -> FormatExpr
+packSubscriptedVar' :: String -> [String] -> FormatTree
+unpackSubscriptedVar :: MonadError Error m => FormatExpr -> m (String, [String])
+makeReadValueIO :: forall m value. (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (Vector value)) -> (Vector value -> value) -> IOFormat -> m ([value], Map String value)
+makeWriteValueIO :: (MonadError Error m, MonadIO m) => (value -> m [value]) -> (Integer -> value) -> (value -> m Integer) -> (value -> m (Vector value)) -> IOFormat -> Map String value -> value -> m ()
+instance GHC.Show.Show Jikka.Common.IOFormat.FormatExpr
+instance GHC.Read.Read Jikka.Common.IOFormat.FormatExpr
+instance GHC.Classes.Ord Jikka.Common.IOFormat.FormatExpr
+instance GHC.Classes.Eq Jikka.Common.IOFormat.FormatExpr
+instance GHC.Show.Show Jikka.Common.IOFormat.FormatTree
+instance GHC.Read.Read Jikka.Common.IOFormat.FormatTree
+instance GHC.Classes.Ord Jikka.Common.IOFormat.FormatTree
+instance GHC.Classes.Eq Jikka.Common.IOFormat.FormatTree
+instance GHC.Show.Show Jikka.Common.IOFormat.IOFormat
+instance GHC.Read.Read Jikka.Common.IOFormat.IOFormat
+instance GHC.Classes.Ord Jikka.Common.IOFormat.IOFormat
+instance GHC.Classes.Eq Jikka.Common.IOFormat.IOFormat
+
+module Jikka.Common.Format.Error
+prettyError :: ColorFlag -> Error -> [String]
+prettyError' :: Error -> [String]
+prettyErrorWithText :: ColorFlag -> Text -> Error -> [String]
+hPrintError :: Handle -> Error -> IO ()
+hPrintErrorWithText :: Handle -> Text -> Error -> IO ()
+
+module Jikka.Common.Matrix
+
+-- | <a>Matrix</a> is data for matrices. It is guaranteed that internal
+--   arrays are not jagged arrays.
+data Matrix a
+unMatrix :: Matrix a -> Vector (Vector a)
+makeMatrix :: Vector (Vector a) -> Maybe (Matrix a)
+makeMatrix' :: Vector (Vector a) -> Matrix a
+
+-- | <a>matsize</a> computes the size of a matrix.
+matsize :: Matrix a -> (Int, Int)
+
+-- | <a>matsize</a>` computes the size of a matrix. This assumes inputs are
+--   matrices (<a>matcheck</a>).
+matsize' :: Vector (Vector a) -> (Int, Int)
+
+-- | <a>matcheck</a> checks a given vector of vectors is a matrix. That is,
+--   this returns <a>False</a> for jagged arrays.
+matcheck :: Vector (Vector a) -> Bool
+matzero :: Num a => Int -> Int -> Matrix a
+matone :: Num a => Int -> Matrix a
+
+-- | <a>matadd</a> calculates the addition &lt;math&gt; of two matrices
+--   &lt;math&gt;. This assumes sizes of inputs match.
+matadd :: Num a => Matrix a -> Matrix a -> Matrix a
+
+-- | <a>matmul</a> calculates the multiplication &lt;math&gt;of two
+--   matrices &lt;math&gt;. This assumes sizes of inputs match.
+matmul :: Num a => Matrix a -> Matrix a -> Matrix a
+
+-- | <a>matap</a> calculates the multiplication &lt;math&gt; of a matrix
+--   &lt;math&gt; and a vector &lt;math&gt;. This assumes sizes of inputs
+--   match.
+matap :: Num a => Matrix a -> Vector a -> Vector a
+matscalar :: Num a => a -> Matrix a -> Matrix a
+
+-- | <a>matpow</a> calculates the power &lt;math&gt; of a matrix
+--   &lt;math&gt; and a natural number &lt;math&gt;. This assumes inputs
+--   are square matrices. This fails for &lt;math&gt;.
+matpow :: (Show a, Num a) => Matrix a -> Integer -> Matrix a
+instance GHC.Base.Functor Jikka.Common.Matrix.Matrix
+instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Matrix.Matrix a)
+instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Matrix.Matrix a)
+instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Matrix.Matrix a)
+
+module Jikka.Common.ModInt
+data ModInt
+toModInt :: Integer -> Integer -> ModInt
+fromModInt :: ModInt -> Integer
+moduloOfModInt :: ModInt -> Maybe Integer
+instance GHC.Show.Show Jikka.Common.ModInt.ModInt
+instance GHC.Read.Read Jikka.Common.ModInt.ModInt
+instance GHC.Classes.Ord Jikka.Common.ModInt.ModInt
+instance GHC.Classes.Eq Jikka.Common.ModInt.ModInt
+instance GHC.Num.Num Jikka.Common.ModInt.ModInt
+
+module Jikka.Common.Name
+type OccName = Maybe String
+type NameFlavour = Maybe Int
+toFlavouredName :: String -> (OccName, NameFlavour)
+formatFlavouredName :: OccName -> NameFlavour -> String
+
+
 -- | <a>Expr</a> module has the basic data types for C++ language. The data
 --   types are intended to use for the code generation.
 module Jikka.CPlusPlus.Language.Expr
-newtype VarName
-VarName :: String -> VarName
-[unVarName] :: VarName -> String
+data NameHint
+LocalNameHint :: NameHint
+LocalArgumentNameHint :: NameHint
+LoopCounterNameHint :: NameHint
+ConstantNameHint :: NameHint
+FunctionNameHint :: NameHint
+ArgumentNameHint :: NameHint
+AdHocNameHint :: String -> NameHint
+data VarName
+VarName :: OccName -> NameFlavour -> Maybe NameHint -> VarName
+formatVarName :: VarName -> String
 newtype FunName
 FunName :: String -> FunName
-[unFunName] :: FunName -> String
+formatFunName :: FunName -> String
 data Type
 
 -- | <pre>
@@ -350,11 +732,9 @@ Cond :: Expr -> Expr -> Expr -> Expr
 --   ... }</tt>
 Lam :: [(Type, VarName)] -> Type -> [Statement] -> Expr
 
--- | <tt>f(e1, e2, ...)</tt> for a fixed function <tt>f</tt>
-Call :: Function -> [Expr] -> Expr
-
--- | <tt>e(e1, e2, ...)</tt> for an callable expr <tt>e</tt>
-CallExpr :: Expr -> [Expr] -> Expr
+-- | <tt>f(e1, e2, ...)</tt> for a callable <tt>f</tt>
+Call :: Expr -> [Expr] -> Expr
+Callable :: Function -> Expr
 data LeftExpr
 
 -- | <pre>
@@ -465,7 +845,7 @@ VarDef :: Type -> VarName -> Expr -> ToplevelStatement
 -- | <pre>
 --   T f(T1 x1, T2 x2, ...) { stmt1; stmt2; ... }
 --   </pre>
-FunDef :: Type -> VarName -> [(Type, VarName)] -> [Statement] -> ToplevelStatement
+FunDef :: Type -> FunName -> [(Type, VarName)] -> [Statement] -> ToplevelStatement
 
 -- | <pre>
 --   static_assert(e, msg);
@@ -474,12 +854,14 @@ StaticAssert :: Expr -> String -> ToplevelStatement
 newtype Program
 Program :: [ToplevelStatement] -> Program
 [decls] :: Program -> [ToplevelStatement]
-instance Data.String.IsString Jikka.CPlusPlus.Language.Expr.VarName
+instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.NameHint
+instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.NameHint
+instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.NameHint
+instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.NameHint
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.VarName
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.VarName
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.VarName
 instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.VarName
-instance Data.String.IsString Jikka.CPlusPlus.Language.Expr.FunName
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.FunName
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.FunName
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.FunName
@@ -540,6 +922,8 @@ instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.Program
 instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.Program
+instance Data.String.IsString Jikka.CPlusPlus.Language.Expr.FunName
+instance Data.String.IsString Jikka.CPlusPlus.Language.Expr.VarName
 
 module Jikka.CPlusPlus.Language.VariableAnalysis
 data ReadWriteList
@@ -560,46 +944,11 @@ instance GHC.Classes.Eq Jikka.CPlusPlus.Language.VariableAnalysis.ReadWriteList
 instance GHC.Base.Semigroup Jikka.CPlusPlus.Language.VariableAnalysis.ReadWriteList
 instance GHC.Base.Monoid Jikka.CPlusPlus.Language.VariableAnalysis.ReadWriteList
 
-
--- | <a>Alpha</a> provides a monad to run alpha-conversion. This monad has
---   only a feature to make unique numbers.
-module Jikka.Common.Alpha
-class Monad m => MonadAlpha m
-nextCounter :: MonadAlpha m => m Int
-newtype AlphaT m a
-AlphaT :: (Int -> m (a, Int)) -> AlphaT m a
-[runAlphaT] :: AlphaT m a -> Int -> m (a, Int)
-liftCatch :: Catch e m (a, Int) -> Catch e (AlphaT m) a
-evalAlphaT :: Functor m => AlphaT m a -> Int -> m a
-evalAlpha :: AlphaT Identity a -> Int -> a
-resetAlphaT :: Monad m => Int -> AlphaT m ()
-instance GHC.Base.Monad m => Jikka.Common.Alpha.MonadAlpha (Jikka.Common.Alpha.AlphaT m)
-instance GHC.Base.Functor m => GHC.Base.Functor (Jikka.Common.Alpha.AlphaT m)
-instance GHC.Base.Monad m => GHC.Base.Applicative (Jikka.Common.Alpha.AlphaT m)
-instance GHC.Base.Monad m => GHC.Base.Monad (Jikka.Common.Alpha.AlphaT m)
-instance Control.Monad.Fix.MonadFix m => Control.Monad.Fix.MonadFix (Jikka.Common.Alpha.AlphaT m)
-instance Control.Monad.Trans.Class.MonadTrans Jikka.Common.Alpha.AlphaT
-instance Control.Monad.Error.Class.MonadError e m => Control.Monad.Error.Class.MonadError e (Jikka.Common.Alpha.AlphaT m)
-instance Control.Monad.IO.Class.MonadIO m => Control.Monad.IO.Class.MonadIO (Jikka.Common.Alpha.AlphaT m)
-instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Except.ExceptT e m)
-instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Reader.ReaderT r m)
-instance Jikka.Common.Alpha.MonadAlpha m => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.State.Strict.StateT s m)
-instance (Jikka.Common.Alpha.MonadAlpha m, GHC.Base.Monoid w) => Jikka.Common.Alpha.MonadAlpha (Control.Monad.Trans.Writer.Strict.WriterT w m)
-instance Jikka.Common.Alpha.MonadAlpha GHC.Types.IO
-instance Jikka.Common.Alpha.MonadAlpha Language.Haskell.TH.Syntax.Q
-
 module Jikka.CPlusPlus.Language.Util
 fromLeftExpr :: LeftExpr -> Expr
-data NameKind
-LocalNameKind :: NameKind
-LocalArgumentNameKind :: NameKind
-LoopCounterNameKind :: NameKind
-ConstantNameKind :: NameKind
-FunctionNameKind :: NameKind
-ArgumentNameKind :: NameKind
-fromNameKind :: NameKind -> String
-newFreshName :: MonadAlpha m => NameKind -> m VarName
-renameVarName :: MonadAlpha m => NameKind -> String -> m VarName
+newFreshName :: MonadAlpha m => NameHint -> m VarName
+renameVarName :: MonadAlpha m => NameHint -> VarName -> m VarName
+renameVarName' :: MonadAlpha m => NameHint -> String -> m VarName
 freeVars :: Expr -> Set VarName
 freeVarsStatements :: [Statement] -> Set VarName
 freeVarsStatement :: Statement -> Set VarName
@@ -613,6 +962,7 @@ repStatement :: VarName -> Expr -> [Statement] -> Statement
 litInt64 :: Integer -> Expr
 litInt32 :: Integer -> Expr
 incrExpr :: Expr -> Expr
+pattern Call' :: Function -> [Expr] -> Expr
 size :: Expr -> Expr
 at :: Expr -> Expr -> Expr
 cast :: Type -> Expr -> Expr
@@ -641,38 +991,7 @@ mapDirectExprAssignExprM :: Monad m => (Expr -> m Expr) -> AssignExpr -> m Assig
 mapDirectExprLeftExprM :: Monad m => (Expr -> m Expr) -> LeftExpr -> m LeftExpr
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceStatement :: VarName -> Expr -> Statement -> Statement
-instance GHC.Read.Read Jikka.CPlusPlus.Language.Util.NameKind
-instance GHC.Show.Show Jikka.CPlusPlus.Language.Util.NameKind
-instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Util.NameKind
-instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Util.NameKind
-
-module Jikka.Common.Combinatorics
-fact :: Integral a => a -> a
-choose :: Integral a => a -> a -> a
-permute :: Integral a => a -> a -> a
-multichoose :: Integral a => a -> a -> a
-
-module Jikka.Common.FileEmbed
-listDirectoryRecursive :: FilePath -> IO [FilePath]
-
--- | <a>embedDir</a> find files recursively and embed their contents, like
---   <a>https://hackage.haskell.org/package/file-embed</a>
---   <tt>file-embed</tt>&gt;'s <a>@embedDir@</a>.
---   
---   <h2>Usage</h2>
---   
---   <pre>
---   myDir :: [(FilePath, Data.Text.Text)]
---   myDir = $(embedDir "dirName")
---   </pre>
-embedDir :: FilePath -> Q Exp
-
-module Jikka.Common.Format.AutoIndent
-indent :: String
-dedent :: String
-makeIndentFromMarkers :: Int -> [String] -> [String]
-makeIndentFromBraces :: Int -> [String] -> [String]
-insertIndentDedentFromBraces :: [String] -> [String]
+mapToplevelStatementProgramM :: Monad m => (ToplevelStatement -> m [ToplevelStatement]) -> Program -> m Program
 
 
 -- | <a>Format</a> module converts the AST for C++ to the plain source
@@ -691,262 +1010,6 @@ instance GHC.Read.Read Jikka.CPlusPlus.Format.Assoc
 instance GHC.Show.Show Jikka.CPlusPlus.Format.Assoc
 instance GHC.Classes.Ord Jikka.CPlusPlus.Format.Assoc
 instance GHC.Classes.Eq Jikka.CPlusPlus.Format.Assoc
-
-module Jikka.Common.Format.Color
-data ColorFlag
-EnableColor :: ColorFlag
-DisableColor :: ColorFlag
-withColor :: ColorFlag -> Color -> String -> String
-withBold :: ColorFlag -> String -> String
-hGetColorFlag :: Handle -> IO ColorFlag
-
--- | ANSI's eight standard colors. They come in two intensities, which are
---   controlled by <a>ColorIntensity</a>. Many terminals allow the colors
---   of the standard palette to be customised, so that, for example,
---   <tt>setSGR [ SetColor Foreground Vivid Green ]</tt> may not result in
---   bright green characters.
-data Color
-Black :: Color
-Red :: Color
-Green :: Color
-Yellow :: Color
-Blue :: Color
-Magenta :: Color
-Cyan :: Color
-White :: Color
-instance GHC.Read.Read Jikka.Common.Format.Color.ColorFlag
-instance GHC.Show.Show Jikka.Common.Format.Color.ColorFlag
-instance GHC.Classes.Ord Jikka.Common.Format.Color.ColorFlag
-instance GHC.Classes.Eq Jikka.Common.Format.Color.ColorFlag
-
-module Jikka.Common.Format.Show
-run :: Show program => program -> Either String Text
-
-module Jikka.Common.Graph
-type Graph = Vector [Int]
-makeReversedDigraph :: Graph -> Graph
-makeInducedDigraph :: Graph -> Vector Int -> Graph
-
--- | <a>decomposeToStronglyConnectedComponents</a> does SCC in &lt;math&gt;
---   using Kosaraju's algorithm. It takes a digraph &lt;math&gt; as an
---   adjacent list &lt;math&gt;, and returns an mapping &lt;math&gt; for
---   the SCC DAG &lt;math&gt;. The indices of vertices of the SCC DAG are
---   topologically sorted.
-decomposeToStronglyConnectedComponents :: Graph -> Vector Int
-
--- | <a>topologicalSort</a> does topological sort in &lt;math&gt; using
---   Tarjan's algorithm. The input is an adjacent list of a DAG.
-topologicalSort :: Graph -> Vector Int
-
-module Jikka.Common.IO
-hTakeWhile :: Handle -> (Char -> Bool) -> IO String
-hGetWord :: Handle -> IO String
-getWord :: IO String
-
-module Jikka.Common.Location
-
--- | <a>Loc</a> represents a location of something in the users' source
---   code. <a>line</a> and <a>column</a> is 1-based.
-data Loc
-Loc :: !Int -> !Int -> !Int -> Loc
-[line] :: Loc -> !Int
-[column] :: Loc -> !Int
-[width] :: Loc -> !Int
-data WithLoc a
-WithLoc :: !Loc -> !a -> WithLoc a
-[loc] :: WithLoc a -> !Loc
-[value] :: WithLoc a -> !a
-data WithLoc' a
-WithLoc' :: !Maybe Loc -> !a -> WithLoc' a
-[loc'] :: WithLoc' a -> !Maybe Loc
-[value'] :: WithLoc' a -> !a
-withoutLoc :: a -> WithLoc' a
-instance GHC.Read.Read Jikka.Common.Location.Loc
-instance GHC.Show.Show Jikka.Common.Location.Loc
-instance GHC.Classes.Ord Jikka.Common.Location.Loc
-instance GHC.Classes.Eq Jikka.Common.Location.Loc
-instance GHC.Base.Functor Jikka.Common.Location.WithLoc
-instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc a)
-instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc a)
-instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc a)
-instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc a)
-instance GHC.Base.Functor Jikka.Common.Location.WithLoc'
-instance GHC.Read.Read a => GHC.Read.Read (Jikka.Common.Location.WithLoc' a)
-instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Location.WithLoc' a)
-instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Location.WithLoc' a)
-instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Location.WithLoc' a)
-instance Data.String.IsString a => Data.String.IsString (Jikka.Common.Location.WithLoc' a)
-
-module Jikka.Common.Format.Location
-prettyLoc :: Loc -> String
-prettyLocWithText :: ColorFlag -> Text -> Loc -> [String]
-
-
-module Jikka.Common.Error
-data Responsibility
-UserMistake :: Responsibility
-ImplementationBug :: Responsibility
-data ErrorGroup
-
--- | It's impossible to split the given source text into tokens.
-LexicalError :: ErrorGroup
-
--- | It's impossible to construct AST from tokens.
-SyntaxError :: ErrorGroup
-
--- | There are undefined variables or functions in AST.
-SymbolError :: ErrorGroup
-
--- | It's impossible reconstruct types for AST.
-TypeError :: ErrorGroup
-
--- | other semantic erros
-SemanticError :: ErrorGroup
-
--- | User's program are not ready to evaluate.
-EvaluationError :: ErrorGroup
-
--- | User's program failed while running.
-RuntimeError :: ErrorGroup
-
--- | User's program violates its assertion.
-AssertionError :: ErrorGroup
-
--- | The given command line arguments are not acceptable.
-CommandLineError :: ErrorGroup
-
--- | User's program was correctly running but wrong input text is given.
-WrongInputError :: ErrorGroup
-
--- | It's an bug of implementation.
-InternalError :: ErrorGroup
-data Error
-Error :: String -> Error
-ErrorAppend :: Error -> Error -> Error
-WithGroup :: ErrorGroup -> Error -> Error
-WithWrapped :: String -> Error -> Error
-WithLocation :: Loc -> Error -> Error
-WithResponsibility :: Responsibility -> Error -> Error
-wrapError :: MonadError e m => (e -> e) -> m a -> m a
-wrapError' :: MonadError Error m => String -> m a -> m a
-wrapAt :: MonadError Error m => Loc -> m a -> m a
-wrapAt' :: MonadError Error m => Maybe Loc -> m a -> m a
-maybeToError :: MonadError a m => a -> Maybe b -> m b
-eitherToError :: MonadError a m => Either a b -> m b
-fromSuccess :: Either Error a -> a
-
--- | <a>catchError</a>` is the inverse of <tt>liftError</tt>.
-catchError' :: MonadError e m => m a -> m (Either e a)
-reportErrors :: MonadError Error m => [Either Error a] -> m [a]
-reportErrors2 :: MonadError Error m => Either Error a -> Either Error b -> m (a, b)
-reportErrors3 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> m (a, b, c)
-reportErrors4 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> Either Error d -> m (a, b, c, d)
-reportErrors5 :: MonadError Error m => Either Error a -> Either Error b -> Either Error c -> Either Error d -> Either Error e -> m (a, b, c, d, e)
-lexicalError :: String -> Error
-lexicalErrorAt :: Loc -> String -> Error
-syntaxError :: String -> Error
-syntaxErrorAt :: Loc -> String -> Error
-symbolError :: String -> Error
-symbolErrorAt :: Loc -> String -> Error
-typeError :: String -> Error
-semanticError :: String -> Error
-evaluationError :: String -> Error
-runtimeError :: String -> Error
-assertionError :: String -> Error
-commandLineError :: String -> Error
-wrongInputError :: String -> Error
-internalError :: String -> Error
-throwLexicalError :: MonadError Error m => String -> m a
-throwLexicalErrorAt :: MonadError Error m => Loc -> String -> m a
-throwSyntaxError :: MonadError Error m => String -> m a
-throwSyntaxErrorAt :: MonadError Error m => Loc -> String -> m a
-throwSyntaxErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
-throwSymbolError :: MonadError Error m => String -> m a
-throwSymbolErrorAt :: MonadError Error m => Loc -> String -> m a
-throwSymbolErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
-throwTypeError :: MonadError Error m => String -> m a
-throwTypeErrorAt :: MonadError Error m => Loc -> String -> m a
-throwTypeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
-throwSemanticError :: MonadError Error m => String -> m a
-throwSemanticErrorAt :: MonadError Error m => Loc -> String -> m a
-throwSemanticErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
-throwEvaluationError :: MonadError Error m => String -> m a
-throwRuntimeError :: MonadError Error m => String -> m a
-throwRuntimeErrorAt :: MonadError Error m => Loc -> String -> m a
-throwRuntimeErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
-throwAssertionError :: MonadError Error m => String -> m a
-throwCommandLineError :: MonadError Error m => String -> m a
-throwWrongInputError :: MonadError Error m => String -> m a
-throwInternalError :: MonadError Error m => String -> m a
-throwInternalErrorAt :: MonadError Error m => Loc -> String -> m a
-throwInternalErrorAt' :: MonadError Error m => Maybe Loc -> String -> m a
-bug :: String -> a
-todo :: String -> a
-instance GHC.Read.Read Jikka.Common.Error.Responsibility
-instance GHC.Show.Show Jikka.Common.Error.Responsibility
-instance GHC.Classes.Ord Jikka.Common.Error.Responsibility
-instance GHC.Classes.Eq Jikka.Common.Error.Responsibility
-instance GHC.Read.Read Jikka.Common.Error.ErrorGroup
-instance GHC.Show.Show Jikka.Common.Error.ErrorGroup
-instance GHC.Classes.Ord Jikka.Common.Error.ErrorGroup
-instance GHC.Classes.Eq Jikka.Common.Error.ErrorGroup
-instance GHC.Read.Read Jikka.Common.Error.Error
-instance GHC.Show.Show Jikka.Common.Error.Error
-instance GHC.Classes.Ord Jikka.Common.Error.Error
-instance GHC.Classes.Eq Jikka.Common.Error.Error
-instance GHC.Base.Semigroup Jikka.Common.Error.Error
-
-module Jikka.Common.IOFormat
-data FormatExpr
-Var :: String -> FormatExpr
-Plus :: FormatExpr -> Integer -> FormatExpr
-At :: FormatExpr -> String -> FormatExpr
-Len :: FormatExpr -> FormatExpr
-data FormatTree
-Exp :: FormatExpr -> FormatTree
-Newline :: FormatTree
-Seq :: [FormatTree] -> FormatTree
-Loop :: String -> FormatExpr -> FormatTree -> FormatTree
-data IOFormat
-IOFormat :: [String] -> FormatTree -> Either String [String] -> FormatTree -> IOFormat
-[inputVariables] :: IOFormat -> [String]
-[inputTree] :: IOFormat -> FormatTree
-
--- | This uses <a>Either</a> to distinguish a type and the 1-tuple of it.
-[outputVariables] :: IOFormat -> Either String [String]
-[outputTree] :: IOFormat -> FormatTree
-mapFormatTreeM :: Monad m => (FormatTree -> m FormatTree) -> FormatTree -> m FormatTree
-mapFormatTree :: (FormatTree -> FormatTree) -> FormatTree -> FormatTree
-normalizeFormatTree :: FormatTree -> FormatTree
-normalizeIOFormat :: IOFormat -> IOFormat
-hasNewline :: FormatTree -> Bool
-formatFormatExpr :: FormatExpr -> String
-formatFormatTree :: FormatTree -> String
-formatIOFormat :: IOFormat -> String
-packSubscriptedVar :: String -> [String] -> FormatExpr
-packSubscriptedVar' :: String -> [String] -> FormatTree
-unpackSubscriptedVar :: MonadError Error m => FormatExpr -> m (String, [String])
-makeReadValueIO :: forall m value. (MonadError Error m, MonadIO m) => (value -> m Integer) -> (Integer -> value) -> (value -> m (Vector value)) -> (Vector value -> value) -> IOFormat -> m ([value], Map String value)
-makeWriteValueIO :: (MonadError Error m, MonadIO m) => (value -> m [value]) -> (Integer -> value) -> (value -> m Integer) -> (value -> m (Vector value)) -> IOFormat -> Map String value -> value -> m ()
-instance GHC.Show.Show Jikka.Common.IOFormat.FormatExpr
-instance GHC.Read.Read Jikka.Common.IOFormat.FormatExpr
-instance GHC.Classes.Ord Jikka.Common.IOFormat.FormatExpr
-instance GHC.Classes.Eq Jikka.Common.IOFormat.FormatExpr
-instance GHC.Show.Show Jikka.Common.IOFormat.FormatTree
-instance GHC.Read.Read Jikka.Common.IOFormat.FormatTree
-instance GHC.Classes.Ord Jikka.Common.IOFormat.FormatTree
-instance GHC.Classes.Eq Jikka.Common.IOFormat.FormatTree
-instance GHC.Show.Show Jikka.Common.IOFormat.IOFormat
-instance GHC.Read.Read Jikka.Common.IOFormat.IOFormat
-instance GHC.Classes.Ord Jikka.Common.IOFormat.IOFormat
-instance GHC.Classes.Eq Jikka.Common.IOFormat.IOFormat
-
-module Jikka.Common.Format.Error
-prettyError :: ColorFlag -> Error -> [String]
-prettyError' :: Error -> [String]
-prettyErrorWithText :: ColorFlag -> Text -> Error -> [String]
-hPrintError :: Handle -> Error -> IO ()
-hPrintErrorWithText :: Handle -> Text -> Error -> IO ()
 
 
 module Jikka.CPlusPlus.Convert.UseInitialization
@@ -1104,64 +1167,16 @@ module Jikka.CPlusPlus.Convert.InlineSetAt
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
+module Jikka.CPlusPlus.Convert.BurnFlavouredNames
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+instance GHC.Show.Show Jikka.CPlusPlus.Convert.BurnFlavouredNames.Env
+instance GHC.Read.Read Jikka.CPlusPlus.Convert.BurnFlavouredNames.Env
+instance GHC.Classes.Ord Jikka.CPlusPlus.Convert.BurnFlavouredNames.Env
+instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.BurnFlavouredNames.Env
+
+
 module Jikka.CPlusPlus.Convert.AddMain
 run :: (MonadAlpha m, MonadError Error m) => Program -> IOFormat -> m Program
-
-module Jikka.Common.Matrix
-
--- | <a>Matrix</a> is data for matrices. It is guaranteed that internal
---   arrays are not jagged arrays.
-data Matrix a
-unMatrix :: Matrix a -> Vector (Vector a)
-makeMatrix :: Vector (Vector a) -> Maybe (Matrix a)
-makeMatrix' :: Vector (Vector a) -> Matrix a
-
--- | <a>matsize</a> computes the size of a matrix.
-matsize :: Matrix a -> (Int, Int)
-
--- | <a>matsize</a>` computes the size of a matrix. This assumes inputs are
---   matrices (<a>matcheck</a>).
-matsize' :: Vector (Vector a) -> (Int, Int)
-
--- | <a>matcheck</a> checks a given vector of vectors is a matrix. That is,
---   this returns <a>False</a> for jagged arrays.
-matcheck :: Vector (Vector a) -> Bool
-matzero :: Num a => Int -> Int -> Matrix a
-matone :: Num a => Int -> Matrix a
-
--- | <a>matadd</a> calculates the addition &lt;math&gt; of two matrices
---   &lt;math&gt;. This assumes sizes of inputs match.
-matadd :: Num a => Matrix a -> Matrix a -> Matrix a
-
--- | <a>matmul</a> calculates the multiplication &lt;math&gt;of two
---   matrices &lt;math&gt;. This assumes sizes of inputs match.
-matmul :: Num a => Matrix a -> Matrix a -> Matrix a
-
--- | <a>matap</a> calculates the multiplication &lt;math&gt; of a matrix
---   &lt;math&gt; and a vector &lt;math&gt;. This assumes sizes of inputs
---   match.
-matap :: Num a => Matrix a -> Vector a -> Vector a
-matscalar :: Num a => a -> Matrix a -> Matrix a
-
--- | <a>matpow</a> calculates the power &lt;math&gt; of a matrix
---   &lt;math&gt; and a natural number &lt;math&gt;. This assumes inputs
---   are square matrices. This fails for &lt;math&gt;.
-matpow :: (Show a, Num a) => Matrix a -> Integer -> Matrix a
-instance GHC.Base.Functor Jikka.Common.Matrix.Matrix
-instance GHC.Show.Show a => GHC.Show.Show (Jikka.Common.Matrix.Matrix a)
-instance GHC.Classes.Ord a => GHC.Classes.Ord (Jikka.Common.Matrix.Matrix a)
-instance GHC.Classes.Eq a => GHC.Classes.Eq (Jikka.Common.Matrix.Matrix a)
-
-module Jikka.Common.ModInt
-data ModInt
-toModInt :: Integer -> Integer -> ModInt
-fromModInt :: ModInt -> Integer
-moduloOfModInt :: ModInt -> Maybe Integer
-instance GHC.Show.Show Jikka.Common.ModInt.ModInt
-instance GHC.Read.Read Jikka.Common.ModInt.ModInt
-instance GHC.Classes.Ord Jikka.Common.ModInt.ModInt
-instance GHC.Classes.Eq Jikka.Common.ModInt.ModInt
-instance GHC.Num.Num Jikka.Common.ModInt.ModInt
 
 module Jikka.Common.Parse.JoinLines
 joinLinesWithParens :: forall m a. (MonadError Error m, Show a) => (a -> Bool) -> (a -> Bool) -> (a -> Bool) -> [WithLoc a] -> m [WithLoc a]
@@ -1205,12 +1220,12 @@ instance GHC.Classes.Eq Jikka.Common.Parse.ShuntingYard.BinOpInfo
 -- | <a>Expr</a> module has the basic data types for our core language.
 --   They are similar to the GHC Core language.
 module Jikka.Core.Language.Expr
-newtype VarName
-VarName :: String -> VarName
-unVarName :: VarName -> String
-newtype TypeName
-TypeName :: String -> TypeName
-unTypeName :: TypeName -> String
+data VarName
+VarName :: OccName -> NameFlavour -> VarName
+formatVarName :: VarName -> String
+data TypeName
+TypeName :: OccName -> NameFlavour -> TypeName
+formatTypeName :: TypeName -> String
 
 -- | <a>Type</a> represents the types of our core language. This is similar
 --   to the <a>Type</a> of GHC Core. See also
@@ -1591,13 +1606,11 @@ ToplevelLet :: VarName -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
 ToplevelLetRec :: VarName -> [(VarName, Type)] -> Type -> Expr -> ToplevelExpr -> ToplevelExpr
 ToplevelAssert :: Expr -> ToplevelExpr -> ToplevelExpr
 type Program = ToplevelExpr
-instance Data.String.IsString Jikka.Core.Language.Expr.VarName
 instance Data.Data.Data Jikka.Core.Language.Expr.VarName
 instance GHC.Read.Read Jikka.Core.Language.Expr.VarName
 instance GHC.Show.Show Jikka.Core.Language.Expr.VarName
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.VarName
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.VarName
-instance Data.String.IsString Jikka.Core.Language.Expr.TypeName
 instance Data.Data.Data Jikka.Core.Language.Expr.TypeName
 instance GHC.Read.Read Jikka.Core.Language.Expr.TypeName
 instance GHC.Show.Show Jikka.Core.Language.Expr.TypeName
@@ -1638,6 +1651,8 @@ instance GHC.Read.Read Jikka.Core.Language.Expr.ToplevelExpr
 instance GHC.Show.Show Jikka.Core.Language.Expr.ToplevelExpr
 instance GHC.Classes.Ord Jikka.Core.Language.Expr.ToplevelExpr
 instance GHC.Classes.Eq Jikka.Core.Language.Expr.ToplevelExpr
+instance Data.String.IsString Jikka.Core.Language.Expr.TypeName
+instance Data.String.IsString Jikka.Core.Language.Expr.VarName
 
 
 -- | <a>BuiltinPatterns</a> provides pattern synonyms for applications of
@@ -1739,6 +1754,7 @@ pattern Bottom' :: Type -> String -> Expr
 
 
 module Jikka.Core.Language.FreeVars
+freeVars :: Expr -> Set VarName
 
 -- | <a>isFreeVar</a> checks if the given variable occurs in the tiven
 --   expr. This considers contexts.
@@ -2692,6 +2708,10 @@ run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 -- | <a>FromCore</a> converts exprs of our core language to exprs of C++.
 module Jikka.CPlusPlus.Convert.FromCore
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+instance GHC.Read.Read Jikka.CPlusPlus.Convert.FromCore.Env
+instance GHC.Show.Show Jikka.CPlusPlus.Convert.FromCore.Env
+instance GHC.Classes.Ord Jikka.CPlusPlus.Convert.FromCore.Env
+instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.FromCore.Env
 instance GHC.Base.Monad m => Jikka.CPlusPlus.Convert.FromCore.MonadStatements (Control.Monad.Trans.Writer.Strict.WriterT (Data.Semigroup.Internal.Dual [Jikka.CPlusPlus.Language.Expr.Statement]) m)
 
 module Jikka.CPlusPlus.Convert
@@ -3805,9 +3825,9 @@ run :: MonadError Error m => FilePath -> Text -> m Program
 
 
 module Jikka.RestrictedPython.Language.Expr
-newtype TypeName
-TypeName :: String -> TypeName
-unTypeName :: TypeName -> String
+data TypeName
+TypeName :: OccName -> NameFlavour -> TypeName
+formatTypeName :: TypeName -> String
 
 -- | <a>Type</a> represents the types of our restricted Python-like
 --   language.
@@ -4032,9 +4052,9 @@ BuiltinAppend :: Type -> Attribute
 -- | "str.split" &lt;math&gt;
 BuiltinSplit :: Attribute
 type Attribute' = WithLoc' Attribute
-newtype VarName
-VarName :: String -> VarName
-unVarName :: VarName -> String
+data VarName
+VarName :: OccName -> NameFlavour -> VarName
+formatVarName :: VarName -> String
 type VarName' = WithLoc' VarName
 
 -- | <a>Expr</a> represents the exprs of our restricted Python-like
@@ -4102,12 +4122,10 @@ ToplevelAssert :: Expr' -> ToplevelStatement
 --   
 --   &lt;math&gt;
 type Program = [ToplevelStatement]
-instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.VarName
 instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.VarName
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.VarName
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.VarName
 instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.VarName
-instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.TypeName
 instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.TypeName
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.TypeName
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.TypeName
@@ -4157,6 +4175,8 @@ instance GHC.Read.Read Jikka.RestrictedPython.Language.Expr.ToplevelStatement
 instance GHC.Show.Show Jikka.RestrictedPython.Language.Expr.ToplevelStatement
 instance GHC.Classes.Ord Jikka.RestrictedPython.Language.Expr.ToplevelStatement
 instance GHC.Classes.Eq Jikka.RestrictedPython.Language.Expr.ToplevelStatement
+instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.TypeName
+instance Data.String.IsString Jikka.RestrictedPython.Language.Expr.VarName
 
 module Jikka.RestrictedPython.Language.Util
 genType :: MonadAlpha m => m Type
