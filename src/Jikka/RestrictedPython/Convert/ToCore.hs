@@ -47,11 +47,11 @@ withScope f = do
   return x
 
 runVarName :: X.VarName' -> Y.VarName
-runVarName (X.WithLoc' _ (X.VarName x)) = Y.VarName (Just x) Nothing
+runVarName (X.WithLoc' _ (X.VarName occ flavour)) = Y.VarName occ flavour
 
 runType :: MonadError Error m => X.Type -> m Y.Type
 runType = \case
-  X.VarTy (X.TypeName x) -> return $ Y.VarTy (Y.TypeName (Just x) Nothing)
+  X.VarTy (X.TypeName occ flavour) -> return $ Y.VarTy (Y.TypeName occ flavour)
   X.IntTy -> return Y.IntTy
   X.BoolTy -> return Y.BoolTy
   X.ListTy t -> Y.ListTy <$> runType t

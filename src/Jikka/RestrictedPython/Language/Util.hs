@@ -64,18 +64,13 @@ import Jikka.Common.Location
 import Jikka.RestrictedPython.Language.Expr
 
 genType :: MonadAlpha m => m Type
-genType = do
-  i <- nextCounter
-  return $ VarTy (TypeName ('$' : show i))
+genType = VarTy . TypeName Nothing . Just <$> nextCounter
 
 genVarName :: MonadAlpha m => VarName' -> m VarName'
-genVarName x = do
-  i <- nextCounter
-  let base = if unVarName (value' x) == "_" then "" else takeWhile (/= '$') (unVarName (value' x))
-  return $ WithLoc' (loc' x) (VarName (base ++ '$' : show i))
+genVarName x@(WithLoc' _ (VarName occ _)) = WithLoc' (loc' x) . VarName occ . Just <$> nextCounter
 
 genVarName' :: MonadAlpha m => m VarName'
-genVarName' = genVarName (withoutLoc (VarName "_"))
+genVarName' = genVarName (withoutLoc (VarName Nothing Nothing))
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
@@ -353,4 +348,4 @@ targetToExpr e =
     SubscriptTrg e1 e2 -> Subscript (targetToExpr e1) e2
 
 toplevelMainDef :: [Statement] -> Program
-toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName "main")) [] IntTy body]
+toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName (Just "main") Nothing)) [] IntTy body]
