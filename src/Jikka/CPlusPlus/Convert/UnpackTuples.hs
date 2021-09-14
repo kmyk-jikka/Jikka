@@ -146,13 +146,13 @@ runStatement stmt cont = case stmt of
     case init of
       -- std::tuple<T1, T2, ...> x = std::tuple<...>(e1, e2, ...);
       DeclareCopy (Call' (StdTuple ts) es) -> do
-        ys <- replicateM (length es) (renameVarName LocalNameKind x)
+        ys <- replicateM (length es) (renameVarName LocalNameHint x)
         modify' (M.insert x (zip ts ys))
         return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
       -- std::array<T, n> x = std::array<T, n>{e1, e2, ...};
       DeclareCopy (Call' (ArrayExt t) es) -> do
         let ts = replicate (length es) t
-        ys <- replicateM (length es) (renameVarName LocalNameKind x)
+        ys <- replicateM (length es) (renameVarName LocalNameHint x)
         modify' (M.insert x (zip ts ys))
         return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts ys es
       _ -> do
@@ -177,7 +177,7 @@ runStatement stmt cont = case stmt of
                     if shouldBeArray ts
                       then map (\i -> Call' At [e, litInt32 i]) [0 .. n - 1]
                       else map (\i -> Call' (StdGet i) [e]) [0 .. n - 1]
-            tmpys <- replicateM (length ts) (newFreshName LocalNameKind)
+            tmpys <- replicateM (length ts) (newFreshName LocalNameHint)
             return $ zipWith3 (\t y e -> Declare t y (DeclareCopy e)) ts tmpys es ++ zipWith (\y e -> Assign (AssignExpr SimpleAssign (LeftVar y) (Var e))) (map snd ys) tmpys
           Nothing -> return [Assign (AssignExpr SimpleAssign (LeftVar x) e)]
       _ -> do

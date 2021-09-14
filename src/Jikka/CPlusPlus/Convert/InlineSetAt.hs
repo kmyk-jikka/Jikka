@@ -24,8 +24,8 @@ runExpr :: (MonadAlpha m, MonadWriter [Statement] m) => Expr -> m Expr
 runExpr = \case
   Call' (SetAt t) [xs, i, x] -> do
     y <- case xs of
-      Var xs -> renameVarName LocalNameKind xs
-      _ -> newFreshName LocalNameKind
+      Var xs -> renameVarName LocalNameHint xs
+      _ -> newFreshName LocalNameHint
     tell
       [ Declare (TyVector t) y (DeclareCopy xs),
         Assign (AssignExpr SimpleAssign (LeftAt (LeftVar y) i) x)

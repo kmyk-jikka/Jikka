@@ -46,7 +46,7 @@ runMainDeclare format = go M.empty (F.inputTree format)
     go sizes = \case
       F.Exp e -> do
         (x, indices) <- F.unpackSubscriptedVar e
-        y <- renameVarName' LocalNameKind x
+        y <- renameVarName' LocalNameHint x
         modify' $ M.insert x y
         let lookupSize i = case M.lookup i sizes of
               Just e -> return e
@@ -78,7 +78,7 @@ runMainInput format decls = do
           (stmts', initialized) <- go initialized (F.Seq formats)
           return (stmts ++ stmts', initialized)
         F.Loop i n body -> do
-          j <- renameVarName' LoopCounterNameKind i
+          j <- renameVarName' LoopCounterNameHint i
           modify' $ M.insert i j
           n <- runFormatExpr n
           (body, initialized) <- go initialized body
@@ -93,11 +93,11 @@ runMainSolve format = do
   let solve = Call' (Function "solve" []) (map Var args)
   case F.outputVariables format of
     Left x -> do
-      y <- renameVarName' LocalNameKind x
+      y <- renameVarName' LocalNameHint x
       modify' $ M.insert x y
       return $ Declare TyAuto y (DeclareCopy solve)
     Right xs -> do
-      ys <- mapM (renameVarName' LocalNameKind) xs
+      ys <- mapM (renameVarName' LocalNameHint) xs
       modify' $ \env -> foldl (\env (x, y) -> M.insert x y env) env (zip xs ys)
       return $ DeclareDestructure ys solve
 
@@ -111,7 +111,7 @@ runMainOutput format = go (F.outputTree format)
       F.Newline -> return [coutStatement (Lit (LitChar '\n'))]
       F.Seq formats -> concat <$> mapM go formats
       F.Loop i n body -> do
-        j <- renameVarName' LoopCounterNameKind i
+        j <- renameVarName' LoopCounterNameHint i
         modify' $ M.insert i j
         n <- runFormatExpr n
         body <- go body

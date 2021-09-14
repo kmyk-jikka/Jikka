@@ -15,17 +15,17 @@ fromLeftExpr = \case
   LeftAt x e -> Call' At [fromLeftExpr x, e]
   LeftGet n e -> Call' (Function "std::get" [TyIntValue n]) [fromLeftExpr e]
 
-newFreshName :: MonadAlpha m => NameKind -> m VarName
+newFreshName :: MonadAlpha m => NameHint -> m VarName
 newFreshName kind = do
   i <- nextCounter
   return (VarName Nothing (Just i) (Just kind))
 
-renameVarName :: MonadAlpha m => NameKind -> VarName -> m VarName
+renameVarName :: MonadAlpha m => NameHint -> VarName -> m VarName
 renameVarName kind (VarName occ _ _) = case occ of
   Nothing -> newFreshName kind
   Just occ -> renameVarName' kind occ
 
-renameVarName' :: MonadAlpha m => NameKind -> String -> m VarName
+renameVarName' :: MonadAlpha m => NameHint -> String -> m VarName
 renameVarName' kind occ = do
   i <- nextCounter
   return (VarName (Just occ) (Just i) (Just kind))

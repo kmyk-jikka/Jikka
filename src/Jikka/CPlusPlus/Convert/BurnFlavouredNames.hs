@@ -38,15 +38,15 @@ emptyEnv =
       usedVars = S.empty
     }
 
-fromNameKind :: Maybe NameKind -> String
+fromNameKind :: Maybe NameHint -> String
 fromNameKind = \case
   Nothing -> "u"
-  Just LocalNameKind -> "x"
-  Just LocalArgumentNameKind -> "b"
-  Just LoopCounterNameKind -> "i"
-  Just ConstantNameKind -> "c"
-  Just FunctionNameKind -> "f"
-  Just ArgumentNameKind -> "a"
+  Just LocalNameHint -> "x"
+  Just LocalArgumentNameHint -> "b"
+  Just LoopCounterNameHint -> "i"
+  Just ConstantNameHint -> "c"
+  Just FunctionNameHint -> "f"
+  Just ArgumentNameHint -> "a"
 
 chooseOccName :: S.Set String -> VarName -> String
 chooseOccName used (VarName occ _ kind) =
