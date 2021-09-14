@@ -53,6 +53,11 @@ module Jikka.RestrictedPython.Language.Util
 
     -- * programs
     toplevelMainDef,
+
+    -- * variable names
+    mainVarName,
+    solveVarName,
+    underscoreVarName,
   )
 where
 
@@ -72,7 +77,7 @@ genVarName x@(WithLoc' _ (VarName occ _ hint)) = do
   return . WithLoc' (loc' x) $ VarName occ (Just i) hint
 
 genVarName' :: MonadAlpha m => m VarName'
-genVarName' = genVarName (withoutLoc (VarName Nothing Nothing Nothing))
+genVarName' = genVarName (withoutLoc underscoreVarName)
 
 freeTyVars :: Type -> [TypeName]
 freeTyVars = nub . go
@@ -350,4 +355,13 @@ targetToExpr e =
     SubscriptTrg e1 e2 -> Subscript (targetToExpr e1) e2
 
 toplevelMainDef :: [Statement] -> Program
-toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing (VarName (Just "main") Nothing Nothing)) [] IntTy body]
+toplevelMainDef body = [ToplevelFunctionDef (WithLoc' Nothing mainVarName) [] IntTy body]
+
+mainVarName :: VarName
+mainVarName = VarName (Just "main") Nothing Nothing
+
+solveVarName :: VarName
+solveVarName = VarName (Just "solve") Nothing Nothing
+
+underscoreVarName :: VarName
+underscoreVarName = VarName Nothing Nothing Nothing
