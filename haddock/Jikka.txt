@@ -2004,6 +2004,13 @@ typecheckToplevelExpr :: MonadError Error m => TypeEnv -> ToplevelExpr -> m Type
 typecheckProgram :: MonadError Error m => Program -> m Type
 
 
+module Jikka.Core.Language.Eta
+etaExpand :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m Expr
+etaExpand' :: (MonadAlpha m, MonadError Error m) => [(VarName, Type)] -> Expr -> m (Maybe Expr)
+etaReduce :: Expr -> Expr
+etaReduce' :: Expr -> Maybe Expr
+
+
 module Jikka.Core.Language.RewriteRules
 data RewriteRule m
 data RewriteEnvironment
@@ -2081,6 +2088,11 @@ module Jikka.Core.Convert.TrivialLetElimination
 --   NOTE: this doesn't constant folding.
 run :: MonadError Error m => Program -> m Program
 run' :: Program -> Program
+
+
+module Jikka.Core.Convert.Eta
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 
 
 module Jikka.Core.Convert.BubbleLet
@@ -2567,11 +2579,6 @@ rule :: (MonadAlpha m, MonadError Error m) => RewriteRule m
 --   k)</tt> s.t. <tt>step(c, i, j) = step'(c[i + j + 1], c[i], i, i + j +
 --   1)</tt>
 runFunctionBody :: (MonadAlpha m, MonadError Error m) => VarName -> VarName -> VarName -> Expr -> VarName -> VarName -> VarName -> MaybeT m Expr
-
-
-module Jikka.Core.Convert.Eta
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-rule :: MonadAlpha m => RewriteRule m
 
 
 module Jikka.Core.Convert.CumulativeSum
