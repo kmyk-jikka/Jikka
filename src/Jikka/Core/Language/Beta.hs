@@ -57,14 +57,14 @@ substituteToplevelExpr x e = \case
       then return $ ToplevelLet y t e' cont
       else do
         when (y `isFreeVar` e) $ do
-          throwInternalError $ "Jikka.Core.Language.Beta.substituteToplevelExpr: toplevel name conflicts: " ++ unVarName y
+          throwInternalError $ "Jikka.Core.Language.Beta.substituteToplevelExpr: toplevel name conflicts: " ++ formatVarName y
         ToplevelLet y t e' <$> substituteToplevelExpr x e cont
   ToplevelLetRec f args ret body cont -> do
     if f == x
       then return $ ToplevelLetRec f args ret body cont
       else do
         when (f `isFreeVar` e) $ do
-          throwInternalError $ "Jikka.Core.Language.Beta.substituteToplevelExpr: toplevel name conflicts: " ++ unVarName f
+          throwInternalError $ "Jikka.Core.Language.Beta.substituteToplevelExpr: toplevel name conflicts: " ++ formatVarName f
         (args, body) <-
           if x `elem` map fst args
             then return (args, body)

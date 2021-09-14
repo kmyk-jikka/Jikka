@@ -17,18 +17,13 @@ import Jikka.Core.Language.BuiltinPatterns
 import Jikka.Core.Language.Expr
 
 genType :: MonadAlpha m => m Type
-genType = do
-  i <- nextCounter
-  return $ VarTy (TypeName ('$' : show i))
+genType = VarTy . TypeName Nothing . Just <$> nextCounter
 
 genVarName :: MonadAlpha m => VarName -> m VarName
-genVarName x = do
-  i <- nextCounter
-  let base = if unVarName x == "_" then "" else takeWhile (/= '$') (unVarName x)
-  return $ VarName (base ++ '$' : show i)
+genVarName (VarName x _) = VarName x . Just <$> nextCounter
 
 genVarName' :: MonadAlpha m => m VarName
-genVarName' = genVarName (VarName "_")
+genVarName' = genVarName (VarName Nothing Nothing)
 
 genVarName'' :: MonadAlpha m => Expr -> m VarName
 genVarName'' = \case

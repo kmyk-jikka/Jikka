@@ -18,6 +18,7 @@ where
 import Control.Arrow
 import Control.Monad.State.Strict
 import Data.Data
+import Data.Maybe
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import Jikka.Common.Format.Error
@@ -40,14 +41,12 @@ liftError f = do
     Right y -> return y
 
 fromVarName :: VarName -> Q TH.Name
-fromVarName (VarName x) = do
-  let base = takeWhile (/= '$') x
-  TH.newName (if null base then "x" else base)
+fromVarName (VarName x _) = do
+  TH.newName (fromMaybe "x" x)
 
 fromTypeName :: TypeName -> Q TH.Name
-fromTypeName (TypeName x) = do
-  let base = takeWhile (/= '$') x
-  TH.newName (if null base then "t" else base)
+fromTypeName (TypeName x _) = do
+  TH.newName (fromMaybe "t" x)
 
 liftDataP :: Data a => a -> Q Pat
 liftDataP = TH.dataToPatQ (const Nothing)
@@ -121,7 +120,7 @@ toPatL = \case
 toPatE :: Expr -> StateT Env Q Pat
 toPatE = \case
   Var x ->
-    if x == VarName "_"
+    if x == VarName Nothing Nothing
       then return WildP
       else do
         env <- gets vars
@@ -132,7 +131,7 @@ toPatE = \case
             y <- lift $ fromVarName x
             modify' (\env -> env {vars = (x, RenamedVar (VarE y)) : vars env})
             return $ VarP y
-          Nothing -> fail $ "Jikka.Core.Language.QuasiRules.toPatE: undefined variable (forall is required): " ++ unVarName x
+          Nothing -> fail $ "Jikka.Core.Language.QuasiRules.toPatE: undefined variable (forall is required): " ++ formatVarName x
   Lit lit -> do
     lit <- toPatL lit
     lift [p|Lit $(pure lit)|]
@@ -166,7 +165,7 @@ toExpT = \case
     env <- gets typeVars
     case lookup x env of
       Just y -> return $ VarE y
-      Nothing -> fail $ "Jikka.Core.Language.QuasiRules.toExpT: undefined type variable: " ++ unTypeName x
+      Nothing -> fail $ "Jikka.Core.Language.QuasiRules.toExpT: undefined type variable: " ++ formatTypeName x
   IntTy -> do
     lift $ TH.liftData IntTy
   BoolTy -> do
@@ -207,7 +206,7 @@ toExpE e = do
       env <- gets vars
       case expFromRenamedVarName <$> lookup x env of
         Just (Just y) -> return ([], y)
-        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: undefined variable: " ++ unVarName x
+        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: undefined variable: " ++ formatVarName x
     Lit lit -> do
       lit <- toExpL lit
       e <- lift [e|Lit $(pure lit)|]
@@ -233,7 +232,7 @@ toExpE e = do
           (stmts, e) <- toExpE e
           e <- lift [e|Lam $(pure (VarE y)) $(pure t) $(pure e)|]
           return (BindS (VarP y) genVarName : stmts, e)
-        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: variable conflicts: " ++ unVarName x
+        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: variable conflicts: " ++ formatVarName x
     Let x t e1 e2 -> do
       t <- toExpT t
       (stmts, e1) <- toExpE e1
@@ -251,7 +250,7 @@ toExpE e = do
           (stmts', e2) <- toExpE e2
           e <- lift [e|Let $(pure (VarE y)) $(pure t) $(pure e1) $(pure e2)|]
           return (stmts ++ BindS (VarP y) genVarName : stmts', e)
-        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: variable conflicts: " ++ unVarName x
+        _ -> fail $ "Jikka.Core.Language.QuasiRules.toExpE: variable conflicts: " ++ formatVarName x
     Assert e1 e2 -> do
       (stmts1, e1) <- toExpE e1
       (stmts2, e2) <- toExpE e2

@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -18,17 +17,47 @@
 module Jikka.Core.Language.Expr where
 
 import Data.Data
-import Data.String (IsString)
+import Data.List
+import Data.Maybe
+import Data.String
+import Text.Read
 
-newtype VarName = VarName String deriving (Eq, Ord, Show, Read, Data, Typeable, IsString)
+type OccName = Maybe String
 
-unVarName :: VarName -> String
-unVarName (VarName name) = name
+type NameFlavour = Maybe Int
 
-newtype TypeName = TypeName String deriving (Eq, Ord, Show, Read, Data, Typeable, IsString)
+-- NOTE: @VarName occ flavour == VarName occ' flavour'@ is defined as @occ == occ' && flavour == flavour'@ but we assume that this is equivalent to @flavour == flavour'@ unless they are @Nothing@.
+data VarName = VarName OccName NameFlavour deriving (Eq, Ord, Show, Read, Data, Typeable)
 
-unTypeName :: TypeName -> String
-unTypeName (TypeName name) = name
+instance IsString VarName where
+  fromString = \case
+    "_" -> VarName Nothing Nothing
+    s -> case elemIndex '$' s of
+      Just i ->
+        let (occ, flavour) = splitAt i s
+            occ' = if occ == "" then Nothing else Just occ
+            flavour' = case readMaybe (tail flavour) of
+              Just i -> i
+              Nothing -> error $ "Jikka.Core.Language.Expr.fromString: invalid var name: " ++ s
+         in VarName occ' (Just flavour')
+      Nothing -> VarName (Just s) Nothing
+
+formatVarName :: VarName -> String
+formatVarName = \case
+  VarName Nothing Nothing -> "_"
+  VarName name flavour -> fromMaybe "" name ++ maybe "" (('$' :) . show) flavour
+
+data TypeName = TypeName OccName NameFlavour deriving (Eq, Ord, Show, Read, Data, Typeable)
+
+instance IsString TypeName where
+  fromString s =
+    let VarName occ flavour = fromString s
+     in TypeName occ flavour
+
+formatTypeName :: TypeName -> String
+formatTypeName = \case
+  TypeName Nothing Nothing -> "_"
+  TypeName name flavour -> fromMaybe "" name ++ maybe "" (('$' :) . show) flavour
 
 -- | `Type` represents the types of our core language. This is similar to the `Type` of GHC Core.
 -- See also [commentary/compiler/type-type](https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/type-type).

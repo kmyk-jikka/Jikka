@@ -35,16 +35,15 @@ rename x = do
     if x `notElem` used
       then return x
       else do
-        let base = takeWhile (/= '$') (unVarName x)
-        i <- nextCounter
-        return $ VarName (base ++ "$" ++ show i)
+        let base = takeWhile (/= '$') (formatVarName x)
+        VarName (Just base) . Just <$> nextCounter
   put $ y : used
   return y
 
 runExpr' :: (MonadState UsedVars m, MonadAlpha m, MonadError Error m) => RenameMapping -> Expr -> m Expr
 runExpr' env = \case
   Var x -> case lookup x env of
-    Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
+    Nothing -> throwInternalError $ "undefined variable: " ++ formatVarName x
     Just y -> return $ Var y
   Lit lit -> return $ Lit lit
   App f e -> App <$> runExpr' env f <*> runExpr' env e

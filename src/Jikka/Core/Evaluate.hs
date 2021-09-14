@@ -259,10 +259,10 @@ callBuiltin builtin ts args = wrapError' ("while calling builtin " ++ formatBuil
     SegmentTreeSetPoint _ -> go3' valueToList valueToInt pure ValList setAtEither
 
 callLambda :: MonadError Error m => Maybe VarName -> Env -> VarName -> Type -> Expr -> [Value] -> m Value
-callLambda = \name env x t body args -> wrapError' ("while calling lambda " ++ maybe "(anonymous)" unVarName name) $ go Nothing env x t body args
+callLambda = \name env x t body args -> wrapError' ("while calling lambda " ++ maybe "(anonymous)" formatVarName name) $ go Nothing env x t body args
   where
     go name env x t body [] = return $ ValLambda name env x t body
-    go name env x _ body (e : args) = maybe id (\name -> wrapError' $ "while calling lambda " ++ unVarName name) name $ do
+    go name env x _ body (e : args) = maybe id (\name -> wrapError' $ "while calling lambda " ++ formatVarName name) name $ do
       body <- evaluateExpr ((x, e) : env) body
       case body of
         ValLambda name env x t body -> go name env x t body args
@@ -278,7 +278,7 @@ callValue f args = case (f, args) of
 evaluateExpr :: MonadError Error m => Env -> Expr -> m Value
 evaluateExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
+    Nothing -> throwInternalError $ "undefined variable: " ++ formatVarName x
     Just val -> return val
   Lit lit -> case lit of
     LitBuiltin ConvexHullTrickInit ts -> callBuiltin ConvexHullTrickInit ts []

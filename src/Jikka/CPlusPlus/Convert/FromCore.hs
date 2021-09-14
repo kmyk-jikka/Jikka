@@ -19,6 +19,7 @@ module Jikka.CPlusPlus.Convert.FromCore
 where
 
 import Control.Monad.Writer.Strict
+import Data.Maybe
 import qualified Jikka.CPlusPlus.Language.Expr as Y
 import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
@@ -35,7 +36,7 @@ import qualified Jikka.Core.Language.Util as X
 -- monad
 
 renameVarName' :: MonadAlpha m => Y.NameKind -> X.VarName -> m Y.VarName
-renameVarName' kind x = Y.renameVarName kind (X.unVarName x)
+renameVarName' kind (X.VarName x _) = Y.renameVarName kind (fromMaybe "" x)
 
 type Env = [(X.VarName, X.Type, Y.VarName)]
 
@@ -45,7 +46,7 @@ typecheckExpr env = X.typecheckExpr (map (\(x, t, _) -> (x, t)) env)
 lookupVarName :: MonadError Error m => Env -> X.VarName -> m Y.VarName
 lookupVarName env x = case lookup x (map (\(x, _, y) -> (x, y)) env) of
   Just y -> return y
-  Nothing -> throwInternalError $ "undefined variable: " ++ X.unVarName x
+  Nothing -> throwInternalError $ "undefined variable: " ++ X.formatVarName x
 
 class Monad m => MonadStatements m where
   useStatement :: Y.Statement -> m ()

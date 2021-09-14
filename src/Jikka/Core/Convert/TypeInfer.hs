@@ -66,7 +66,7 @@ wrapHint hint = censor (fmap (map (consHint hint)))
 
 wrapErrorFromHint :: MonadError Error m => Hint -> m a -> m a
 wrapErrorFromHint = \case
-  VarHint x -> wrapError' $ "around variable " ++ unVarName x
+  VarHint x -> wrapError' $ "around variable " ++ formatVarName x
   ExprHint e -> wrapError' $ "around expr " ++ summarize (formatExpr e)
   ToplevelExprHint e -> wrapError' $ "around toplevel expr " ++ summarize (formatToplevelExpr e)
   where
@@ -170,7 +170,7 @@ subst sigma = \case
 unifyTyVar :: (MonadState Subst m, MonadError Error m) => TypeName -> Type -> m ()
 unifyTyVar x t =
   if x `elem` freeTyVars t
-    then throwInternalError $ "looped type equation " ++ unTypeName x ++ " = " ++ formatType t
+    then throwInternalError $ "looped type equation " ++ formatTypeName x ++ " = " ++ formatType t
     else do
       modify' (Subst . M.insert x t . unSubst) -- This doesn't introduce the loop.
 

@@ -166,7 +166,7 @@ type TypeEnv = [(VarName, Type)]
 typecheckExpr :: MonadError Error m => TypeEnv -> Expr -> m Type
 typecheckExpr env = \case
   Var x -> case lookup x env of
-    Nothing -> throwInternalError $ "undefined variable: " ++ unVarName x
+    Nothing -> throwInternalError $ "undefined variable: " ++ formatVarName x
     Just t -> return t
   Lit lit -> literalToType lit
   App f e -> do
@@ -176,13 +176,13 @@ typecheckExpr env = \case
       FunTy te' ret | te' == te -> return ret
       _ -> throwInternalError $ "wrong type funcall: function = " ++ formatExpr f ++ " and argument = " ++ formatExpr e ++ ", function's type = " ++ formatType tf ++ ", but argument's type = " ++ formatType te
   Lam x t e ->
-    let env' = if x == VarName "_" then env else (x, t) : env
+    let env' = if x == VarName Nothing Nothing then env else (x, t) : env
      in FunTy t <$> typecheckExpr env' e
   Let x t e1 e2 -> do
     t' <- typecheckExpr env e1
     when (t /= t') $ do
       throwInternalError $ "wrong type binding: " ++ formatExpr (Let x t e1 e2)
-    let env' = if x == VarName "_" then env else (x, t) : env
+    let env' = if x == VarName Nothing Nothing then env else (x, t) : env
     typecheckExpr env' e2
   Assert e1 e2 -> do
     t <- typecheckExpr env e1
@@ -196,13 +196,13 @@ typecheckToplevelExpr env = \case
   ToplevelLet x t e cont -> do
     t' <- typecheckExpr env e
     when (t' /= t) $ do
-      throwInternalError $ "assigned type is not correct: context = (let " ++ unVarName x ++ ": " ++ formatType t ++ " = " ++ formatExpr e ++ " in ...), expected type = " ++ formatType t ++ ", actual type = " ++ formatType t'
+      throwInternalError $ "assigned type is not correct: context = (let " ++ formatVarName x ++ ": " ++ formatType t ++ " = " ++ formatExpr e ++ " in ...), expected type = " ++ formatType t ++ ", actual type = " ++ formatType t'
     typecheckToplevelExpr ((x, t) : env) cont
   ToplevelLetRec f args ret body cont -> do
     let t = curryFunTy (map snd args) ret
     ret' <- typecheckExpr (reverse args ++ (f, t) : env) body
     when (ret' /= ret) $ do
-      throwInternalError $ "returned type is not correct: context = (let rec " ++ unVarName f ++ " " ++ unwords (map (\(x, t) -> unVarName x ++ ": " ++ formatType t) args) ++ ": " ++ formatType ret ++ " = " ++ formatExpr body ++ " in ...), expected type = " ++ formatType ret ++ ", actual type = " ++ formatType ret'
+      throwInternalError $ "returned type is not correct: context = (let rec " ++ formatVarName f ++ " " ++ unwords (map (\(x, t) -> formatVarName x ++ ": " ++ formatType t) args) ++ ": " ++ formatType ret ++ " = " ++ formatExpr body ++ " in ...), expected type = " ++ formatType ret ++ ", actual type = " ++ formatType ret'
     typecheckToplevelExpr ((f, t) : env) cont
   ToplevelAssert e1 e2 -> do
     t <- typecheckExpr env e1

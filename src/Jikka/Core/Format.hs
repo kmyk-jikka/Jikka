@@ -109,7 +109,7 @@ resolvePrecRight cur assoc (s, prv)
 
 formatType' :: Type -> (String, Prec)
 formatType' = \case
-  VarTy (TypeName a) -> (a, identPrec)
+  VarTy a -> (formatTypeName a, identPrec)
   IntTy -> ("int", identPrec)
   BoolTy -> ("bool", identPrec)
   ListTy t -> (resolvePrec funCallPrec (formatType' t) ++ " list", funCallPrec)
@@ -306,16 +306,16 @@ formatLiteral = \case
   LitBottom _ msg -> "bottom<" ++ show msg ++ ">"
 
 formatFormalArgs :: [(VarName, Type)] -> String
-formatFormalArgs args = unwords $ map (\(x, t) -> paren (unVarName x ++ ": " ++ formatType t)) args
+formatFormalArgs args = unwords $ map (\(x, t) -> paren (formatVarName x ++ ": " ++ formatType t)) args
 
 formatExpr' :: Expr -> (String, Prec)
 formatExpr' = \case
-  Var x -> (unVarName x, identPrec)
+  Var x -> (formatVarName x, identPrec)
   Lit lit -> (formatLiteral lit, identPrec)
   e@(App _ _) ->
     let (f, args) = curryApp e
      in case f of
-          Var x -> formatFunCall (unVarName x, identPrec) args
+          Var x -> formatFunCall (formatVarName x, identPrec) args
           Lit (LitBuiltin builtin ts) -> formatBuiltin' builtin ts args
           _ -> formatFunCall (formatExpr' f) args
   LamId _ -> ("id", identPrec)
@@ -323,7 +323,7 @@ formatExpr' = \case
   e@(Lam _ _ _) ->
     let (args, body) = uncurryLam e
      in ("fun " ++ formatFormalArgs args ++ " ->\n" ++ indent ++ "\n" ++ resolvePrec parenPrec (formatExpr' body) ++ "\n" ++ dedent ++ "\n", lambdaPrec)
-  Let x t e1 e2 -> ("let " ++ unVarName x ++ ": " ++ formatType t ++ " = " ++ resolvePrec parenPrec (formatExpr' e1) ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
+  Let x t e1 e2 -> ("let " ++ formatVarName x ++ ": " ++ formatType t ++ " = " ++ resolvePrec parenPrec (formatExpr' e1) ++ "\nin " ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
   Assert e1 e2 -> ("assert " ++ resolvePrec parenPrec (formatExpr' e1) ++ " in\n" ++ resolvePrec lambdaPrec (formatExpr' e2), lambdaPrec)
 
 formatExpr :: Expr -> String
@@ -332,8 +332,8 @@ formatExpr = unlines . makeIndentFromMarkers 4 . lines . resolvePrec parenPrec .
 formatToplevelExpr' :: ToplevelExpr -> [String]
 formatToplevelExpr' = \case
   ResultExpr e -> lines (resolvePrec lambdaPrec (formatExpr' e))
-  ToplevelLet x t e cont -> let' (unVarName x) t e cont
-  ToplevelLetRec f args ret e cont -> let' ("rec " ++ unVarName f ++ " " ++ formatFormalArgs args) ret e cont
+  ToplevelLet x t e cont -> let' (formatVarName x) t e cont
+  ToplevelLetRec f args ret e cont -> let' ("rec " ++ formatVarName f ++ " " ++ formatFormalArgs args) ret e cont
   ToplevelAssert e cont -> ["assert " ++ resolvePrec parenPrec (formatExpr' e), "in"] ++ formatToplevelExpr' cont
   where
     let' s t e cont =
