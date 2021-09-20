@@ -189,7 +189,7 @@ def run_integration_test(script: pathlib.Path, *, executable: pathlib.Path, libr
 
                 with open(inputcase, 'rb') as fh:
                     try:
-                        actual = subprocess.check_output(command, stdin=fh, timeout=2 * TIMEOUT_FACTOR)
+                        actual = subprocess.check_output(command, stdin=fh, timeout=2 * TIMEOUT_FACTOR if title == 'C++' else 2)
                     except subprocess.TimeoutExpired as e:
                         msg = '{}: TLE with {}: {}'.format(str(inputcase), title, e)
                         if title == 'C++':
