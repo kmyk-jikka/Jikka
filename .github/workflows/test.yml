@@ -11,6 +11,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - run: |
+          echo 'CXX=clang++' >> $GITHUB_ENV
+        if: ${{ matrix.os == 'macos-latest' }}
+
       - uses: actions/checkout@v2
         with:
           submodules: true
