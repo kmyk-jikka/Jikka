@@ -2,14 +2,17 @@
 set -x
 
 # Haskell
-stack exec ormolu -- --version \
-    || { echo HINT: Please install Ormolu with '$ stack install ormolu'; exit 1; }
-stack exec ormolu -- --mode=check $(find src app test -name \*.hs) \
-    || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; exit 1; }
-stack exec hlint -- --version \
-    || { echo HINT: Please install HLint with '$ stack install hlint'; exit 1; }
-stack exec hlint -- src app test \
-    || exit 1
+if git diff --staged --name-only | grep '\.hs$'; then
+    stack exec ormolu -- --version \
+        || { echo HINT: Please install Ormolu with '$ stack install ormolu'; exit 1; }
+    stack exec ormolu -- --mode=check $(find src app test -name \*.hs) \
+        || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; exit 1; }
+    stack exec hlint -- --version \
+        || { echo HINT: Please install HLint with '$ stack install hlint'; exit 1; }
+    stack exec hlint -- src app test \
+        || exit 1
+fi
+
 if [ -n "$(git diff --staged --name-only --diff-filter=m src test)$(git diff --staged package.yaml)" ]; then
     # Check *.cabal only when some source files are added or deleted, because it is not stable and depends on the versions of stack command or hpack command.
     stack build --only-configure \
@@ -17,43 +20,44 @@ if [ -n "$(git diff --staged --name-only --diff-filter=m src test)$(git diff --s
     git diff --exit-code *.cabal \
         || { echo HINT: Please run '$ git add *.cabal'; exit 1; }
 fi
+
 grep '\<Debug.Trace\>' $(find src test -name \*.hs | grep -v 'RewriteRules\.hs') \
     && { echo HINT: Please remove Debug.Trace from $(grep '\<Debug.Trace\>' -r src test | cut -d: -f1); exit 1; }
 
 # C++
-which clang-format \
-    || { echo HINT: Please install clang-format; exit 1; }
-for f in $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems'); do
-    diff $f <(clang-format $f) \
-        || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems');' ; exit 1; }
-done
+if git diff --staged --name-only | grep '\..\?pp$'; then
+    which clang-format \
+        || { echo HINT: Please install clang-format; exit 1; }
+    for f in $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems'); do
+        diff $f <(clang-format $f) \
+            || { echo HINT: Please run '$ clang-format -i $(find runtime/include examples/data -name \*.\?pp | grep -v 'library-checker-problems\|jikka-judge-problems');' ; exit 1; }
+    done
+fi
 
 # Python
-isort --version \
-    || { echo HINT: Please install isort with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
-isort --check-only --diff scripts/*.py examples/data/*.py \
-    || { echo HINT: Please run '$ isort scripts/*.py examples/data/*.py'; exit 1; }
-yapf --version \
-    || { echo HINT: Please install yapf with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
-yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py \
-    || { echo HINT: Please run '$ yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; exit 1; }
-mypy --version \
-    || { echo HINT: Please install mypy with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
-mypy --ignore-missing-imports scripts/*.py examples/data/*.py \
-    || exit 1
+if git diff --staged --name-only | grep '\.py$'; then
+    isort --version \
+        || { echo HINT: Please install isort with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
+    isort --check-only --diff scripts/*.py examples/data/*.py \
+        || { echo HINT: Please run '$ isort scripts/*.py examples/data/*.py'; exit 1; }
+    yapf --version \
+        || { echo HINT: Please install yapf with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
+    yapf --diff '--style={ COLUMN_LIMIT: 9999 }' scripts/*.py examples/data/*.py \
+        || { echo HINT: Please run '$ yapf --in-place '\''--style={ COLUMN_LIMIT: 9999 }'\'' scripts/*.py examples/data/*.py'; exit 1; }
+    mypy --version \
+        || { echo HINT: Please install mypy with running '$ pip3 install -r scripts/requirements.txt'; exit 1; }
+    mypy --ignore-missing-imports scripts/*.py examples/data/*.py \
+        || exit 1
+fi
 
-# YAML
-which yarn \
-    || { echo HINT: Please install Yarn 'https://classic.yarnpkg.com/en/docs/install/'; exit 1; }
-yarn prettier --version \
-    || { echo HINT: Please run '$ yarn install'; exit 1; }
-yarn prettier --check $(git ls-files | grep '\.yml$\|\.yaml$\|\.json$') \
-    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.yml$\|\.yaml$\|\.json$'\'')'; exit 1; }
-
-# Markdown
-yarn prettier --check $(git ls-files | grep '\.md$') \
-    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.md$'\'')'; exit 1; }
-
-# HTML and JavaScript
-yarn prettier --check $(git ls-files | grep '\.html\|.mjs$') \
-    || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.html$\|.mjs$'\'')'; exit 1; }
+# Other files
+for ext in yml yaml json md html mjs; do
+    if git diff --staged --name-only | grep '\.'$ext'$'; then
+        which yarn \
+            || { echo HINT: Please install Yarn 'https://classic.yarnpkg.com/en/docs/install/'; exit 1; }
+        yarn prettier --version \
+            || { echo HINT: Please run '$ yarn install'; exit 1; }
+        yarn prettier --check $(git ls-files | grep '\.'$ext'$') \
+            || { echo HINT: Please run '$ yarn prettier --write $(git ls-files | grep '\''\.'$ext'$'\'')'; exit 1; }
+    fi
+done
