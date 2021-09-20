@@ -10,10 +10,13 @@ stack exec hlint -- --version \
     || { echo HINT: Please install HLint with '$ stack install hlint'; exit 1; }
 stack exec hlint -- src app test \
     || exit 1
-stack build --only-configure \
-    || exit 1
-git diff --exit-code *.cabal \
-    || { echo HINT: Please run '$ git add *.cabal'; exit 1; }
+if [ -n "$(git diff --staged --name-only --diff-filter=m src test)$(git diff --staged package.yaml)" ]; then
+    # Check *.cabal only when some source files are added or deleted, because it is not stable and depends on the versions of stack command or hpack command.
+    stack build --only-configure \
+        || exit 1
+    git diff --exit-code *.cabal \
+        || { echo HINT: Please run '$ git add *.cabal'; exit 1; }
+fi
 grep '\<Debug.Trace\>' $(find src test -name \*.hs | grep -v 'RewriteRules\.hs') \
     && { echo HINT: Please remove Debug.Trace from $(grep '\<Debug.Trace\>' -r src test | cut -d: -f1); exit 1; }
 
