@@ -2,8 +2,12 @@
 set -x
 
 # Haskell
+stack exec ormolu -- --version \
+    || { echo HINT: Please install Ormolu with '$ stack install ormolu'; exit 1; }
 stack exec ormolu -- --mode=check $(find src app test -name \*.hs) \
     || { echo HINT: Please run '$ stack exec ormolu -- --mode=inplace $(find src app test -name \*.hs)'; exit 1; }
+stack exec hlint -- --version \
+    || { echo HINT: Please install HLint with '$ stack install hlint'; exit 1; }
 stack exec hlint -- src app test \
     || exit 1
 stack build --only-configure \
