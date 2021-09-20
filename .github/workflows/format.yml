@@ -20,7 +20,7 @@ jobs:
           key: ${{ runner.os }}-stack-test-${{ hashFiles('stack.yaml') }}
 
       - name: Build dependencies
-        run: stack --system-ghc build --test --only-dependencies
+        run: stack --system-ghc install ormolu hlint
 
       - name: Run Ormolu
         run: stack --system-ghc exec ormolu -- --mode=check $(find src app test -name \*.hs)
