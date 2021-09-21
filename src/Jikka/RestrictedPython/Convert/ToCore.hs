@@ -112,7 +112,7 @@ runBuiltin builtin = do
         xs <- replicateM (length ts) Y.genVarName'
         let lam body = Y.Lam "go0" (Y.curryFunTy ts ret) (foldr (\(i, t) -> Y.Lam (xs !! i) (Y.ListTy t)) body (zip [0 ..] ts))
         let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (xs !! i))) [0 ..] ts))
-        let body = Y.Map' Y.IntTy ret (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "go0") (map (Y.Var . (xs !!)) [0 .. length ts - 1]))) (Y.Range1' len)
+        let body = Y.Map' Y.IntTy ret (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Var "go0") (zipWith (\i t -> Y.At' t (Y.Var (xs !! i)) (Y.Var "i")) [0 ..] ts))) (Y.Range1' len)
         return $ lam body
     X.BuiltinSorted t -> go1 Y.Sorted t
     X.BuiltinReversed t -> go1 Y.Reversed t
