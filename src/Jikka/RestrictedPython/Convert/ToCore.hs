@@ -119,14 +119,14 @@ runBuiltin builtin = do
     X.BuiltinEnumerate t -> do
       t <- runType t
       let body = Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' [Y.IntTy, t]) [Y.Var "i", Y.At' t (Y.Var "xs") (Y.Var "i")])
-      return $ Y.Lam "xs" (Y.ListTy t) (Y.Map' (Y.ListTy t) (Y.ListTy (Y.TupleTy [Y.IntTy, t])) body (Y.Range1' (Y.Len' t (Y.Var "xs"))))
+      return $ Y.Lam "xs" (Y.ListTy t) (Y.Map' Y.IntTy (Y.TupleTy [Y.IntTy, t]) body (Y.Range1' (Y.Len' t (Y.Var "xs"))))
     X.BuiltinFilter t -> go1 Y.Filter t
     X.BuiltinZip ts -> do
       ts <- mapM runType ts
       xs <- replicateM (length ts) Y.genVarName'
       let lam body = foldr (\(i, t) -> Y.Lam (xs !! i) (Y.ListTy t)) body (zip [0 ..] ts)
       let len = Y.Min1' Y.IntTy (foldr (Y.Cons' Y.IntTy) (Y.Nil' Y.IntTy) (zipWith (\i t -> Y.Len' t (Y.Var (xs !! i))) [0 ..] ts))
-      let body = Y.Map' Y.IntTy (Y.TupleTy ts) (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts) (map (Y.Var . (xs !!)) [0 .. length ts - 1]))) (Y.Range1' len)
+      let body = Y.Map' Y.IntTy (Y.TupleTy ts) (Y.Lam "i" Y.IntTy (Y.uncurryApp (Y.Tuple' ts) (zipWith (\i t -> Y.At' t (Y.Var (xs !! i)) (Y.Var "i")) [0 ..] ts))) (Y.Range1' len)
       return $ lam body
     X.BuiltinAll -> go0 Y.All
     X.BuiltinAny -> go0 Y.Any
