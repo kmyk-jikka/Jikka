@@ -1,6 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 module Jikka.CPlusPlus.Language.Util where
 
@@ -197,6 +199,9 @@ mapExprStatementProgramM f g (Program decls) = Program <$> mapM (mapExprStatemen
 mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> [Statement]) -> Program -> Program
 mapExprStatementProgram f g = runIdentity . mapExprStatementProgramM (return . f) (return . g)
 
+mapExprStatementExpr :: (Expr -> Expr) -> (Statement -> [Statement]) -> Expr -> Expr
+mapExprStatementExpr goE goS = runIdentity . mapExprStatementExprM (return . goE) (return . goS)
+
 mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
 mapSubExprM f e = mapExprStatementExprM f (return . (: [])) e
 
@@ -232,11 +237,11 @@ mapDirectExprLeftExprM f = \case
   LeftGet i e -> LeftGet i <$> mapDirectExprLeftExprM f e
 
 replaceExpr :: VarName -> Expr -> Expr -> Expr
-replaceExpr x e = runIdentity . mapExprStatementExprM go (return . (: []))
+replaceExpr x e = mapExprStatementExpr go (: [])
   where
     go = \case
-      Var y | y == x -> return e
-      e' -> return e'
+      Var y | y == x -> e
+      e' -> e'
 
 replaceStatement :: VarName -> Expr -> Statement -> Statement
 replaceStatement x e = head . runIdentity . mapExprStatementStatementM go (return . (: []))
@@ -247,3 +252,50 @@ replaceStatement x e = head . runIdentity . mapExprStatementStatementM go (retur
 
 mapToplevelStatementProgramM :: Monad m => (ToplevelStatement -> m [ToplevelStatement]) -> Program -> m Program
 mapToplevelStatementProgramM f prog = Program . concat <$> mapM f (decls prog)
+
+mapLeftExprAssignExprM :: Applicative m => (LeftExpr -> m LeftExpr) -> AssignExpr -> m AssignExpr
+mapLeftExprAssignExprM f = \case
+  AssignExpr op e1 e2 -> AssignExpr op <$> f e1 <*> pure e2
+  AssignIncr e -> AssignIncr <$> f e
+  AssignDecr e -> AssignDecr <$> f e
+
+mapLeftExprAssignExpr :: (LeftExpr -> LeftExpr) -> AssignExpr -> AssignExpr
+mapLeftExprAssignExpr f = runIdentity . mapLeftExprAssignExprM (return . f)
+
+mapVarNameExprStatementGenericM :: forall m a. Monad m => ((Expr -> m Expr) -> (Statement -> m [Statement]) -> a) -> (VarName -> m VarName) -> a
+mapVarNameExprStatementGenericM mapExprStatementM f = mapExprStatementM goE (fmap (: []) . goS)
+  where
+    goE = \case
+      Var x -> Var <$> f x
+      Lam args ret body -> Lam <$> mapM (\(t, x) -> (t,) <$> f x) args <*> pure ret <*> pure body
+      e -> return e
+    goS :: Statement -> m Statement
+    goS = \case
+      Assign e -> Assign <$> goAssignExpr e
+      Declare t x init -> Declare t <$> f x <*> pure init
+      DeclareDestructure xs e -> DeclareDestructure <$> mapM f xs <*> pure e
+      For t x init pred incr body -> For t <$> f x <*> pure init <*> pure pred <*> goAssignExpr incr <*> pure body
+      ForEach t x e body -> ForEach t <$> f x <*> pure e <*> pure body
+      stmt -> return stmt
+    goAssignExpr = mapLeftExprAssignExprM goLeftExpr
+    goLeftExpr = \case
+      LeftVar x -> LeftVar <$> f x
+      LeftAt e1 e2 -> LeftAt <$> goLeftExpr e1 <*> pure e2
+      LeftGet n e -> LeftGet n <$> goLeftExpr e
+
+mapVarNameStatementM :: Monad m => (VarName -> m VarName) -> Statement -> m Statement
+mapVarNameStatementM f stmt = head <$> mapVarNameExprStatementGenericM mapExprStatementStatementM f stmt
+
+mapVarNameToplevelStatementM :: Monad m => (VarName -> m VarName) -> ToplevelStatement -> m ToplevelStatement
+mapVarNameToplevelStatementM f stmt = do
+  stmt <- case stmt of
+    VarDef t x e -> VarDef t <$> f x <*> pure e
+    FunDef ret g args body -> FunDef ret g <$> mapM (\(t, x) -> (t,) <$> f x) args <*> pure body
+    _ -> return stmt
+  mapVarNameExprStatementGenericM mapExprStatementToplevelStatementM f stmt
+
+mapVarNameProgramM :: Monad m => (VarName -> m VarName) -> Program -> m Program
+mapVarNameProgramM f = mapToplevelStatementProgramM (fmap (: []) . mapVarNameToplevelStatementM f)
+
+renameVarNameStatement :: VarName -> VarName -> Statement -> Statement
+renameVarNameStatement x y = runIdentity . mapVarNameStatementM (\z -> return $ if z == x then y else z)
