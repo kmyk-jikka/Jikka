@@ -294,7 +294,7 @@ resolveAttribute e@(WithLoc' _ (Name (WithLoc' _ "math"))) x = wrapAt' (loc' x) 
   _ -> return $ Attribute e x
 resolveAttribute e@(WithLoc' _ (Name (WithLoc' _ "jikka"))) x = wrapAt' (loc' x) $ case value' x of
   UnresolvedAttribute x' ->
-    let x'' = VarName (Just (unAttributeName x')) Nothing
+    let x'' = VarName (Just (unAttributeName x')) Nothing Nothing
      in if x'' `S.notMember` additionalBuiltinNames
           then throwSymbolError $ "unknown attribute: " ++ unAttributeName x'
           else value' <$> resolveUniqueBuiltin (x $> x'')

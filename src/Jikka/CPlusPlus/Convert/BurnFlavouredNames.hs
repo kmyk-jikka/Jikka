@@ -24,6 +24,7 @@ import Jikka.CPlusPlus.Language.Expr
 import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Common.Name
 
 data Env = Env
   { renameMapping :: M.Map VarName VarName,

@@ -69,7 +69,7 @@ renameLocalNew x = do
     Just y -> return y
     Nothing -> do
       y <- genVarName x
-      when (value' x /= VarName Nothing Nothing) $ do
+      when (value' x /= underscoreVarName) $ do
         put $
           env
             { currentMapping = (value' x, value' y) : currentMapping env

@@ -19,6 +19,7 @@ import Jikka.CPlusPlus.Language.Expr
 import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Common.Name
 
 runExpr :: (MonadAlpha m, MonadWriter [Statement] m) => Expr -> m Expr
 runExpr = \case

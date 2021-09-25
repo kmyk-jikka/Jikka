@@ -23,6 +23,7 @@ import qualified Jikka.CPlusPlus.Language.Expr as Y
 import qualified Jikka.CPlusPlus.Language.Util as Y
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Common.Name
 import qualified Jikka.Core.Format as X (formatBuiltinIsolated, formatType)
 import qualified Jikka.Core.Language.BuiltinPatterns as X
 import qualified Jikka.Core.Language.Eta as X
@@ -34,7 +35,7 @@ import qualified Jikka.Core.Language.Util as X
 --------------------------------------------------------------------------------
 -- monad
 
-renameVarName' :: MonadAlpha m => Y.NameHint -> X.VarName -> m Y.VarName
+renameVarName' :: MonadAlpha m => NameHint -> X.VarName -> m Y.VarName
 renameVarName' kind (X.VarName occ _) = case occ of
   Nothing -> Y.newFreshName kind
   Just occ -> Y.renameVarName' kind occ
@@ -46,13 +47,13 @@ renameFunName' = \case
 
 newFreshNameWithAdHocHintFromExpr :: MonadAlpha m => String -> Y.Expr -> m Y.VarName
 newFreshNameWithAdHocHintFromExpr prefix e = case e of
-  Y.Var (Y.VarName (Just occ) _ _) -> Y.newFreshName (Y.AdHocNameHint (prefix ++ "_" ++ occ))
-  _ -> Y.newFreshName (Y.AdHocNameHint prefix)
+  Y.Var (Y.VarName (Just occ) _ _) -> Y.newFreshName (AdHocNameHint (prefix ++ "_" ++ occ))
+  _ -> Y.newFreshName (AdHocNameHint prefix)
 
 newFreshNameWithAdHocHintFromExpr' :: MonadAlpha m => String -> X.Expr -> m Y.VarName
 newFreshNameWithAdHocHintFromExpr' prefix e = case e of
-  X.Var (X.VarName (Just occ) _) -> Y.newFreshName (Y.AdHocNameHint (prefix ++ "_" ++ occ))
-  _ -> Y.newFreshName (Y.AdHocNameHint prefix)
+  X.Var (X.VarName (Just occ) _) -> Y.newFreshName (AdHocNameHint (prefix ++ "_" ++ occ))
+  _ -> Y.newFreshName (AdHocNameHint prefix)
 
 data Env = Env
   { typeEnv :: [(X.VarName, X.Type)],
@@ -173,8 +174,8 @@ runIterate env t n f x = do
   t <- runType t
   n <- runExpr env n
   x <- runExpr env x
-  y <- Y.newFreshName Y.LocalNameHint
-  i <- Y.newFreshName Y.LoopCounterNameHint
+  y <- Y.newFreshName LocalNameHint
+  i <- Y.newFreshName LoopCounterNameHint
   (stmtsF, body, f) <- runExprFunction env f (Y.Var y)
   useStatement $ Y.Declare t y (Y.DeclareCopy x)
   useStatements stmtsF
@@ -192,7 +193,7 @@ runIf env t e1 e2 e3 = do
         return $ Y.Cond e1' e2' e3'
     _ -> do
       t <- runType t
-      phi <- Y.newFreshName Y.LocalNameHint
+      phi <- Y.newFreshName LocalNameHint
       let assign = Y.Assign . Y.AssignExpr Y.SimpleAssign (Y.LeftVar phi)
       useStatement $ Y.Declare t phi Y.DeclareDefault
       useStatement $ Y.If e1' (stmts2 ++ [assign e2']) (Just (stmts3 ++ [assign e3']))
@@ -204,8 +205,8 @@ runFoldl env t1 t2 f init xs = do
   xs <- runExpr env xs
   t1 <- runType t1
   t2 <- runType t2
-  y <- Y.newFreshName Y.LocalNameHint
-  x <- Y.newFreshName Y.LocalNameHint
+  y <- Y.newFreshName LocalNameHint
+  x <- Y.newFreshName LocalNameHint
   (stmtsF, body, f) <- runExprFunction2 env f (Y.Var y) (Y.Var x)
   useStatement $ Y.Declare t2 y (Y.DeclareCopy init)
   useStatements stmtsF
@@ -226,7 +227,7 @@ runMap env _ t2 f xs = do
     -- other cases
     _ -> do
       xs <- runExpr env xs
-      i <- Y.newFreshName Y.LoopCounterNameHint
+      i <- Y.newFreshName LoopCounterNameHint
       (stmtsF, body, f) <- runExprFunction env f (Y.at xs (Y.Var i))
       useStatement $ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.size xs]))
       useStatements stmtsF
@@ -362,13 +363,13 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.ModMatPow n -> go03 $ \f k m -> Y.Call' (Y.Function "jikka::modmat::pow" [Y.TyIntValue n]) [f, k, m]
     -- list functions
     X.Cons -> go12' $ \t x xs -> do
-      ys <- Y.newFreshName Y.LocalNameHint
+      ys <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare (Y.TyVector t) ys Y.DeclareDefault
       useStatement $ Y.callMethod' (Y.Var ys) "push_back" [x]
       useStatement $ Y.callMethod' (Y.Var ys) "insert" [Y.end (Y.Var ys), Y.begin xs, Y.end xs]
       return $ Y.Var ys
     X.Snoc -> go12' $ \t xs x -> do
-      ys <- Y.newFreshName Y.LocalNameHint
+      ys <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
       useStatement $ Y.callMethod' (Y.Var ys) "push_back" [x]
       return $ Y.Var ys
@@ -377,8 +378,8 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       init <- runExpr env init
       xs <- runExpr env xs
       t2 <- runType t2
-      ys <- Y.newFreshName Y.LocalNameHint
-      i <- Y.newFreshName Y.LoopCounterNameHint
+      ys <- Y.newFreshName LocalNameHint
+      i <- Y.newFreshName LoopCounterNameHint
       (stmtsF, body, f) <- runExprFunction2 env f (Y.at (Y.Var ys) (Y.Var i)) (Y.at xs (Y.Var i))
       useStatement $ Y.Declare (Y.TyVector t2) ys (Y.DeclareCopy (Y.vecCtor t2 [Y.incrExpr (Y.size xs)]))
       useStatement $ Y.assignAt ys (Y.litInt32 0) init
@@ -389,8 +390,8 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       xs <- runExpr env xs
       n <- runExpr env n
       t <- runType t
-      ys <- Y.newFreshName Y.LocalNameHint
-      i <- Y.newFreshName Y.LoopCounterNameHint
+      ys <- Y.newFreshName LocalNameHint
+      i <- Y.newFreshName LoopCounterNameHint
       (stmtsF, body, f) <- runExprFunction env f (Y.Var ys)
       useStatement $ Y.Declare (Y.TyVector t) ys (Y.DeclareCopy xs)
       useStatements stmtsF
@@ -402,7 +403,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       xs <- runExpr env xs
       t <- runType t
       ys <- newFreshNameWithAdHocHintFromExpr "filtered" xs
-      x <- Y.newFreshName Y.LocalNameHint
+      x <- Y.newFreshName LocalNameHint
       (stmtsF, body, f) <- runExprFunction env f (Y.Var x)
       useStatement $ Y.Declare (Y.TyVector t) ys Y.DeclareDefault
       useStatements stmtsF
@@ -411,7 +412,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
     X.At -> go12 $ \_ e1 e2 -> Y.at e1 e2
     X.SetAt -> go13 $ \t xs i x -> Y.Call' (Y.SetAt t) [xs, i, x]
     X.Elem -> go12' $ \_ xs x -> do
-      y <- Y.newFreshName Y.LocalNameHint
+      y <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare Y.TyBool y (Y.DeclareCopy (Y.BinOp Y.NotEqual (Y.callFunction "std::find" [] [Y.begin xs, Y.end xs, x]) (Y.end xs)))
       return $ Y.Var y
     X.Sum -> go01' $ \xs -> do
@@ -420,19 +421,19 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       return $ Y.Var y
     X.ModSum -> go02' $ \xs m -> do
       y <- newFreshNameWithAdHocHintFromExpr "sum" xs
-      x <- Y.newFreshName Y.LocalNameHint
+      x <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 0))
       useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.AddAssign (Y.LeftVar y) (Y.callFunction "jikka::floormod" [] [Y.Var x, m]))]
       return $ Y.callFunction "jikka::floormod" [] [Y.Var y, m]
     X.Product -> go01' $ \xs -> do
       y <- newFreshNameWithAdHocHintFromExpr "prod" xs
-      x <- Y.newFreshName Y.LocalNameHint
+      x <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1))
       useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.MulAssign (Y.LeftVar y) (Y.Var x))]
       return $ Y.Var y
     X.ModProduct -> go02' $ \xs m -> do
       y <- newFreshNameWithAdHocHintFromExpr "prod" xs
-      x <- Y.newFreshName Y.LocalNameHint
+      x <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare Y.TyInt64 y (Y.DeclareCopy (Y.litInt64 1))
       useStatement $ Y.ForEach Y.TyInt64 x xs [Y.Assign (Y.AssignExpr Y.SimpleAssign (Y.LeftVar y) (Y.callFunction "jikka::mod::mult" [] [Y.Var y, Y.Var x, m]))]
       return $ Y.Var y
@@ -454,14 +455,14 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       return $ Y.Var y
     X.Gcd1 -> go11' $ \t xs -> do
       y <- newFreshNameWithAdHocHintFromExpr "gcd" xs
-      a <- Y.newFreshName Y.LocalArgumentNameHint
-      b <- Y.newFreshName Y.LocalArgumentNameHint
+      a <- Y.newFreshName LocalArgumentNameHint
+      b <- Y.newFreshName LocalArgumentNameHint
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 0, Y.Lam [(Y.TyAuto, a), (Y.TyAuto, b)] Y.TyAuto [Y.Return $ Y.callFunction "std::gcd" [] [Y.Var a, Y.Var b]]])))
       return $ Y.Var y
     X.Lcm1 -> go11' $ \t xs -> do
       y <- newFreshNameWithAdHocHintFromExpr "lcm" xs
-      a <- Y.newFreshName Y.LocalArgumentNameHint
-      b <- Y.newFreshName Y.LocalArgumentNameHint
+      a <- Y.newFreshName LocalArgumentNameHint
+      b <- Y.newFreshName LocalArgumentNameHint
       useStatement $ Y.Declare t y (Y.DeclareCopy (Y.UnOp Y.Deref (Y.callFunction "std::accumulate" [] [Y.begin xs, Y.end xs, Y.litInt64 1, Y.Lam [(Y.TyAuto, a), (Y.TyAuto, b)] Y.TyAuto [Y.Return $ Y.callFunction "std::lcm" [] [Y.Var a, Y.Var b]]])))
       return $ Y.Var y
     X.All -> go01' $ \xs -> do
@@ -484,13 +485,13 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
       return $ Y.Var ys
     X.Range1 -> go01 $ \n -> Y.Call' Y.Range [n]
     X.Range2 -> go02' $ \from to -> do
-      ys <- Y.newFreshName Y.LocalNameHint
+      ys <- Y.newFreshName LocalNameHint
       useStatement $ Y.Declare (Y.TyVector Y.TyInt64) ys (Y.DeclareCopy (Y.vecCtor Y.TyInt64 [Y.BinOp Y.Sub to from]))
       useStatement $ Y.callFunction' "std::iota" [] [Y.begin (Y.Var ys), Y.end (Y.Var ys), from]
       return $ Y.Var ys
     X.Range3 -> go03' $ \from to step -> do
-      ys <- Y.newFreshName Y.LocalNameHint
-      i <- Y.newFreshName Y.LoopCounterNameHint
+      ys <- Y.newFreshName LocalNameHint
+      i <- Y.newFreshName LoopCounterNameHint
       useStatement $ Y.Declare (Y.TyVector Y.TyInt64) ys Y.DeclareDefault
       useStatement $ Y.For Y.TyInt32 i from (Y.BinOp Y.LessThan (Y.Var i) to) (Y.AssignExpr Y.AddAssign (Y.LeftVar i) step) [Y.callMethod' (Y.Var ys) "push_back" [Y.Var i]]
       return $ Y.Var ys
@@ -526,7 +527,7 @@ runAppBuiltin env f ts args = wrapError' ("converting builtin " ++ X.formatBuilt
 runExprFunction :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction env f e = case f of
   X.Lam x t body -> do
-    y <- renameVarName' Y.LocalArgumentNameHint x
+    y <- renameVarName' LocalArgumentNameHint x
     (stmts, body) <- runStatementsT $ runExpr (pushVar x t y env) body
     let stmts' = map (Y.replaceStatement y e) stmts
     let body' = Y.replaceExpr y e body
@@ -538,8 +539,8 @@ runExprFunction env f e = case f of
 runExprFunction2 :: (MonadAlpha m, MonadError Error m) => Env -> X.Expr -> Y.Expr -> Y.Expr -> m ([Y.Statement], [Y.Statement], Y.Expr)
 runExprFunction2 env f e1 e2 = case f of
   X.Lam2 x1 t1 x2 t2 body -> do
-    y1 <- renameVarName' Y.LocalArgumentNameHint x1
-    y2 <- renameVarName' Y.LocalArgumentNameHint x2
+    y1 <- renameVarName' LocalArgumentNameHint x1
+    y2 <- renameVarName' LocalArgumentNameHint x2
     (stmts, body) <- runStatementsT $ runExpr (pushVar x2 t2 y2 (pushVar x1 t1 y1 env)) body
     let stmts' = map (Y.replaceStatement y2 e2 . Y.replaceStatement y1 e1) stmts
     let body' = Y.replaceExpr y2 e2 $ Y.replaceExpr y1 e1 body
@@ -553,7 +554,7 @@ runAssert env = \case
   -- optimize @assert all(...)@
   X.All' (X.Map' t _ f xs) -> do
     t <- runType t
-    y <- Y.newFreshName Y.LocalNameHint
+    y <- Y.newFreshName LocalNameHint
     xs <- runExpr env xs
     (stmtsF, body, e) <- runExprFunction env f (Y.Var y)
     useStatements stmtsF
@@ -584,7 +585,7 @@ runExpr env = \case
             ts <- mapM runType ts
             ret <- runType ret
             xs <- replicateM (arity - length args) X.genVarName'
-            ys <- mapM (renameVarName' Y.LocalArgumentNameHint) xs
+            ys <- mapM (renameVarName' LocalArgumentNameHint) xs
             e <- runAppBuiltin env builtin bts (args ++ map X.Var xs)
             let (_, e') = foldr (\(t, y) (ret, e) -> (Y.TyFunction ret [t], Y.Lam [(t, y)] ret [Y.Return e])) (ret, e) (zip (drop (length args) ts) ys)
             return e'
@@ -602,7 +603,7 @@ runExpr env = \case
         return $ Y.Call f args
   e@(X.Lam _ _ _) -> do
     let (args, body) = X.uncurryLam e
-    ys <- mapM (renameVarName' Y.LocalArgumentNameHint . fst) args
+    ys <- mapM (renameVarName' LocalArgumentNameHint . fst) args
     let env' = foldl (\env ((x, t), y) -> pushVar x t y env) env (zip args ys)
     ret <- runType =<< typecheckExpr env' body
     (stmts, body) <- runStatementsT $ runExpr env' body
@@ -610,7 +611,7 @@ runExpr env = \case
     let (_, [Y.Return e]) = foldr (\(t, y) (ret, body) -> (Y.TyFunction ret [t], [Y.Return (Y.Lam [(t, y)] ret body)])) (ret, stmts ++ [Y.Return body]) (zip ts ys)
     return e
   X.Let x t e1 e2 -> do
-    y <- renameVarName' Y.LocalNameHint x
+    y <- renameVarName' LocalNameHint x
     t' <- runType t
     e1 <- runExpr env e1
     useStatement $ Y.Declare t' y (Y.DeclareCopy e1)
@@ -623,7 +624,7 @@ runToplevelFunDef :: (MonadAlpha m, MonadError Error m) => Env -> Y.FunName -> [
 runToplevelFunDef env f args ret body = do
   ret <- runType ret
   args <- forM args $ \(x, t) -> do
-    y <- renameVarName' Y.ArgumentNameHint x
+    y <- renameVarName' ArgumentNameHint x
     return (x, t, y)
   (stmts, result) <- runStatementsT $ runExpr (foldl (\env (x, t, y) -> pushVar x t y env) env args) body
   args <- forM args $ \(_, t, y) -> do
@@ -654,7 +655,7 @@ runToplevelExpr env = \case
       _ -> throwInternalError "the result expr must be eta-converted"
     -- merge two sets of arguments which introduced by @FunTy@ and @Lam@
     args <- forM args $ \(x, t) -> do
-      y <- renameVarName' Y.ArgumentNameHint x
+      y <- renameVarName' ArgumentNameHint x
       return (x, t, y)
     (stmts, e) <- runStatementsT $ runExpr (foldl (\env (x, t, y) -> pushVar x t y env) env args) body
     let body = stmts ++ [Y.Return e]
@@ -678,7 +679,7 @@ runToplevelExpr env = \case
       cont <- runToplevelExpr (pushFun x t g env) cont
       return $ stmt ++ cont
     _ -> do
-      y <- renameVarName' Y.ConstantNameHint x
+      y <- renameVarName' ConstantNameHint x
       stmt <- runToplevelVarDef env y t e
       cont <- runToplevelExpr (pushVar x t y env) cont
       return $ stmt ++ cont

@@ -28,7 +28,7 @@ import qualified Jikka.RestrictedPython.Language.Util as Y (genType)
 runIdent :: X.Ident' -> Y.VarName'
 runIdent (WithLoc loc (X.Ident x)) =
   let occ = if x == "_" then Nothing else Just x
-   in WithLoc' (Just loc) (Y.VarName occ Nothing)
+   in WithLoc' (Just loc) (Y.VarName occ Nothing Nothing)
 
 runAttribute :: X.Ident' -> Y.Attribute'
 runAttribute (WithLoc loc (X.Ident x)) = WithLoc' (Just loc) (Y.UnresolvedAttribute (Y.AttributeName x))

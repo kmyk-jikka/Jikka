@@ -23,6 +23,7 @@ import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Alpha
 import Jikka.Common.Error
 import qualified Jikka.Common.IOFormat as F
+import Jikka.Common.Name
 
 lookup' :: (MonadState (M.Map String VarName) m, MonadError Error m) => String -> m VarName
 lookup' x = do

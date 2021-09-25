@@ -21,6 +21,7 @@ import Jikka.CPlusPlus.Language.Expr
 import Jikka.CPlusPlus.Language.Util
 import Jikka.Common.Alpha
 import Jikka.Common.Error
+import Jikka.Common.Name
 
 -- | `runExpr` replaces variables using the @mapping :: M.Map VarName [(Type, VarName)]@.
 runExpr :: (MonadAlpha m, MonadError Error m, MonadState (M.Map VarName [(Type, VarName)]) m) => Expr -> m Expr
