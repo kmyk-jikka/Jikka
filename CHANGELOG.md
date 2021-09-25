@@ -1,5 +1,15 @@
 # Changelog for Jikka
 
+## 2021-09-25: v5.6.0.0
+
+Feature:
+
+- Use readable names for variables in generated C++ code ([#232](https://github.com/kmyk/Jikka/pull/232), [#238](https://github.com/kmyk/Jikka/pull/238) by [@kmyk](https://github.com/kmyk))
+
+Bug Fix:
+
+- Fix type errors of `map`, `zip`, and `enumerate` ([#237](https://github.com/kmyk/Jikka/pull/237) by [@zer0-star](https://github.com/zer0-star))
+
 ## 2021-09-04: v5.5.0.0
 
 Features:
