@@ -1,7 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 -- |
 -- Module      : Jikka.CPlusPlus.Convert.BurnFlavouredNames
@@ -72,44 +70,6 @@ rename x = do
             usedVars = S.insert y' (usedVars env)
           }
       return y
-
-mapVarNameExprStatementGenericM :: forall m a. Monad m => ((Expr -> m Expr) -> (Statement -> m [Statement]) -> a) -> (VarName -> m VarName) -> a
-mapVarNameExprStatementGenericM mapExprStatementM f = mapExprStatementM goE (fmap (: []) . goS)
-  where
-    goE :: Monad m => Expr -> m Expr
-    goE = \case
-      Var x -> Var <$> f x
-      Lam args ret body -> Lam <$> mapM (\(t, x) -> (t,) <$> f x) args <*> pure ret <*> pure body
-      e -> return e
-    goLeftExpr :: Monad m => LeftExpr -> m LeftExpr
-    goLeftExpr = \case
-      LeftVar x -> LeftVar <$> f x
-      LeftAt e1 e2 -> LeftAt <$> goLeftExpr e1 <*> pure e2
-      LeftGet n e -> LeftGet n <$> goLeftExpr e
-    goAssignExpr :: Monad m => AssignExpr -> m AssignExpr
-    goAssignExpr = \case
-      AssignExpr op e1 e2 -> AssignExpr op <$> goLeftExpr e1 <*> pure e2
-      AssignIncr e -> AssignIncr <$> goLeftExpr e
-      AssignDecr e -> AssignDecr <$> goLeftExpr e
-    goS :: Monad m => Statement -> m Statement
-    goS = \case
-      For t x init pred incr body -> For t <$> f x <*> pure init <*> pure pred <*> goAssignExpr incr <*> pure body
-      ForEach t x e body -> ForEach t <$> f x <*> pure e <*> pure body
-      Declare t x init -> Declare t <$> f x <*> pure init
-      DeclareDestructure xs e -> DeclareDestructure <$> mapM f xs <*> pure e
-      Assign e -> Assign <$> goAssignExpr e
-      stmt -> return stmt
-
-mapVarNameToplevelStatementM :: Monad m => (VarName -> m VarName) -> ToplevelStatement -> m ToplevelStatement
-mapVarNameToplevelStatementM f stmt = do
-  stmt <- case stmt of
-    VarDef t x e -> VarDef t <$> f x <*> pure e
-    FunDef ret g args body -> FunDef ret g <$> mapM (\(t, x) -> (t,) <$> f x) args <*> pure body
-    _ -> return stmt
-  mapVarNameExprStatementGenericM mapExprStatementToplevelStatementM f stmt
-
-mapVarNameProgramM :: Monad m => (VarName -> m VarName) -> Program -> m Program
-mapVarNameProgramM f = mapToplevelStatementProgramM (fmap (: []) . mapVarNameToplevelStatementM f)
 
 runProgram :: MonadState Env m => Program -> m Program
 runProgram = mapVarNameProgramM rename
