@@ -382,11 +382,6 @@ type OccName = Maybe String
 type NameFlavour = Maybe Int
 toFlavouredName :: String -> (OccName, NameFlavour)
 formatFlavouredName :: OccName -> NameFlavour -> String
-
-
--- | <a>Expr</a> module has the basic data types for C++ language. The data
---   types are intended to use for the code generation.
-module Jikka.CPlusPlus.Language.Expr
 data NameHint
 LocalNameHint :: NameHint
 LocalArgumentNameHint :: NameHint
@@ -395,6 +390,15 @@ ConstantNameHint :: NameHint
 FunctionNameHint :: NameHint
 ArgumentNameHint :: NameHint
 AdHocNameHint :: String -> NameHint
+instance GHC.Read.Read Jikka.Common.Name.NameHint
+instance GHC.Show.Show Jikka.Common.Name.NameHint
+instance GHC.Classes.Ord Jikka.Common.Name.NameHint
+instance GHC.Classes.Eq Jikka.Common.Name.NameHint
+
+
+-- | <a>Expr</a> module has the basic data types for C++ language. The data
+--   types are intended to use for the code generation.
+module Jikka.CPlusPlus.Language.Expr
 data VarName
 VarName :: OccName -> NameFlavour -> Maybe NameHint -> VarName
 formatVarName :: VarName -> String
@@ -854,10 +858,6 @@ StaticAssert :: Expr -> String -> ToplevelStatement
 newtype Program
 Program :: [ToplevelStatement] -> Program
 [decls] :: Program -> [ToplevelStatement]
-instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.NameHint
-instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.NameHint
-instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.NameHint
-instance GHC.Classes.Eq Jikka.CPlusPlus.Language.Expr.NameHint
 instance GHC.Read.Read Jikka.CPlusPlus.Language.Expr.VarName
 instance GHC.Show.Show Jikka.CPlusPlus.Language.Expr.VarName
 instance GHC.Classes.Ord Jikka.CPlusPlus.Language.Expr.VarName
@@ -1032,29 +1032,6 @@ module Jikka.CPlusPlus.Convert.UseInitialization
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
-module Jikka.CPlusPlus.Convert.UnpackTuples
-
--- | <a>run</a> unpack tuples.
---   
---   <h2>Examples</h2>
---   
---   Before:
---   
---   <pre>
---   tuple&lt;int, int&gt; c = make_tuple(a, b);
---   func(get&lt;0&gt;(c), get&lt;1&gt;(c));
---   </pre>
---   
---   After:
---   
---   <pre>
---   int c0 = a;
---   int c1 = b;
---   func(c0, c1);
---   </pre>
-run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
 module Jikka.CPlusPlus.Convert.OptimizeRange
 
 -- | <a>run</a> replaces superfluous copying.
@@ -1142,6 +1119,29 @@ instance GHC.Read.Read Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
 instance GHC.Show.Show Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
 instance GHC.Classes.Ord Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
 instance GHC.Classes.Eq Jikka.CPlusPlus.Convert.MoveSemantics.CopyType
+
+
+module Jikka.CPlusPlus.Convert.UnpackTuples
+
+-- | <a>run</a> unpack tuples.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   tuple&lt;int, int&gt; c = make_tuple(a, b);
+--   func(get&lt;0&gt;(c), get&lt;1&gt;(c));
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   int c0 = a;
+--   int c1 = b;
+--   func(c0, c1);
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
 
 module Jikka.CPlusPlus.Convert.InlineSetAt
@@ -4053,7 +4053,7 @@ BuiltinAppend :: Type -> Attribute
 BuiltinSplit :: Attribute
 type Attribute' = WithLoc' Attribute
 data VarName
-VarName :: OccName -> NameFlavour -> VarName
+VarName :: OccName -> NameFlavour -> Maybe NameHint -> VarName
 formatVarName :: VarName -> String
 type VarName' = WithLoc' VarName
 
@@ -4229,6 +4229,9 @@ hasBareNameTrg :: Target' -> Bool
 exprToTarget :: Expr' -> Maybe Target'
 targetToExpr :: Target' -> Expr'
 toplevelMainDef :: [Statement] -> Program
+mainVarName :: VarName
+solveVarName :: VarName
+underscoreVarName :: VarName
 
 module Jikka.RestrictedPython.Language.Builtin
 builtinNames :: Set VarName
