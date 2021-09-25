@@ -982,6 +982,7 @@ mapExprStatementStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m [St
 mapExprStatementToplevelStatementM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> ToplevelStatement -> m ToplevelStatement
 mapExprStatementProgramM :: Monad m => (Expr -> m Expr) -> (Statement -> m [Statement]) -> Program -> m Program
 mapExprStatementProgram :: (Expr -> Expr) -> (Statement -> [Statement]) -> Program -> Program
+mapExprStatementExpr :: (Expr -> Expr) -> (Statement -> [Statement]) -> Expr -> Expr
 mapSubExprM :: Monad m => (Expr -> m Expr) -> Expr -> m Expr
 
 -- | <a>mapDirectExprStatementM</a> replaces exprs which are direct
@@ -992,6 +993,13 @@ mapDirectExprLeftExprM :: Monad m => (Expr -> m Expr) -> LeftExpr -> m LeftExpr
 replaceExpr :: VarName -> Expr -> Expr -> Expr
 replaceStatement :: VarName -> Expr -> Statement -> Statement
 mapToplevelStatementProgramM :: Monad m => (ToplevelStatement -> m [ToplevelStatement]) -> Program -> m Program
+mapLeftExprAssignExprM :: Applicative m => (LeftExpr -> m LeftExpr) -> AssignExpr -> m AssignExpr
+mapLeftExprAssignExpr :: (LeftExpr -> LeftExpr) -> AssignExpr -> AssignExpr
+mapVarNameExprStatementGenericM :: forall m a. Monad m => ((Expr -> m Expr) -> (Statement -> m [Statement]) -> a) -> (VarName -> m VarName) -> a
+mapVarNameStatementM :: Monad m => (VarName -> m VarName) -> Statement -> m Statement
+mapVarNameToplevelStatementM :: Monad m => (VarName -> m VarName) -> ToplevelStatement -> m ToplevelStatement
+mapVarNameProgramM :: Monad m => (VarName -> m VarName) -> Program -> m Program
+renameVarNameStatement :: VarName -> VarName -> Statement -> Statement
 
 
 -- | <a>Format</a> module converts the AST for C++ to the plain source
@@ -1030,42 +1038,6 @@ module Jikka.CPlusPlus.Convert.UseInitialization
 --   vector&lt;int&gt; xs(n, 0);
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
-
-
-module Jikka.CPlusPlus.Convert.OptimizeRange
-
--- | <a>run</a> replaces superfluous copying.
---   
---   <h2>Examples</h2>
---   
---   Before:
---   
---   <pre>
---   int b = range(a).size();
---   </pre>
---   
---   After:
---   
---   <pre>
---   int b = a;
---   </pre>
---   
---   Before:
---   
---   <pre>
---   for (int i : jikka::range(n)) {
---       ...
---   }
---   </pre>
---   
---   After:
---   
---   <pre>
---   for (int i = 0; i &lt; n; ++ i) {
---       ...
---   }
---   </pre>
-run :: MonadError Error m => Program -> m Program
 
 
 module Jikka.CPlusPlus.Convert.MoveSemantics
@@ -1140,6 +1112,42 @@ module Jikka.CPlusPlus.Convert.UnpackTuples
 --   int c0 = a;
 --   int c1 = b;
 --   func(c0, c1);
+--   </pre>
+run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
+
+
+module Jikka.CPlusPlus.Convert.OptimizeRange
+
+-- | <a>run</a> replaces superfluous copying.
+--   
+--   <h2>Examples</h2>
+--   
+--   Before:
+--   
+--   <pre>
+--   int b = range(a).size();
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   int b = a;
+--   </pre>
+--   
+--   Before:
+--   
+--   <pre>
+--   for (int i : jikka::range(n)) {
+--       ...
+--   }
+--   </pre>
+--   
+--   After:
+--   
+--   <pre>
+--   for (int i = 0; i &lt; n; ++ i) {
+--       ...
+--   }
 --   </pre>
 run :: (MonadAlpha m, MonadError Error m) => Program -> m Program
 
