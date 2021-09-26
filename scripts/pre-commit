@@ -54,7 +54,7 @@ fi
 if git diff --staged --name-only | grep '\.tex$'; then
     chktex --version \
         || { echo HINT: Please install chktex, e.g. '$ sudo apt install chktex'; exit 1; }
-    chktex --nowarn={1,2,8,11,12,36,39} $(git ls-files | grep '\.tex$') \
+    chktex --nowarn={1,2,8,11,12,13,36,39} $(git ls-files | grep '\.tex$') \
         || exit 1
 fi
 

@@ -67,7 +67,7 @@ For users:
 For developpers:
 
 - [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
-- [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
+- [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) / [docs/how-it-works.ja.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.ja.pdf)
   - How it works and related theories / 動作原理や関連する理論
 - [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md)
   - The policy of designs / 実装方針
