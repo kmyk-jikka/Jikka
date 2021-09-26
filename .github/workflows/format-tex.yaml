@@ -1,0 +1,18 @@
+name: format-tex
+
+on: [push, pull_request]
+
+jobs:
+  format-tex:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: |
+          sudo apt install chktex
+
+      - name: Run chktex
+        run: |
+          chktex --nowarn={1,2,8,11,12,36,39} docs/*.tex
