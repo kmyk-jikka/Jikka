@@ -67,9 +67,7 @@ For users:
 For developpers:
 
 - [CONTRIBUTING.md](https://github.com/kmyk/Jikka/blob/master/CONTRIBUTING.md)
-- My blog article [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
-  - On what it means to automatically solve problems of competitive programming / 競技プログラミングの問題を自動で解くとはどういうことなのかについて
-- [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) (Japanese)
+- [docs/how-it-works.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.pdf) / [docs/how-it-works.ja.pdf](https://github.com/kmyk/Jikka/blob/master/docs/how-it-works.ja.pdf)
   - How it works and related theories / 動作原理や関連する理論
 - [docs/DESIGN.md](https://github.com/kmyk/Jikka/blob/master/docs/DESIGN.md)
   - The policy of designs / 実装方針
@@ -79,6 +77,11 @@ For developpers:
   - The specification of core language / core 言語の仕様
 - [Haddock](https://hackage.haskell.org/package/Jikka)
   - [Haddock (master)](https://kmyk.github.io/Jikka/haddock)
+
+Blog articles:
+
+- [競技プログラミングの問題を自動で解きたい - うさぎ小屋](https://kimiyuki.net/blog/2020/12/09/automated-solvers-of-competitive-programming/) (Japanese)
+- [Jikka, a transpiler/solver for competitive programming - Codeforces](https://codeforces.com/blog/entry/94648)
 
 ## Examples
 

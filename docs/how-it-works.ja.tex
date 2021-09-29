@@ -18,53 +18,50 @@
 % \usepackage{bibentry}
 % \nobibliography*
 
-\newtheorem{problem*}{Problem}[section]
+\newtheorem{problem*}{問題}[section]
 \newenvironment{problem}{\begin{problem*}\renewcommand{\qedsymbol}{\(\diamond\)}\pushQED{\qed}}{\popQED\end{problem*}}
-\newtheorem{definition*}{Definition}[section]
+\newtheorem{definition*}{定義}[section]
 \newenvironment{definition}{\begin{definition*}\renewcommand{\qedsymbol}{\(\diamond\)}\pushQED{\qed}}{\popQED\end{definition*}}
 
 
-\title{Towards automatically solving problems of \\ competitive programming}
+\title{競技プログラミングの問題を自動的に解きたい}
 \author{Kimiyuki Onaka}
 \date{\today}
 
 \begin{document}
 \maketitle
 
-TODO: Complete translation
-
 \setcounter{section}{-1}
-\section{Abstract}
+\section{概要}
 
-In this PDF, we consider the question, ``Can we automatically solve problems of competitive programming?''.
-In other words, ``Can we make a solver for competitive programming?''.
+この PDF では「競技プログラミングの問題を自動的に解けるか？」という問いについて考える。
+あるいは「競技プログラミングのソルバを作ることはできるか？」と言い換えてもよいだろう。
 
-In section $1$, we organize this still vague question into a more concrete one.
-We explain that there are various types of solvers that automatically solve problems of competitive programming, and clarify which type of solver we are aiming to develop.
-Our goal is to develop a solver that receives a formally expressed problem as input and outputs a solution to it, especially one that uses naive source code as its ``formally expressed problem''.
-Such a solver is, in other words, a transpiler with optimization about asymptotic computational complexity.
-Therefore, the question ``Can we make a solver for competitive programming?'' becomes a concrete question: ``Can we make a transpiler with optimization about asymptotic computational complexity?''
-Also, for practical use, it would be easier to use it as an IDE plugin that rewrites a code snippet to reduce its asymptotic computational complexity, instead of transpiling the entire source code.
+$1$ 章ではこのまだ曖昧な問いをより具体的な問いへと整理する。
+競技プログラミングの問題を自動的に解くソルバにも様々な種類のものがあることを説明し、今回我々が作成を目指すソルバがそれらの中のどの種類のものかを明確にする。
+我々が作成を目指すのは「形式的に表現された問題を受け取り、それに対する解答を出力する」という種類のものであり、その中でも特に「形式的に表現された問題」として「愚直解のソースコード」を用いるものである。
+そのようなソルバはつまり「漸近的計算量のレベルの最適化を伴うトランスパイラ」である。
+よって「競技プログラミングのソルバを作ることはできるか？」という問いは「漸近的計算量のレベルの最適化を伴うトランスパイラは作れるか？」という具体的な問いとなる。
+また、より実用的には、完全なソースコードでなく小さなコード片を入力とする「漸近的計算量のレベルの最適化を行う IDE プラグイン」としても利用できると扱いやすいであろう。
 
-In section $2$, we give a tentative answer to this concretized question.
-We describe how to implement a solver for competitive programming as a transpiler with optimization, and observes that such a solver can solve some problems.
-The implementation strategy is mechanical rewriting of expression trees.
-For example, when the solver detects a part that is naively taking interval sums many times, the solver replaces it with cumulative sums.
-For another example, when it detects a part that is naively doing convolution with double loops, then it replaces the part with convolution using FFT.
-Such rewriting is expressed as a rule called ``rewrite rules'', and the core of such a solver is implemented as a set of rewrite rules.
+$2$ 章では具体化された問いに対する暫定の答えを与える。
+つまり、最適化を伴うトランスパイラとしての競技プログラミングのソルバの実装方針を説明し、またそのような方針で実装されたソルバでいくらかの問題が解けることを見る。
+実装方針は機械的な式木の書き換えが中心となる。
+たとえば、愚直に何度も区間和を取っている部分を検出すればそれを累積和で置き換えたり、愚直な 2 重ループで畳み込みをしている部分を検出すればそれを FFT を用いた畳み込みで置き換えたりする。
+このような書き換えは ``rewrite rule'' と呼ばれる規則として表現され、よってソルバの中心部分は「rewrite rules からなる集合」として実装される。
 
-\section{What is automatically solving problems of competitive programming}
+\section{競技プログラミングの問題を自動的に解くとはどのようなことか}
 
-\subsection{Why do we want to solve problems automatically?}
+\subsection{そもそもなぜ競技プログラミングの問題を自動で解きたいのか}
 
-First of all, let's discuss the significance of the question, ``Can you automatically solve problems of competitive programming?''.
-Why do we want to automatically solve problems of competition programming?
-There are three main reasons for this.
+まず先に、「競技プログラミングの問題を自動的に解けるか？」という問いの意義について述べておこう。
+なぜ競技プログラミングの問題を自動で解きたいのだろうか？
+これは主には以下の 3 種類であろう。
 
 \begin{enumerate}[label=(\arabic{enumi}.)]
-    \item Practical use in competition programming: ``We want to automate works during a contest to get a better rating'', ``The execution log of a solver may be used for learning purposes'', etc.
-    \item Engineering interest: ``We want to know how many problems can be solved automatically.''
-    \item Philosophical motivation: ``If a problem can be solved manually but not automatically, the problem may not really be solved'', ``We want to understand how humans solve problems''.
+    \item 競技プログラミングでの実用: 「コンテスト中の作業を自動化してレートに繋げたい」「ソルバの実行ログが学習用途に使えるかもしれない」など
+    \item 工学的な興味: 「どの程度の問題までなら自動で解けてしまうのか知りたい」など
+    \item 哲学的な動機: 「問題が手動でなら解けても自動では解けないなら、本当に解けたとは言えないかもしれない」「人間がどのようにして問題を解いているのかについて理解を深めたい」
 \end{enumerate}
 
 (1.) 競技プログラミングでの実用は分かりやすい。
@@ -101,18 +98,17 @@ There are three main reasons for this.
 あるいは逆にそのようなソルバがまったく失敗してしまうなら、人間の思考には機械的な規則の適用としては捉えきれない暗黙的な部分があることが疑われる。
 
 
-\subsection{How do humans solve problems of competitive programming?}
+\subsection{競技プログラミングの問題を人間はどのように解いているのか}
 
-There are many things during solving competitive programming problems.
-Let's start by sorting this out.
-What steps are there in the process of solving a problem from the moment the problem page is opened (e.g., right after clicking on the link \url{https://atcoder.jp/contests/abc184/tasks/abc184_c}) to the moment you see the green ``AC'' mark?
-Of course, this process can include too many things (e.g., interpreting the diagram embedded in the question, scrolling through the question page, clicking the blue ``submit'' button, etc.) and can be described in many details.
-However, if we ignore the inessential ones and organize them in an abstract form, the usual process can be modeled into three steps:
+「競技プログラミングの問題を解く」と言っても、その範囲は意外に広い。まずこれを整理するところから初めよう。
+競プロの問題のページが開かれた直後の状態 (たとえば \url{https://atcoder.jp/contests/abc184/tasks/abc184_c} というリンクをクリックした直後のような状態) から初めて、緑色の「AC」という表示を確認するまでの過程において、具体的にはどのようなステップがあるだろうか？
+もちろんこの過程には様々なものが含まれており (例: 「問題文中に埋め込まれている図を解釈する」「問題ページをスクロールする」「青い ``提出'' と書かれたボタンをクリックする」など) いくらでも細かく説明できてしまう。
+しかし、重要でないものを無視して抽象的な形で整理すると、通常の過程は次の 3 ステップにモデル化できるだろう。
 
 \begin{description}
-    \item[(1.) Interpretation] Read a problem given in natural language and organize it as a mathematical problem.
-    \item[(2.) Consideration] Find a mathematical solution to the mathematical problem.
-    \item[(3.) Implementation] Write the mathematical solution as a concrete implementation on a computer.
+    \item[(1.) 読解] 自然言語で与えられた問題を解釈し、数学的な問題として整理する
+    \item[(2.) 考察] 数学的な問題に対し、数学的な解法を考案する
+    \item[(3.) 実装] 数学的な解法を、計算機上の具体的な実装として記述する
 \end{description}
 
 順番に見ていこう。
@@ -138,18 +134,13 @@ AtCoder 王国は $1$ から $N$ までの番号の付いた島と、それら�
 このステップは競技プログラミングという行為において中心となるステップであり、「問題を解く」と言うときも主にこのステップに注目している。
 つまり「競技プログラミングの問題を自動で解きたい」とは「考察を自動で行いたい」ということである。
 
-The topic of this article is (2.), the ``Consideration'' step.
-This step is the central step in the act of competitive programming, and when we say ``solving a problem'', we are mainly focusing on this step.
-In other words, ``We want to automatically solve problems of competition programming'' means ``We want to do the `Consideration' step automatically''.
 
 
+\subsection{競技プログラミングのソルバは形式化を人間に任せるとよいだろう}
 
-
-\subsection{Solvers for competitive programming should leave the formalization to humans.}
-
-Even if we divide the process of solving a problem of competitive programming into the three steps of ``Interpretation'', ``Consideration'', and ``Implementation'', and say that we mainly want to do the ``Consideration'', the remaining two steps are not easily separated.
-The problem has to be input in some form, and the solution has to be output in some form.
-We need to be able to handle the remaining steps of ``Interpretation'' and ``Implementation''.
+競技プログラミングの問題を解くことを「読解」「考察」「実装」という 3 ステップに分けた上で主に「考察」を行いたいのだと言っても、残りのふたつのステップは容易に切り離せるものではない。
+問題は何らかの形で入力されねばならないし、解法は何らかの形で出力されねばならない。
+「読解」「実装」という残りのステップについても扱える必要がある。
 
 機械にとって最も面倒なのは「読解」だろう。
 自然言語の理解という高度な処理が必要になる。
@@ -167,21 +158,21 @@ We need to be able to handle the remaining steps of ``Interpretation'' and ``Imp
 このことはコンパイラを思い出せば分かる。
 F\# や Haskell のような高級言語のソースコードを仮想機械の中間言語や実際の機械語に変換する操作はまさに「実装」であろう。
 
-Therefore, when we were to use a solver to solve a problem of competitive programming, the process could be organized into four steps as follows:
+よって、ソルバを用いて競技プログラミングの問題を解くとすると、その過程は以下のような 4 ステップに整理されるだろう。この形であれば可能性はある。
 
 \begin{description}
-    \item[(1.) Interpretation] (A human) reads a problem given in natural language and organizes it as a mathematical problem.
-    \item[(2.) Translation] (A human) inputs the mathematical problem as a formalized problem on a computer.
-    \item[(3.) Consideration'] (A solver) computes a solution mechanically to the translated formalized solution.
-    \item[(4.) Implementation'] (A solver) outputs the computed solution as an concrete implementation.
+    \item[(1.) 読解] (人間が) 自然言語で与えられた問題を解釈し、数学的な問題として整理する
+    \item[(2.) 翻訳] (人間が) 数学的な問題を、機械上に形式化された問題として入力する
+    \item[(3.) 考察'] (ソルバが) 記述された形式化された問題に対し、機械的に解法を計算する
+    \item[(4.) 実装'] (ソルバが) 計算された解法を、具体的な実装として出力する
 \end{description}
 
-(1.) and (2.) together do the ``Formalization'' process.
-Both of these steps are easy for humans.
-Admittedly, the ``Interpretation'' step is easy.
-The step of ``Translation'' is also easy for humans.
-We can just write what we read.
-This is similar to the fact that it is usually not so difficult to type a difficult mathematical expression in LaTeX, even if you don't understand it at all.
+(1.) と (2.) は合わせて「形式化」をしている。
+これらのステップはどちらも人間にとっては簡単である。
+「読解」のステップが簡単であるのは認めてよいだろう。
+「翻訳」のステップも人間にとっては簡単だとしてよい。
+ただ読んだままを書けばよいためである。
+まったく理解できない難しい数式であってもそれを LaTeX で打ち込むだけならそれほど難しくないことがたいていだろうが、これと同じようなものである。
 
 競技プログラミングのソルバが (1.) と (2.) のステップによる「形式化」を人間に任せてしまったとして、そのような条件で残りのステップだけを処理した場合も「競技プログラミングの問題を自動で解けた」と言ってよいだろうか？
 これは「自動で解けた」と言ってしまってよいだろう。
@@ -190,63 +181,63 @@ This is similar to the fact that it is usually not so difficult to type a diffic
 様々なことを自動でしてくれるソフトウェアであってもデータの打ち込みは人間の担当であることは多く、今回もそうだったというだけである。
 
 
-\subsection{We should implement a solver for competitive programming in the form of a transpiler.}
+\subsection{競技プログラミングのソルバはトランスパイラの形で実装するのがよいだろう}
 
-I said that the input to the solver should be a ``formalized problem'', but what exactly should be the ``formalized problem''?
-Is it a $3$-tuple of $(\text{variables as input}, \text{variables as output}, \text{constraints to be satisfied})$?
-Or is it a graph of a computable function?
-It could be anything.
-As long as it can represent the problem, it is unlikely that the choice of input format will make the problem solvable or unsolvable.
-You can use whatever you like.
+ソルバの入力は「形式化された問題」だろうと言ったが、では「形式化された問題」というのは具体的に何にするとよいだろうか？
+$(\text{入力となる変数}, \text{出力となる変数}, \text{それらが満たすべき制約})$ という $3$ つ組だろうか？
+計算可能な関数のグラフだと考えるべきだろうか？
+これはおそらく何でもよい。
+問題を表現できてさえいれば、入力フォーマットの選択によって問題が解けたり解けなかったりするといったことはほぼないだろう。
+好きなものを使えばよい。
 
-However, the input format to a solver greatly affects the ease of implementation of the solver itself.
-What kind of input is easiest to use?
-From my experience of implementing several prototypes, I think it is better to use an executable program as a formalized problem.
-If ``executable programs'' are the input to the solver, the process of competitive programming can be reduced to the following three steps:
+しかしソルバへの入力形式はソルバ自体の実装のしやすさを大きく左右する。
+どのような入力にするのがもっとも楽だろうか？
+何度かプロトタイプを実装した経験から、私は「実行可能なプログラム」を「形式化された問題」として使うのがよいと考えている。
+「実行可能なプログラム」をソルバの入力とすれば、競技プログラミングの過程は以下の 3 ステップに具体化される。
 
 \begin{description}
-    \item[(1.) Interpretation] (A human) reads a problem given in natural language and organizes it as a mathematical problem.
-    \item[(2.) Implementation''] (A human) writes a naive solution to the mathematical problem.
-    \item[(3.) Consideration''] (A solver) optimizes the given implementation in its computational complexity.
+    \item[(1.) 読解] (人間が) 自然言語で与えられた問題を解釈し、数学的な問題として整理する
+    \item[(2.) 実装''] (人間が) 数学的な問題を、計算機上にその愚直解として実装する
+    \item[(3.) 考察''] (ソルバが) 記述された実装に対し、計算量的な最適化を行う
 \end{description}
 
-In this case, the ``Consideration'' '' step in (3.) uses a programming language as both input and output.
-The output is a faster program that does the same calculation as the input program.
-This is the same to ``optimization''.
-In other words, if we use a ``executable program'' as the input of a solver, the ``solver that automatically solves the problem of competitive programming'' becomes a ``transpiler with optimization''.
+このとき (3.) の「考察''」のステップは、入力も出力も共にプログラミング言語である。
+入力されたプログラムと同じ計算をするより高速なプログラムを出力する。
+これは「最適化」に同じである。
+つまり「実行可能なプログラム」をソルバの入力とすれば、「競技プログラミングの問題を自動で解くソルバ」は「最適化を伴なうトランスパイラ」となる。
 
-The notion of ``a solver that automatically solves problems of competitive programming'' has been explicated as the concept of ``a transpiler with optimization''.
-This is a big step forward.
-We can now write the ``usual one'' instead of ``some mysterious and amazing thing''.
-Compared to something like artificial intelligence, compilers are much easier to develop.
-We can use a lot of existing technologies and materials.
-Another advantage is that the gap between input and output is small.
-Even a program that simply outputs its input can now be claimed to be the ``trivial solver''.
+「競技プログラミングの問題を自動で解くソルバ」を「最適化を伴なうトランスパイラ」と言い換えられた。
+これは大きな進歩である。
+「なにやらよく分からないすごそうなもの」ではなく「いつもの」を書けばよいことになった。
+「人工知能」と比べれば「コンパイラ」はたいへんに開発しやすい。
+既存の技術や資料をたくさん利用できる。
+また、入力と出力のギャップが小さいことも利点である。
+入力をそのまま出力するだけのプログラムでさえ、いまや「自明なソルバ」だと主張できる。
 
-Note that it is not obvious to use an ``executable program'' as a ``formalized problem''.
-It may sound natural to hear the answer first.
-But remember, a ``problem'' and a ``program'' are two very different things.
-You can run a program, but you cannot run a problem.
-A program has an asymptotic computational complexity, but a problem does not have an asymptotic computational complexity.
-At least I couldn't get over this gap until I had made a few prototypes.
+なお、「形式化された問題」として「実行可能なプログラム」使うことは明らかなことではない。
+答えを先に聞くと自然に聞こえるかもしれない。
+しかし思い出してほしいのは、「問題」と「プログラム」はまったく異なるものだということである。
+プログラムは実行できるが、問題は実行できない。
+プログラムは漸近的計算量を持つが、問題は漸近的計算量を持たない。
+少なくとも私はいくつかのプロトタイプを作るまでこのギャップを乗り越えられなかった。
 
-Other than transpilers, other types of solvers are possible, such as interactive solvers, or solvers consisting of a database of past problems and a search engine.
+なお、トランスパイラ以外の形のソルバの可能性としては、たとえば「対話的なソルバ」「過去問データベースと検索エンジンからなるソルバ」などが考えられる。
 
 
 
-\subsection{Not all problems of competition programming can be solved automatically.}
+\subsection{競技プログラミングのすべての問題が自動で解けるわけではない}
 
-It probably goes without saying, but I should warn you that not all problems of competitive programming can be solved automatically.
-You shouldn't expect too much.
-Problems that are suitable for mechanical methods will be solved, but problems that are not suitable for mechanical methods will not be solved.
-At least for a while, a solver will be nothing more than a toy software.
+言うまでもないことだろうが、競技プログラミングのすべての問題が自動で解けるわけではないことを注意しておく。
+期待しすぎるべきではない。
+機械的な解法と相性の良い問題は解けるだろうが、相性の悪い問題は解けない。
+少なくともしばらくの間は、再翻訳がおもしろおかしいものだった時代の機械翻訳と同程度の有用性がせいぜいのはずである。
 
-Especially for solvers as transpilers, problems that are not suitable for them include the following:
+特にトランスパイラとしてのソルバについて言えば、相性の悪い問題にはたとえば以下のようなものがある。
 
 \begin{enumerate}[label=(\arabic{enumi}.)]
-    \item Problems difficult to implement naive solutions
-    \item Problems that require ``intuition'' or ``inspiration''
-    \item problems that are intrinsically complicated
+    \item 愚直解の実装が難しい問題
+    \item 「直感」や「ひらめき」を必要とする問題
+    \item 問題そのものが複雑な問題
 \end{enumerate}
 
 (1.) は、たとえば幾何の問題である。
@@ -267,10 +258,10 @@ Especially for solvers as transpilers, problems that are not suitable for them i
 
 
 
-\subsection{About use of a solver in practice}
+\subsection{ソルバの実践での利用について}
 
-Let's consider what a solver for competitive programming looks like from view of the users who use it during contests.
-Basically, it will only be in a position not so different from the current \href{https://oeis.org/}{The On-Line Encyclopedia of Integer Sequences} (OEIS) and \href{https://www.wolframalpha.com/}{Wolfram|Alpha}.
+競技プログラミングのソルバの、それをコンテスト中に利用するユーザから見たときの様子を検討しておこう。
+基本的には現在の\href{https://oeis.org/}{オンライン整数列大辞典} (OEIS) や \href{https://www.wolframalpha.com/}{Wolfram|Alpha} とそう変わらない立ち位置にしかならない。
 
 まず明らかに言えることは、一般にソルバは銀の弾丸にはならないということである。
 もしどんなに優秀なソルバが開発されたとしても、そのようなソルバで解けてしまう問題は出題前に弾かれるだけである。
@@ -279,17 +270,18 @@ Basically, it will only be in a position not so different from the current \href
 機械的に解けうる問題であっても入力の与え方次第では解けないことも多いので、この判断を行なえることはソルバの利用のために必要である。
 しかしそのような判断ができるには結局はユーザ自身の能力が要求される。
 
-Also, the input can only be a problem itself when we think a ``solver for competition programming problems'', but other possibilities appear when considering practical use in contests.
-Since only a small portion of the final solution code is intrinsically related to its algorithm, we can use such code fragments as input.
-Then, something that deals only with such code fragments will be an extension of refactoring support functions of editors.
-It can be realized as a ``plugin to an IDE''.
-When the user specifies a code fragment, the plugin will rewrite it by reducing the asymptotic computational complexity of that fragment.
-If the input/output is not the whole source code but small code fragments, it will be convenient to interpret and reuse the results more flexibly.
+また、「競技プログラミングの問題のソルバ」という形であれば入力は問題そのものでしかありえないのだが、コンテストでの実用を考えたときにはそれ以外の可能性も現れてくる。
+最終的な解法コードのうちでアルゴリズムに本質的に関わる部分はごく一部のみであるので、そのようなコード断片のみを入力とすることもできる。
+すると、そのようなコード断片のみを扱うものはエディタのリファクタリング支援機能の延長に位置するものになる。
+それは「IDE のプラグイン」として実現される。
+ユーザがコード断片を指定すると、その部分の漸近的計算量を落とすなどの書き換えを行ってくれるようなものである。
+入出力がソースコードの全体でなくコード断片という小さいものになれば、結果の解釈や再利用もより柔軟に行えて便利であろう。
 
 
-\section{How is a transpiler with optimization implemented?}
 
-\subsection{Some problems can be solved by mechanical transformation by hand.}\label{section:hand-solve}
+\section{最適化を行うトランスパイラはどのように実装されるか}
+
+\subsection{手作業による機械的な変形で解くことができる問題がある}\label{section:hand-solve}
 
 ソルバのことはいったん忘れて、手作業による機械的な変形で解くことができる問題を AtCoder Beginner Contest 100 の $4$ 問目 Patisserie ABC (\url{https://atcoder.jp/contests/abc100/tasks/abc100_d}) を例に見てみよう。
 これは整理すると以下のような問題である。
@@ -372,7 +364,7 @@ $N, M$ の上限と計算時間制限が与えられていれば、これが時�
 よってこの問題は機械的に解けると言える。
 
 
-\subsection{Such manual mechanical transformation can also be done by programs.}\label{section:machine-solve}
+\subsection{このような手動での機械的な変形はプログラムによっても可能である}\label{section:machine-solve}
 
 \ref{section:hand-solve}節で見たような機械的な変形がプログラムによっても可能であることを、引き続き Patisserie ABC を例に見ていこう。
 「このようにして機械的に解ける」と主張した上の説明を分析して裏に隠されたものも明示すれば、さらにいくつかの要素に分解することができる。
@@ -534,7 +526,7 @@ $N, M$ の上限と計算時間制限が与えられていれば、これが時�
 
 
 
-\section{Related Research}
+\section{関連研究}
 
 一般のものであれば、以下のものが近いだろう。
 
